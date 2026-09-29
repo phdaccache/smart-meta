@@ -39,4 +39,8 @@ drop policy if exists "own records" on public.records;
 create policy "own records" on public.records
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+-- Explicit access: signed-in users only (their own rows, per the policy above).
+-- Works whether or not the project exposes new tables automatically.
+revoke all on public.records from anon;
+grant select, insert, update, delete on public.records to authenticated;
 grant usage on sequence public.records_seq to authenticated;
