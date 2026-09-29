@@ -1,0 +1,30 @@
+# Free Supabase projects pause after about a week without activity. This runs a
+# real query every day, which keeps the project awake. If the project has paused
+# anyway (or is down), the run fails and GitHub emails you.
+name: Supabase keep-alive
+
+on:
+  schedule:
+    - cron: '17 11 * * *' # daily, 08:17 in Brasília
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .env.production
+          sparse-checkout-cone-mode: false
+      - name: Query the database
+        run: |
+          set -a; . <(sed 's/\r$//' .env.production); set +a
+          body=$(curl -sS --max-time 30 "$VITE_SUPABASE_URL/rest/v1/records?select=id&limit=1" -H "apikey: $VITE_SUPABASE_ANON_KEY" || true)
+          echo "$body"
+          # Signed out, the database itself answers "permission denied" (42501).
+          # Anything else means it didn't answer: paused, or down.
+          if ! echo "$body" | grep -q '42501'; then
+            echo "::error::Supabase did not answer. Restore the project: https://supabase.com/dashboard/project/$(echo "$VITE_SUPABASE_URL" | sed -E 's#https://([^.]+).*#\1#')"
+            exit 1
+          fi

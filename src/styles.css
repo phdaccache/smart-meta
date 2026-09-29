@@ -213,6 +213,7 @@ a { color: var(--accent); }
 /* ——— buttons & inputs ——— */
 
 .btn {
+  text-decoration: none;
   min-height: 44px; padding: 0 18px; border-radius: 12px; font-weight: 600; font-size: 15px;
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   background: var(--surface-2); color: var(--ink);

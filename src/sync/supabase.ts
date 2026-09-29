@@ -12,6 +12,11 @@ export const supabase: SupabaseClient | null =
       })
     : null
 
+/** Where to restore the project if Supabase has paused it. */
+export const dashboardUrl: string | null = url
+  ? `https://supabase.com/dashboard/project/${new URL(url).hostname.split('.')[0]}`
+  : null
+
 const PAGE = 500
 
 interface Row {

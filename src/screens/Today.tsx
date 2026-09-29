@@ -13,6 +13,8 @@ import { IconCalendar, IconCheck, IconChevronRight, IconPlus } from '../ui/icons
 import { navigate } from '../ui/router'
 import { openQuickAdd } from './QuickAdd'
 import { OccurrenceSheet } from './OccurrenceSheet'
+import { useSyncStatus } from '../sync/controller'
+import { dashboardUrl } from '../sync/supabase'
 import { TaskSheet } from './TaskSheet'
 
 type Filter = 'all' | 'goals' | 'projects' | 'tasks'
@@ -116,6 +118,7 @@ export function TodayScreen({ date }: { date?: DateStr }) {
         </>
       )}
 
+      {!isPast && <SyncNotice />}
       {!isPast && <ExportNudge lastExportAt={settings.lastExportAt} snap={snap} />}
       <TaskSheet task={openTask} onClose={() => setOpenTask(null)} today={today} />
       <OccurrenceSheet commitment={logFor} date={viewDate} today={today} onClose={() => setLogFor(null)} />
@@ -410,6 +413,26 @@ function EmptyDay({ snap, ctx, isPast }: { snap: Snapshot; ctx: ScoreContext; is
 }
 
 const lowerFirst = (s: string) => s.replace(/[.!]+$/, '').replace(/^\w/, (c) => c.toLowerCase())
+
+/**
+ * Sync failing for over a day while online usually means Supabase paused the
+ * free project. Nothing is lost (changes wait on the phone), but it needs a click.
+ */
+function SyncNotice() {
+  const s = useSyncStatus()
+  if (s.phase !== 'error' || !navigator.onLine) return null
+  const since = s.lastSyncedAt ? Date.now() - new Date(s.lastSyncedAt).getTime() : Infinity
+  if (since < 86_400_000) return null
+  return (
+    <div className="banner" style={{ marginTop: 20 }}>
+      <div className="text">
+        Not synced {s.lastSyncedAt ? `since ${dayMonth(s.lastSyncedAt.slice(0, 10))}` : 'yet'}. Supabase may have paused the project.
+        {s.pending > 0 && ` ${s.pending} changes are waiting here, safe.`}
+      </div>
+      {dashboardUrl && <a className="btn" href={dashboardUrl} target="_blank" rel="noreferrer">Restore</a>}
+    </div>
+  )
+}
 
 function ExportNudge({ lastExportAt, snap }: { lastExportAt: string | null; snap: Snapshot }) {
   const since = lastExportAt ?? snap.goals.map((g) => g.createdAt).sort()[0]
