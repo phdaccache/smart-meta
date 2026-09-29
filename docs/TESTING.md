@@ -116,3 +116,17 @@ Turn on airplane mode, open the installed app, and tick things.
 **24. Installed on iPhone**
 In Safari, go to Share → **Add to Home Screen**, then open the app from the icon.
 - **Expect:** full screen, the check icon, and your data kept between opens.
+
+## Sync
+
+**25. It uploads**
+Tick something on the phone, wait a few seconds, then open Settings.
+- **Expect:** "Synced: just now", nothing waiting. In Supabase → Table Editor → `records`, the row count grows.
+
+**26. Restore on a fresh browser**
+On the computer, open the app in a **private window**, go to Settings → Sync and sign in.
+- **Expect:** your goals, history and projects appear. Close the window afterwards. Don't erase anything there: an erase while signed in empties the synced copy too.
+
+**27. Offline, then back**
+Turn on airplane mode, tick two things, then turn it off.
+- **Expect:** Settings shows "Waiting 2" while offline, then syncs by itself once back online.
