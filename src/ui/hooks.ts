@@ -4,7 +4,7 @@ import { db } from '../db/db'
 import { DEFAULT_SETTINGS, getMeta, getSettings, type Settings } from '../db/settings'
 import { logicalDate } from '../lib/dates'
 import type { Snapshot } from '../lib/today'
-import type { DateStr, Displacement, GoalReview, ID, Revision } from '../lib/types'
+import type { DateStr, Displacement, GoalReview, ID, Revision, WeekReview } from '../lib/types'
 
 const live = <T extends { deletedAt?: string | null }>(rows: T[]) => rows.filter((r) => !r.deletedAt)
 /** IndexedDB returns rows by id (random); show them in the order they were made. */
@@ -44,6 +44,14 @@ export function useDisplacements(): Displacement[] {
 
 export function useRevisions(goalId: ID): Revision[] {
   return useLiveQuery(async () => live(await db.revisions.where('goalId').equals(goalId).toArray()), [goalId]) ?? []
+}
+
+export function useAllRevisions(): Revision[] | undefined {
+  return useLiveQuery(async () => live(await db.revisions.toArray()), [])
+}
+
+export function useWeekReviews(): WeekReview[] | undefined {
+  return useLiveQuery(async () => live(await db.weekReviews.toArray()), [])
 }
 
 export function useGoalReviews(goalId: ID): GoalReview[] {

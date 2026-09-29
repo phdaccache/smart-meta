@@ -3,7 +3,8 @@ import { db } from './db/db'
 import { setSettings } from './db/settings'
 import { dayMonth } from './lib/dates'
 import { Toaster } from './ui/components'
-import { useSettingsLoaded } from './ui/hooks'
+import { reviewPending } from './lib/review'
+import { useSettingsLoaded, useToday } from './ui/hooks'
 import { IconGoals, IconInsights, IconPlus, IconReview, IconToday } from './ui/icons'
 import { match, navigate, useLocation } from './ui/router'
 import { GoalDetailScreen, GoalEditScreen, GoalReviewScreen } from './screens/GoalDetail'
@@ -12,6 +13,7 @@ import { GoalsScreen } from './screens/Goals'
 import { NewProjectScreen, ProjectScreen } from './screens/Projects'
 import { openQuickAdd, QuickAdd } from './screens/QuickAdd'
 import { SettingsScreen, ValuesScreen } from './screens/Settings'
+import { ReviewScreen } from './screens/Review'
 import { TodayScreen } from './screens/Today'
 import { WelcomeScreen } from './screens/Welcome'
 import { Screen } from './ui/components'
@@ -36,7 +38,7 @@ function route(path: string, query: URLSearchParams) {
   if ((m = match('/projects/:id', path))) return <ProjectScreen key={m.id} id={m.id} />
   if (path === '/settings') return <SettingsScreen />
   if (path === '/settings/values') return <ValuesScreen />
-  if (path === '/review') return <Later title="Review" />
+  if (path === '/review') return <ReviewScreen />
   if (path === '/insights') return <Later title="Insights" />
   return <Later title="Not found" />
 }
@@ -53,6 +55,11 @@ export function App() {
   const settings = useSettingsLoaded()
   const valueCount = useLiveQuery(() => db.values.count(), [])
   const { path, query } = useLocation()
+  const today = useToday(settings?.rolloverHour ?? 4)
+  const reviewDot = useLiveQuery(
+    async () => reviewPending(await db.goals.toArray(), await db.weekReviews.toArray(), today),
+    [today],
+  )
   if (!settings || valueCount == null) return null
 
   // Settings live on the device; values arrive with sync, so a restored phone skips first run.
@@ -79,7 +86,10 @@ export function App() {
                 return (
                   <a key={p} href={p} aria-current={current ? 'page' : undefined}
                     onClick={(e) => { e.preventDefault(); navigate(p) }}>
-                    <Icon />
+                    <span className="tab-icon">
+                      <Icon />
+                      {p === '/review' && reviewDot && <i className="tab-dot" aria-label="Review ready" />}
+                    </span>
                     {label}
                   </a>
                 )

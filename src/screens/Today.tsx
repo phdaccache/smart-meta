@@ -8,7 +8,8 @@ import type { MissPrompt, ScoreContext } from '../lib/scoring'
 import { buildDay, type Snapshot, type TodayGroup, type TodayItem } from '../lib/today'
 import type { Commitment, DateStr, ID, MissReason, Task } from '../lib/types'
 import { Badge, CheckButton, Chip, DatePickerButton, Screen, Segmented, toast } from '../ui/components'
-import { useDisplacements, useSettings, useSnapshot, useSnoozes, useToday } from '../ui/hooks'
+import { useDisplacements, useSettings, useSnapshot, useSnoozes, useToday, useWeekReviews } from '../ui/hooks'
+import { reviewPending } from '../lib/review'
 import { IconCalendar, IconCheck, IconChevronRight, IconPlus } from '../ui/icons'
 import { navigate } from '../ui/router'
 import { openQuickAdd } from './QuickAdd'
@@ -118,6 +119,7 @@ export function TodayScreen({ date }: { date?: DateStr }) {
         </>
       )}
 
+      {!isPast && <ReviewNotice snap={snap} today={today} />}
       {!isPast && <SyncNotice />}
       {!isPast && <ExportNudge lastExportAt={settings.lastExportAt} snap={snap} />}
       <TaskSheet task={openTask} onClose={() => setOpenTask(null)} today={today} />
@@ -300,7 +302,11 @@ function ValueEditor({ item, date, onDone }: { item: TodayItem; date: DateStr; o
 
 // ——— miss prompt ———
 
-function MissPromptCard(props: { prompt: MissPrompt; label: string; question: string; today: DateStr; canLog: boolean }) {
+export function MissPromptCard(props: {
+  prompt: MissPrompt; label: string; question: string; today: DateStr; canLog: boolean
+  /** Today only: "Not now" hides the prompt until tomorrow. */
+  snooze?: boolean
+}) {
   const displacements = useDisplacements()
   const [reason, setReason] = useState<MissReason | null>(null)
   const [displacementId, setDisplacementId] = useState<ID | null>(null)
@@ -361,7 +367,9 @@ function MissPromptCard(props: { prompt: MissPrompt; label: string; question: st
 
       <div className="actions">
         <div className="row">
-          <button className="link-btn" onClick={() => snoozePrompt(props.prompt.commitmentId, props.today)}>Not now</button>
+          {props.snooze !== false && (
+            <button className="link-btn" onClick={() => snoozePrompt(props.prompt.commitmentId, props.today)}>Not now</button>
+          )}
           {props.canLog && (
             <button className="link-btn" onClick={() => navigate(`/day/${props.prompt.slots[0].date}`)}>Log it instead</button>
           )}
@@ -413,6 +421,18 @@ function EmptyDay({ snap, ctx, isPast }: { snap: Snapshot; ctx: ScoreContext; is
 }
 
 const lowerFirst = (s: string) => s.replace(/[.!]+$/, '').replace(/^\w/, (c) => c.toLowerCase())
+
+/** Quiet, from Monday until the week is reviewed. */
+function ReviewNotice({ snap, today }: { snap: Snapshot; today: DateStr }) {
+  const weekReviews = useWeekReviews()
+  if (!weekReviews || !reviewPending(snap.goals, weekReviews, today)) return null
+  return (
+    <div className="banner" style={{ marginTop: 20 }}>
+      <div className="text">Last week is ready to review.</div>
+      <button className="btn" onClick={() => navigate('/review')}>Review</button>
+    </div>
+  )
+}
 
 /**
  * Sync failing for over a day while online usually means Supabase paused the

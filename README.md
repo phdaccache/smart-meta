@@ -30,8 +30,11 @@ offline, and an optional Supabase sync copies everything off the phone.
 - **Settings**: values, day rollover (default 04:00), goal cap, creation mode,
   JSON export/import, sync sign-in.
 
-Review and Insights are placeholders for now; the data they need (entries, miss
-reasons, displacements, revisions) is already being recorded.
+- **Review**: the weekly ritual: loose ends, last week per goal with reasons,
+  one evidence-backed suggestion per goal, dates, stalled projects, an open
+  slot. Rules in `src/lib/review.ts`, design in spec §16.
+
+Insights is a placeholder for now; its design is in spec §16.
 
 ## Develop
 

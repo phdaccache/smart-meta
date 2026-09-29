@@ -246,10 +246,15 @@ export interface MissPrompt {
  * Closed periods in the lookback window that fell short and have no reason
  * logged yet. Daily misses are merged into one prompt so a lost week asks once.
  */
-export function missPrompt(c: Commitment, entries: Entry[], ctx: ScoreContext): MissPrompt | null {
+export function missPrompt(
+  c: Commitment,
+  entries: Entry[],
+  ctx: ScoreContext,
+  lookbackDays = MISS_LOOKBACK_DAYS,
+): MissPrompt | null {
   if (c.shape === 'standard' || c.deletedAt) return null
   const yesterday = addDays(ctx.today, -1)
-  const earliest = maxDate(c.startDate, addDays(ctx.today, -MISS_LOOKBACK_DAYS))
+  const earliest = maxDate(c.startDate, addDays(ctx.today, -lookbackDays))
   if (earliest > yesterday) return null
   const mine = activeEntries(entries).filter((e) => e.subjectType === 'commitment' && e.subjectId === c.id)
   const slots: MissSlot[] = []

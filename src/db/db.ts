@@ -1,12 +1,13 @@
 import Dexie, { type Table } from 'dexie'
 import type {
   Base, Commitment, Displacement, Entry, Goal, GoalReview, Occurrence, Prep, Project, Revision, Task, Value,
+  WeekReview,
 } from '../lib/types'
 
 /** Every synced collection. The names are also the collection keys in Postgres. */
 export const COLLECTIONS = [
   'values', 'goals', 'commitments', 'preps', 'projects', 'tasks', 'entries',
-  'revisions', 'occurrences', 'displacements', 'goalReviews',
+  'revisions', 'occurrences', 'displacements', 'goalReviews', 'weekReviews',
 ] as const
 export type Collection = (typeof COLLECTIONS)[number]
 
@@ -22,6 +23,7 @@ export interface CollectionTypes {
   occurrences: Occurrence
   displacements: Displacement
   goalReviews: GoalReview
+  weekReviews: WeekReview
 }
 
 export interface MetaRow {
@@ -48,6 +50,7 @@ export class AppDB extends Dexie {
   occurrences!: Table<Occurrence, string>
   displacements!: Table<Displacement, string>
   goalReviews!: Table<GoalReview, string>
+  weekReviews!: Table<WeekReview, string>
   meta!: Table<MetaRow, string>
   outbox!: Table<OutboxItem, number>
 
@@ -71,6 +74,7 @@ export class AppDB extends Dexie {
       meta: 'key',
       outbox: '++seq, [collection+id]',
     })
+    this.version(2).stores({ weekReviews: 'id, week, updatedAt' })
   }
 
   coll<C extends Collection>(c: C): Table<CollectionTypes[C], string> {

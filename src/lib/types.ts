@@ -151,4 +151,13 @@ export interface GoalReview extends Base {
   outcome: 'renewed' | 'maintenance' | 'completed'
 }
 
+/** One weekly review: the Monday of the week reviewed, and what was decided. */
+export interface WeekReview extends Base {
+  week: DateStr
+  /** Set by "Done for this week". */
+  doneAt: string | null
+  /** Suggestion keys dismissed during this review; hidden for a few weeks. */
+  dismissed: string[]
+}
+
 export type Status = 'on track' | 'behind' | 'at risk'

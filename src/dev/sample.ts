@@ -241,6 +241,18 @@ export async function loadSampleData(today: DateStr): Promise<void> {
     await check({ subjectType: 'task', subjectId: first.id }, addDays(today, -3))
   }
 
+  // Backdate the plan to each start date, as if it had been set up back then
+  // (Review only counts prep edits made after the commitment was set up).
+  await db.transaction('rw', db.commitments, db.preps, async () => {
+    for (const c of await db.commitments.toArray()) {
+      const at = `${c.startDate}T08:00:00.000Z`
+      await db.commitments.put({ ...c, createdAt: at, updatedAt: at })
+      for (const p of await db.preps.where('commitmentId').equals(c.id).toArray()) {
+        await db.preps.put({ ...p, createdAt: at, updatedAt: at })
+      }
+    }
+  })
+
   // ——— tasks ———
 
   await createTask({ title: 'Pay Ana back', date: addDays(today, 1) })

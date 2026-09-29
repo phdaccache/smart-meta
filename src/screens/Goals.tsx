@@ -215,7 +215,7 @@ function ProjectRow({ project, snap, today }: { project: Project; snap: Snapshot
         <div className="title">{project.title}</div>
         <div className="sub">
           {total ? `${done} of ${total} steps` : 'No steps yet'}
-          {project.state === 'active' ? <> · <span style={overdue ? { color: 'var(--at-risk)' } : undefined}>due {relativeDay(project.targetDate, today)}</span></> : ' · done'}
+          {project.state === 'active' ? <> · <span style={overdue ? { color: 'var(--at-risk)' } : undefined}>due {relativeDay(project.targetDate, today)}</span></> : project.state === 'archived' ? ' · set aside' : ' · done'}
           {goal && ` · ${goal.title}`}
         </div>
         {total > 0 && <div className="progress"><i style={{ width: `${(100 * done) / total}%` }} /></div>}

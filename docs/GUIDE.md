@@ -56,12 +56,24 @@ After a week closes you see "Last week: 2 of 4 LeetCode. What happened?". Tap **
 
 **Forgot to log?** Tap 📅 at the top of Today, pick the day, and tick things there. A goal's full history is behind the 🕘 icon at the top right of its page (✓ done, ✕ missed, ↺ corrected, ✎ edited).
 
-## Every week
+## Every week (a few minutes)
 
-Open **Plan**. Each goal card shows its status (**on track / behind / at risk**), its habits, and its projects. Drag cards to change their order on Today. If a goal slips, you can:
-- lower a habit's target,
-- add a prep,
-- or move the goal to the backlog.
+From Monday, a dot on **Review** (and a line on Today) says last week is ready. In **Review**:
+1. **Loose ends:** answer misses that still have no reason.
+2. **Last week:** each goal's plain counts ("gym 2 of 3"), its status and your reasons. When a reason keeps coming back, one suggestion appears with its facts, e.g. *"3 of 4 gym misses: chose something else (phone ×3)". Add a prep?* Accept it (it opens the right editor) or **Dismiss** (hidden for 4 weeks).
+3. **Dates** and **Stalled projects** (no step in 3 weeks, or past their date): open, move the date, or put down.
+4. **Open slot:** start the top backlog goal.
+5. **Done for this week.**
+
+| Reason that keeps coming back | Suggestion |
+|---|---|
+| Forgot | Add a prep |
+| Chose something else | Add a prep, or change the one you have |
+| No time / too tired | Lower the target |
+| Below tolerance 3 of the last 4 weeks | Pause it |
+| On track 8 weeks straight | Maintenance |
+
+**Plan** shows every goal's status (**on track / behind / at risk**), habits and projects. Drag cards to change their order on Today.
 
 For finish-line goals, the status comes from their habits until the deadline. It turns **behind** during the extra time and **at risk** after it.
 

@@ -4,7 +4,7 @@ import type { CommitmentDraft, GoalDraft, PrepDraft } from '../lib/draft'
 import { meetsTarget, type MissPrompt } from '../lib/scoring'
 import type {
   Base, Commitment, DateStr, Entry, Goal, GoalReview, GoalState, ID, MissReason, Occurrence, Prep, Project,
-  Task, Value,
+  Task, Value, WeekReview,
 } from '../lib/types'
 import { db, type Collection, type CollectionTypes } from './db'
 import { getMeta, getSettings, setMeta } from './settings'
@@ -426,4 +426,22 @@ export async function promoteTask(t: Task, fallbackTargetDate: DateStr) {
   })
   await putAll([{ c: 'projects', r: project }, { c: 'tasks', r: { ...t, deletedAt: now() } }])
   return project
+}
+
+// ——— weekly review ———
+
+async function weekReviewFor(week: DateStr): Promise<WeekReview> {
+  const existing = (await db.weekReviews.where('week').equals(week).toArray()).find((w) => !w.deletedAt)
+  return existing ?? make<'weekReviews'>({ week, doneAt: null, dismissed: [] })
+}
+
+/** Hides a suggestion for a few weeks (see DISMISS_WEEKS). */
+export async function dismissSuggestion(week: DateStr, key: string) {
+  const w = await weekReviewFor(week)
+  await put('weekReviews', { ...w, dismissed: [...new Set([...w.dismissed, key])] })
+}
+
+export async function markWeekReviewed(week: DateStr) {
+  const w = await weekReviewFor(week)
+  await put('weekReviews', { ...w, doneAt: now() })
 }

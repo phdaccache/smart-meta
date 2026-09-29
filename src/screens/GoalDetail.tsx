@@ -246,7 +246,7 @@ function CommitmentCard({ c, snap, today, canRemove, onEdit }: { c: Commitment; 
   )
 }
 
-function PrepSheet({ commitment, editing, onClose }: { commitment: Commitment; editing: Prep | 'new' | null; onClose: () => void }) {
+export function PrepSheet({ commitment, editing, onClose }: { commitment: Commitment; editing: Prep | 'new' | null; onClose: () => void }) {
   const [drafts, setDrafts] = useState<PrepDraft[]>([])
   const [tried, setTried] = useState(false)
   const [key, setKey] = useState<unknown>(null)
@@ -275,7 +275,7 @@ function PrepSheet({ commitment, editing, onClose }: { commitment: Commitment; e
   )
 }
 
-function CommitmentSheet({ goal, editing, today, onClose }: { goal: Goal; editing: Commitment | 'new' | null; today: string; onClose: () => void }) {
+export function CommitmentSheet({ goal, editing, today, onClose }: { goal: Goal; editing: Commitment | 'new' | null; today: string; onClose: () => void }) {
   const [d, setD] = useState<CommitmentDraft>(emptyCommitmentDraft)
   const [start, setStart] = useState(today)
   const [tried, setTried] = useState(false)

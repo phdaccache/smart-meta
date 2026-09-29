@@ -96,7 +96,7 @@ export function ProjectScreen({ id }: { id: string }) {
   }
 
   return (
-    <Screen back={goal ? `/goals/${goal.id}` : '/goals'} eyebrow={project.state === 'active' ? 'Project' : 'Project · done'} title={project.title}>
+    <Screen back={goal ? `/goals/${goal.id}` : '/goals'} eyebrow={project.state === 'active' ? 'Project' : project.state === 'archived' ? 'Project · set aside' : 'Project · done'} title={project.title}>
       {allDone && project.state === 'active' && (
         <div className="banner">
           <div className="text">Every step is done.</div>
