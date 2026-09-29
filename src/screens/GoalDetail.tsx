@@ -12,7 +12,7 @@ import {
 import { activeEntries, summarizeGoal, type ScoreContext } from '../lib/scoring'
 import { dueBadge, type Snapshot } from '../lib/today'
 import type { Commitment, Goal, GoalState, Prep } from '../lib/types'
-import { Field, InfoTip, Screen, Section, Sheet, StatusWord, toast, TypeToConfirm, WeekBar } from '../ui/components'
+import { Field, InfoTip, Screen, Section, Sheet, StatusInfo, StatusWord, toast, TypeToConfirm, WeekBar } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconHistory } from '../ui/icons'
 import { navigate } from '../ui/router'
@@ -85,7 +85,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
           <div className="pad card-head"><div className="group-why">{goal.whyText}</div></div>
           <div className="pad">
             <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}>
-              <StatusWord status={summary.status} />
+              <span className="row" style={{ gap: 0 }}><StatusWord status={summary.status} /><StatusInfo /></span>
               {commitments.length > 0 && <WeekBar weeks={summary.weeks} />}
             </div>
             {summary.time && (

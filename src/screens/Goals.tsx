@@ -5,7 +5,7 @@ import { cadenceText } from '../lib/describe'
 import { activeEntries, summarizeGoal, type ScoreContext } from '../lib/scoring'
 import type { Snapshot } from '../lib/today'
 import type { Goal, Project } from '../lib/types'
-import { InfoTip, Screen, Section, Segmented, StatusWord, toast, WeekBar } from '../ui/components'
+import { InfoTip, Screen, Section, Segmented, StatusInfo, StatusWord, toast, WeekBar } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconPlus } from '../ui/icons'
 import { navigate } from '../ui/router'
@@ -78,7 +78,7 @@ export function GoalsScreen() {
           )}
         </>
       ) : (<>
-      <Section title="Active" aside={<span>{active.length} of {settings.goalCap}</span>}>
+      <Section title={<span className="title-row">Active <StatusInfo /></span>} aside={<span>{active.length} of {settings.goalCap}</span>}>
         {active.length === 0 ? (
           <div className="card list-empty">
             No active goals. {backlog.length > 0 ? 'Start one from the backlog.' : <button className="link-btn" onClick={() => navigate('/goals/new')}>Create one</button>}

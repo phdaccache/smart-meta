@@ -2,19 +2,54 @@ import { useSyncExternalStore } from 'react'
 
 const listeners = new Set<() => void>()
 const notify = () => listeners.forEach((l) => l())
-window.addEventListener('popstate', notify)
+
+/** Tab screens. Reaching one resets the history stack, so back can't go behind it. */
+export const ROOTS = ['/', '/goals', '/review', '/insights']
+const isRoot = (to: string) => ROOTS.includes(to.split('?')[0])
+
+interface NavState {
+  /** How many in-app screens sit below this one. 0 on a tab screen. */
+  depth: number
+}
+
+const depth = () => (history.state as NavState | null)?.depth ?? 0
+
+// Entries made before this app ran (or by a reload) count as the bottom of the stack.
+if (!(history.state as NavState | null)?.depth) history.replaceState({ depth: 0 }, '')
+
+/** Set while unwinding the stack to a tab: where to land once the browser gets there. */
+let pendingRoot: string | null = null
+
+window.addEventListener('popstate', () => {
+  if (pendingRoot != null) {
+    history.replaceState({ depth: 0 }, '', pendingRoot)
+    pendingRoot = null
+  }
+  notify()
+})
 
 export function navigate(to: string, opts: { replace?: boolean } = {}) {
-  const state = { inApp: true }
-  if (opts.replace) history.replaceState(state, '', to)
-  else history.pushState(state, '', to)
+  if (isRoot(to)) {
+    const d = depth()
+    if (d > 0) {
+      // Pop every in-app screen first; the popstate handler then lands on `to`.
+      pendingRoot = to
+      history.go(-d)
+      return
+    }
+    history.replaceState({ depth: 0 }, '', to)
+  } else if (opts.replace) {
+    history.replaceState({ depth: depth() }, '', to)
+  } else {
+    history.pushState({ depth: depth() + 1 }, '', to)
+  }
   notify()
   window.scrollTo(0, 0)
 }
 
-/** Back within the app when there is history, otherwise to a sensible parent. */
+/** Back within the app when there is somewhere to go, otherwise to a sensible parent. */
 export function goBack(fallback: string) {
-  if ((history.state as { inApp?: boolean } | null)?.inApp) history.back()
+  if (depth() > 0) history.back()
   else navigate(fallback, { replace: true })
 }
 

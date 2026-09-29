@@ -124,6 +124,20 @@ export function StatusWord({ status }: { status: Status | null }) {
   return <span className={`status status-${status.replace(' ', '-')}`}>{status}</span>
 }
 
+/** What on track / behind / at risk mean, behind an (i). */
+export function StatusInfo() {
+  return (
+    <InfoTip label="What the status means">
+      Counted from the goal’s start, against its tolerance (say 80%):<br />
+      <b>On track</b>: at or above it.<br />
+      <b>Behind</b>: below it, by up to 15 points (65–79%).<br />
+      <b>At risk</b>: more than 15 points below.<br />
+      Finish lines turn <b>behind</b> during their extra time and <b>at risk</b> after it.
+      The four bars are the last four weeks, oldest first; grey means nothing to judge yet.
+    </InfoTip>
+  )
+}
+
 export function WeekBar({ weeks, label = 'Last 4 weeks' }: { weeks: (Status | null)[]; label?: string }) {
   const text = weeks.map((w, i) => `week ${i + 1}: ${w ?? 'no data'}`).join(', ')
   return (

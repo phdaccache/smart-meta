@@ -72,7 +72,8 @@ export async function shareOrDownload(b: Backup): Promise<'shared' | 'downloaded
   const file = new File([json], name, { type: 'application/json' })
   if (navigator.canShare?.({ files: [file] })) {
     try {
-      await navigator.share({ files: [file], title: name })
+      // Files only: a title or text here is saved by iOS as an extra .txt file next to the JSON.
+      await navigator.share({ files: [file] })
       return 'shared'
     } catch (e) {
       if ((e as Error).name === 'AbortError') return 'cancelled'
