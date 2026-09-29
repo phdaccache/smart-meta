@@ -5,16 +5,18 @@ import { activeEntries } from '../lib/scoring'
 import type { Task } from '../lib/types'
 import { CheckButton, Field, Screen, Section, toast, TypeToConfirm } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
-import { IconDown, IconUp } from '../ui/icons'
+import { IconChevronRight } from '../ui/icons'
+import { Sortable } from '../ui/Sortable'
+import { hueOf } from '../lib/colors'
 import { navigate } from '../ui/router'
 import { GoalSelect } from './TaskSheet'
 
-export function NewProjectScreen() {
+export function NewProjectScreen({ goalId: presetGoal }: { goalId?: string | null }) {
   const settings = useSettings()
   const today = useToday(settings.rolloverHour)
   const [title, setTitle] = useState('')
   const [targetDate, setTargetDate] = useState(() => addDays(today, 30))
-  const [goalId, setGoalId] = useState<string | null>(null)
+  const [goalId, setGoalId] = useState<string | null>(presetGoal ?? null)
   const [steps, setSteps] = useState<string[]>(['', ''])
   const [tried, setTried] = useState(false)
 
@@ -84,11 +86,6 @@ export function ProjectScreen({ id }: { id: string }) {
   const currentId = steps.find((s) => !doneEntry.has(s.id))?.id
   const allDone = steps.length > 0 && done === steps.length
 
-  const move = (i: number, dir: -1 | 1) => {
-    const next = [...steps]
-    ;[next[i], next[i + dir]] = [next[i + dir], next[i]]
-    reorderSteps(next)
-  }
   const toggle = (t: Task) => {
     const e = doneEntry.get(t.id)
     return e ? uncheck(e.id) : check({ subjectType: 'task', subjectId: t.id }, today)
@@ -100,10 +97,7 @@ export function ProjectScreen({ id }: { id: string }) {
   }
 
   return (
-    <Screen back="/goals" eyebrow={`Project${goal ? ` · ${goal.title}` : ''} · ${project.state === 'active' ? `due ${relativeDay(project.targetDate, today)}` : 'done'}`}
-      title={project.title}>
-      {goal && <div className="group-why" style={{ marginBottom: 16 }}>{goal.whyText}</div>}
-
+    <Screen back={goal ? `/goals/${goal.id}` : '/goals'} eyebrow={project.state === 'active' ? 'Project' : 'Project · done'} title={project.title}>
       {allDone && project.state === 'active' && (
         <div className="banner">
           <div className="text">Every step is done.</div>
@@ -114,20 +108,56 @@ export function ProjectScreen({ id }: { id: string }) {
         </div>
       )}
 
-      <Section title="Steps" aside={<span>{done} of {steps.length}</span>}>
+      <Section title="Details" aside={<button className="link-btn" onClick={() => setEditing(!editing)}>{editing ? 'Done' : 'Edit'}</button>}>
+        <div className={`card hued hue-${hueOf(project)}`}>
+          {goal && (
+            <button className="hue-band pad list-row" style={{ borderRadius: 0 }} onClick={() => navigate(`/goals/${goal.id}`)}>
+              <div className="text">
+                <div className="group-eyebrow">{goal.title}</div>
+                <div className="group-why">{goal.whyText}</div>
+              </div>
+              <IconChevronRight className="chev" width={18} />
+            </button>
+          )}
+          {!goal && <div className="hue-band" style={{ height: 8 }} />}
+          <div className="pad">
+            {editing ? (
+              <>
+                <Field label="Outcome" htmlFor="pe-title">
+                  <input id="pe-title" defaultValue={project.title}
+                    onBlur={(e) => e.target.value.trim() && updateProject(project, { title: e.target.value.trim() })} />
+                </Field>
+                <Field label="Target date" htmlFor="pe-date">
+                  <input id="pe-date" type="date" defaultValue={project.targetDate}
+                    onChange={(e) => isDateStr(e.target.value) && updateProject(project, { targetDate: e.target.value })} />
+                </Field>
+                <Field label="Goal" htmlFor="pe-goal">
+                  <GoalSelect id="pe-goal" value={project.goalId ?? null} onChange={(goalId) => updateProject(project, { goalId })} />
+                </Field>
+              </>
+            ) : (
+              <>
+                <div className="row" style={{ justifyContent: 'space-between' }}>
+                  <span className="small muted">{done} of {steps.length} steps</span>
+                  <span className="small muted">due {relativeDay(project.targetDate, today)} · {dayMonth(project.targetDate)}</span>
+                </div>
+                <div className="progress"><i style={{ width: `${steps.length ? (100 * done) / steps.length : 0}%` }} /></div>
+              </>
+            )}
+          </div>
+        </div>
+      </Section>
+
+      <Section title="Steps">
         <div className="card">
-          <ul className="items">
-            {steps.map((t, i) => (
-              <li key={t.id} className={`item kind-step ${doneEntry.has(t.id) ? 'done' : ''}`} style={i === 0 ? { borderTop: 0 } : undefined}>
+          <Sortable items={steps} keyOf={(t) => t.id} labelOf={(t) => t.title} onReorder={reorderSteps} className="items"
+            render={(t, grip) => (
+              <div className={`item kind-step ${doneEntry.has(t.id) ? 'done' : ''}`}>
                 <CheckButton shape="square" checked={doneEntry.has(t.id)} label={t.title} onClick={() => toggle(t)} />
                 <StepTitle task={t} current={t.id === currentId} />
-                <div className="row" style={{ gap: 0 }}>
-                  <button className="icon-btn" aria-label="Move up" disabled={i === 0} onClick={() => move(i, -1)}><IconUp width={18} /></button>
-                  <button className="icon-btn" aria-label="Move down" disabled={i === steps.length - 1} onClick={() => move(i, 1)}><IconDown width={18} /></button>
-                </div>
-              </li>
-            ))}
-          </ul>
+                {grip}
+              </div>
+            )} />
           <form className="add-inline" style={{ padding: 12, marginTop: 0, borderTop: steps.length ? '1px solid var(--line)' : 0 }}
             onSubmit={(e) => { e.preventDefault(); add() }}>
             <input value={newStep} onChange={(e) => setNewStep(e.target.value)} placeholder="Add a step" aria-label="New step" />
@@ -136,34 +166,8 @@ export function ProjectScreen({ id }: { id: string }) {
         </div>
       </Section>
 
-      <Section title="Details" aside={<button className="link-btn" onClick={() => setEditing(!editing)}>{editing ? 'Done' : 'Edit'}</button>}>
-        {editing ? (
-          <div className="card pad">
-            <Field label="Outcome" htmlFor="pe-title">
-              <input id="pe-title" defaultValue={project.title}
-                onBlur={(e) => e.target.value.trim() && updateProject(project, { title: e.target.value.trim() })} />
-            </Field>
-            <Field label="Target date" htmlFor="pe-date">
-              <input id="pe-date" type="date" defaultValue={project.targetDate}
-                onChange={(e) => isDateStr(e.target.value) && updateProject(project, { targetDate: e.target.value })} />
-            </Field>
-            <Field label="Goal" htmlFor="pe-goal">
-              <GoalSelect id="pe-goal" value={project.goalId ?? null} onChange={(goalId) => updateProject(project, { goalId })} />
-            </Field>
-          </div>
-        ) : (
-          <div className="card pad">
-            <dl className="kv">
-              <dt>Target</dt><dd>{dayMonth(project.targetDate)}</dd>
-              <dt>Goal</dt><dd>{goal?.title ?? 'None'}</dd>
-              <dt>State</dt><dd>{project.state === 'active' ? 'Active' : 'Done'}</dd>
-            </dl>
-          </div>
-        )}
-      </Section>
-
       <Section title="Manage">
-        <div className="stack">
+        <div className="card pad stack">
           {project.state === 'active' ? (
             <button className="btn outline block" onClick={() => updateProject(project, { state: 'done' })}>Mark done and archive</button>
           ) : (

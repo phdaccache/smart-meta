@@ -39,12 +39,6 @@ export const IconCheck = (p: P) => (
 export const IconCalendar = (p: P) => (
   <Svg {...p}><rect x="4" y="5" width="16" height="15" rx="3" /><path d="M4 10h16M9 3v4M15 3v4M8 14h2M14 14h2M8 17h2" /></Svg>
 )
-export const IconUp = (p: P) => (
-  <Svg {...p}><path d="m6 15 6-6 6 6" /></Svg>
-)
-export const IconDown = (p: P) => (
-  <Svg {...p}><path d="m6 9 6 6 6-6" /></Svg>
-)
 export const IconClose = (p: P) => (
   <Svg {...p}><path d="M6 6l12 12M18 6 6 18" /></Svg>
 )
@@ -53,4 +47,7 @@ export const IconCloud = (p: P) => (
 )
 export const IconInfo = (p: P) => (
   <Svg strokeWidth="1.7" {...p}><circle cx="12" cy="12" r="9" /><path d="M12 11v5" /><circle cx="12" cy="7.8" r="0.6" fill="currentColor" /></Svg>
+)
+export const IconSteps = (p: P) => (
+  <Svg {...p}><path d="M9 6h11M9 12h11M9 18h11" /><path d="m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11" /><circle cx="5" cy="18" r="1.2" /></Svg>
 )

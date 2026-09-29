@@ -10,11 +10,26 @@ import { Chip, Field, InfoTip, Screen, Segmented, Stepper, toast, WeekdayPicker 
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { navigate } from '../ui/router'
 
-const SHAPES: { value: Shape; title: string; example: string }[] = [
-  { value: 'rhythm', title: 'Rhythm', example: 'Gym 3× per week' },
-  { value: 'threshold', title: 'Threshold', example: 'Sleep at least 8 hours a night' },
-  { value: 'standard', title: 'Standard', example: 'Arrive on time to anything agreed' },
+const SHAPES: { value: Shape; title: string }[] = [
+  { value: 'rhythm', title: 'Rhythm' },
+  { value: 'threshold', title: 'Threshold' },
+  { value: 'standard', title: 'Standard' },
 ]
+
+export const SHAPE_INFO = (
+  <>
+    <b>Rhythm</b>: a number of times per week or month, any days (gym 3× a week).{' '}
+    <b>Threshold</b>: stay over or under a line every day, week or month (sleep ≥ 8 h).{' '}
+    <b>Standard</b>: a rule for when something comes up, logged when it happens (arrive on time).
+  </>
+)
+
+const KIND_INFO = (
+  <>
+    <b>Finish line</b>: reached once, by a deadline (get the job). Habits that help can be added after.{' '}
+    {SHAPE_INFO}
+  </>
+)
 
 const PERIODS: { value: Period; label: string }[] = [
   { value: 'day', label: 'Day' },
@@ -26,17 +41,72 @@ type SetField = <K extends keyof GoalDraft>(k: K, v: GoalDraft[K]) => void
 
 // ——— shared field groups (used by the wizard, the compact form and commitment editing) ———
 
+/** Tiles, titles only: the (i) next to the question explains them. */
 export function ShapeField({ d, set }: { d: CommitmentDraft; set: (p: Partial<CommitmentDraft>) => void }) {
   return (
-    <div role="radiogroup" aria-label="Kind of commitment">
+    <div className="kind-grid three" role="radiogroup" aria-label="Kind">
       {SHAPES.map((s) => (
-        <button key={s.value} role="radio" aria-checked={d.shape === s.value} className={`choice ${d.shape === s.value ? 'on' : ''}`}
+        <button type="button" key={s.value} role="radio" aria-checked={d.shape === s.value}
+          className={`choice ${d.shape === s.value ? 'on' : ''}`}
           onClick={() => set({ shape: s.value, checkinType: CHECKIN_TYPES[s.value][0], period: s.value === 'threshold' ? 'day' : 'week' })}>
           <div className="t">{s.title}</div>
-          <div className="d">{s.example}</div>
         </button>
       ))}
     </div>
+  )
+}
+
+/** For a goal: a finish line, or one of the three habit shapes. */
+function KindField({ d, patch }: { d: GoalDraft; patch: (p: Partial<GoalDraft>) => void }) {
+  const outcome = d.goalKind === 'outcome'
+  return (
+    <div className="kind-grid" role="radiogroup" aria-label="Kind">
+      <button type="button" role="radio" aria-checked={outcome} className={`choice ${outcome ? 'on' : ''}`}
+        onClick={() => patch({ goalKind: 'outcome' })}>
+        <div className="t">Finish line</div>
+      </button>
+      {SHAPES.map((s) => {
+        const on = !outcome && d.shape === s.value
+        return (
+          <button type="button" key={s.value} role="radio" aria-checked={on} className={`choice ${on ? 'on' : ''}`}
+            onClick={() => patch({ goalKind: 'habit', shape: s.value, checkinType: CHECKIN_TYPES[s.value][0], period: s.value === 'threshold' ? 'day' : 'week' })}>
+            <div className="t">{s.title}</div>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function DoneWhenField({ d, set, error }: { d: GoalDraft; set: SetField; error?: string }) {
+  return (
+    <Field label="Done when" htmlFor="done-when" error={error}
+      info="The yes/no question that ends the goal. Make it something no one could argue about.">
+      <textarea id="done-when" rows={2} value={d.doneWhen} placeholder="Signed an offer from a big tech company paying at least 10k a month"
+        onChange={(e) => set('doneWhen', e.target.value)} />
+    </Field>
+  )
+}
+
+const GRACE = [
+  { days: 0, label: 'None' },
+  { days: 14, label: '2 weeks' },
+  { days: 30, label: '1 month' },
+  { days: 61, label: '2 months' },
+  { days: 91, label: '3 months' },
+  { days: 183, label: '6 months' },
+]
+
+export const graceLabel = (days: number) => GRACE.find((g) => g.days === days)?.label ?? `${days} days`
+
+export function GraceField({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+  return (
+    <Field label="Extra time" htmlFor="grace"
+      info="If it takes longer than the deadline, how much extra time is still fine? Until then the goal is “behind”, after it “at risk”.">
+      <select id="grace" value={value} onChange={(e) => onChange(Number(e.target.value))}>
+        {GRACE.map((g) => <option key={g.days} value={g.days}>{g.label}</option>)}
+      </select>
+    </Field>
   )
 }
 
@@ -200,8 +270,9 @@ export function NewGoalScreen({ first }: { first?: boolean }) {
   const mode = settings.creationMode
 
   const save = async () => {
-    const goal = await createGoal(d)
-    toast(goal.state === 'active' ? 'Goal saved.' : 'Saved to backlog (cap reached).')
+    // New goals wait in the backlog until you start them; the very first one starts right away.
+    const goal = await createGoal(d, { start: first })
+    toast(goal.state === 'active' ? 'Goal saved.' : 'Saved to backlog.')
     navigate(first ? '/' : `/goals/${goal.id}`, { replace: true })
   }
 
@@ -233,7 +304,7 @@ const SMART = [
   { k: 'R', word: 'Relevant' },
   { k: 'T', word: 'Time-bound' },
 ] as const
-type Letter = (typeof SMART)[number]['k'] | '+'
+export type Letter = (typeof SMART)[number]['k'] | '+'
 
 /** S M A R T, with the current letter lit, so the method is visible without explaining it. */
 function SmartBar({ current }: { current: Letter }) {
@@ -251,7 +322,7 @@ function SmartBar({ current }: { current: Letter }) {
   )
 }
 
-function SmartHead({ k, children }: { k: Letter; children?: ReactNode }) {
+export function SmartHead({ k, children }: { k: Letter; children?: ReactNode }) {
   const word = k === '+' ? 'Prep · optional' : SMART.find((x) => x.k === k)!.word
   return (
     <div className="smart-head">
@@ -273,33 +344,37 @@ interface Step {
 function Wizard({ d, set, patch, errors, onSave, first }: FormProps) {
   const [i, setI] = useState(0)
   const [tried, setTried] = useState(false)
+  const outcome = d.goalKind === 'outcome'
+  const err = (k: keyof GoalDraft) => (tried ? errors[k] : undefined)
 
-  const steps: Step[] = [
+  const all: (Step | false)[] = [
     {
       letter: 'S',
-      q: 'What are you changing?',
+      q: 'What do you want?',
       fields: ['title'],
       body: (
-        <Field label="Goal" htmlFor="title" error={tried ? errors.title : undefined}>
-          <input id="title" autoFocus value={d.title} placeholder="Exercise regularly" onChange={(e) => set('title', e.target.value)} />
+        <Field label="Goal" htmlFor="title" error={err('title')}>
+          <input id="title" autoFocus value={d.title} placeholder="Work at a big tech, earning 10k+" onChange={(e) => set('title', e.target.value)} />
         </Field>
       ),
     },
     {
-      letter: 'S',
-      q: 'What kind?',
-      info: <><b>Rhythm</b>: a number of times per week or month, any days. <b>Threshold</b>: stay over or under a line every day, week or month. <b>Standard</b>: a rule for when something comes up — you log it when it happens.</>,
-      fields: ['shape'],
-      body: <ShapeField d={d} set={patch} />,
+      letter: 'M',
+      q: 'How will you know?',
+      info: KIND_INFO,
+      fields: outcome ? ['doneWhen'] : ['measurementDefinition', 'label'],
+      body: (
+        <>
+          <KindField d={d} patch={patch} />
+          <div style={{ marginTop: 18 }}>
+            {outcome
+              ? <DoneWhenField d={d} set={set} error={err('doneWhen')} />
+              : <MeasurementFields d={d} set={patch} e={errors} showErrors={tried} />}
+          </div>
+        </>
+      ),
     },
-    {
-      letter: 'S',
-      q: 'What exactly counts?',
-      info: 'What’s the smallest version of this you’d still be proud of?',
-      fields: ['measurementDefinition', 'label'],
-      body: <MeasurementFields d={d} set={patch} e={errors} showErrors={tried} />,
-    },
-    {
+    !outcome && {
       letter: 'M',
       q: d.shape === 'rhythm' ? 'How often?' : d.shape === 'threshold' ? 'Where’s the line?' : 'How will you check in?',
       info: d.shape === 'rhythm' ? 'Pick a number you could hit in a bad week, not a good one.' : undefined,
@@ -309,8 +384,10 @@ function Wizard({ d, set, patch, errors, onSave, first }: FormProps) {
     {
       letter: 'A',
       q: 'How much slack?',
-      fields: ['tolerancePct'],
-      body: <ToleranceField value={d.tolerancePct} onChange={(n) => set('tolerancePct', n)} error={tried ? errors.tolerancePct : undefined} />,
+      fields: outcome ? ['graceDays'] : ['tolerancePct'],
+      body: outcome
+        ? <GraceField value={d.graceDays} onChange={(n) => set('graceDays', n)} />
+        : <ToleranceField value={d.tolerancePct} onChange={(n) => set('tolerancePct', n)} error={err('tolerancePct')} />,
     },
     {
       letter: 'R',
@@ -322,19 +399,9 @@ function Wizard({ d, set, patch, errors, onSave, first }: FormProps) {
       letter: 'T',
       q: 'When?',
       fields: ['startDate', 'targetDate'],
-      body: (
-        <>
-          <Field label="Start" htmlFor="start" error={tried ? errors.startDate : undefined}>
-            <input id="start" type="date" value={d.startDate} onChange={(e) => set('startDate', e.target.value)} />
-          </Field>
-          <Field label="Review on (optional)" htmlFor="target" error={tried ? errors.targetDate : undefined}
-            info="On this date the goal asks: did you hit it, what happened, what next. Ongoing habits can skip it.">
-            <input id="target" type="date" value={d.targetDate} min={d.startDate} onChange={(e) => set('targetDate', e.target.value)} />
-          </Field>
-        </>
-      ),
+      body: <DateFields d={d} set={set} err={err} />,
     },
-    {
+    !outcome && {
       letter: '+',
       q: 'What usually stops you?',
       info: 'A prep is a small step beforehand — like packing the gym bag the night before — that makes the real thing easier. Optional, and never scored.',
@@ -342,86 +409,107 @@ function Wizard({ d, set, patch, errors, onSave, first }: FormProps) {
       body: <PrepEditor preps={d.preps} onChange={(p) => set('preps', p)} showErrors={tried} />,
     },
   ]
-
-  const step = steps[i]
-  const stepErrors = step.fields.filter((f) => errors[f])
-  const last = i === steps.length - 1
+  const steps = all.filter((x): x is Step => !!x)
+  const at = Math.min(i, steps.length - 1)
+  const step = steps[at]
+  const last = at === steps.length - 1
 
   const next = () => {
-    if (stepErrors.length) return setTried(true)
+    if (step.fields.some((f) => errors[f])) return setTried(true)
     setTried(false)
     if (last) {
       if (isValid(errors)) onSave()
+      else setTried(true)
       return
     }
-    setI(i + 1)
+    setI(at + 1)
     window.scrollTo(0, 0)
   }
 
   return (
     <div>
       <SmartBar current={step.letter} />
-      <h2 className="wizard-q title-row">
-        {step.q}
-        {step.info && <InfoTip label="More about this step">{step.info}</InfoTip>}
-      </h2>
-      {step.body}
-      <div className="wizard-nav">
-        {i > 0 ? <button className="btn" onClick={() => { setTried(false); setI(i - 1) }}>Back</button>
-          : first ? <button className="btn" onClick={() => navigate('/', { replace: true })}>Later</button> : null}
-        <button className="btn primary" onClick={next}>
-          {last ? 'Save' : 'Next'}
-        </button>
+      <div className="card pad smart-card">
+        <h2 className="wizard-q title-row">
+          {step.q}
+          {step.info && <InfoTip label="More about this step">{step.info}</InfoTip>}
+        </h2>
+        {step.body}
       </div>
+      <div className="wizard-nav">
+        {at > 0 ? <button className="btn" onClick={() => { setTried(false); setI(at - 1) }}>Back</button>
+          : first ? <button className="btn" onClick={() => navigate('/', { replace: true })}>Later</button> : null}
+        <button className="btn primary" onClick={next}>{last ? 'Save' : 'Next'}</button>
+      </div>
+    </div>
+  )
+}
+
+function DateFields({ d, set, err }: { d: GoalDraft; set: SetField; err: (k: keyof GoalDraft) => string | undefined }) {
+  const outcome = d.goalKind === 'outcome'
+  return (
+    <div className="inline-fields">
+      <Field label="Start" htmlFor="start" error={err('startDate')}>
+        <input id="start" type="date" value={d.startDate} onChange={(e) => set('startDate', e.target.value)} />
+      </Field>
+      <Field label={outcome ? 'Deadline' : 'Review on'} htmlFor="target" error={err('targetDate')}
+        info={outcome ? undefined : 'Optional. On this date the goal asks: did you hit it, what happened, what next.'}>
+        <input id="target" type="date" value={d.targetDate} min={d.startDate} onChange={(e) => set('targetDate', e.target.value)} />
+      </Field>
     </div>
   )
 }
 
 function Compact({ d, set, patch, errors, onSave }: FormProps) {
   const [tried, setTried] = useState(false)
+  const outcome = d.goalKind === 'outcome'
   const submit = () => (isValid(errors) ? onSave() : setTried(true))
+  const err = (k: keyof GoalDraft) => (tried ? errors[k] : undefined)
   const cErr = validateCommitment(d)
   return (
     <div>
-      <section className="smart-section">
+      <section className="card pad smart-section">
         <SmartHead k="S" />
-        <Field label="Goal" htmlFor="title" error={tried ? errors.title : undefined}>
-          <input id="title" value={d.title} placeholder="Exercise regularly" onChange={(e) => set('title', e.target.value)} />
+        <Field label="Goal" htmlFor="title" error={err('title')}>
+          <input id="title" value={d.title} placeholder="Work at a big tech, earning 10k+" onChange={(e) => set('title', e.target.value)} />
         </Field>
-        <Field label="Kind" info={<><b>Rhythm</b>: a number of times per week or month, any days. <b>Threshold</b>: stay over or under a line every day, week or month. <b>Standard</b>: a rule for when something comes up — you log it when it happens.</>}>
-          <ShapeField d={d} set={patch} />
-        </Field>
-        <div style={{ marginTop: 18 }}><MeasurementFields d={d} set={patch} e={cErr} showErrors={tried} /></div>
       </section>
-      <section className="smart-section">
-        <SmartHead k="M" />
-        <CadenceFields d={d} set={patch} e={cErr} showErrors={tried} />
+      <section className="card pad smart-section">
+        <SmartHead k="M"><InfoTip label="About kinds">{KIND_INFO}</InfoTip></SmartHead>
+        <KindField d={d} patch={patch} />
+        <div style={{ marginTop: 18 }}>
+          {outcome ? (
+            <DoneWhenField d={d} set={set} error={err('doneWhen')} />
+          ) : (
+            <>
+              <MeasurementFields d={d} set={patch} e={cErr} showErrors={tried} />
+              <div style={{ marginTop: 18 }}><CadenceFields d={d} set={patch} e={cErr} showErrors={tried} /></div>
+            </>
+          )}
+        </div>
       </section>
-      <section className="smart-section">
+      <section className="card pad smart-section">
         <SmartHead k="A" />
-        <ToleranceField value={d.tolerancePct} onChange={(n) => set('tolerancePct', n)} error={tried ? errors.tolerancePct : undefined} />
+        {outcome
+          ? <GraceField value={d.graceDays} onChange={(n) => set('graceDays', n)} />
+          : <ToleranceField value={d.tolerancePct} onChange={(n) => set('tolerancePct', n)} error={err('tolerancePct')} />}
       </section>
-      <section className="smart-section">
+      <section className="card pad smart-section">
         <SmartHead k="R" />
         <WhyFields valueId={d.whyValueId} text={d.whyText} onValue={(v) => set('whyValueId', v)} onText={(t) => set('whyText', t)} errors={errors} showErrors={tried} />
       </section>
-      <section className="smart-section">
+      <section className="card pad smart-section">
         <SmartHead k="T" />
-        <div className="inline-fields">
-          <Field label="Start" htmlFor="start" error={tried ? errors.startDate : undefined}>
-            <input id="start" type="date" value={d.startDate} onChange={(e) => set('startDate', e.target.value)} />
-          </Field>
-          <Field label="Review on" htmlFor="target" error={tried ? errors.targetDate : undefined}>
-            <input id="target" type="date" value={d.targetDate} min={d.startDate} onChange={(e) => set('targetDate', e.target.value)} />
-          </Field>
-        </div>
+        <DateFields d={d} set={set} err={err} />
       </section>
-      <section className="smart-section">
-        <SmartHead k="+">
-          <InfoTip label="About preps">A small step beforehand — like packing the gym bag the night before — that makes the real thing easier. Never scored.</InfoTip>
-        </SmartHead>
-        <PrepEditor preps={d.preps} onChange={(p) => set('preps', p)} showErrors={tried} />
-      </section>
+      {!outcome && (
+        <section className="card pad smart-section">
+          <SmartHead k="+">
+            <InfoTip label="About preps">A small step beforehand — like packing the gym bag the night before — that makes the real thing easier. Never scored.</InfoTip>
+          </SmartHead>
+          <PrepEditor preps={d.preps} onChange={(p) => set('preps', p)} showErrors={tried} />
+        </section>
+      )}
       {tried && !isValid(errors) && <p className="field-error" style={{ marginTop: 16 }}>Check the fields above.</p>}
       <div className="wizard-nav">
         <button className="btn primary" onClick={submit}>Save goal</button>

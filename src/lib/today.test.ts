@@ -45,13 +45,18 @@ describe('Today — Gym (rhythm)', () => {
 })
 
 describe('Today — Punctuality (standard)', () => {
-  it('shows nothing by default; only the prep appears on schedule', () => {
+  it('has nothing to tick: a log row, plus the prep on schedule', () => {
     const g = goal()
-    const c = commitment(g, { shape: 'standard', checkinType: 'timestamp' })
+    const c = commitment(g, { shape: 'standard', checkinType: 'timestamp', label: 'punctuality' })
     const p = prep(c, { title: 'Leave 15 minutes early', fireWeekdays: [3] })
     const s = snapshot({ goals: [g], commitments: [c], preps: [p] })
-    expect(titles(buildDay(s, today, ctx))).toEqual(['Leave 15 minutes early'])
-    expect(buildDay(s, '2026-10-01', { ...ctx, today: '2026-10-01' }).groups).toHaveLength(0)
+    const v = buildDay(s, today, ctx)
+    expect(titles(v)).toEqual(['Log punctuality', 'Leave 15 minutes early'])
+    expect(v.total).toBe(1) // the log row is an action, not a to-do
+    const thu = buildDay(s, '2026-10-01', { ...ctx, today: '2026-10-01' })
+    expect(titles(thu)).toEqual(['Log punctuality'])
+    expect(thu.total).toBe(0)
+    expect(thu.groups[0].done).toBe(false)
   })
 })
 
@@ -118,7 +123,27 @@ describe('Today — Pay a friend (task)', () => {
   })
 })
 
+describe('Today — supporting habits that start later', () => {
+  it('hides a commitment and its preps until its start date', () => {
+    const g = goal({ kind: 'outcome' })
+    const later = commitment(g, { startDate: '2026-11-30', measurementDefinition: 'Sent at least one tailored application' })
+    const p = prep(later, { title: 'Pick 3 companies', fireWeekdays: [3] })
+    const s = snapshot({ goals: [g], commitments: [later], preps: [p] })
+    expect(buildDay(s, today, ctx).groups).toHaveLength(0)
+  })
+})
+
 describe('Goals must be SMART to be saved', () => {
+  it('lets a finish line stand without commitments, but not without a deadline', () => {
+    const d = {
+      ...emptyGoalDraft(today), goalKind: 'outcome' as const, title: 'Work at a big tech, earning 10k+',
+      doneWhen: 'Signed an offer paying at least 10k a month', whyValueId: 'v', whyText: 'Career.',
+    }
+    expect(validateGoal(d)).toEqual({ targetDate: 'A finish line needs a deadline.' })
+    expect(validateGoal({ ...d, targetDate: '2027-09-29' })).toEqual({})
+    expect(validateGoal({ ...d, targetDate: '2027-09-29', doneWhen: 'Get the job' }).doneWhen).toBeTruthy()
+  })
+
   it('rejects “Be more kind” and “Go to the gym”', () => {
     expect(measurementProblem('Be more kind')).not.toBeNull()
     expect(measurementProblem('Go to the gym')).not.toBeNull()

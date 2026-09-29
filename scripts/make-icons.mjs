@@ -1,4 +1,4 @@
-// Draws the app icon (a ring and a check on deep blue) into PNGs with no dependencies.
+// Draws the app icon (a check on deep blue) into PNGs with no dependencies.
 // Run: npm run icons
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { deflateSync } from 'node:zlib'
@@ -66,10 +66,8 @@ function coverage(x, y, size) {
     for (let sx = 0; sx < 4; sx++) {
       const u = (x + (sx + 0.5) / 4) / size
       const v = (y + (sy + 0.5) / 4) / size
-      const r = Math.hypot(u - 0.5, v - 0.5)
-      const ring = Math.abs(r - 0.29) < 0.035
-      const check = Math.min(segDist(u, v, 0.37, 0.51, 0.46, 0.6), segDist(u, v, 0.46, 0.6, 0.64, 0.41)) < 0.036
-      if (ring || check) hit++
+      const check = Math.min(segDist(u, v, 0.29, 0.52, 0.43, 0.66), segDist(u, v, 0.43, 0.66, 0.72, 0.36)) < 0.052
+      if (check) hit++
     }
   }
   return hit / 16
@@ -88,8 +86,7 @@ writeFileSync('public/icons/icon-512.png', icon(512))
 writeFileSync('public/icons/apple-touch-icon.png', icon(180))
 writeFileSync('public/icons/favicon.svg', `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
 <rect width="100" height="100" rx="22" fill="rgb(${BG})"/>
-<circle cx="50" cy="50" r="29" fill="none" stroke="rgb(${FG})" stroke-width="7"/>
-<path d="M37 51l9 9 18-19" fill="none" stroke="rgb(${FG})" stroke-width="7.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M29 52l14 14 29-30" fill="none" stroke="rgb(${FG})" stroke-width="10.4" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
 `)
 console.log('icons written to public/icons')

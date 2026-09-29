@@ -1,14 +1,16 @@
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { reorderGoals, setGoalState } from '../db/repo'
-import { relativeDay } from '../lib/dates'
+import { hueOf } from '../lib/colors'
+import { dayMonth, relativeDay } from '../lib/dates'
 import { cadenceText } from '../lib/describe'
 import { activeEntries, summarizeGoal, type ScoreContext } from '../lib/scoring'
 import type { Snapshot } from '../lib/today'
 import type { Goal, Project } from '../lib/types'
 import { InfoTip, Screen, Section, StatusWord, toast, WeekBar } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
-import { IconChevronRight, IconDown, IconPlus, IconUp } from '../ui/icons'
+import { IconChevronRight, IconPlus } from '../ui/icons'
 import { navigate } from '../ui/router'
+import { Sortable } from '../ui/Sortable'
 
 export function GoalsScreen() {
   const settings = useSettings()
@@ -22,15 +24,11 @@ export function GoalsScreen() {
   const maintenance = snap.goals.filter((g) => g.state === 'maintenance').sort(byPriority)
   const backlog = snap.goals.filter((g) => g.state === 'backlog').sort(byPriority)
   const archived = snap.goals.filter((g) => g.state === 'completed' || g.state === 'abandoned')
-  const projects = snap.projects.filter((p) => p.state === 'active')
+  const shownInCards = new Set([...active, ...maintenance].map((g) => g.id))
+  // Projects of active goals live inside their goal's card; the rest are listed on their own.
+  const projects = snap.projects.filter((p) => p.state === 'active' && !(p.goalId && shownInCards.has(p.goalId)))
   const doneProjects = snap.projects.filter((p) => p.state !== 'active')
   const slotOpen = active.length < settings.goalCap
-
-  const move = (list: Goal[], i: number, dir: -1 | 1) => {
-    const next = [...list]
-    ;[next[i], next[i + dir]] = [next[i + dir], next[i]]
-    reorderGoals(next)
-  }
 
   return (
     <Screen title="Goals" settings actions={
@@ -39,54 +37,53 @@ export function GoalsScreen() {
       <Section title="Active" aside={<span>{active.length} of {settings.goalCap}</span>}>
         {active.length === 0 ? (
           <div className="card list-empty">
-            No active goals. <button className="link-btn" onClick={() => navigate('/goals/new')}>Create one</button>
+            No active goals. {backlog.length > 0 ? 'Start one from the backlog.' : <button className="link-btn" onClick={() => navigate('/goals/new')}>Create one</button>}
           </div>
         ) : (
-          <div className="stack">
-            {active.map((g) => <GoalCard key={g.id} goal={g} snap={snap} ctx={ctx} />)}
-          </div>
+          <Sortable items={active} keyOf={(g) => g.id} labelOf={(g) => g.title} className="card-stack"
+            onReorder={(next) => reorderGoals([...next, ...maintenance, ...backlog])}
+            render={(g, grip) => <GoalCard goal={g} snap={snap} ctx={ctx} grip={grip} />} />
         )}
       </Section>
 
       {maintenance.length > 0 && (
         <Section title={<span className="title-row">Maintenance <InfoTip label="About maintenance">Goals you keep doing without a finish line. Still scored; they don’t count toward the active limit.</InfoTip></span>}>
-          <div className="card list">
-            {maintenance.map((g) => <GoalRow key={g.id} goal={g} snap={snap} ctx={ctx} />)}
+          <div className="card-stack">
+            {maintenance.map((g) => <GoalCard key={g.id} goal={g} snap={snap} ctx={ctx} />)}
           </div>
         </Section>
       )}
 
-      {backlog.length > 0 && <Section title="Backlog">
-        {(
-          <div className="card list">
-            {backlog.map((g, i) => (
-              <div key={g.id} className="list-row">
-                <button className="text" style={{ textAlign: 'left' }} onClick={() => navigate(`/goals/${g.id}`)}>
-                  <div className="title">{g.title}</div>
-                </button>
-                {backlog.length > 1 && (
-                  <div className="row" style={{ gap: 0 }}>
-                    <button className="icon-btn" aria-label="Move up" disabled={i === 0} onClick={() => move(backlog, i, -1)}><IconUp width={18} /></button>
-                    <button className="icon-btn" aria-label="Move down" disabled={i === backlog.length - 1} onClick={() => move(backlog, i, 1)}><IconDown width={18} /></button>
-                  </div>
-                )}
-                {slotOpen && (
-                  <button className="btn" onClick={async () => {
-                    await setGoalState(g, 'active')
-                    toast('Started.')
-                  }}>Start</button>
-                )}
-              </div>
-            ))}
+      {backlog.length > 0 && (
+        <Section title="Backlog">
+          <div className="card">
+            <Sortable items={backlog} keyOf={(g) => g.id} labelOf={(g) => g.title} className="list"
+              onReorder={(next) => reorderGoals([...active, ...maintenance, ...next])}
+              render={(g, grip) => (
+                <div className="list-row">
+                  <span className={`hue-dot hue-${hueOf(g)}`} />
+                  <button className="text" style={{ textAlign: 'left' }} onClick={() => navigate(`/goals/${g.id}`)}>
+                    <div className="title">{g.title}</div>
+                    <div className="sub">{g.kind === 'outcome' ? 'Finish line' : habitSummary(g, snap)}</div>
+                  </button>
+                  {slotOpen && (
+                    <button className="btn" onClick={async () => {
+                      await setGoalState(g, 'active')
+                      toast('Started.')
+                    }}>Start</button>
+                  )}
+                  {backlog.length > 1 && grip}
+                </div>
+              )} />
           </div>
-        )}
-      </Section>}
+        </Section>
+      )}
 
       <Section title="Projects" aside={<button className="link-btn" onClick={() => navigate('/projects/new')}>New project</button>}>
         {projects.length === 0 ? (
-          <div className="card list-empty">No projects.</div>
+          <div className="card list-empty">{snap.projects.some((p) => p.state === 'active') ? 'All inside their goals above.' : 'No projects.'}</div>
         ) : (
-          <div className="card list tint-project">
+          <div className="card list">
             {projects.map((p) => <ProjectRow key={p.id} project={p} snap={snap} today={today} />)}
           </div>
         )}
@@ -117,42 +114,55 @@ export function GoalsScreen() {
   )
 }
 
-function GoalCard({ goal, snap, ctx }: { goal: Goal; snap: Snapshot; ctx: ScoreContext }) {
-  const s = summarizeGoal(goal, snap.commitments, snap.entries, snap.occurrences, ctx)
-  const value = snap.values.find((v) => v.id === goal.whyValueId)
-  const commitments = snap.commitments.filter((c) => c.goalId === goal.id)
-  const reviewDue = goal.targetDate && goal.targetDate <= ctx.today
-  return (
-    <button className="card goal-card tint-goal" style={{ textAlign: 'left', width: '100%' }} onClick={() => navigate(`/goals/${goal.id}`)}>
-      <div className="top">
-        <div style={{ minWidth: 0 }}>
-          <div className="group-eyebrow">{value?.name ?? 'Goal'}</div>
-          <div className="title" style={{ fontWeight: 650, fontSize: 17 }}>{goal.title}</div>
-        </div>
-        <IconChevronRight className="chev" width={18} style={{ color: 'var(--ink-3)', flex: 'none' }} />
-      </div>
-      <div className="sub muted small" style={{ marginTop: 4 }}>
-        {commitments.map((c) => `${c.label} · ${cadenceText(c)}`).join('  ·  ')}
-      </div>
-      <div className="row" style={{ marginTop: 12, justifyContent: 'space-between' }}>
-        <StatusWord status={s.status} />
-        <WeekBar weeks={s.weeks} />
-      </div>
-      {reviewDue && <div className="small" style={{ marginTop: 10, color: 'var(--accent)', fontWeight: 600 }}>Review due</div>}
-    </button>
-  )
+function habitSummary(goal: Goal, snap: Snapshot, today?: string): string {
+  return snap.commitments
+    .filter((c) => c.goalId === goal.id)
+    .map((c) => `${c.label} · ${cadenceText(c)}${today && c.startDate > today ? ` (from ${relativeDay(c.startDate, today)})` : ''}`)
+    .join('  ·  ')
 }
 
-function GoalRow({ goal, snap, ctx }: { goal: Goal; snap: Snapshot; ctx: ScoreContext }) {
+function GoalCard({ goal, snap, ctx, grip }: { goal: Goal; snap: Snapshot; ctx: ScoreContext; grip?: ReactNode }) {
   const s = summarizeGoal(goal, snap.commitments, snap.entries, snap.occurrences, ctx)
+  const value = snap.values.find((v) => v.id === goal.whyValueId)
+  const hasHabits = snap.commitments.some((c) => c.goalId === goal.id)
+  const projects = snap.projects.filter((p) => p.goalId === goal.id && p.state === 'active')
+  const outcome = goal.kind === 'outcome'
+  const reviewOn = outcome && s.time ? s.time.graceEnd : goal.targetDate
+  const open = () => navigate(`/goals/${goal.id}`)
   return (
-    <button className="list-row" onClick={() => navigate(`/goals/${goal.id}`)}>
-      <div className="text">
-        <div className="title">{goal.title}</div>
-        <div className="meta"><StatusWord status={s.status} /><WeekBar weeks={s.weeks} /></div>
+    <div className={`card goal-card hued hue-${hueOf(goal)}`}>
+      <div className="hue-band goal-card-head">
+        <button className="text" onClick={open}>
+          <div className="group-eyebrow">{value?.name ?? 'Goal'}{outcome ? ' · Finish line' : ''}</div>
+          <div className="goal-card-title">{goal.title}</div>
+        </button>
+        {grip}
       </div>
-      <IconChevronRight className="chev" width={18} />
-    </button>
+      <button className="goal-card-body" onClick={open}>
+        <div className="row" style={{ justifyContent: 'space-between' }}>
+          <StatusWord status={s.status} />
+          {outcome && goal.targetDate
+            ? <span className="small muted">due {dayMonth(goal.targetDate)} {goal.targetDate.slice(0, 4)}</span>
+            : hasHabits && <WeekBar weeks={s.weeks} />}
+        </div>
+        {hasHabits && <div className="small muted" style={{ marginTop: 6 }}>{habitSummary(goal, snap, ctx.today)}</div>}
+        {reviewOn && reviewOn <= ctx.today && <div className="small" style={{ marginTop: 8, color: 'var(--accent)', fontWeight: 600 }}>Review due</div>}
+      </button>
+      {projects.length > 0 && (
+        <div className="goal-card-projects">
+          {projects.map((p) => {
+            const { done, total } = projectProgress(p, snap)
+            return (
+              <button key={p.id} className="mini-project" onClick={() => navigate(`/projects/${p.id}`)}>
+                <span className={`hue-dot hue-${hueOf(p)}`} />
+                <span className="name">{p.title}</span>
+                <span className="small muted">{done}/{total}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -169,6 +179,7 @@ function ProjectRow({ project, snap, today }: { project: Project; snap: Snapshot
   const overdue = project.state === 'active' && project.targetDate < today
   return (
     <button className="list-row" onClick={() => navigate(`/projects/${project.id}`)}>
+      <span className={`hue-dot hue-${hueOf(project)}`} />
       <div className="text">
         <div className="title">{project.title}</div>
         <div className="sub">

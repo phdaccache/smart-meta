@@ -5,14 +5,53 @@ import { setSettings } from '../db/settings'
 import { addDays, dayMonth, diffDays, formatTime, isDateStr, parseTime, weekdayName } from '../lib/dates'
 import { formatValue, promptQuestion, REASONS } from '../lib/describe'
 import type { MissPrompt, ScoreContext } from '../lib/scoring'
-import { buildDay, type Snapshot, type TodayGroup, type TodayItem } from '../lib/today'
-import type { DateStr, ID, MissReason, Task } from '../lib/types'
-import { Badge, CheckButton, Chip, DatePickerButton, Screen, toast } from '../ui/components'
+import { buildDay, type ItemKind, type Snapshot, type TodayGroup, type TodayItem } from '../lib/today'
+import type { Commitment, DateStr, ID, MissReason, Task } from '../lib/types'
+import { Badge, CheckButton, Chip, DatePickerButton, Screen, Segmented, toast } from '../ui/components'
 import { useDisplacements, useSettings, useSnapshot, useSnoozes, useToday } from '../ui/hooks'
-import { IconCalendar, IconCheck, IconChevronRight } from '../ui/icons'
+import { IconCalendar, IconCheck, IconChevronRight, IconPlus } from '../ui/icons'
 import { navigate } from '../ui/router'
 import { openQuickAdd } from './QuickAdd'
+import { OccurrenceSheet } from './OccurrenceSheet'
 import { TaskSheet } from './TaskSheet'
+
+type Filter = 'all' | 'goals' | 'projects' | 'tasks'
+const FILTER_KINDS: Record<Exclude<Filter, 'all'>, ItemKind[]> = {
+  goals: ['commitment', 'prep', 'log'],
+  projects: ['step'],
+  tasks: ['task'],
+}
+
+/** Keeps only one kind of item; miss prompts belong to goals. */
+function applyFilter(groups: TodayGroup[], f: Filter): TodayGroup[] {
+  if (f === 'all') return groups
+  return groups
+    .map((g) => {
+      const items = g.items.filter((i) => FILTER_KINDS[f].includes(i.kind))
+      const prompts = f === 'goals' ? g.prompts : []
+      const todos = items.filter((i) => i.kind !== 'log')
+      return { ...g, items, prompts, done: prompts.length === 0 && todos.length > 0 && todos.every((i) => i.done) }
+    })
+    .filter((g) => g.items.length > 0 || g.prompts.length > 0)
+}
+
+function useStoredFilter(): [Filter, (f: Filter) => void] {
+  const [f, setF] = useState<Filter>(() => {
+    try {
+      return (localStorage.getItem('today-filter') as Filter | null) ?? 'all'
+    } catch {
+      return 'all'
+    }
+  })
+  return [f, (next) => {
+    setF(next)
+    try {
+      localStorage.setItem('today-filter', next)
+    } catch {
+      // private mode: the filter just won't be remembered
+    }
+  }]
+}
 
 export function TodayScreen({ date }: { date?: DateStr }) {
   const settings = useSettings()
@@ -20,6 +59,8 @@ export function TodayScreen({ date }: { date?: DateStr }) {
   const snap = useSnapshot()
   const snoozes = useSnoozes()
   const [openTask, setOpenTask] = useState<Task | null>(null)
+  const [logFor, setLogFor] = useState<Commitment | null>(null)
+  const [filter, setFilter] = useStoredFilter()
   const viewDate = date && isDateStr(date) && date <= today ? date : today
   const ctx: ScoreContext = useMemo(() => ({ today, rolloverHour: settings.rolloverHour }), [today, settings.rolloverHour])
   const view = useMemo(() => (snap ? buildDay(snap, viewDate, ctx, snoozes) : null), [snap, viewDate, ctx, snoozes])
@@ -35,6 +76,7 @@ export function TodayScreen({ date }: { date?: DateStr }) {
   }
 
   const onOpen = (item: TodayItem) => {
+    if (item.kind === 'log') return setLogFor(snap.commitments.find((c) => c.id === item.subjectId) ?? null)
     if (item.target.kind === 'goal') navigate(`/goals/${item.target.id}`)
     else if (item.target.kind === 'project') navigate(`/projects/${item.target.id}`)
     else setOpenTask(snap.tasks.find((t) => t.id === item.target.id) ?? null)
@@ -56,13 +98,23 @@ export function TodayScreen({ date }: { date?: DateStr }) {
       {view.groups.length === 0 ? (
         <EmptyDay snap={snap} ctx={ctx} isPast={isPast} />
       ) : (
-        view.groups.map((g) => (
-          <Group key={g.key} group={g} snap={snap} date={viewDate} today={today} onOpen={onOpen} />
-        ))
+        <>
+          <div className="today-filter">
+            <Segmented label="Show" value={filter} onChange={setFilter} options={[
+              { value: 'all', label: 'All' }, { value: 'goals', label: 'Goals' },
+              { value: 'projects', label: 'Projects' }, { value: 'tasks', label: 'Tasks' },
+            ]} />
+          </div>
+          {applyFilter(view.groups, filter).map((g) => (
+            <Group key={g.key} group={g} snap={snap} date={viewDate} today={today} onOpen={onOpen} />
+          ))}
+          {applyFilter(view.groups, filter).length === 0 && <p className="muted" style={{ padding: '24px 4px' }}>Nothing here today.</p>}
+        </>
       )}
 
       {!isPast && <ExportNudge lastExportAt={settings.lastExportAt} snap={snap} />}
       <TaskSheet task={openTask} onClose={() => setOpenTask(null)} today={today} />
+      <OccurrenceSheet commitment={logFor} date={viewDate} today={today} onClose={() => setLogFor(null)} />
     </Screen>
   )
 }
@@ -81,11 +133,11 @@ function Group(props: {
 
   if (group.done && !expanded) {
     return (
-      <div className={`card group collapsed tint-${group.kind}`}>
-        <button className="group-head" onClick={() => setExpanded(true)} aria-expanded={false}>
+      <div className={`card group collapsed ${group.hue != null ? `hued hue-${group.hue}` : ''}`}>
+        <button className="group-head hue-band" onClick={() => setExpanded(true)} aria-expanded={false}>
           <span className="done-mark"><IconCheck width={15} height={15} /></span>
           <span className="title">{group.kind === 'errands' ? 'Errands' : group.title}</span>
-          <span className="count">{group.items.length} done</span>
+          <span className="count">{group.items.filter((i) => i.kind !== 'log').length} done</span>
         </button>
       </div>
     )
@@ -110,9 +162,9 @@ function Group(props: {
   )
 
   return (
-    <div className={`card group tint-${group.kind}`}>
+    <div className={`card group ${group.hue != null ? `hued hue-${group.hue}` : ''}`}>
       {parent ? (
-        <button className="group-head" onClick={() => navigate(parent)}>{head}</button>
+        <button className="group-head hue-band" onClick={() => navigate(parent)}>{head}</button>
       ) : (
         <div className="group-head">{head}</div>
       )}
@@ -123,7 +175,9 @@ function Group(props: {
       })}
       <ul className="items">
         {group.items.map((i) => (
-          <ItemRow key={i.key} item={i} date={props.date} onOpen={() => props.onOpen(i)} />
+          i.kind === 'log'
+            ? <LogRow key={i.key} item={i} onOpen={() => props.onOpen(i)} />
+            : <ItemRow key={i.key} item={i} date={props.date} onOpen={() => props.onOpen(i)} />
         ))}
       </ul>
     </div>
@@ -131,6 +185,24 @@ function Group(props: {
 }
 
 // ——— items ———
+
+/** Rule-type commitments: nothing to tick, just a place to log what happened. */
+function LogRow({ item, onOpen }: { item: TodayItem; onOpen: () => void }) {
+  return (
+    <li>
+      <div className="item kind-log">
+        <button className="check" aria-label={item.title} onClick={onOpen}>
+          <span className="check-box log-box"><IconPlus width={16} height={16} /></span>
+        </button>
+        <button className="item-main" onClick={onOpen}>
+          <div className="item-title">{item.title}</div>
+          {item.detail && <div className="item-detail">{item.detail}</div>}
+        </button>
+        <div className="item-side"><Badge kind="goal">Log</Badge></div>
+      </div>
+    </li>
+  )
+}
 
 function ItemRow({ item, date, onOpen }: { item: TodayItem; date: DateStr; onOpen: () => void }) {
   const [editing, setEditing] = useState(false)
@@ -147,7 +219,14 @@ function ItemRow({ item, date, onOpen }: { item: TodayItem; date: DateStr; onOpe
   let badge: React.ReactNode
   if (item.kind === 'commitment') badge = <Badge kind="goal">Goal</Badge>
   else if (item.kind === 'prep') badge = <Badge kind="prep">Prep</Badge>
-  else if (item.kind === 'step') badge = <Badge kind="step">{item.step!.index}/{item.step!.total}</Badge>
+  else if (item.kind === 'step') {
+    badge = (
+      <Badge kind="step">
+        {item.hue != null && <span className={`hue-dot hue-${item.hue}`} />}
+        {item.step!.index}/{item.step!.total}
+      </Badge>
+    )
+  }
   else badge = <Badge kind="task">Task</Badge>
 
   const miss = item.valueState === 'miss'

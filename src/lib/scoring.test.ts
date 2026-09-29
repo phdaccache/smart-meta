@@ -179,3 +179,32 @@ describe('goal summary', () => {
     expect(s.recentStatus).toBe('at risk')
   })
 })
+
+describe('Big tech — a finish line with a deadline and extra time', () => {
+  const g = goal({ kind: 'outcome', startDate: '2026-09-01', targetDate: '2027-09-01', graceDays: 61 })
+
+  it('is judged by its supporting habits until the deadline', () => {
+    const leetcode = commitment(g, { cadence: { period: 'week', times: 4 }, startDate: '2026-09-07' })
+    const entries = weeklyHits(leetcode, '2026-09-07', [4, 4, 4], addDays)
+    const s = summarizeGoal(g, [leetcode], entries, [], ctx)
+    expect(s.time?.phase).toBe('running')
+    expect(s.status).toBe('on track')
+  })
+
+  it('has no status at all with no habits and no deadline passed', () => {
+    expect(summarizeGoal(g, [], [], [], ctx).status).toBeNull()
+  })
+
+  it('is behind during the extra time and at risk after it', () => {
+    const grace = { today: '2027-10-15', rolloverHour: 4 }
+    expect(summarizeGoal(g, [], [], [], grace)).toMatchObject({ status: 'behind', time: { phase: 'grace', graceEnd: '2027-11-01' } })
+    const late = { today: '2027-11-02', rolloverHour: 4 }
+    expect(summarizeGoal(g, [], [], [], late).status).toBe('at risk')
+  })
+
+  it('does not score a supporting habit before it starts', () => {
+    const applications = commitment(g, { startDate: '2026-11-30' })
+    expect(scoreCommitment(applications, [], [], ctx)).toEqual({ hits: 0, expected: 0 })
+    expect(missPrompt(applications, [], ctx)).toBeNull()
+  })
+})

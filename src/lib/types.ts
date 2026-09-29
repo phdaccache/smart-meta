@@ -16,8 +16,23 @@ export interface Value extends Base {
 
 export type GoalState = 'backlog' | 'active' | 'maintenance' | 'abandoned' | 'completed'
 
+/**
+ * habit: a behavior kept up, measured by its commitments' check-ins.
+ * outcome: a finish line reached once ("did I get the job?"), by a deadline
+ * plus some grace; commitments are optional supporting habits.
+ */
+export type GoalKind = 'habit' | 'outcome'
+
 export interface Goal extends Base {
+  /** Missing on goals made before outcomes existed: treat as 'habit'. */
+  kind?: GoalKind
   title: string
+  /** Outcome only: the yes/no sentence that says it's done. */
+  doneWhen?: string | null
+  /** Outcome only: extra days after the deadline that still count. */
+  graceDays?: number | null
+  /** Palette index for its subtle color. */
+  color?: number | null
   whyValueId: ID
   whyText: string
   state: GoalState
@@ -69,6 +84,8 @@ export type ProjectState = 'active' | 'done' | 'archived'
 
 export interface Project extends Base {
   title: string
+  /** Palette index for its subtle color. */
+  color?: number | null
   targetDate: DateStr
   goalId?: ID | null
   state: ProjectState

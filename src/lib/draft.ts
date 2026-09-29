@@ -1,5 +1,5 @@
 import { isDateStr, parseTime } from './dates'
-import type { CheckinType, Comparator, DateStr, Period, Shape } from './types'
+import type { CheckinType, Comparator, DateStr, GoalKind, Period, Shape } from './types'
 
 /**
  * A measurement definition must say how much, how long, when, or how often —
@@ -42,6 +42,11 @@ export interface CommitmentDraft {
 }
 
 export interface GoalDraft extends CommitmentDraft {
+  goalKind: GoalKind
+  /** Outcome: the yes/no sentence that says it's done. */
+  doneWhen: string
+  /** Outcome: extra days after the deadline that still count. */
+  graceDays: number
   title: string
   tolerancePct: number
   whyValueId: string
@@ -62,7 +67,7 @@ export function emptyCommitmentDraft(): CommitmentDraft {
 
 export function emptyGoalDraft(today: DateStr): GoalDraft {
   return {
-    ...emptyCommitmentDraft(), title: '', tolerancePct: 80, whyValueId: '', whyText: '',
+    ...emptyCommitmentDraft(), goalKind: 'habit', doneWhen: '', graceDays: 0, title: '', tolerancePct: 80, whyValueId: '', whyText: '',
     startDate: today, targetDate: '', preps: [],
   }
 }
@@ -104,8 +109,16 @@ export function validatePrep(p: PrepDraft): Errors<PrepDraft> {
 }
 
 export function validateGoal(d: GoalDraft): Errors<GoalDraft> {
-  const e: Errors<GoalDraft> = { ...validateCommitment(d) }
-  if (!d.title.trim()) e.title = 'Name the behavior you’re changing.'
+  const outcome = d.goalKind === 'outcome'
+  // A habit is measured by its commitment; an outcome by its finish line.
+  const e: Errors<GoalDraft> = outcome ? {} : { ...validateCommitment(d) }
+  if (outcome) {
+    const m = measurementProblem(d.doneWhen)
+    if (m) e.doneWhen = m
+    if (!d.targetDate) e.targetDate = 'A finish line needs a deadline.'
+    if (!(d.graceDays >= 0)) e.graceDays = 'Pick how much extra time is OK.'
+  }
+  if (!d.title.trim()) e.title = 'Name what you want.'
   if (!(d.tolerancePct >= 1 && d.tolerancePct <= 100)) e.tolerancePct = 'Between 1 and 100%.'
   if (!d.whyValueId) e.whyValueId = 'Pick the value this serves.'
   if (!d.whyText.trim()) e.whyText = 'Say how this goal serves it. This is what you’ll see every day.'

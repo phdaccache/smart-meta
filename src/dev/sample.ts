@@ -67,7 +67,7 @@ export async function loadSampleData(today: DateStr): Promise<void> {
   const values = await db.values.toArray()
   const v = (name: string) => values.find((x) => x.name === name)!.id
 
-  const goal = (d: Partial<GoalDraft>) => createGoal({ ...emptyGoalDraft(today), ...d } as GoalDraft)
+  const goal = (d: Partial<GoalDraft>, start = false) => createGoal({ ...emptyGoalDraft(today), ...d } as GoalDraft, { start })
 
   // ——— active goals (created first, so they take the 5 active slots) ———
 
@@ -76,33 +76,33 @@ export async function loadSampleData(today: DateStr): Promise<void> {
     shape: 'rhythm', label: 'gym', measurementDefinition: 'At least 45 minutes of exercise', times: 3, period: 'week',
     tolerancePct: 80, startDate: addDays(today, -24),
     preps: [prep('Pack the gym bag and pick tomorrow’s routine', [7, 2, 4], '21:00')],
-  })
+  }, true)
   const sleep = await goal({
     title: 'Sleep well', whyValueId: v('Health'), whyText: 'So I stop losing mornings.',
     shape: 'threshold', label: 'sleep', measurementDefinition: 'Slept at least 7.5 hours', checkinType: 'quantity',
     period: 'day', targetValue: '7.5', comparator: 'gte', unit: 'h', tolerancePct: 70, startDate: addDays(today, -20),
     preps: [prep('Phone charging outside the bedroom', [1, 2, 3, 4, 5, 6, 7], '23:00')],
-  })
+  }, true)
   const onTime = await goal({
     title: 'Be on time', whyValueId: v('People'), whyText: 'Because other people’s time matters as much as mine.',
     shape: 'standard', label: 'punctuality', measurementDefinition: 'Arrived at or before the agreed time',
     checkinType: 'timestamp', tolerancePct: 90, startDate: addDays(today, -21),
     preps: [prep('Check tomorrow’s first appointment and when to leave', [7, 1, 2, 3, 4], '22:00')],
-  })
+  }, true)
   const sugar = await goal({
     title: '30 days without sugar', whyValueId: v('Health'), whyText: 'To prove to myself cravings pass.',
     shape: 'threshold', label: 'no sugar', measurementDefinition: 'No added sugar all day', checkinType: 'binary',
     period: 'day', tolerancePct: 90, startDate: addDays(today, -12), targetDate: addDays(today, 18),
     preps: [prep('Buy fruit for the week', [7], '18:00')],
-  })
-  // The worked example in docs/GUIDE.md: one outcome, three behaviors, three projects.
+  }, true)
+  // The worked example in docs/GUIDE.md: a finish line, supporting habits (one
+  // starting later), and projects for the finite work.
   const bigTech = await goal({
-    title: 'Work at a big tech, earning 10k+', whyValueId: v('Career'),
+    goalKind: 'outcome', title: 'Work at a big tech, earning 10k+', whyValueId: v('Career'),
     whyText: 'Work on things millions use, and never worry about money again.',
-    shape: 'rhythm', label: 'applications', measurementDefinition: 'Sent at least one tailored application', times: 3, period: 'week',
+    doneWhen: 'Signed an offer from a big tech company paying at least 10k a month', graceDays: 61,
     tolerancePct: 70, startDate: addDays(today, -17), targetDate: addDays(today, 348),
-    preps: [prep('Pick this week’s 3 companies', [7], '20:00')],
-  })
+  }, true)
   const bigTechGoal = (await db.goals.get(bigTech.id))!
   const rhythm = { checkinType: 'binary' as const, period: 'week' as const, targetValue: '', targetTime: '', comparator: 'gte' as const, unit: '' }
   await addCommitment(bigTechGoal, {
@@ -112,6 +112,11 @@ export async function loadSampleData(today: DateStr): Promise<void> {
     ...rhythm, shape: 'rhythm', label: 'mock interview', measurementDefinition: 'Did a mock interview with a friend', times: 1,
   }, addDays(today, -17))
   await addPrep(mock.id, prep('Book a friend for this week’s mock interview', [1], '21:00'))
+  // Applications start in two months, once the CV and stories are ready.
+  const applications = await addCommitment(bigTechGoal, {
+    ...rhythm, shape: 'rhythm', label: 'applications', measurementDefinition: 'Sent at least one tailored application', times: 3,
+  }, addDays(today, 61))
+  await addPrep(applications.id, prep('Pick this week’s 3 companies', [7], '20:00'))
 
   // ——— backlog (over the limit of 5) ———
 

@@ -30,9 +30,9 @@ function route(path: string, query: URLSearchParams) {
   if (path === '/goals') return <GoalsScreen />
   if (path === '/goals/new') return <NewGoalScreen first={query.get('first') === '1'} />
   if ((m = match('/goals/:id/edit', path))) return <GoalEditScreen id={m.id} />
-  if ((m = match('/goals/:id/review', path))) return <GoalReviewScreen id={m.id} />
+  if ((m = match('/goals/:id/review', path))) return <GoalReviewScreen id={m.id} presetHit={query.get('hit') === '1' ? true : undefined} />
   if ((m = match('/goals/:id', path))) return <GoalDetailScreen key={m.id} id={m.id} />
-  if (path === '/projects/new') return <NewProjectScreen />
+  if (path === '/projects/new') return <NewProjectScreen goalId={query.get('goal')} />
   if ((m = match('/projects/:id', path))) return <ProjectScreen key={m.id} id={m.id} />
   if (path === '/settings') return <SettingsScreen />
   if (path === '/settings/values') return <ValuesScreen />

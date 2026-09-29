@@ -162,6 +162,27 @@ export function goalPct(
   return pcts.reduce((a, b) => a + b, 0) / pcts.length
 }
 
+export type OutcomePhase = 'running' | 'grace' | 'overdue'
+
+export interface OutcomeTime {
+  phase: OutcomePhase
+  deadline: DateStr
+  /** Deadline plus grace: after this the goal is overdue. */
+  graceEnd: DateStr
+  /** Share of the time from start to deadline already used, 0–1. */
+  elapsed: number
+}
+
+/** Where a finish-line goal stands against its deadline. */
+export function outcomeTime(goal: Goal, today: DateStr): OutcomeTime | null {
+  if (goal.kind !== 'outcome' || !goal.targetDate) return null
+  const graceEnd = addDays(goal.targetDate, goal.graceDays ?? 0)
+  const total = Math.max(1, diffDays(goal.startDate, goal.targetDate))
+  const elapsed = Math.min(1, Math.max(0, diffDays(goal.startDate, today) / total))
+  const phase: OutcomePhase = today <= goal.targetDate ? 'running' : today <= graceEnd ? 'grace' : 'overdue'
+  return { phase, deadline: goal.targetDate, graceEnd, elapsed }
+}
+
 export interface GoalSummary {
   /** Cumulative, start → today. Null when nothing has been decided yet. */
   pct: number | null
@@ -169,6 +190,8 @@ export interface GoalSummary {
   /** Last four calendar weeks, oldest first; null for a week with no data. */
   weeks: (Status | null)[]
   recentStatus: Status | null
+  /** Finish-line goals only. */
+  time: OutcomeTime | null
 }
 
 export function summarizeGoal(
@@ -187,9 +210,16 @@ export function summarizeGoal(
     weeks.push(statusFor(goalPct(mine, entries, occurrences, ctx, start, addDays(start, 6)), goal.tolerancePct))
   }
   const recentFrom = addDays(thisWeek.start, -7 * (RECENT_WEEKS - 1))
+  const time = outcomeTime(goal, ctx.today)
+  // A finish line past its deadline is behind during grace and at risk after,
+  // whatever its supporting habits say.
+  let status = statusFor(cumulative, goal.tolerancePct)
+  if (time?.phase === 'grace') status = 'behind'
+  if (time?.phase === 'overdue') status = 'at risk'
   return {
     pct: cumulative,
-    status: statusFor(cumulative, goal.tolerancePct),
+    status,
+    time,
     weeks,
     recentStatus: statusFor(goalPct(mine, entries, occurrences, ctx, recentFrom, ctx.today), goal.tolerancePct),
   }

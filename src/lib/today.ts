@@ -1,3 +1,4 @@
+import { hueOf } from './colors'
 import { diffDays, inSpan, isoWeekday, periodOf, relativeDay } from './dates'
 import { activeEntries, evaluateThreshold, meetsTarget, missPrompt, thresholdAggregate, type MissPrompt, type PeriodEval, type ScoreContext } from './scoring'
 import type {
@@ -15,7 +16,10 @@ export interface Snapshot {
   occurrences: Occurrence[]
 }
 
-export type ItemKind = 'commitment' | 'prep' | 'step' | 'task'
+/** 'log' is an action row for rule-type commitments, not a to-do: it never counts as open. */
+export type ItemKind = 'commitment' | 'prep' | 'step' | 'task' | 'log'
+
+const isTodo = (i: TodayItem) => i.kind !== 'log'
 
 export type ItemTarget = { kind: 'goal'; id: ID } | { kind: 'project'; id: ID } | { kind: 'task'; id: ID }
 
@@ -37,6 +41,8 @@ export interface TodayItem {
   value?: number | null
   valueState?: PeriodEval
   step?: { index: number; total: number }
+  /** Steps: the project's color. */
+  hue?: number
   /** Open tasks with a date: red when due today or late, yellow tomorrow, green later. */
   due?: { label: string; tone: 'red' | 'yellow' | 'green' }
   target: ItemTarget
@@ -62,6 +68,8 @@ export interface TodayGroup {
   why?: string
   goalId?: ID
   projectId?: ID
+  /** The goal's or project's color; errands have none. */
+  hue?: number
   items: TodayItem[]
   prompts: MissPrompt[]
   done: boolean
@@ -131,7 +139,7 @@ export function buildDay(
       const done = latest(entriesOf('task', t.id).filter((e) => e.outcome === 'hit'))
       const base = {
         kind: 'step' as const, title: t.title, subjectType: 'task' as const, subjectId: t.id,
-        step: { index: i + 1, total: steps.length }, target: { kind: 'project' as const, id: p.id },
+        step: { index: i + 1, total: steps.length }, hue: hueOf(p), target: { kind: 'project' as const, id: p.id },
       }
       if (done && done.date === date) {
         out.push({ ...base, key: `task:${t.id}`, done: true, entryId: done.id })
@@ -185,6 +193,15 @@ export function buildDay(
           key: `commitment:${c.id}`, kind: 'commitment', title: c.measurementDefinition, detail,
           done: doneToday || satisfied, subjectType: 'commitment', subjectId: c.id,
           entryId: doneToday ? latest(hitsToday)?.id : undefined, target,
+        })
+      } else if (c.shape === 'standard') {
+        // Nothing to tick: occurrences are logged when they happen, from this row.
+        const week = periodOf(date, 'week')
+        const logged = s.occurrences.filter((o) => o.commitmentId === c.id && !o.deletedAt && inSpan(o.date, week)).length
+        items.push({
+          key: `log:${c.id}`, kind: 'log', title: `Log ${c.label}`,
+          detail: logged ? `${logged} logged this week` : undefined,
+          done: false, subjectType: 'commitment', subjectId: c.id, target,
         })
       } else if (c.shape === 'threshold') {
         const closed = period.end < ctx.today
@@ -243,9 +260,9 @@ export function buildDay(
 
     if (items.length || prompts.length) {
       groups.push({
-        key: `goal:${g.id}`, kind: 'goal', goalId: g.id,
+        key: `goal:${g.id}`, kind: 'goal', goalId: g.id, hue: hueOf(g),
         eyebrow: value ? `${value.name} · ${g.title}` : g.title, title: g.title, why: g.whyText,
-        items, prompts, done: prompts.length === 0 && items.every((i) => i.done),
+        items, prompts, done: prompts.length === 0 && items.filter(isTodo).length > 0 && items.filter(isTodo).every((i) => i.done),
       })
     }
   }
@@ -258,7 +275,7 @@ export function buildDay(
     if (!items.length) continue
     const goal = p.goalId ? s.goals.find((g) => g.id === p.goalId) : undefined
     groups.push({
-      key: `project:${p.id}`, kind: 'project', projectId: p.id,
+      key: `project:${p.id}`, kind: 'project', projectId: p.id, hue: hueOf(p),
       eyebrow: `Project · due ${relativeDay(p.targetDate, date)}`, title: p.title, why: goal?.whyText,
       items, prompts: [], done: items.every((i) => i.done),
     })
@@ -281,7 +298,7 @@ export function buildDay(
     })
   }
 
-  const all = groups.flatMap((g) => g.items)
+  const all = groups.flatMap((g) => g.items).filter(isTodo)
   return { date, isToday, groups, total: all.length, open: all.filter((i) => !i.done).length }
 }
 
