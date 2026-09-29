@@ -762,10 +762,9 @@ A goal's charts stay hidden until it has 4 weeks of data.
    pack the bag you go 80% of the time; when you don't, 30%"). Shows which preps
    earn their place.
 
-Optional, more interesting than useful (candidates, build if wanted):
+Also wanted — more interesting than decision-making, so they sit below the four
+above:
 
-- **Year grid** per goal: one square per day, hit / miss / nothing. Shows
-  seasons (holidays, exam months). Not a streak: gaps carry no penalty.
 - **Goals timeline:** every goal as a bar from start to end, coloured by state,
   with revisions as ticks. A year of goals on one screen.
 - **Value balance:** share of hits per value over time. Is anything being done
@@ -773,7 +772,7 @@ Optional, more interesting than useful (candidates, build if wanted):
 - **Weekday pattern** for daily commitments: which days the misses fall on.
 - **Tolerance vs actual** across goals: are tolerances set realistically?
 - **Project burn-up:** steps done over time against the target date.
-- **Year in review:** at year end, one card — goals finished, best month, most
+- **Year in review:** at year end, one card: goals finished, best month, most
   common displacement, longest-kept habit.
 
 Deliberately excluded: an overall "life score" across goals, streaks, charts of
