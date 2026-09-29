@@ -20,7 +20,7 @@ create index if not exists records_user_seq on public.records (user_id, seq);
 
 -- Last write wins, and every accepted write moves to the end of the pull cursor.
 create or replace function public.records_before_update() returns trigger
-language plpgsql as $$
+language plpgsql set search_path = '' as $$
 begin
   if new.updated_at < old.updated_at then
     return null; -- stale write: keep the newer row
