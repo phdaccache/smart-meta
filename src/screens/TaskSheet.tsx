@@ -28,7 +28,7 @@ export function GoalSelect(props: { value: string | null; onChange: (id: string 
   const goals = (snap?.goals ?? []).filter((g) => g.state === 'active' || g.state === 'maintenance' || g.state === 'backlog')
   return (
     <select id={props.id} value={props.value ?? ''} onChange={(e) => props.onChange(e.target.value || null)}>
-      <option value="">No goal — a one-off</option>
+      <option value="">None</option>
       {goals.map((g) => <option key={g.id} value={g.id}>{g.title}</option>)}
     </select>
   )
@@ -60,7 +60,7 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
         <Field label="Task" htmlFor="task-title">
           <input id="task-title" value={title} onChange={(e) => setTitle(e.target.value)} />
         </Field>
-        <Field label="When">
+        <Field label="Due">
           <DateChoice value={date} today={today} onChange={setDate} />
         </Field>
         <Field label="Goal" htmlFor="task-goal">
@@ -74,10 +74,10 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
         <button className="btn outline block" onClick={async () => {
           const p = await promoteTask({ ...task, title: title.trim() || task.title, date, goalId }, today)
           onClose()
-          toast('Now a project. Add its steps.')
+          toast('Now a project.')
           navigate(`/projects/${p.id}`)
         }}>
-          Needs steps? Turn into a project
+          Turn into project
         </button>
         <button className="btn danger block" onClick={async () => {
           await deleteTask(task)

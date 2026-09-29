@@ -97,12 +97,24 @@ describe('Today — Pay a friend (task)', () => {
     expect(buildDay(snapshot({ tasks: [t], entries }), tomorrow, { ...ctx, today: tomorrow }).groups).toHaveLength(0)
   })
 
-  it('waits for its date and carries over when overdue', () => {
-    const later = task({ title: 'Later', date: '2026-10-02' })
+  it('shows open tasks now, soonest due first, with a colored due badge', () => {
+    const later = task({ title: 'Later', date: '2026-10-05' })
+    const tomorrow = task({ title: 'Tomorrow', date: '2026-10-01' })
     const late = task({ title: 'Late', date: '2026-09-28' })
-    const v = buildDay(snapshot({ tasks: [later, late] }), today, ctx)
-    expect(titles(v)).toEqual(['Late'])
-    expect(v.groups[0].items[0].detail).toBe('from Mon')
+    const undated = task({ title: 'Whenever' })
+    const v = buildDay(snapshot({ tasks: [undated, later, tomorrow, late] }), today, ctx)
+    expect(titles(v)).toEqual(['Late', 'Tomorrow', 'Later', 'Whenever'])
+    expect(v.groups[0].items.map((i) => i.due)).toEqual([
+      { label: 'overdue · Mon', tone: 'red' },
+      { label: 'due tomorrow', tone: 'yellow' },
+      { label: 'due Mon', tone: 'green' },
+      undefined,
+    ])
+  })
+
+  it('marks a task due today red', () => {
+    const v = buildDay(snapshot({ tasks: [task({ date: today })] }), today, ctx)
+    expect(v.groups[0].items[0].due).toEqual({ label: 'due today', tone: 'red' })
   })
 })
 

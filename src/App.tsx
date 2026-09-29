@@ -34,18 +34,15 @@ function route(path: string, query: URLSearchParams) {
   if ((m = match('/projects/:id', path))) return <ProjectScreen key={m.id} id={m.id} />
   if (path === '/settings') return <SettingsScreen />
   if (path === '/settings/values') return <ValuesScreen />
-  if (path === '/review') return <Later title="Review" body="The weekly ritual — last week’s results, misses grouped by reason, and suggested adjustments — arrives in a later update. Your misses and reasons are already being recorded for it." />
-  if (path === '/insights') return <Later title="Insights" body="Trends, miss-reason breakdowns and percentages arrive in a later update. Everything you log now will show up there." />
-  return <Later title="Not found" body="There’s nothing at this address." />
+  if (path === '/review') return <Later title="Review" />
+  if (path === '/insights') return <Later title="Insights" />
+  return <Later title="Not found" />
 }
 
-function Later({ title, body }: { title: string; body: string }) {
+function Later({ title }: { title: string }) {
   return (
     <Screen title={title} settings>
-      <div className="empty" style={{ paddingTop: 40 }}>
-        <h2>Coming soon</h2>
-        <p>{body}</p>
-      </div>
+      <p className="muted">{title === 'Not found' ? 'Nothing here.' : 'Coming soon.'}</p>
     </Screen>
   )
 }

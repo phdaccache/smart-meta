@@ -59,7 +59,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
     <Screen back="/goals" eyebrow={[value?.name, STATE_LABEL[goal.state]].filter(Boolean).join(' · ')} title={goal.title}>
       {reviewDue && (
         <div className="banner">
-          <div className="text">The review date has arrived. Three questions, then decide what’s next.</div>
+          <div className="text">Review date reached.</div>
           <button className="btn primary" onClick={() => navigate(`/goals/${goal.id}/review`)}>Review</button>
         </div>
       )}
@@ -68,7 +68,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
         <div className="group-why">{goal.whyText}</div>
         <div className="row" style={{ marginTop: 14, justifyContent: 'space-between', flexWrap: 'wrap' }}>
           <StatusWord status={summary.status} />
-          <span className="row small muted" style={{ gap: 8 }}>last 4 weeks <WeekBar weeks={summary.weeks} /></span>
+          <WeekBar weeks={summary.weeks} />
         </div>
         <dl className="kv" style={{ marginTop: 14 }}>
           <dt>Since</dt><dd>{dayMonth(goal.startDate)}</dd>
@@ -115,7 +115,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
           {goal.state === 'backlog' && (
             <button className="btn outline block" disabled={activeCount >= settings.goalCap}
               onClick={() => setGoalState(goal, 'active').then(() => toast('Active. It’s on Today.'))}>
-              {activeCount >= settings.goalCap ? `Start (cap of ${settings.goalCap} reached)` : 'Start now'}
+              {activeCount >= settings.goalCap ? 'Start (limit reached)' : 'Start'}
             </button>
           )}
           {goal.state === 'maintenance' && (
@@ -129,9 +129,6 @@ export function GoalDetailScreen({ id }: { id: string }) {
           )}
           <details style={{ marginTop: 8 }}>
             <summary className="small muted" style={{ cursor: 'pointer', padding: '10px 0' }}>Delete permanently</summary>
-            <p className="small muted" style={{ margin: '4px 0 12px' }}>
-              For mistakes only, like a goal created twice. Its history is removed too. To stop working on a goal, abandon it instead — that keeps its history.
-            </p>
             <TypeToConfirm phrase={goal.title} action="Delete goal and its history" onConfirm={async () => {
               await deleteGoal(goal)
               toast('Deleted.')
@@ -157,7 +154,7 @@ function CommitmentCard({ c, snap, canRemove, onEdit }: { c: Commitment; snap: S
         <div style={{ fontWeight: 600 }}>{c.measurementDefinition}</div>
         <div className="row" style={{ marginTop: 10, gap: 4, flexWrap: 'wrap' }}>
           <button className="btn" onClick={onEdit}>Edit</button>
-          {c.shape === 'standard' && <button className="btn" onClick={openQuickAdd}>Log an occurrence</button>}
+          {c.shape === 'standard' && <button className="btn" onClick={openQuickAdd}>Log</button>}
           {canRemove && (
             <button className="btn ghost" onClick={async () => {
               if (confirm(`Remove “${c.label}”? Its history stays, but it stops being scored.`)) await removeCommitment(c)
@@ -177,7 +174,7 @@ function CommitmentCard({ c, snap, canRemove, onEdit }: { c: Commitment; snap: S
         ))}
         {preps.length < MAX_PREPS && (
           <button className="list-row link-btn" style={{ minHeight: 48 }} onClick={() => setEditingPrep('new')}>
-            + Add a prep {preps.length === 0 && <span className="muted small">— what usually stops you?</span>}
+            + Add prep
           </button>
         )}
       </div>
@@ -206,9 +203,6 @@ function PrepSheet({ commitment, editing, onClose }: { commitment: Commitment; e
   }
   return (
     <Sheet open onClose={onClose} title={editing === 'new' ? `Prep for ${commitment.label}` : 'Edit prep'}>
-      <p className="muted small" style={{ marginBottom: 14 }}>
-        Something you do beforehand, while judgment is good, so the moment itself is easy. Checked off like a task; never scored.
-      </p>
       <PrepEditor preps={drafts} onChange={(p) => p.length ? setDrafts(p) : onClose()} showErrors={tried} />
       <div className="sheet-actions">
         {editing !== 'new' && <button className="btn danger" onClick={async () => { await removePrep(editing); onClose() }}>Delete</button>}
@@ -234,7 +228,7 @@ function CommitmentSheet({ goal, editing, today, onClose }: { goal: Goal; editin
     if (!isValid(e)) return setTried(true)
     if (editing === 'new') await addCommitment(goal, d, today)
     else await updateCommitment(editing, d)
-    toast(editing === 'new' ? 'Commitment added. Scoring starts today.' : 'Saved. The change is recorded in the goal’s history.')
+    toast('Saved.')
     onClose()
   }
   return (
@@ -252,17 +246,14 @@ function AbandonSheet({ goal, onClose }: { goal: Goal | null; onClose: () => voi
   if (!goal) return null
   return (
     <Sheet open onClose={onClose} title="Abandon this goal?">
-      <p className="muted" style={{ marginBottom: 16 }}>
-        It leaves Today but stays in history with your reason. A decision, not a failure.
-      </p>
-      <Field label="Why are you setting it aside?" htmlFor="abandon-why">
-        <textarea id="abandon-why" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Optional" />
+      <Field label="Reason (optional)" htmlFor="abandon-why" info="It leaves Today but stays in your history. A decision, not a failure.">
+        <textarea id="abandon-why" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />
       </Field>
       <div className="sheet-actions">
         <button className="btn" onClick={onClose}>Keep it</button>
         <button className="btn primary" onClick={async () => {
           await setGoalState(goal, 'abandoned', reason)
-          toast('Abandoned. It’s in your history.')
+          toast('Abandoned.')
           onClose()
         }}>Abandon</button>
       </div>
@@ -313,7 +304,7 @@ function GoalHistory({ goal, snap, today }: { goal: Goal; snap: Snapshot; today:
     }>
       <div className="card">
         {rows.length === 0 ? (
-          <div className="list-empty">No check-ins yet. They’ll appear here, including corrections.</div>
+          <div className="list-empty">No check-ins yet.</div>
         ) : (
           <ul className="history">
             {rows.slice(0, limit).map((e) => {
@@ -384,13 +375,12 @@ export function GoalEditScreen({ id }: { id: string }) {
       title: d.title.trim(), whyValueId: d.whyValueId, whyText: d.whyText.trim(), tolerancePct: d.tolerancePct,
       startDate: d.startDate, targetDate: d.targetDate || null,
     })
-    toast('Saved. Changes are recorded in the goal’s history.')
+    toast('Saved.')
     navigate(`/goals/${goal.id}`, { replace: true })
   }
 
   return (
     <Screen back={`/goals/${goal.id}`} eyebrow="Edit" title={goal.title}>
-      <p className="muted small" style={{ marginBottom: 18 }}>Every change is kept as a revision, so you can later see how a goal evolved.</p>
       <Field label="Goal" htmlFor="title" error={tried ? errors.title : undefined}>
         <input id="title" value={d.title} onChange={(e) => setD({ ...d, title: e.target.value })} />
       </Field>
@@ -430,7 +420,7 @@ export function GoalReviewScreen({ id }: { id: string }) {
   const save = async () => {
     if (!ready) return
     await saveGoalReview(goal, { hit: hit!, whatHappened: whatHappened.trim(), journalNote: journal.trim() }, outcome!, renewDate || null)
-    toast(outcome === 'completed' ? 'Closed out. It lives in your history.' : outcome === 'maintenance' ? 'Now in maintenance: no longer being achieved, simply being done.' : 'Renewed.')
+    toast('Saved.')
     navigate(`/goals/${goal.id}`, { replace: true })
   }
   const choice = (v: typeof outcome, t: string, d: string) => (
@@ -450,15 +440,15 @@ export function GoalReviewScreen({ id }: { id: string }) {
       <Field label="2. What happened?" htmlFor="wh">
         <textarea id="wh" rows={3} value={whatHappened} onChange={(e) => setWhatHappened(e.target.value)} />
       </Field>
-      <Field label="Journal" htmlFor="journal" hint="Kept with the goal forever. Write what would make this goal make sense to you a year from now.">
+      <Field label="Journal" htmlFor="journal" info="Kept with the goal. Write what would make it make sense to you a year from now.">
         <textarea id="journal" rows={5} value={journal} onChange={(e) => setJournal(e.target.value)} />
       </Field>
       <div className="section">
         <div className="field-label" style={{ marginBottom: 10 }}>3. What next?</div>
         <div role="radiogroup" aria-label="What next">
-          {choice('renewed', 'Renew', 'Set a new review date and keep going.')}
-          {choice('maintenance', 'Maintenance', 'Keep doing it, scored as before, without a finish line. Frees a slot in your cap.')}
-          {choice('completed', 'Close it out', 'It leaves Today and lives in your history.')}
+          {choice('renewed', 'Renew', 'New review date.')}
+          {choice('maintenance', 'Maintenance', 'Keep doing it, no finish line.')}
+          {choice('completed', 'Close it out', 'Archive it.')}
         </div>
         {outcome === 'renewed' && (
           <Field label="New review date" htmlFor="renew">

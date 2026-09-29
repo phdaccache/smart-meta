@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { setSettings } from '../db/settings'
-import { Screen } from '../ui/components'
+import { InfoTip, Screen } from '../ui/components'
 import { navigate } from '../ui/router'
 import { ValuesEditor } from './Settings'
 
@@ -10,27 +10,20 @@ export function WelcomeScreen() {
 
   if (step === 'intro') {
     return (
-      <Screen title="Goals that survive the moment">
-        <div className="stack" style={{ gap: 16, fontSize: 17, lineHeight: 1.5 }}>
-          <p>Most goals don’t fail because you forget them. They fail because they’re vague, and because the reason is missing at the moment you choose.</p>
-          <p>So this app will ask you to be specific, and it will put your reason next to everything you do each day.</p>
-          <p className="muted">It never writes goals for you. It only makes sure they’re checkable.</p>
-        </div>
+      <Screen title="Smart Meta">
+        <p className="wizard-lead">Specific goals, with your reason in front of you every day.</p>
         <div className="wizard-nav">
-          <button className="btn primary" onClick={() => setStep('values')}>Start with what matters</button>
+          <button className="btn primary" onClick={() => setStep('values')}>Start</button>
         </div>
         <p className="small muted" style={{ textAlign: 'center' }}>
-          New phone? <button className="link-btn" onClick={() => navigate('/settings')}>Restore your data</button>
+          <button className="link-btn" onClick={() => navigate('/settings')}>Restore data</button>
         </p>
       </Screen>
     )
   }
 
   return (
-    <Screen eyebrow="Step 1 of 2" title="What matters to you?">
-      <p className="wizard-lead">
-        Write three to five values — short statements of what you care about. Each goal will name one of these as its reason.
-      </p>
+    <Screen title={<span className="title-row">What matters to you? <InfoTip label="About values">Write 3 to 5 values. Every goal names one of them as its reason.</InfoTip></span>}>
       <ValuesEditor onboarding onSaved={async () => {
         await setSettings({ onboarded: true })
         navigate('/goals/new?first=1', { replace: true })

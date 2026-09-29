@@ -51,3 +51,6 @@ export const IconClose = (p: P) => (
 export const IconCloud = (p: P) => (
   <Svg {...p}><path d="M7 18a4 4 0 0 1-.6-7.95A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9H7z" /></Svg>
 )
+export const IconInfo = (p: P) => (
+  <Svg strokeWidth="1.7" {...p}><circle cx="12" cy="12" r="9" /><path d="M12 11v5" /><circle cx="12" cy="7.8" r="0.6" fill="currentColor" /></Svg>
+)

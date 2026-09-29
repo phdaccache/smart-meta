@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { AppDB } from '../db/db'
-import { exportData, importData } from '../db/backup'
+import { exportData, importData, wipeLocal } from '../db/backup'
 import type { Base, Value } from '../lib/types'
 import { SyncEngine } from './engine'
 import type { PullResult, RemoteRecord, SyncTarget } from './target'
@@ -21,6 +21,11 @@ class FakeTarget implements SyncTarget {
       if (cur && cur.updatedAt > r.updatedAt) continue // server-side LWW guard
       this.rows.set(key, { ...r, seq: ++this.seq })
     }
+  }
+
+  async clear() {
+    if (!this.online) throw new Error('offline')
+    this.rows.clear()
   }
 
   async pull(cursor: string | null): Promise<PullResult> {
@@ -123,6 +128,19 @@ describe('sync queue', () => {
     }
     await engine.pull()
     expect(pulled).toBe(1)
+  })
+})
+
+describe('erase all data', () => {
+  it('empties the server and the device, and a fresh pull brings nothing back', async () => {
+    await write(db, value('Health'))
+    await engine.sync()
+    await engine.clearRemote()
+    await wipeLocal(db)
+    expect(await db.values.count()).toBe(0)
+    expect(await db.outbox.count()).toBe(0)
+    await engine.sync()
+    expect(await db.values.count()).toBe(0)
   })
 })
 

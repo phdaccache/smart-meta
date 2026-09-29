@@ -1,11 +1,13 @@
 import { useState, useSyncExternalStore } from 'react'
 import { addDisplacement, createTask, logOccurrence } from '../db/repo'
-import { isDateStr, nowMinutes, formatTime, parseTime } from '../lib/dates'
+import { formatTime, isDateStr, nowMinutes, parseTime, relativeDay } from '../lib/dates'
 import { REASONS } from '../lib/describe'
 import type { Commitment, DateStr, ID, MissReason } from '../lib/types'
-import { Chip, Field, Segmented, Sheet, toast } from '../ui/components'
+import { Chip, DatePickerButton, Field, Segmented, Sheet, toast } from '../ui/components'
+import { IconCalendar, IconClose, IconGoals } from '../ui/icons'
 import { useDisplacements, useSettings, useSnapshot, useToday } from '../ui/hooks'
-import { DateChoice, GoalSelect } from './TaskSheet'
+
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 let open = false
 const listeners = new Set<() => void>()
@@ -48,16 +50,18 @@ export function QuickAdd() {
 }
 
 function TaskForm({ today, onDone }: { today: DateStr; onDone: () => void }) {
+  const snap = useSnapshot()
   const [title, setTitle] = useState('')
   const [date, setDate] = useState<DateStr | null>(null)
   const [goalId, setGoalId] = useState<string | null>(null)
-  const [more, setMore] = useState(false)
+  const goals = (snap?.goals ?? []).filter((g) => g.state === 'active' || g.state === 'maintenance' || g.state === 'backlog')
+  const goal = goals.find((g) => g.id === goalId)
 
   const save = async () => {
     if (!title.trim()) return
     await createTask({ title, date, goalId })
     setTitle('')
-    toast(date && date > today ? 'Added. It shows up on the day.' : 'Added to Today.')
+    toast('Added.')
     onDone()
   }
 
@@ -65,15 +69,29 @@ function TaskForm({ today, onDone }: { today: DateStr; onDone: () => void }) {
     <form onSubmit={(e) => { e.preventDefault(); save() }}>
       <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="What needs doing?"
         aria-label="Task" enterKeyHint="done" />
-      {more ? (
-        <>
-          <Field label="When"><DateChoice value={date} today={today} onChange={setDate} /></Field>
-          <Field label="Goal" htmlFor="qa-goal"><GoalSelect id="qa-goal" value={goalId} onChange={setGoalId} /></Field>
-        </>
-      ) : (
-        <button type="button" className="link-btn" onClick={() => setMore(true)}>Date or goal…</button>
-      )}
-      <div className="sheet-actions">
+      <div className="qa-tools">
+        <span className={`tool ${date ? 'on' : ''}`}>
+          <DatePickerButton className="tool-hit" value={date ?? ''} min={today} label="Due date"
+            onPick={(d) => isDateStr(d) && setDate(d)}>
+            <IconCalendar width={20} height={20} />
+            {date && <span className="tool-text">{capitalize(relativeDay(date, today))}</span>}
+          </DatePickerButton>
+          {date && <button type="button" className="tool-clear" aria-label="Clear due date" onClick={() => setDate(null)}><IconClose width={14} height={14} /></button>}
+        </span>
+        {goals.length > 0 && (
+          <span className={`tool ${goalId ? 'on' : ''}`}>
+            <span className="date-overlay tool-hit">
+              <IconGoals width={20} height={20} />
+              {goal && <span className="tool-text">{goal.title}</span>}
+              <select aria-label="Goal" value={goalId ?? ''} onChange={(e) => setGoalId(e.target.value || null)}>
+                <option value="">No goal</option>
+                {goals.map((g) => <option key={g.id} value={g.id}>{g.title}</option>)}
+              </select>
+            </span>
+            {goalId && <button type="button" className="tool-clear" aria-label="Clear goal" onClick={() => setGoalId(null)}><IconClose width={14} height={14} /></button>}
+          </span>
+        )}
+        <span className="spacer" />
         <button type="submit" className="btn primary" disabled={!title.trim()}>Add</button>
       </div>
     </form>
@@ -103,11 +121,11 @@ function OccurrenceForm({ commitments, today, onDone }: { commitments: Commitmen
     if (!decided) return
     let dId = displacementId
     if (reason === 'chose_other' && !dId && newLabel.trim()) dId = (await addDisplacement(newLabel)).id
-    const r = await logOccurrence(c, {
+    await logOccurrence(c, {
       date, scheduledTime: scheduled || '00:00', actualTime: actual, kept: kept ?? false,
       miss: !hit && reason ? { reason, displacementId: reason === 'chose_other' ? dId : null, note } : undefined,
     })
-    toast(r.hit ? 'Logged: kept.' : 'Logged. A miss is just data.')
+    toast('Logged.')
     onDone()
   }
 
@@ -120,7 +138,6 @@ function OccurrenceForm({ commitments, today, onDone }: { commitments: Commitmen
           </select>
         </Field>
       )}
-      <p className="muted small" style={{ margin: '0 0 14px' }}>{c.measurementDefinition}</p>
       <Field label="Day" htmlFor="occ-date">
         <input id="occ-date" type="date" value={date} max={today} onChange={(e) => isDateStr(e.target.value) && setDate(e.target.value)} />
       </Field>

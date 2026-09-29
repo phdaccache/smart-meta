@@ -25,23 +25,22 @@ export function NewProjectScreen() {
   const save = async () => {
     if (errors.title || errors.targetDate) return setTried(true)
     const p = await createProject({ title, targetDate, goalId, steps })
-    toast('Project saved. Its first step is on Today.')
+    toast('Project saved.')
     navigate(`/projects/${p.id}`, { replace: true })
   }
 
   return (
-    <Screen back="/goals" eyebrow="New project" title="A finite outcome">
-      <p className="wizard-lead">Done when done, then archived. Today shows only the current step.</p>
+    <Screen back="/goals" title="New project">
       <Field label="Outcome" htmlFor="p-title" error={tried ? errors.title : undefined}>
         <input id="p-title" autoFocus value={title} placeholder="Get driver’s license" onChange={(e) => setTitle(e.target.value)} />
       </Field>
       <Field label="Target date" htmlFor="p-date" error={tried ? errors.targetDate : undefined}>
         <input id="p-date" type="date" min={today} value={targetDate} onChange={(e) => setTargetDate(e.target.value)} />
       </Field>
-      <Field label="Goal (optional)" htmlFor="p-goal">
+      <Field label="Goal" htmlFor="p-goal">
         <GoalSelect id="p-goal" value={goalId} onChange={setGoalId} />
       </Field>
-      <Field label="Steps, in order" hint="Rough is fine. You can add, reorder and rename later.">
+      <Field label="Steps" info="Today shows only the current step.">
         <ol className="steps-editor">
           {steps.map((s, i) => (
             <li key={i}>
@@ -198,7 +197,7 @@ function StepTitle({ task, current }: { task: Task; current: boolean }) {
   return (
     <button className="item-main" onClick={() => setEditing(true)}>
       <div className="item-title">{task.title}</div>
-      {current && <div className="item-detail">Current step — on Today</div>}
+      {current && <div className="item-detail">Current</div>}
     </button>
   )
 }

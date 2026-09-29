@@ -42,6 +42,11 @@ export class SupabaseTarget implements SyncTarget {
     if (error) throw new Error(error.message)
   }
 
+  async clear(): Promise<void> {
+    const { error } = await this.client.from('records').delete().eq('user_id', this.userId)
+    if (error) throw new Error(error.message)
+  }
+
   async pull(cursor: string | null): Promise<PullResult> {
     const { data, error } = await this.client
       .from('records')

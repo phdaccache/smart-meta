@@ -53,6 +53,13 @@ export async function importData(b: Backup, database: AppDB = db): Promise<numbe
   return changed
 }
 
+/** Empties every table on this device, including settings and the sync queue. */
+export async function wipeLocal(database: AppDB = db): Promise<void> {
+  await database.transaction('rw', database.tables, async () => {
+    await Promise.all(database.tables.map((t) => t.clear()))
+  })
+}
+
 export function backupFilename(date = new Date()): string {
   const d = date.toISOString().slice(0, 10)
   return `smart-meta-${d}.json`

@@ -114,6 +114,11 @@ export class SyncEngine {
     }
   }
 
+  /** Erases the server copy. Used by "Erase all data". */
+  async clearRemote() {
+    await this.target.clear()
+  }
+
   /** Forget the pull cursor, so the next sync re-reads everything (after sign-in). */
   async resetCursor() {
     await this.setMeta({ cursor: null })

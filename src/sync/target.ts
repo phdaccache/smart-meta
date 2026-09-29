@@ -22,9 +22,11 @@ export interface PullResult {
 /**
  * The only thing sync knows about the server. Supabase implements it today;
  * moving to Neon, Railway or a self-hosted Postgres means one new implementation
- * of these two methods.
+ * of these methods.
  */
 export interface SyncTarget {
   push(records: RemoteRecord[]): Promise<void>
   pull(cursor: string | null): Promise<PullResult>
+  /** Deletes every record this user has on the server. */
+  clear(): Promise<void>
 }

@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { wipeLocal } from '../db/backup'
 import { db } from '../db/db'
 import { writeListeners } from '../db/repo'
 import { SyncEngine } from './engine'
@@ -113,6 +114,19 @@ export async function verifyLoginCode(email: string, code: string): Promise<void
   if (!supabase) throw new Error('Sync is not configured for this build.')
   const { error } = await supabase.auth.verifyOtp({ email: email.trim(), token: code.trim(), type: 'email' })
   if (error) throw new Error(error.message)
+}
+
+/**
+ * Erases everything: the synced copy first (so it can't flow back), then this
+ * device. Refuses while offline if signed in, rather than leave a copy behind.
+ */
+export async function eraseAllData(): Promise<void> {
+  if (engine) {
+    if (!navigator.onLine) throw new Error('You’re offline. Connect first so the synced copy is erased too.')
+    await engine.clearRemote()
+  }
+  clearTimeout(timer)
+  await wipeLocal(db)
 }
 
 /** Local data stays: the device is the source of truth. */

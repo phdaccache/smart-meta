@@ -1,4 +1,4 @@
-import { inSpan, isoWeekday, periodOf, relativeDay } from './dates'
+import { diffDays, inSpan, isoWeekday, periodOf, relativeDay } from './dates'
 import { activeEntries, evaluateThreshold, meetsTarget, missPrompt, thresholdAggregate, type MissPrompt, type PeriodEval, type ScoreContext } from './scoring'
 import type {
   Commitment, DateStr, Entry, Goal, ID, Occurrence, Prep, Project, SubjectType, Task, Value,
@@ -37,8 +37,22 @@ export interface TodayItem {
   value?: number | null
   valueState?: PeriodEval
   step?: { index: number; total: number }
+  /** Open tasks with a date: red when due today or late, yellow tomorrow, green later. */
+  due?: { label: string; tone: 'red' | 'yellow' | 'green' }
   target: ItemTarget
 }
+
+export function dueBadge(due: DateStr, date: DateStr): NonNullable<TodayItem['due']> {
+  const d = diffDays(date, due)
+  if (d < 0) return { label: `overdue · ${relativeDay(due, date)}`, tone: 'red' }
+  if (d === 0) return { label: 'due today', tone: 'red' }
+  if (d === 1) return { label: 'due tomorrow', tone: 'yellow' }
+  return { label: `due ${relativeDay(due, date)}`, tone: 'green' }
+}
+
+/** Dated tasks first, soonest due first; undated after. */
+const byDue = (a: TodayItem & { sortDate?: string | null }, b: TodayItem & { sortDate?: string | null }) =>
+  (a.sortDate ?? '9999').localeCompare(b.sortDate ?? '9999')
 
 export interface TodayGroup {
   key: string
@@ -92,17 +106,17 @@ export function buildDay(
 
   // ——— tasks and project steps ———
 
-  const taskItem = (t: Task, target: ItemTarget): TodayItem | null => {
+  // A task's date is when it's due, so open tasks show on Today from the day they're added.
+  const taskItem = (t: Task, target: ItemTarget): (TodayItem & { sortDate?: string | null }) | null => {
     const done = latest(entriesOf('task', t.id).filter((e) => e.outcome === 'hit'))
     let visible: boolean
     if (done) visible = done.date === date
-    else visible = isToday ? !t.date || t.date <= date : t.date === date
+    else visible = isToday || t.date === date
     if (!visible) return null
-    let detail: string | undefined
-    if (!done && t.date && t.date < date) detail = `from ${relativeDay(t.date, date)}`
     return {
-      key: `task:${t.id}`, kind: 'task', title: t.title, detail, done: !!done,
-      subjectType: 'task', subjectId: t.id, entryId: done?.id, target,
+      key: `task:${t.id}`, kind: 'task', title: t.title, done: !!done,
+      due: !done && t.date && isToday ? dueBadge(t.date, date) : undefined,
+      subjectType: 'task', subjectId: t.id, entryId: done?.id, target, sortDate: t.date,
     }
   }
 
@@ -217,10 +231,13 @@ export function buildDay(
       projectsInGoals.add(p.id)
       items.push(...stepItems(p, true))
     }
-    for (const t of s.tasks.filter((t) => t.goalId === g.id && !t.projectId && !t.deletedAt)) {
-      const item = taskItem(t, { kind: 'task', id: t.id })
-      if (item) items.push(item)
-    }
+    items.push(
+      ...s.tasks
+        .filter((t) => t.goalId === g.id && !t.projectId && !t.deletedAt)
+        .map((t) => taskItem(t, { kind: 'task', id: t.id }))
+        .filter((i): i is NonNullable<typeof i> => !!i)
+        .sort(byDue),
+    )
 
     if (items.length || prompts.length) {
       groups.push({
@@ -247,16 +264,17 @@ export function buildDay(
 
   // ——— errands ———
 
-  const errands: TodayItem[] = []
+  const errands: (TodayItem & { sortDate?: string | null })[] = []
   for (const t of s.tasks) {
     if (t.deletedAt || t.projectId) continue
     if (t.goalId && liveGoalIds.has(t.goalId)) continue
     const item = taskItem(t, { kind: 'task', id: t.id })
     if (item) errands.push(item)
   }
+  errands.sort(byDue)
   if (errands.length) {
     groups.push({
-      key: 'errands', kind: 'errands', eyebrow: 'One-offs, not tied to a goal', title: 'Errands',
+      key: 'errands', kind: 'errands', eyebrow: 'Errands', title: 'Errands',
       items: errands, prompts: [], done: errands.every((i) => i.done),
     })
   }

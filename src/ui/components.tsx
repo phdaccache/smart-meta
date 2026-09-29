@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import type { Status } from '../lib/types'
-import { IconCheck, IconChevronLeft, IconClose, IconSettings } from './icons'
+import { IconCheck, IconChevronLeft, IconClose, IconInfo, IconSettings } from './icons'
 import { goBack, navigate } from './router'
 
 // ——— screen chrome ———
@@ -135,10 +135,55 @@ export function WeekBar({ weeks, label = 'Last 4 weeks' }: { weeks: (Status | nu
   )
 }
 
-export function Field(props: { label: string; hint?: ReactNode; error?: string; children: ReactNode; htmlFor?: string }) {
+/**
+ * An (i) that opens a short explanation. Use it for ideas that are genuinely
+ * new; everything else should explain itself without text.
+ */
+export function InfoTip({ label, children }: { label: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false)
+  const [style, setStyle] = useState<React.CSSProperties | null>(null)
+  const btn = useRef<HTMLButtonElement>(null)
+  const id = useId()
+  useEffect(() => {
+    if (!open || !btn.current) return
+    const r = btn.current.getBoundingClientRect()
+    const width = Math.min(300, window.innerWidth - 32)
+    const left = Math.max(16, Math.min(r.left + r.width / 2 - width / 2, window.innerWidth - 16 - width))
+    const below = r.bottom + 160 < window.innerHeight
+    setStyle(below ? { top: r.bottom + 6, left, width } : { top: r.top - 6, left, width, transform: 'translateY(-100%)' })
+    const close = (e: Event) => {
+      if (!btn.current?.contains(e.target as Node)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('pointerdown', close)
+    document.addEventListener('keydown', onKey)
+    window.addEventListener('scroll', close, true)
+    return () => {
+      document.removeEventListener('pointerdown', close)
+      document.removeEventListener('keydown', onKey)
+      window.removeEventListener('scroll', close, true)
+    }
+  }, [open])
+  return (
+    <>
+      <button type="button" ref={btn} className="info-btn" aria-label={label} aria-expanded={open}
+        aria-describedby={open ? id : undefined} onClick={() => setOpen((o) => !o)}>
+        <IconInfo width={18} height={18} />
+      </button>
+      {open && style && createPortal(<div id={id} role="tooltip" className="info-pop" style={style}>{children}</div>, document.body)}
+    </>
+  )
+}
+
+export function Field(props: {
+  label: string; hint?: ReactNode; info?: ReactNode; error?: string; children: ReactNode; htmlFor?: string
+}) {
   return (
     <div className={`field ${props.error ? 'has-error' : ''}`}>
-      <label className="field-label" htmlFor={props.htmlFor}>{props.label}</label>
+      <div className="field-label-row">
+        <label className="field-label" htmlFor={props.htmlFor}>{props.label}</label>
+        {props.info && <InfoTip label={`About ${props.label.toLowerCase()}`}>{props.info}</InfoTip>}
+      </div>
       {props.hint && <div className="field-hint">{props.hint}</div>}
       {props.children}
       {props.error && <div className="field-error" role="alert">{props.error}</div>}
@@ -223,6 +268,7 @@ export function TypeToConfirm(props: { phrase: string; action: string; onConfirm
  */
 export function DatePickerButton(props: {
   value: string
+  min?: string
   max?: string
   label: string
   className?: string
@@ -232,7 +278,7 @@ export function DatePickerButton(props: {
   return (
     <span className={`date-overlay ${props.className ?? ''}`}>
       {props.children}
-      <input type="date" value={props.value} max={props.max} aria-label={props.label}
+      <input type="date" value={props.value} min={props.min} max={props.max} aria-label={props.label}
         onChange={(e) => e.target.value && props.onPick(e.target.value)} />
     </span>
   )

@@ -42,23 +42,17 @@ export function TodayScreen({ date }: { date?: DateStr }) {
 
   return (
     <Screen
-      eyebrow={isPast ? `${dayMonth(viewDate)} · editing a past day` : [dayMonth(viewDate), count].filter(Boolean).join(' · ')}
+      eyebrow={isPast ? `${dayMonth(viewDate)} · past day` : [dayMonth(viewDate), count].filter(Boolean).join(' · ')}
       title={isPast && diffDays(viewDate, today) === 1 ? 'Yesterday' : weekdayName(viewDate)}
       settings
-      actions={
+      actions={<>
+        {isPast && <button className="btn" onClick={() => navigate('/')}>Today</button>}
         <DatePickerButton className="icon-btn" value={viewDate} max={today} label="Go to a past day"
           onPick={(d) => isDateStr(d) && d <= today && navigate(d === today ? '/' : `/day/${d}`)}>
           <IconCalendar />
         </DatePickerButton>
-      }
+      </>}
     >
-      {isPast && (
-        <div className="banner">
-          <div className="text">Checking things off here backfills {dayMonth(viewDate)}. Corrections stay visible in history.</div>
-          <button className="btn primary" onClick={() => navigate('/')}>Today</button>
-        </div>
-      )}
-
       {view.groups.length === 0 ? (
         <EmptyDay snap={snap} ctx={ctx} isPast={isPast} />
       ) : (
@@ -102,10 +96,7 @@ function Group(props: {
     <>
       <div className="text">
         {group.kind === 'errands' ? (
-          <>
-            <div className="group-why">Errands</div>
-            <div className="group-sub">{group.eyebrow}</div>
-          </>
+          <div className="group-why">Errands</div>
         ) : (
           <>
             <div className="group-eyebrow">{group.eyebrow}</div>
@@ -168,6 +159,7 @@ function ItemRow({ item, date, onOpen }: { item: TodayItem; date: DateStr; onOpe
         <button className="item-main" onClick={onOpen}>
           <div className="item-title">{item.title}</div>
           {item.detail && <div className="item-detail">{item.detail}</div>}
+          {item.due && <span className={`due due-${item.due.tone}`}>{item.due.label}</span>}
           {item.step && (
             <div className="stepdots" aria-hidden="true">
               {Array.from({ length: item.step.total }, (_, i) => <i key={i} className={i < item.step!.index - (item.done ? 0 : 1) ? 'on' : ''} />)}
@@ -242,7 +234,7 @@ function MissPromptCard(props: { prompt: MissPrompt; label: string; question: st
     let dId = displacementId
     if (reason === 'chose_other' && !dId && newLabel.trim()) dId = (await addDisplacement(newLabel)).id
     await explainMiss(props.prompt, { reason, displacementId: reason === 'chose_other' ? dId : null, note })
-    toast('Logged. Patterns show up in your weekly review.')
+    toast('Logged.')
   }
 
   return (
@@ -313,8 +305,7 @@ function EmptyDay({ snap, ctx, isPast }: { snap: Snapshot; ctx: ScoreContext; is
   if (isPast) {
     return (
       <div className="empty">
-        <h2>Nothing was scheduled that day.</h2>
-        <p>Standard commitments are logged from the + button, with any date.</p>
+        <h2>Nothing scheduled that day.</h2>
       </div>
     )
   }
@@ -324,7 +315,6 @@ function EmptyDay({ snap, ctx, isPast }: { snap: Snapshot; ctx: ScoreContext; is
       <p>
         That’s allowed.
         {next && <> Next up is {diffDays(ctx.today, next.date) === 1 ? 'tomorrow' : weekdayName(next.date)}: {next.item.title.toLowerCase()}{next.why ? <>, {lowerFirst(next.why)}</> : null}.</>}
-        {!hasGoals && <> Start with a goal: the one behavior you most want to change.</>}
       </p>
       {hasGoals ? (
         <button className="btn outline" onClick={openQuickAdd}>
@@ -353,9 +343,7 @@ function ExportNudge({ lastExportAt, snap }: { lastExportAt: string | null; snap
   }
   return (
     <div className="banner" style={{ marginTop: 20 }}>
-      <div className="text">
-        {lastExportAt ? 'A month since your last export.' : 'You haven’t exported your data yet.'} A copy in iCloud Drive keeps it yours.
-      </div>
+      <div className="text">{lastExportAt ? 'Last backup over a month ago.' : 'No backup yet.'}</div>
       <button className="btn" onClick={run}>Export</button>
     </div>
   )

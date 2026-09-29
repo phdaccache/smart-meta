@@ -5,7 +5,7 @@ import { cadenceText } from '../lib/describe'
 import { activeEntries, summarizeGoal, type ScoreContext } from '../lib/scoring'
 import type { Snapshot } from '../lib/today'
 import type { Goal, Project } from '../lib/types'
-import { Screen, Section, StatusWord, toast, WeekBar } from '../ui/components'
+import { InfoTip, Screen, Section, StatusWord, toast, WeekBar } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconDown, IconPlus, IconUp } from '../ui/icons'
 import { navigate } from '../ui/router'
@@ -40,7 +40,6 @@ export function GoalsScreen() {
         {active.length === 0 ? (
           <div className="card list-empty">
             No active goals. <button className="link-btn" onClick={() => navigate('/goals/new')}>Create one</button>
-            {backlog.length > 0 && ' or start one from the backlog.'}
           </div>
         ) : (
           <div className="stack">
@@ -50,23 +49,20 @@ export function GoalsScreen() {
       </Section>
 
       {maintenance.length > 0 && (
-        <Section title="Maintenance" aside={<span>not counted in the cap</span>}>
+        <Section title={<span className="title-row">Maintenance <InfoTip label="About maintenance">Goals you keep doing without a finish line. Still scored; they don’t count toward the active limit.</InfoTip></span>}>
           <div className="card list">
             {maintenance.map((g) => <GoalRow key={g.id} goal={g} snap={snap} ctx={ctx} />)}
           </div>
         </Section>
       )}
 
-      <Section title="Backlog" aside={backlog.length > 1 ? <span>in priority order</span> : undefined}>
-        {backlog.length === 0 ? (
-          <div className="card list-empty">Goals past your cap of {settings.goalCap} wait here until a slot opens.</div>
-        ) : (
+      {backlog.length > 0 && <Section title="Backlog">
+        {(
           <div className="card list">
             {backlog.map((g, i) => (
               <div key={g.id} className="list-row">
                 <button className="text" style={{ textAlign: 'left' }} onClick={() => navigate(`/goals/${g.id}`)}>
                   <div className="title">{g.title}</div>
-                  <div className="sub">{g.whyText}</div>
                 </button>
                 {backlog.length > 1 && (
                   <div className="row" style={{ gap: 0 }}>
@@ -77,18 +73,18 @@ export function GoalsScreen() {
                 {slotOpen && (
                   <button className="btn" onClick={async () => {
                     await setGoalState(g, 'active')
-                    toast(`${g.title} is active. It’s on Today.`)
+                    toast('Started.')
                   }}>Start</button>
                 )}
               </div>
             ))}
           </div>
         )}
-      </Section>
+      </Section>}
 
       <Section title="Projects" aside={<button className="link-btn" onClick={() => navigate('/projects/new')}>New project</button>}>
         {projects.length === 0 ? (
-          <div className="card list-empty">Finite outcomes with steps, like “Get driver’s license”. Today shows only the current step.</div>
+          <div className="card list-empty">No projects.</div>
         ) : (
           <div className="card list">
             {projects.map((p) => <ProjectRow key={p.id} project={p} snap={snap} today={today} />)}
@@ -100,7 +96,7 @@ export function GoalsScreen() {
         <Section title="History">
           <details className="card">
             <summary className="list-row" style={{ cursor: 'pointer' }}>
-              <span className="text title">{archived.length + doneProjects.length} finished or set aside</span>
+              <span className="text title">Archived · {archived.length + doneProjects.length}</span>
             </summary>
             <div className="list">
               {archived.map((g) => (
@@ -140,9 +136,9 @@ function GoalCard({ goal, snap, ctx }: { goal: Goal; snap: Snapshot; ctx: ScoreC
       </div>
       <div className="row" style={{ marginTop: 12, justifyContent: 'space-between' }}>
         <StatusWord status={s.status} />
-        <span className="row small muted" style={{ gap: 8 }}>last 4 weeks <WeekBar weeks={s.weeks} /></span>
+        <WeekBar weeks={s.weeks} />
       </div>
-      {reviewDue && <div className="small" style={{ marginTop: 10, color: 'var(--accent)', fontWeight: 600 }}>Review date reached — tap to review</div>}
+      {reviewDue && <div className="small" style={{ marginTop: 10, color: 'var(--accent)', fontWeight: 600 }}>Review due</div>}
     </button>
   )
 }
