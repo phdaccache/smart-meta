@@ -347,12 +347,12 @@ All / Goals / Projects / Tasks filter.
 ### Review
 
 The weekly ritual: last week's results, misses with their reasons, suggested
-adjustments, and end-of-goal reviews when dates arrive.
+adjustments, and end-of-goal reviews when dates arrive. Detailed in §16.
 
 ### Insights
 
 Deeper reporting, visited rarely. Trends, miss-reason breakdowns, history,
-percentages.
+percentages. Detailed in §16.
 
 ### Settings
 
@@ -608,9 +608,11 @@ app working as intended.
 ### Weekly review
 
 1. Open Review.
-2. See last week's results per goal, with miss reasons grouped.
-3. Accept or dismiss suggested adjustments.
-4. Pull a backlog goal forward if a slot opened.
+2. Answer any misses still without a reason.
+3. See last week's results per goal, with miss reasons grouped.
+4. Accept or dismiss suggested adjustments; look at stalled projects.
+5. Pull a backlog goal forward if a slot opened.
+6. Mark the week reviewed.
 
 ### Creating a goal
 
@@ -688,3 +690,91 @@ person who opens it out of habit rather than in response to a prompt.
 
 The local-first + Supabase architecture permits it. Would require replacing
 last-write-wins with real conflict resolution.
+## 16. Review and Insights (designed after v1)
+
+One test for every element on both screens: **what decision does it lead to?**
+Anything that is only interesting belongs in the optional charts at the end of
+Insights, and never in Review.
+
+### Review — "what should I change about next week?"
+
+Weekly, three to five minutes. Its output is changes to the plan, not
+information; every accepted change is written as a Revision.
+
+In order:
+
+1. **Loose ends.** Last week's misses that still have no reason, answerable
+   inline. Today only asks within 7 days; Review is the catch-all. Suggestions
+   are only as good as the reasons, so this comes first.
+2. **One card per active goal.** Last week's result in plain counts ("gym 2 of
+   3", "sleep 5 of 7 nights"), the status word and whether it changed ("on track
+   → behind"), and the reasons grouped ("chose something else ×2 · phone ×2").
+   No percentages.
+3. **At most one suggestion per goal**, stating its evidence. Accept opens the
+   relevant editor; dismiss hides that suggestion for 4 weeks.
+4. **Finish lines.** Deadline approaching, extra time running, reviews due.
+5. **Stalled projects.** An active project with no step done in 3 weeks, or
+   past its target date: open it, move the date, or put it down.
+6. **Open slot.** "1 of 4 free" with the top backlog goal and **Start**. A goal
+   paused by a suggestion opens the slot right there.
+7. **Done for this week.** Records the week as reviewed. Until then, Today shows
+   a quiet "Weekly review ready" from Monday.
+
+Maintenance goals appear only when slipping.
+
+#### Suggestion rules
+
+Patterns use the last 4 weeks (one week is too small a sample) and need at
+least 2 misses with the same reason.
+
+| Main reason | Suggestion | Logic |
+|---|---|---|
+| forgot | add a prep | Forgetting means there was no cue. |
+| chose something else, no prep | add a prep, naming the top displacement ("phone took 3 of 4") | The moment was lost; remove friction beforehand. |
+| chose something else, prep exists | change the prep (earlier, or a different one) | The prep isn't working. |
+| no time / too tired | lower the target or change the cadence | The commitment is too big for the real week. |
+| below tolerance in 3 of the last 4 weeks, any reason | pause (back to backlog) or lower the target | It is failing and holding a slot. |
+| comfortably on track for 8+ weeks | convert to maintenance | Frees a slot without losing the habit. |
+
+The app never writes the content: "Add a prep?" opens an empty prep editor with
+the evidence beside it. Suggestions are honest about past revisions: if the
+target has already been lowered twice, it says so and offers a pause instead.
+
+Prep completion is not shown as a statistic; it appears only as evidence inside
+a suggestion.
+
+### Insights — "what have I learned, and is this working?"
+
+Visited rarely; spans months. It shows only what Review's 4-week window cannot.
+A goal's charts stay hidden until it has 4 weeks of data.
+
+1. **Goal trend with markers.** Weekly percentage over time, with markers where
+   the target changed or a prep was added. Shows whether an intervention
+   worked ("gym bag prep added → 55% to 80%"). Without it, Review's suggestions
+   are guesses.
+2. **What gets in the way.** Miss reasons and displacements across all goals
+   over time. A displacement beating several goals ("phone": gym and sleep) may
+   deserve a goal of its own.
+3. **Near-miss distribution** for quantity and timestamp commitments: average
+   hours slept, typical minutes late. 7.4 h and 5 h are both misses but need
+   different fixes.
+4. **Prep effect.** Hit rate after a prep was done versus not done ("when you
+   pack the bag you go 80% of the time; when you don't, 30%"). Shows which preps
+   earn their place.
+
+Optional, more interesting than useful (candidates, build if wanted):
+
+- **Year grid** per goal: one square per day, hit / miss / nothing. Shows
+  seasons (holidays, exam months). Not a streak: gaps carry no penalty.
+- **Goals timeline:** every goal as a bar from start to end, coloured by state,
+  with revisions as ticks. A year of goals on one screen.
+- **Value balance:** share of hits per value over time. Is anything being done
+  for "People"?
+- **Weekday pattern** for daily commitments: which days the misses fall on.
+- **Tolerance vs actual** across goals: are tolerances set realistically?
+- **Project burn-up:** steps done over time against the target date.
+- **Year in review:** at year end, one card — goals finished, best month, most
+  common displacement, longest-kept habit.
+
+Deliberately excluded: an overall "life score" across goals, streaks, charts of
+tasks completed (workload, not willpower), badges.
