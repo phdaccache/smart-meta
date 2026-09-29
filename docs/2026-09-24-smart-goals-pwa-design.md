@@ -1,7 +1,7 @@
 # SMART Goals PWA — Design
 
 **Date:** 2026-09-24
-**Status:** Approved design, ready for implementation planning
+**Status:** Approved design; v1 built. Decisions made while building are folded in and marked *(v1)*.
 
 ## 1. Purpose
 
@@ -63,11 +63,19 @@ others wait in a backlog.
 
 > "Exercise regularly."
 
+*(v1)* A goal can instead be a **finish line**: a result reached once ("Work at
+a big tech, earning 10k+"). It has a *done when* sentence and a deadline, and
+its tolerance is **extra time** after the deadline rather than a percentage.
+Its commitments are optional *supporting habits*, each of which may start
+later than the goal. Status follows the habits until the deadline, is
+**behind** during the extra time, and **at risk** after it, when the goal asks
+for its review.
+
 ### Commitment
 
 The **recurring action that is the goal**, and the only thing that is scored. A
-goal has one or more. Each has a cadence, a measurement definition, and a
-check-in type.
+goal has one or more (a finish-line goal may have none). Each has a cadence, a
+measurement definition, a check-in type and *(v1)* its own start date.
 
 > "45+ minutes of exercise, 3× per week."
 
@@ -149,7 +157,9 @@ have no schedule, so the app cannot know when they apply — punctuality only
 matters when there is somewhere to be. The user logs an occurrence when it
 happens ("I had a meeting; I arrived at 08:57"), and each logged occurrence
 counts as a hit or a miss. Standard commitments therefore never generate
-unprompted Today items; they are logged reactively via quick-add.
+unprompted to-dos; they are logged reactively. *(v1)* Logging lives with the
+goal, not in quick-add: Today shows a "Log punctuality" row under the goal (not
+a to-do and not counted), and the goal page has the same button.
 
 **Occurrences come from a pluggable source.** Manual logging is the v1
 implementation, and it is the weakest part of this design: it depends on the
@@ -170,7 +180,6 @@ Chosen per commitment at creation:
 - **Binary** — did it / didn't. ("Did you exercise 45+ min?")
 - **Quantity** — a number. ("Hours slept: 7.5")
 - **Timestamp** — a time. ("Arrival time: 08:57")
-- **Derived** — computed from other entries, no input required.
 
 ### Measurement definition is mandatory
 
@@ -332,6 +341,8 @@ something lives.
 
 Management, visited weekly rather than daily. Active goals with status, the
 backlog below, and the projects list. Creation and editing happen here.
+*(v1)* The tab is called **Plan**, with a Goals / Projects switch. Today has an
+All / Goals / Projects / Tasks filter.
 
 ### Review
 
@@ -347,7 +358,7 @@ percentages.
 
 Day rollover, goal cap, export, sync status, notifications.
 
-Navigation is a four-item tab bar (Today / Goals / Review / Insights), with
+Navigation is a four-item tab bar (Today / Plan / Review / Insights), with
 **Settings as an icon in the top bar**, reachable from any screen. A quick-add
 task button is available from anywhere.
 
@@ -371,6 +382,7 @@ enforces structure only.
 - **Relevant** — the *why*: a personal value selected from those declared at
   first run, plus a sentence linking this goal to it
 - **Time-bound** — start date; target date optional for ongoing behaviors
+  *(v1: required for a finish line, as its deadline)*
 
 A goal with no measurable definition **cannot be saved**. "Be more kind" is
 correctly rejected until converted into something like "message one friend I
@@ -403,9 +415,11 @@ commitment itself is too big.
 Value       — id, name, description
 Goal        — id, title, why_value_id (→ Value), why_text,
               state (backlog|active|maintenance|abandoned|completed),
-              tolerance_pct, start_date, target_date?, priority
+              tolerance_pct, start_date, target_date?, priority,
+              kind (habit|outcome), done_when?, grace_days?      (v1)
 Commitment  — id, goal_id, shape (rhythm|standard|threshold), cadence,
-              measurement_definition, target_value, checkin_type
+              measurement_definition, target_value, checkin_type,
+              start_date                                         (v1)
 Prep        — id, commitment_id, title, fire_weekdays[], fire_time
 Project     — id, title, target_date, goal_id?, state
 Task        — id, title, date?, goal_id?, project_id?, order?
@@ -475,6 +489,10 @@ mechanism, which is why sync carries that responsibility.
 
 Magic-link email login. No password to manage; signed in for months at a time.
 This provides the "only I can access it" requirement via a real auth boundary.
+*(v1)* The app signs in with the emailed **code** rather than the link, because
+on iOS a link opens in Safari, which doesn't share storage with the Home Screen
+app. Sign-ups are off in Supabase and the app never creates accounts; the one
+user is added in the dashboard.
 
 ### Day rollover
 
@@ -548,8 +566,9 @@ full set runs as the regression suite on every change.
 - **Commitment:** "Arrived at or before the agreed time" — timestamp,
   per-event, tolerance 90%.
 - **Prep:** "Leave 15 minutes before required departure."
-- **Today shows:** nothing by default — occurrences are logged reactively after
-  an appointment, via quick-add. Only the prep appears on schedule.
+- **Today shows:** no to-do — occurrences are logged reactively after an
+  appointment, from the goal's "Log" row *(v1)*. Only the prep appears on
+  schedule.
 - **Scoring:** compliance ÷ occurrences, cumulative.
 
 ### Sleep — Threshold
@@ -599,7 +618,8 @@ app working as intended.
 2. Wizard (or compact form): title → measurement definition → check-in type and
    cadence → tolerance → why (value) → dates.
 3. Prompted: "What usually stops you?" → optionally add a prep.
-4. Saved as active if under the cap, otherwise to backlog.
+4. Saved to the backlog *(v1: always, even the first goal)*. Starting it is a
+   separate, deliberate tap, which also checks the cap.
 
 ### Miss and recover
 

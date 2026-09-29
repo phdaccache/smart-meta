@@ -99,11 +99,16 @@ export function startSync() {
 
 export async function sendLoginEmail(email: string): Promise<void> {
   if (!supabase) throw new Error('Sync is not configured for this build.')
+  // Never creates an account: the owner's user is added in the Supabase
+  // dashboard, and sign-ups stay off there (the real guard; see README).
   const { error } = await supabase.auth.signInWithOtp({
     email: email.trim(),
-    options: { emailRedirectTo: window.location.origin },
+    options: { emailRedirectTo: window.location.origin, shouldCreateUser: false },
   })
-  if (error) throw new Error(error.message)
+  if (error) {
+    if (/signups? not allowed|user not found/i.test(error.message)) throw new Error('This email has no account here.')
+    throw new Error(error.message)
+  }
 }
 
 /**
