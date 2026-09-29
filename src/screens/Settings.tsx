@@ -4,7 +4,7 @@ import { deleteValue, saveValues } from '../db/repo'
 import { setSettings } from '../db/settings'
 import { formatTime, isDateStr } from '../lib/dates'
 import { loadSampleData } from '../dev/sample'
-import { eraseAllData, sendLoginEmail, signOut, syncNow, useSyncStatus, verifyLoginCode } from '../sync/controller'
+import { eraseAllData, signIn, signOut, syncNow, useSyncStatus } from '../sync/controller'
 import { Field, Screen, Section, Segmented, Stepper, toast, TypeToConfirm } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconClose } from '../ui/icons'
@@ -68,8 +68,7 @@ function ago(iso: string | null): string {
 function SyncSection() {
   const s = useSyncStatus()
   const [email, setEmail] = useState('')
-  const [code, setCode] = useState('')
-  const [sent, setSent] = useState(false)
+  const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -97,25 +96,15 @@ function SyncSection() {
     return (
       <Section title="Sync">
         <div className="card pad">
-          {!sent ? (
-            <form onSubmit={(e) => { e.preventDefault(); run(async () => { await sendLoginEmail(email); setSent(true) }) }}>
-              <Field label="Email" htmlFor="email" info="Signing in copies your data to your private database, so losing this phone loses nothing.">
-                <input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-              </Field>
-              <button className="btn primary block" style={{ marginTop: 12 }} disabled={busy || !email.includes('@')}>Send code</button>
-            </form>
-          ) : (
-            <form onSubmit={(e) => { e.preventDefault(); run(() => verifyLoginCode(email, code)) }}>
-              <Field label="Code" htmlFor="code" info={`Sent to ${email}. Type it here — the email’s link would open in Safari, not this app.`}>
-                <input id="code" inputMode="numeric" autoComplete="one-time-code" value={code} onChange={(e) => setCode(e.target.value)} />
-              </Field>
-              <div className="row" style={{ marginTop: 12 }}>
-                <button type="button" className="btn ghost" onClick={() => setSent(false)}>Back</button>
-                <span className="spacer" />
-                <button className="btn primary" disabled={busy || code.trim().length < 6}>Sign in</button>
-              </div>
-            </form>
-          )}
+          <form onSubmit={(e) => { e.preventDefault(); run(() => signIn(email, password)) }}>
+            <Field label="Email" htmlFor="email" info="Signing in copies your data to your private database, so losing this phone loses nothing.">
+              <input id="email" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} />
+            </Field>
+            <Field label="Password" htmlFor="password">
+              <input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            </Field>
+            <button className="btn primary block" style={{ marginTop: 12 }} disabled={busy || !email.includes('@') || !password}>Sign in</button>
+          </form>
           {error && <p className="field-error" style={{ marginTop: 10 }}>{error}</p>}
         </div>
       </Section>

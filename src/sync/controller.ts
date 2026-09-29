@@ -97,28 +97,18 @@ export function startSync() {
   setInterval(() => schedule(0), 5 * 60_000)
 }
 
-export async function sendLoginEmail(email: string): Promise<void> {
+/**
+ * Email and password. Accounts are only ever made in the Supabase dashboard
+ * (sign-ups stay off there), so no email is sent and nothing opens in Safari,
+ * which on iOS doesn't share storage with the Home Screen app.
+ */
+export async function signIn(email: string, password: string): Promise<void> {
   if (!supabase) throw new Error('Sync is not configured for this build.')
-  // Never creates an account: the owner's user is added in the Supabase
-  // dashboard, and sign-ups stay off there (the real guard; see README).
-  const { error } = await supabase.auth.signInWithOtp({
-    email: email.trim(),
-    options: { emailRedirectTo: window.location.origin, shouldCreateUser: false },
-  })
+  const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
   if (error) {
-    if (/signups? not allowed|user not found/i.test(error.message)) throw new Error('This email has no account here.')
+    if (/invalid login credentials/i.test(error.message)) throw new Error('Wrong email or password.')
     throw new Error(error.message)
   }
-}
-
-/**
- * The emailed code, for iOS: a magic link opens in Safari, which does not share
- * storage with the Home Screen app. Typing the code signs in the app itself.
- */
-export async function verifyLoginCode(email: string, code: string): Promise<void> {
-  if (!supabase) throw new Error('Sync is not configured for this build.')
-  const { error } = await supabase.auth.verifyOtp({ email: email.trim(), token: code.trim(), type: 'email' })
-  if (error) throw new Error(error.message)
 }
 
 /**

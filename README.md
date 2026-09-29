@@ -64,16 +64,17 @@ Without Supabase keys the app runs local-only and Settings says so. To enable:
 1. Create a Supabase project. In the SQL editor, run
    `supabase/migrations/0001_records.sql`.
 2. **Authentication → Sign In / Providers**: turn off **Allow new users to sign
-   up**, then **Authentication → Users → Add user** with your own email. Do this
-   before the app knows the keys, so there is never a moment when a stranger
-   could make an account. The app itself never creates accounts.
-3. **Authentication → Emails**: edit the *Magic Link* template to include the
-   code, e.g. `Your code: {{ .Token }}`. On iOS a magic link opens in Safari,
-   which doesn't share storage with the Home Screen app, so the app signs in
-   with the typed code.
-4. **Authentication → URL configuration**: set the Site URL to your deployed URL.
-5. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (see `.env.example`)
-   locally in `.env.local` and in Vercel's project environment variables.
+   up**, then **Authentication → Users → Add user → Create new user** with your
+   email, a strong password (keep it in your password manager) and **Auto
+   Confirm User**. Do this before the app knows the keys, so there is never a
+   moment when a stranger could make an account. The app itself never creates
+   accounts.
+3. Put the project URL and publishable key in `.env.production` (committed; both
+   are public by design) and in `.env.local` for development.
+
+The app signs in with email and password, not a magic link: on iOS a link opens
+in Safari, which doesn't share storage with the Home Screen app, and Supabase's
+default email can't carry a code without custom SMTP. No email is ever sent.
 
 Everything in a `VITE_` variable ships to every visitor's browser. The anon key
 is meant to be public (row-level security limits each user to their own rows);

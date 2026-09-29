@@ -489,9 +489,10 @@ mechanism, which is why sync carries that responsibility.
 
 Magic-link email login. No password to manage; signed in for months at a time.
 This provides the "only I can access it" requirement via a real auth boundary.
-*(v1)* The app signs in with the emailed **code** rather than the link, because
-on iOS a link opens in Safari, which doesn't share storage with the Home Screen
-app. Sign-ups are off in Supabase and the app never creates accounts; the one
+*(v1)* The app signs in with **email and password** instead: on iOS a link
+opens in Safari, which doesn't share storage with the Home Screen app, and
+Supabase's default email can't carry a code. The password manager fills it in,
+once. Sign-ups are off in Supabase and the app never creates accounts; each
 user is added in the dashboard.
 
 ### Day rollover
