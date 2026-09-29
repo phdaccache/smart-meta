@@ -133,7 +133,7 @@ function Group(props: {
 
   if (group.done && !expanded) {
     return (
-      <div className="card group collapsed">
+      <div className={`card group collapsed tint-${group.kind}`}>
         <button className="group-head" onClick={() => setExpanded(true)} aria-expanded={false}>
           <span className="done-mark"><IconCheck width={15} height={15} /></span>
           <span className="title">{group.kind === 'errands' ? 'Errands' : group.title}</span>
@@ -162,7 +162,7 @@ function Group(props: {
   )
 
   return (
-    <div className="card group">
+    <div className={`card group tint-${group.kind}`}>
       {parent ? (
         <button className="group-head" onClick={() => navigate(parent)}>{head}</button>
       ) : (

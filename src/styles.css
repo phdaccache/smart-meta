@@ -10,6 +10,9 @@
   --accent: #2c5d8f;
   --accent-ink: #ffffff;
   --accent-soft: #e3ebf4;
+  --tint-goal: #2c5d8f;
+  --tint-project: #a8742a;
+  --tint-mix: 96%;
   --prep: #2f7a5b;
   --prep-soft: #e1efe8;
   --on-track: #2f7a4d;
@@ -41,6 +44,9 @@
     --accent: #8fb9e6;
     --accent-ink: #0d1a28;
     --accent-soft: #1e2b3a;
+    --tint-goal: #8fb9e6;
+    --tint-project: #e0b36a;
+    --tint-mix: 95%;
     --prep: #7fcaa6;
     --prep-soft: #19302a;
     --on-track: #7cc796;
@@ -518,3 +524,13 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .check-box.log-box { border-style: dashed; color: var(--ink-3); }
 .card-head { border-bottom: 1px solid var(--line); }
 .goal-card-head { border-bottom: 1px solid var(--line); }
+
+/* Kinds, told apart by a whisper of color: goals blue, projects ochre, errands neutral. */
+.tint-goal { --tint: var(--tint-goal); }
+.tint-project { --tint: var(--tint-project); }
+.tint-goal, .tint-project {
+  background: color-mix(in srgb, var(--surface) var(--tint-mix), var(--tint));
+  border-color: color-mix(in srgb, var(--line) 80%, var(--tint));
+}
+.tint-goal .card-head, .tint-goal .goal-card-head, .tint-project .card-head { border-bottom-color: color-mix(in srgb, var(--line) 80%, var(--tint)); }
+.badge-step { color: color-mix(in srgb, var(--tint-project) 85%, var(--ink)); border-color: color-mix(in srgb, var(--tint-project) 40%, transparent); }

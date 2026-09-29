@@ -55,7 +55,7 @@ export function GoalsScreen() {
 
       {backlog.length > 0 && (
         <Section title="Backlog">
-          <div className="card">
+          <div className="card tint-goal">
             <Sortable items={backlog} keyOf={(g) => g.id} labelOf={(g) => g.title} className="list"
               onReorder={(next) => reorderGoals([...active, ...maintenance, ...next])}
               render={(g, grip) => (
@@ -81,7 +81,7 @@ export function GoalsScreen() {
         {projects.length === 0 ? (
           <div className="card list-empty">{snap.projects.some((p) => p.state === 'active') ? 'All inside their goals above.' : 'No projects.'}</div>
         ) : (
-          <div className="card list">
+          <div className="card list tint-project">
             {projects.map((p) => <ProjectRow key={p.id} project={p} snap={snap} today={today} />)}
           </div>
         )}
@@ -128,7 +128,7 @@ function GoalCard({ goal, snap, ctx, grip }: { goal: Goal; snap: Snapshot; ctx: 
   const reviewOn = outcome && s.time ? s.time.graceEnd : goal.targetDate
   const open = () => navigate(`/goals/${goal.id}`)
   return (
-    <div className="card goal-card">
+    <div className="card goal-card tint-goal">
       <div className="goal-card-head">
         <button className="text" onClick={open}>
           <div className="group-eyebrow">{value?.name ?? 'Goal'}{outcome ? ' · Finish line' : ''}</div>

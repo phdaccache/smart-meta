@@ -78,7 +78,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
       )}
 
       <Section title="Details">
-        <div className="card">
+        <div className="card tint-goal">
           <div className="pad card-head"><div className="group-why">{goal.whyText}</div></div>
           <div className="pad">
             <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}>
@@ -126,7 +126,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
         {projects.length === 0 ? (
           <div className="card list-empty">None yet.</div>
         ) : (
-          <div className="card list">
+          <div className="card list tint-project">
             {projects.map((p) => {
               const { done, total } = projectProgress(p, snap)
               return (

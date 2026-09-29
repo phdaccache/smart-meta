@@ -108,7 +108,7 @@ export function ProjectScreen({ id }: { id: string }) {
       )}
 
       <Section title="Details" aside={<button className="link-btn" onClick={() => setEditing(!editing)}>{editing ? 'Done' : 'Edit'}</button>}>
-        <div className="card">
+        <div className="card tint-project">
           {goal && (
             <button className="card-head pad list-row" style={{ borderRadius: 0 }} onClick={() => navigate(`/goals/${goal.id}`)}>
               <div className="text">
@@ -147,7 +147,7 @@ export function ProjectScreen({ id }: { id: string }) {
       </Section>
 
       <Section title="Steps">
-        <div className="card">
+        <div className="card tint-project">
           <Sortable items={steps} keyOf={(t) => t.id} labelOf={(t) => t.title} onReorder={reorderSteps} className="items"
             render={(t, grip) => (
               <div className={`item kind-step ${doneEntry.has(t.id) ? 'done' : ''}`}>
