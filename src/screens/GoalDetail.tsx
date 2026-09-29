@@ -3,7 +3,6 @@ import {
   addCommitment, addPrep, deleteGoal, draftFromCommitment, removeCommitment, removePrep, saveGoalReview, setGoalState,
   updateCommitment, updateGoal, updatePrep,
 } from '../db/repo'
-import { hueOf } from '../lib/colors'
 import { dayMonth, diffDays, isDateStr, relativeDay, weekdaysLabel } from '../lib/dates'
 import { cadenceText, formatValue, reasonLabel } from '../lib/describe'
 import {
@@ -62,7 +61,6 @@ export function GoalDetailScreen({ id }: { id: string }) {
   const tasks = snap.tasks.filter((t) => t.goalId === goal.id && !t.projectId)
   const doneTasks = new Set(activeEntries(snap.entries).filter((e) => e.subjectType === 'task' && e.outcome === 'hit').map((e) => e.subjectId))
   const openTasks = tasks.filter((t) => !doneTasks.has(t.id))
-  const hue = hueOf(goal)
 
   return (
     <Screen back="/goals" eyebrow={[value?.name, STATE_LABEL[goal.state]].filter(Boolean).join(' · ')} title={goal.title}>
@@ -80,8 +78,8 @@ export function GoalDetailScreen({ id }: { id: string }) {
       )}
 
       <Section title="Details">
-        <div className={`card hued hue-${hue}`}>
-          <div className="hue-band pad"><div className="group-why">{goal.whyText}</div></div>
+        <div className="card">
+          <div className="pad card-head"><div className="group-why">{goal.whyText}</div></div>
           <div className="pad">
             <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}>
               <StatusWord status={summary.status} />
@@ -133,7 +131,6 @@ export function GoalDetailScreen({ id }: { id: string }) {
               const { done, total } = projectProgress(p, snap)
               return (
                 <button key={p.id} className="list-row" onClick={() => navigate(`/projects/${p.id}`)}>
-                  <span className={`hue-dot hue-${hueOf(p)}`} />
                   <div className="text">
                     <div className="title">{p.title}</div>
                     <div className="sub">{done} of {total} steps · due {relativeDay(p.targetDate, today)}</div>

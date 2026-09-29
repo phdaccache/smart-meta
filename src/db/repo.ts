@@ -1,6 +1,5 @@
 import { addDays, formatTime, parseTime } from '../lib/dates'
 import type { CommitmentDraft, GoalDraft, PrepDraft } from '../lib/draft'
-import { pickColor } from '../lib/colors'
 import { meetsTarget, type MissPrompt } from '../lib/scoring'
 import type {
   Base, Commitment, DateStr, Entry, Goal, GoalReview, GoalState, ID, MissReason, Occurrence, Prep, Project,
@@ -119,15 +118,6 @@ export async function activeGoalCount(): Promise<number> {
   return (await db.goals.where('state').equals('active').toArray()).filter((g) => !g.deletedAt).length
 }
 
-/** What's on screen together (live goals, active projects), so a new one gets a hue they don't use. */
-async function colored() {
-  const [goals, projects] = await Promise.all([db.goals.toArray(), db.projects.toArray()])
-  return [
-    ...goals.filter((g) => !g.deletedAt && (g.state === 'active' || g.state === 'maintenance')),
-    ...projects.filter((p) => !p.deletedAt && p.state === 'active'),
-  ]
-}
-
 /**
  * New goals wait in the backlog until started, so starting one is a decision.
  * `start` (first run) makes it active straight away if there's room.
@@ -140,7 +130,6 @@ export async function createGoal(d: GoalDraft, opts: { start?: boolean } = {}): 
   const goal = make<'goals'>({
     kind: d.goalKind, title: d.title.trim(), whyValueId: d.whyValueId, whyText: d.whyText.trim(),
     doneWhen: outcome ? d.doneWhen.trim() : null, graceDays: outcome ? d.graceDays : null,
-    color: pickColor(await colored()),
     state: opts.start && active < goalCap ? 'active' : 'backlog', tolerancePct: d.tolerancePct,
     startDate: d.startDate, targetDate: d.targetDate || null,
     priority: Math.max(0, ...goals.map((g) => g.priority + 1)),
@@ -399,7 +388,6 @@ export async function deleteTask(t: Task) {
 export async function createProject(fields: { title: string; targetDate: DateStr; goalId?: ID | null; steps: string[] }) {
   const project = make<'projects'>({
     title: fields.title.trim(), targetDate: fields.targetDate, goalId: fields.goalId ?? null, state: 'active',
-    color: pickColor(await colored()),
   })
   const steps = fields.steps
     .map((s) => s.trim())
@@ -427,7 +415,7 @@ export async function reorderSteps(steps: Task[]) {
 export async function promoteTask(t: Task, fallbackTargetDate: DateStr) {
   const project = make<'projects'>({
     title: t.title, targetDate: t.date && t.date > fallbackTargetDate ? t.date : addDays(fallbackTargetDate, 14),
-    goalId: t.goalId ?? null, state: 'active', color: pickColor(await colored()),
+    goalId: t.goalId ?? null, state: 'active',
   })
   await putAll([{ c: 'projects', r: project }, { c: 'tasks', r: { ...t, deletedAt: now() } }])
   return project

@@ -10,7 +10,6 @@
   --accent: #2c5d8f;
   --accent-ink: #ffffff;
   --accent-soft: #e3ebf4;
-  --band-mix: 91%;
   --prep: #2f7a5b;
   --prep-soft: #e1efe8;
   --on-track: #2f7a4d;
@@ -42,7 +41,6 @@
     --accent: #8fb9e6;
     --accent-ink: #0d1a28;
     --accent-soft: #1e2b3a;
-    --band-mix: 88%;
     --prep: #7fcaa6;
     --prep-soft: #19302a;
     --on-track: #7cc796;
@@ -470,18 +468,6 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .tool-text { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tool-clear { width: 30px; height: 100%; display: grid; place-items: center; color: inherit; margin-left: -6px; }
 
-/* Each goal and project has its own muted hue, shown only as a faint band
-   behind its title and as a small dot next to its steps. */
-.hue-0 { --hue: #3b6ea5; } .hue-1 { --hue: #3f8a5c; } .hue-2 { --hue: #b07d2b; } .hue-3 { --hue: #b5546b; }
-.hue-4 { --hue: #7a5bb0; } .hue-5 { --hue: #2f8a8a; } .hue-6 { --hue: #c0672e; } .hue-7 { --hue: #5f6b7a; }
-.hue-8 { --hue: #7d8a2f; } .hue-9 { --hue: #4b5bb8; } .hue-10 { --hue: #8a5a3c; } .hue-11 { --hue: #a0458f; }
-@media (prefers-color-scheme: dark) {
-  .hue-0 { --hue: #8fb9e6; } .hue-1 { --hue: #85c9a0; } .hue-2 { --hue: #e0b36a; } .hue-3 { --hue: #eb95a8; }
-  .hue-4 { --hue: #b9a3ea; } .hue-5 { --hue: #7fcfcf; } .hue-6 { --hue: #f0a574; } .hue-7 { --hue: #a9b4c2; }
-  .hue-8 { --hue: #c3d27a; } .hue-9 { --hue: #a3adf0; } .hue-10 { --hue: #d9a584; } .hue-11 { --hue: #e39ad5; }
-}
-.hued .hue-band, .hue-band.hued { background: color-mix(in srgb, var(--surface) var(--band-mix), var(--hue)); }
-.hue-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--hue); flex: none; }
 
 .dev-pill {
   position: fixed; z-index: 40; left: 16px; bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 30px);
@@ -529,5 +515,6 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .grip:active { cursor: grabbing; color: var(--ink); }
 .kind-grid.three { grid-template-columns: repeat(3, 1fr); }
 .sortable > li:first-child > .item { border-top: 0; }
-.card.hued { overflow: hidden; }
 .check-box.log-box { border-style: dashed; color: var(--ink-3); }
+.card-head { border-bottom: 1px solid var(--line); }
+.goal-card-head { border-bottom: 1px solid var(--line); }

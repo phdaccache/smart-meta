@@ -133,8 +133,8 @@ function Group(props: {
 
   if (group.done && !expanded) {
     return (
-      <div className={`card group collapsed ${group.hue != null ? `hued hue-${group.hue}` : ''}`}>
-        <button className="group-head hue-band" onClick={() => setExpanded(true)} aria-expanded={false}>
+      <div className="card group collapsed">
+        <button className="group-head" onClick={() => setExpanded(true)} aria-expanded={false}>
           <span className="done-mark"><IconCheck width={15} height={15} /></span>
           <span className="title">{group.kind === 'errands' ? 'Errands' : group.title}</span>
           <span className="count">{group.items.filter((i) => i.kind !== 'log').length} done</span>
@@ -162,9 +162,9 @@ function Group(props: {
   )
 
   return (
-    <div className={`card group ${group.hue != null ? `hued hue-${group.hue}` : ''}`}>
+    <div className="card group">
       {parent ? (
-        <button className="group-head hue-band" onClick={() => navigate(parent)}>{head}</button>
+        <button className="group-head" onClick={() => navigate(parent)}>{head}</button>
       ) : (
         <div className="group-head">{head}</div>
       )}
@@ -222,7 +222,6 @@ function ItemRow({ item, date, onOpen }: { item: TodayItem; date: DateStr; onOpe
   else if (item.kind === 'step') {
     badge = (
       <Badge kind="step">
-        {item.hue != null && <span className={`hue-dot hue-${item.hue}`} />}
         {item.step!.index}/{item.step!.total}
       </Badge>
     )

@@ -46,7 +46,7 @@ Drag the ⠿ grip to reorder steps.
 
 ## Every day (under a minute)
 
-On **Today**, tick what you did. Each goal's items sit under its *why*, in its own color. Use the **All / Goals / Projects / Tasks** switch to focus on one kind. A finished goal collapses to one line.
+On **Today**, tick what you did. Each goal's items sit under its *why*. Use the **All / Goals / Projects / Tasks** switch to focus on one kind. A finished goal collapses to one line.
 
 Rule-type habits (like "be on time") have nothing to tick. Their goal shows a **Log** row; tap it after an appointment.
 

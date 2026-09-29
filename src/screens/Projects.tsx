@@ -7,7 +7,6 @@ import { CheckButton, Field, Screen, Section, toast, TypeToConfirm } from '../ui
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight } from '../ui/icons'
 import { Sortable } from '../ui/Sortable'
-import { hueOf } from '../lib/colors'
 import { navigate } from '../ui/router'
 import { GoalSelect } from './TaskSheet'
 
@@ -109,9 +108,9 @@ export function ProjectScreen({ id }: { id: string }) {
       )}
 
       <Section title="Details" aside={<button className="link-btn" onClick={() => setEditing(!editing)}>{editing ? 'Done' : 'Edit'}</button>}>
-        <div className={`card hued hue-${hueOf(project)}`}>
+        <div className="card">
           {goal && (
-            <button className="hue-band pad list-row" style={{ borderRadius: 0 }} onClick={() => navigate(`/goals/${goal.id}`)}>
+            <button className="card-head pad list-row" style={{ borderRadius: 0 }} onClick={() => navigate(`/goals/${goal.id}`)}>
               <div className="text">
                 <div className="group-eyebrow">{goal.title}</div>
                 <div className="group-why">{goal.whyText}</div>
@@ -119,7 +118,6 @@ export function ProjectScreen({ id }: { id: string }) {
               <IconChevronRight className="chev" width={18} />
             </button>
           )}
-          {!goal && <div className="hue-band" style={{ height: 8 }} />}
           <div className="pad">
             {editing ? (
               <>

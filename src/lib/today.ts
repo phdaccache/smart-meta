@@ -1,4 +1,3 @@
-import { hueOf } from './colors'
 import { diffDays, inSpan, isoWeekday, periodOf, relativeDay } from './dates'
 import { activeEntries, evaluateThreshold, meetsTarget, missPrompt, thresholdAggregate, type MissPrompt, type PeriodEval, type ScoreContext } from './scoring'
 import type {
@@ -41,8 +40,6 @@ export interface TodayItem {
   value?: number | null
   valueState?: PeriodEval
   step?: { index: number; total: number }
-  /** Steps: the project's color. */
-  hue?: number
   /** Open tasks with a date: red when due today or late, yellow tomorrow, green later. */
   due?: { label: string; tone: 'red' | 'yellow' | 'green' }
   target: ItemTarget
@@ -68,8 +65,6 @@ export interface TodayGroup {
   why?: string
   goalId?: ID
   projectId?: ID
-  /** The goal's or project's color; errands have none. */
-  hue?: number
   items: TodayItem[]
   prompts: MissPrompt[]
   done: boolean
@@ -139,7 +134,7 @@ export function buildDay(
       const done = latest(entriesOf('task', t.id).filter((e) => e.outcome === 'hit'))
       const base = {
         kind: 'step' as const, title: t.title, subjectType: 'task' as const, subjectId: t.id,
-        step: { index: i + 1, total: steps.length }, hue: hueOf(p), target: { kind: 'project' as const, id: p.id },
+        step: { index: i + 1, total: steps.length }, target: { kind: 'project' as const, id: p.id },
       }
       if (done && done.date === date) {
         out.push({ ...base, key: `task:${t.id}`, done: true, entryId: done.id })
@@ -260,7 +255,7 @@ export function buildDay(
 
     if (items.length || prompts.length) {
       groups.push({
-        key: `goal:${g.id}`, kind: 'goal', goalId: g.id, hue: hueOf(g),
+        key: `goal:${g.id}`, kind: 'goal', goalId: g.id,
         eyebrow: value ? `${value.name} · ${g.title}` : g.title, title: g.title, why: g.whyText,
         items, prompts, done: prompts.length === 0 && items.filter(isTodo).length > 0 && items.filter(isTodo).every((i) => i.done),
       })
@@ -275,7 +270,7 @@ export function buildDay(
     if (!items.length) continue
     const goal = p.goalId ? s.goals.find((g) => g.id === p.goalId) : undefined
     groups.push({
-      key: `project:${p.id}`, kind: 'project', projectId: p.id, hue: hueOf(p),
+      key: `project:${p.id}`, kind: 'project', projectId: p.id,
       eyebrow: `Project · due ${relativeDay(p.targetDate, date)}`, title: p.title, why: goal?.whyText,
       items, prompts: [], done: items.every((i) => i.done),
     })

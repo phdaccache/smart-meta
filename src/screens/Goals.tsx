@@ -1,6 +1,5 @@
 import { useMemo, type ReactNode } from 'react'
 import { reorderGoals, setGoalState } from '../db/repo'
-import { hueOf } from '../lib/colors'
 import { dayMonth, relativeDay } from '../lib/dates'
 import { cadenceText } from '../lib/describe'
 import { activeEntries, summarizeGoal, type ScoreContext } from '../lib/scoring'
@@ -61,7 +60,6 @@ export function GoalsScreen() {
               onReorder={(next) => reorderGoals([...active, ...maintenance, ...next])}
               render={(g, grip) => (
                 <div className="list-row">
-                  <span className={`hue-dot hue-${hueOf(g)}`} />
                   <button className="text" style={{ textAlign: 'left' }} onClick={() => navigate(`/goals/${g.id}`)}>
                     <div className="title">{g.title}</div>
                     <div className="sub">{g.kind === 'outcome' ? 'Finish line' : habitSummary(g, snap)}</div>
@@ -130,8 +128,8 @@ function GoalCard({ goal, snap, ctx, grip }: { goal: Goal; snap: Snapshot; ctx: 
   const reviewOn = outcome && s.time ? s.time.graceEnd : goal.targetDate
   const open = () => navigate(`/goals/${goal.id}`)
   return (
-    <div className={`card goal-card hued hue-${hueOf(goal)}`}>
-      <div className="hue-band goal-card-head">
+    <div className="card goal-card">
+      <div className="goal-card-head">
         <button className="text" onClick={open}>
           <div className="group-eyebrow">{value?.name ?? 'Goal'}{outcome ? ' · Finish line' : ''}</div>
           <div className="goal-card-title">{goal.title}</div>
@@ -154,7 +152,6 @@ function GoalCard({ goal, snap, ctx, grip }: { goal: Goal; snap: Snapshot; ctx: 
             const { done, total } = projectProgress(p, snap)
             return (
               <button key={p.id} className="mini-project" onClick={() => navigate(`/projects/${p.id}`)}>
-                <span className={`hue-dot hue-${hueOf(p)}`} />
                 <span className="name">{p.title}</span>
                 <span className="small muted">{done}/{total}</span>
               </button>
@@ -179,7 +176,6 @@ function ProjectRow({ project, snap, today }: { project: Project; snap: Snapshot
   const overdue = project.state === 'active' && project.targetDate < today
   return (
     <button className="list-row" onClick={() => navigate(`/projects/${project.id}`)}>
-      <span className={`hue-dot hue-${hueOf(project)}`} />
       <div className="text">
         <div className="title">{project.title}</div>
         <div className="sub">
