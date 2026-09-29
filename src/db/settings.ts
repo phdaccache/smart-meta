@@ -9,6 +9,8 @@ export interface Settings {
   /** First run finished (values written). */
   onboarded: boolean
   lastExportAt: string | null
+  /** Testing only: the app behaves as if this is today. */
+  devToday: string | null
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -17,6 +19,7 @@ export const DEFAULT_SETTINGS: Settings = {
   creationMode: 'wizard',
   onboarded: false,
   lastExportAt: null,
+  devToday: null,
 }
 
 export async function getSettings(): Promise<Settings> {

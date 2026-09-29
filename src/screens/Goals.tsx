@@ -86,7 +86,7 @@ export function GoalsScreen() {
         {projects.length === 0 ? (
           <div className="card list-empty">No projects.</div>
         ) : (
-          <div className="card list">
+          <div className="card list tint-project">
             {projects.map((p) => <ProjectRow key={p.id} project={p} snap={snap} today={today} />)}
           </div>
         )}
@@ -123,7 +123,7 @@ function GoalCard({ goal, snap, ctx }: { goal: Goal; snap: Snapshot; ctx: ScoreC
   const commitments = snap.commitments.filter((c) => c.goalId === goal.id)
   const reviewDue = goal.targetDate && goal.targetDate <= ctx.today
   return (
-    <button className="card goal-card" style={{ textAlign: 'left', width: '100%' }} onClick={() => navigate(`/goals/${goal.id}`)}>
+    <button className="card goal-card tint-goal" style={{ textAlign: 'left', width: '100%' }} onClick={() => navigate(`/goals/${goal.id}`)}>
       <div className="top">
         <div style={{ minWidth: 0 }}>
           <div className="group-eyebrow">{value?.name ?? 'Goal'}</div>

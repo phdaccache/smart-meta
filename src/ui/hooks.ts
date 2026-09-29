@@ -7,6 +7,8 @@ import type { Snapshot } from '../lib/today'
 import type { DateStr, Displacement, GoalReview, ID, Revision } from '../lib/types'
 
 const live = <T extends { deletedAt?: string | null }>(rows: T[]) => rows.filter((r) => !r.deletedAt)
+/** IndexedDB returns rows by id (random); show them in the order they were made. */
+const byCreation = <T extends { createdAt: string }>(rows: T[]) => rows.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
 
 export async function loadSnapshot(): Promise<Snapshot> {
   const [values, goals, commitments, preps, projects, tasks, entries, occurrences] = await Promise.all([
@@ -14,8 +16,9 @@ export async function loadSnapshot(): Promise<Snapshot> {
     db.projects.toArray(), db.tasks.toArray(), db.entries.toArray(), db.occurrences.toArray(),
   ])
   return {
-    values: live(values).sort((a, b) => a.createdAt.localeCompare(b.createdAt)), goals: live(goals), commitments: live(commitments), preps: live(preps),
-    projects: live(projects), tasks: live(tasks), entries, occurrences: live(occurrences),
+    values: byCreation(live(values)), goals: live(goals), commitments: byCreation(live(commitments)),
+    preps: byCreation(live(preps)), projects: byCreation(live(projects)), tasks: live(tasks), entries,
+    occurrences: live(occurrences),
   }
 }
 
@@ -47,8 +50,12 @@ export function useGoalReviews(goalId: ID): GoalReview[] {
   return useLiveQuery(async () => live(await db.goalReviews.where('goalId').equals(goalId).toArray()), [goalId]) ?? []
 }
 
-/** The logical day, refreshed every minute and whenever the app comes back to the foreground. */
+/**
+ * The logical day, refreshed every minute and whenever the app comes back to
+ * the foreground. A developer override ("pretend today is") wins when set.
+ */
 export function useToday(rolloverHour: number): DateStr {
+  const override = useSettings().devToday
   const [today, setToday] = useState(() => logicalDate(new Date(), rolloverHour))
   useEffect(() => {
     const tick = () => setToday(logicalDate(new Date(), rolloverHour))
@@ -61,5 +68,5 @@ export function useToday(rolloverHour: number): DateStr {
       document.removeEventListener('visibilitychange', onVisible)
     }
   }, [rolloverHour])
-  return today
+  return override ?? today
 }

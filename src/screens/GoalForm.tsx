@@ -67,7 +67,7 @@ export function CadenceFields({ d, set, e, showErrors }: {
   return (
     <>
       {d.shape === 'rhythm' && (
-        <Field label="How often" error={showErrors ? e.times : undefined}>
+        <Field label="Target" error={showErrors ? e.times : undefined}>
           <div className="inline-fields">
             <Stepper label="Times" value={d.times} min={1} max={31} onChange={(times) => set({ times })} />
             <span className="muted" style={{ flex: 'none' }}>times per</span>
@@ -226,7 +226,44 @@ interface FormProps {
   first?: boolean
 }
 
+const SMART = [
+  { k: 'S', word: 'Specific' },
+  { k: 'M', word: 'Measurable' },
+  { k: 'A', word: 'Achievable' },
+  { k: 'R', word: 'Relevant' },
+  { k: 'T', word: 'Time-bound' },
+] as const
+type Letter = (typeof SMART)[number]['k'] | '+'
+
+/** S M A R T, with the current letter lit, so the method is visible without explaining it. */
+function SmartBar({ current }: { current: Letter }) {
+  const idx = current === '+' ? SMART.length : SMART.findIndex((x) => x.k === current)
+  const word = current === '+' ? 'Extra · Prep' : SMART[idx].word
+  return (
+    <div className="smart" aria-label={`SMART: ${word}`}>
+      <div className="smart-letters" aria-hidden="true">
+        {SMART.map((x, j) => (
+          <span key={x.k} className={`smart-l ${j < idx ? 'done' : j === idx ? 'on' : ''}`}>{x.k}</span>
+        ))}
+      </div>
+      <div className="smart-word">{word}</div>
+    </div>
+  )
+}
+
+function SmartHead({ k, children }: { k: Letter; children?: ReactNode }) {
+  const word = k === '+' ? 'Prep · optional' : SMART.find((x) => x.k === k)!.word
+  return (
+    <div className="smart-head">
+      <span className="smart-l on small-l">{k}</span>
+      <h2>{word}</h2>
+      {children}
+    </div>
+  )
+}
+
 interface Step {
+  letter: Letter
   q: string
   info?: ReactNode
   fields: (keyof GoalDraft)[]
@@ -239,6 +276,7 @@ function Wizard({ d, set, patch, errors, onSave, first }: FormProps) {
 
   const steps: Step[] = [
     {
+      letter: 'S',
       q: 'What are you changing?',
       fields: ['title'],
       body: (
@@ -248,34 +286,40 @@ function Wizard({ d, set, patch, errors, onSave, first }: FormProps) {
       ),
     },
     {
+      letter: 'S',
       q: 'What kind?',
       info: <><b>Rhythm</b>: a number of times per week or month, any days. <b>Threshold</b>: stay over or under a line every day, week or month. <b>Standard</b>: a rule for when something comes up — you log it when it happens.</>,
       fields: ['shape'],
       body: <ShapeField d={d} set={patch} />,
     },
     {
+      letter: 'S',
       q: 'What exactly counts?',
       info: 'What’s the smallest version of this you’d still be proud of?',
       fields: ['measurementDefinition', 'label'],
       body: <MeasurementFields d={d} set={patch} e={errors} showErrors={tried} />,
     },
     {
+      letter: 'M',
       q: d.shape === 'rhythm' ? 'How often?' : d.shape === 'threshold' ? 'Where’s the line?' : 'How will you check in?',
       info: d.shape === 'rhythm' ? 'Pick a number you could hit in a bad week, not a good one.' : undefined,
       fields: ['times', 'checkinType', 'targetValue', 'targetTime'],
       body: <CadenceFields d={d} set={patch} e={errors} showErrors={tried} />,
     },
     {
+      letter: 'A',
       q: 'How much slack?',
       fields: ['tolerancePct'],
       body: <ToleranceField value={d.tolerancePct} onChange={(n) => set('tolerancePct', n)} error={tried ? errors.tolerancePct : undefined} />,
     },
     {
+      letter: 'R',
       q: 'Why does it matter?',
       fields: ['whyValueId', 'whyText'],
       body: <WhyFields valueId={d.whyValueId} text={d.whyText} onValue={(v) => set('whyValueId', v)} onText={(t) => set('whyText', t)} errors={errors} showErrors={tried} />,
     },
     {
+      letter: 'T',
       q: 'When?',
       fields: ['startDate', 'targetDate'],
       body: (
@@ -291,6 +335,7 @@ function Wizard({ d, set, patch, errors, onSave, first }: FormProps) {
       ),
     },
     {
+      letter: '+',
       q: 'What usually stops you?',
       info: 'A prep is a small step beforehand — like packing the gym bag the night before — that makes the real thing easier. Optional, and never scored.',
       fields: ['preps'],
@@ -315,9 +360,7 @@ function Wizard({ d, set, patch, errors, onSave, first }: FormProps) {
 
   return (
     <div>
-      <div className="wizard-progress" aria-label={`Step ${i + 1} of ${steps.length}`}>
-        {steps.map((_, j) => <i key={j} className={j <= i ? 'on' : ''} />)}
-      </div>
+      <SmartBar current={step.letter} />
       <h2 className="wizard-q title-row">
         {step.q}
         {step.info && <InfoTip label="More about this step">{step.info}</InfoTip>}
@@ -340,23 +383,30 @@ function Compact({ d, set, patch, errors, onSave }: FormProps) {
   const cErr = validateCommitment(d)
   return (
     <div>
-      <Field label="Goal" htmlFor="title" error={tried ? errors.title : undefined}>
-        <input id="title" value={d.title} placeholder="Exercise regularly" onChange={(e) => set('title', e.target.value)} />
-      </Field>
-      <div className="section"><div className="section-head"><h2 className="title-row">Kind <InfoTip label="About kinds"><b>Rhythm</b>: a number of times per week or month, any days. <b>Threshold</b>: stay over or under a line every day, week or month. <b>Standard</b>: a rule for when something comes up — you log it when it happens.</InfoTip></h2></div>
-        <ShapeField d={d} set={patch} />
-      </div>
-      <div className="section">
-        <MeasurementFields d={d} set={patch} e={cErr} showErrors={tried} />
-        <div style={{ marginTop: 18 }}><CadenceFields d={d} set={patch} e={cErr} showErrors={tried} /></div>
-      </div>
-      <div className="section">
+      <section className="smart-section">
+        <SmartHead k="S" />
+        <Field label="Goal" htmlFor="title" error={tried ? errors.title : undefined}>
+          <input id="title" value={d.title} placeholder="Exercise regularly" onChange={(e) => set('title', e.target.value)} />
+        </Field>
+        <Field label="Kind" info={<><b>Rhythm</b>: a number of times per week or month, any days. <b>Threshold</b>: stay over or under a line every day, week or month. <b>Standard</b>: a rule for when something comes up — you log it when it happens.</>}>
+          <ShapeField d={d} set={patch} />
+        </Field>
+        <div style={{ marginTop: 18 }}><MeasurementFields d={d} set={patch} e={cErr} showErrors={tried} /></div>
+      </section>
+      <section className="smart-section">
+        <SmartHead k="M" />
+        <CadenceFields d={d} set={patch} e={cErr} showErrors={tried} />
+      </section>
+      <section className="smart-section">
+        <SmartHead k="A" />
         <ToleranceField value={d.tolerancePct} onChange={(n) => set('tolerancePct', n)} error={tried ? errors.tolerancePct : undefined} />
-      </div>
-      <div className="section">
+      </section>
+      <section className="smart-section">
+        <SmartHead k="R" />
         <WhyFields valueId={d.whyValueId} text={d.whyText} onValue={(v) => set('whyValueId', v)} onText={(t) => set('whyText', t)} errors={errors} showErrors={tried} />
-      </div>
-      <div className="section">
+      </section>
+      <section className="smart-section">
+        <SmartHead k="T" />
         <div className="inline-fields">
           <Field label="Start" htmlFor="start" error={tried ? errors.startDate : undefined}>
             <input id="start" type="date" value={d.startDate} onChange={(e) => set('startDate', e.target.value)} />
@@ -365,10 +415,13 @@ function Compact({ d, set, patch, errors, onSave }: FormProps) {
             <input id="target" type="date" value={d.targetDate} min={d.startDate} onChange={(e) => set('targetDate', e.target.value)} />
           </Field>
         </div>
-      </div>
-      <div className="section"><div className="section-head"><h2 className="title-row">Preps <InfoTip label="About preps">A small step beforehand — like packing the gym bag the night before — that makes the real thing easier. Optional, never scored.</InfoTip></h2></div>
+      </section>
+      <section className="smart-section">
+        <SmartHead k="+">
+          <InfoTip label="About preps">A small step beforehand — like packing the gym bag the night before — that makes the real thing easier. Never scored.</InfoTip>
+        </SmartHead>
         <PrepEditor preps={d.preps} onChange={(p) => set('preps', p)} showErrors={tried} />
-      </div>
+      </section>
       {tried && !isValid(errors) && <p className="field-error" style={{ marginTop: 16 }}>Check the fields above.</p>}
       <div className="wizard-nav">
         <button className="btn primary" onClick={submit}>Save goal</button>

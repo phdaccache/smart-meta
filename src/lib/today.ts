@@ -158,7 +158,9 @@ export function buildDay(
     const items: TodayItem[] = []
     const prompts: MissPrompt[] = []
     const target: ItemTarget = { kind: 'goal', id: g.id }
-    const commitments = s.commitments.filter((c) => c.goalId === g.id && !c.deletedAt && c.startDate <= date)
+    const commitments = s.commitments
+      .filter((c) => c.goalId === g.id && !c.deletedAt && c.startDate <= date)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
 
     for (const c of commitments) {
       const mine = entriesOf('commitment', c.id)

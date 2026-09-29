@@ -1,5 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './db/db'
+import { setSettings } from './db/settings'
+import { dayMonth } from './lib/dates'
 import { Toaster } from './ui/components'
 import { useSettingsLoaded } from './ui/hooks'
 import { IconGoals, IconInsights, IconPlus, IconReview, IconToday } from './ui/icons'
@@ -61,6 +63,11 @@ export function App() {
 
   return (
     <>
+      {settings.devToday && (
+        <button className="dev-pill" onClick={() => setSettings({ devToday: null })}>
+          Pretending it’s {dayMonth(settings.devToday)} · tap to reset
+        </button>
+      )}
       <main className={`app ${tabbed ? '' : 'no-tabs'}`}>{content}</main>
       {tabbed && (
         <>

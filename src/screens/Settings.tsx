@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { exportData, importData, parseBackup, shareOrDownload } from '../db/backup'
 import { deleteValue, saveValues } from '../db/repo'
 import { setSettings } from '../db/settings'
-import { formatTime } from '../lib/dates'
+import { formatTime, isDateStr } from '../lib/dates'
+import { loadSampleData } from '../dev/sample'
 import { eraseAllData, sendLoginEmail, signOut, syncNow, useSyncStatus, verifyLoginCode } from '../sync/controller'
 import { Field, Screen, Section, Segmented, Stepper, toast, TypeToConfirm } from '../ui/components'
-import { useSettings, useSnapshot } from '../ui/hooks'
+import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconClose } from '../ui/icons'
 import { navigate } from '../ui/router'
 
@@ -49,6 +50,7 @@ export function SettingsScreen() {
       <SyncSection />
       <DataSection lastExportAt={settings.lastExportAt} />
       <EraseSection />
+      <DevSection devToday={settings.devToday} />
     </Screen>
   )
 }
@@ -212,6 +214,42 @@ function EraseSection() {
           <button className="btn ghost block" style={{ marginTop: 8 }} onClick={() => setOpen(false)}>Cancel</button>
         </div>
       )}
+    </Section>
+  )
+}
+
+// ——— developer (temporary) ———
+
+function DevSection({ devToday }: { devToday: string | null }) {
+  const settings = useSettings()
+  const today = useToday(settings.rolloverHour)
+  const [busy, setBusy] = useState(false)
+  const load = async () => {
+    if (!confirm('Replace ALL data with sample data? Your current data is erased (including the synced copy).')) return
+    setBusy(true)
+    try {
+      await loadSampleData(today)
+      window.location.replace('/')
+    } catch (e) {
+      toast((e as Error).message)
+      setBusy(false)
+    }
+  }
+  return (
+    <Section title="Developer">
+      <div className="card pad">
+        <Field label="Pretend today is" htmlFor="dev-today"
+          info="For testing. The app acts as if it’s this date: Today, miss prompts, due badges and scores all follow it. Clear it to go back to the real date.">
+          <div className="inline-fields">
+            <input id="dev-today" type="date" value={devToday ?? ''}
+              onChange={(e) => setSettings({ devToday: isDateStr(e.target.value) ? e.target.value : null })} />
+            {devToday && <button className="btn" style={{ flex: 'none' }} onClick={() => setSettings({ devToday: null })}>Real date</button>}
+          </div>
+        </Field>
+        <button className="btn outline block" style={{ marginTop: 16 }} disabled={busy} onClick={load}>
+          {busy ? 'Loading…' : 'Load sample data…'}
+        </button>
+      </div>
     </Section>
   )
 }

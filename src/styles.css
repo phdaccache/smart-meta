@@ -10,6 +10,9 @@
   --accent: #2c5d8f;
   --accent-ink: #ffffff;
   --accent-soft: #e3ebf4;
+  --tint-goal: #2c5d8f;
+  --tint-project: #a8742a;
+  --tint-mix: 96%;
   --prep: #2f7a5b;
   --prep-soft: #e1efe8;
   --on-track: #2f7a4d;
@@ -41,6 +44,9 @@
     --accent: #8fb9e6;
     --accent-ink: #0d1a28;
     --accent-soft: #1e2b3a;
+    --tint-goal: #8fb9e6;
+    --tint-project: #e0b36a;
+    --tint-mix: 95%;
     --prep: #7fcaa6;
     --prep-soft: #19302a;
     --on-track: #7cc796;
@@ -370,9 +376,6 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 
 /* ——— wizard ——— */
 
-.wizard-progress { display: flex; gap: 4px; margin-bottom: 20px; }
-.wizard-progress i { flex: 1; height: 4px; border-radius: 2px; background: var(--line); }
-.wizard-progress i.on { background: var(--accent); }
 .wizard-q { font: 700 24px/1.2 var(--font-display); letter-spacing: -0.01em; margin-bottom: 8px; }
 .wizard-lead { color: var(--ink-2); margin-bottom: 20px; line-height: 1.45; }
 .wizard-nav {
@@ -459,3 +462,38 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .tool-hit { display: inline-flex; align-items: center; gap: 6px; height: 100%; padding: 0 10px; min-width: 0; }
 .tool-text { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tool-clear { width: 30px; height: 100%; display: grid; place-items: center; color: inherit; margin-left: -6px; }
+
+/* Kinds, told apart by a whisper of color: goals blue, projects ochre, errands neutral. */
+.tint-goal { --tint: var(--tint-goal); }
+.tint-project { --tint: var(--tint-project); }
+.tint-goal, .tint-project {
+  background: color-mix(in srgb, var(--surface) var(--tint-mix), var(--tint));
+  border-color: color-mix(in srgb, var(--line) 80%, var(--tint));
+}
+.badge-step { color: color-mix(in srgb, var(--tint-project) 85%, var(--ink)); border-color: color-mix(in srgb, var(--tint-project) 40%, transparent); }
+
+.dev-pill {
+  position: fixed; z-index: 40; left: 16px; bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 30px);
+  font-size: 12px; font-weight: 650; padding: 4px 12px; border-radius: 999px;
+  background: var(--behind); color: #fff; white-space: nowrap;
+}
+
+/* ——— SMART ——— */
+
+.smart { margin-bottom: 22px; }
+.smart-letters { display: flex; gap: 6px; }
+.smart-l {
+  flex: 1; height: 34px; border-radius: 9px; display: grid; place-items: center;
+  font: 700 15px/1 var(--font-display); color: var(--ink-3); background: var(--surface-2);
+  transition: background 0.2s, color 0.2s;
+}
+.smart-l.done { color: var(--accent); background: var(--accent-soft); }
+.smart-l.on { color: var(--accent-ink); background: var(--accent); }
+.smart-word {
+  margin-top: 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent);
+}
+.smart-section { margin-top: 30px; }
+.smart-section:first-child { margin-top: 0; }
+.smart-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.smart-head h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+.smart-l.small-l { flex: none; width: 26px; height: 26px; font-size: 13px; border-radius: 7px; }

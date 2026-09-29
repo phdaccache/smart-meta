@@ -1,7 +1,9 @@
 # Smart Meta
 
-A personal SMART-goals PWA for daily use on an iPhone. Design spec:
-[docs/2026-09-24-smart-goals-pwa-design.md](docs/2026-09-24-smart-goals-pwa-design.md).
+A personal SMART-goals PWA for daily use on an iPhone.
+
+- **How to use it:** [docs/GUIDE.md](docs/GUIDE.md)
+- Design spec: [docs/2026-09-24-smart-goals-pwa-design.md](docs/2026-09-24-smart-goals-pwa-design.md)
 
 Local-first: IndexedDB on the device is the source of truth, the app works fully
 offline, and an optional Supabase sync copies everything off the phone.
