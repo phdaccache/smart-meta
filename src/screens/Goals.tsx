@@ -1,17 +1,38 @@
-import { useMemo, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { reorderGoals, setGoalState } from '../db/repo'
 import { dayMonth, relativeDay } from '../lib/dates'
 import { cadenceText } from '../lib/describe'
 import { activeEntries, summarizeGoal, type ScoreContext } from '../lib/scoring'
 import type { Snapshot } from '../lib/today'
 import type { Goal, Project } from '../lib/types'
-import { InfoTip, Screen, Section, StatusWord, toast, WeekBar } from '../ui/components'
+import { InfoTip, Screen, Section, Segmented, StatusWord, toast, WeekBar } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconPlus } from '../ui/icons'
 import { navigate } from '../ui/router'
 import { Sortable } from '../ui/Sortable'
 
+type View = 'goals' | 'projects'
+
+function useStoredView(): [View, (v: View) => void] {
+  const [v, setV] = useState<View>(() => {
+    try {
+      return localStorage.getItem('plan-view') === 'projects' ? 'projects' : 'goals'
+    } catch {
+      return 'goals'
+    }
+  })
+  return [v, (next) => {
+    setV(next)
+    try {
+      localStorage.setItem('plan-view', next)
+    } catch {
+      // private mode: just not remembered
+    }
+  }]
+}
+
 export function GoalsScreen() {
+  const [view, setView] = useStoredView()
   const settings = useSettings()
   const today = useToday(settings.rolloverHour)
   const snap = useSnapshot()
@@ -23,16 +44,40 @@ export function GoalsScreen() {
   const maintenance = snap.goals.filter((g) => g.state === 'maintenance').sort(byPriority)
   const backlog = snap.goals.filter((g) => g.state === 'backlog').sort(byPriority)
   const archived = snap.goals.filter((g) => g.state === 'completed' || g.state === 'abandoned')
-  const shownInCards = new Set([...active, ...maintenance].map((g) => g.id))
-  // Projects of active goals live inside their goal's card; the rest are listed on their own.
-  const projects = snap.projects.filter((p) => p.state === 'active' && !(p.goalId && shownInCards.has(p.goalId)))
+  const projects = snap.projects.filter((p) => p.state === 'active')
   const doneProjects = snap.projects.filter((p) => p.state !== 'active')
   const slotOpen = active.length < settings.goalCap
 
   return (
-    <Screen title="Goals" settings actions={
-      <button className="icon-btn" aria-label="New goal" onClick={() => navigate('/goals/new')}><IconPlus /></button>
+    <Screen title="Plan" settings actions={
+      <button className="icon-btn" aria-label={view === 'goals' ? 'New goal' : 'New project'}
+        onClick={() => navigate(view === 'goals' ? '/goals/new' : '/projects/new')}><IconPlus /></button>
     }>
+      <div className="today-filter">
+        <Segmented label="Show" value={view} onChange={setView}
+          options={[{ value: 'goals', label: 'Goals' }, { value: 'projects', label: 'Projects' }]} />
+      </div>
+
+      {view === 'projects' ? (
+        <>
+          <Section title="Active" aside={<span>{projects.length}</span>}>
+            {projects.length === 0 ? (
+              <div className="card list-empty">No projects. <button className="link-btn" onClick={() => navigate('/projects/new')}>Create one</button></div>
+            ) : (
+              <div className="card list tint-project">
+                {projects.map((p) => <ProjectRow key={p.id} project={p} snap={snap} today={today} />)}
+              </div>
+            )}
+          </Section>
+          {doneProjects.length > 0 && (
+            <Section title="Done">
+              <div className="card list">
+                {doneProjects.map((p) => <ProjectRow key={p.id} project={p} snap={snap} today={today} />)}
+              </div>
+            </Section>
+          )}
+        </>
+      ) : (<>
       <Section title="Active" aside={<span>{active.length} of {settings.goalCap}</span>}>
         {active.length === 0 ? (
           <div className="card list-empty">
@@ -77,21 +122,11 @@ export function GoalsScreen() {
         </Section>
       )}
 
-      <Section title="Projects" aside={<button className="link-btn" onClick={() => navigate('/projects/new')}>New project</button>}>
-        {projects.length === 0 ? (
-          <div className="card list-empty">{snap.projects.some((p) => p.state === 'active') ? 'All inside their goals above.' : 'No projects.'}</div>
-        ) : (
-          <div className="card list tint-project">
-            {projects.map((p) => <ProjectRow key={p.id} project={p} snap={snap} today={today} />)}
-          </div>
-        )}
-      </Section>
-
-      {(archived.length > 0 || doneProjects.length > 0) && (
-        <Section title="History">
+      {archived.length > 0 && (
+        <Section title="Archive">
           <details className="card">
             <summary className="list-row" style={{ cursor: 'pointer' }}>
-              <span className="text title">Archived · {archived.length + doneProjects.length}</span>
+              <span className="text title">{archived.length} finished or set aside</span>
             </summary>
             <div className="list">
               {archived.map((g) => (
@@ -103,11 +138,11 @@ export function GoalsScreen() {
                   <IconChevronRight className="chev" width={18} />
                 </button>
               ))}
-              {doneProjects.map((p) => <ProjectRow key={p.id} project={p} snap={snap} today={today} />)}
             </div>
           </details>
         </Section>
       )}
+      </>)}
     </Screen>
   )
 }

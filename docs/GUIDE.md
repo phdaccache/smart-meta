@@ -16,7 +16,7 @@
 
 ## Worked example: "Work at a big tech, earning 10k+"
 
-**1. Create it** (Goals → **+**). The wizard lights up S M A R T as you go:
+**1. Create it** (Plan → Goals → **+**). The wizard lights up S M A R T as you go:
 
 | | You enter |
 |---|---|
@@ -54,11 +54,11 @@ Rule-type habits (like "be on time") have nothing to tick. Their goal shows a **
 
 After a week closes you see "Last week: 2 of 4 LeetCode. What happened?". Tap **Chose something else**, then add what took its place, e.g. "gaming". Next time it's one tap.
 
-**Forgot to log?** Tap 📅 at the top of Today, pick the day, and tick things there.
+**Forgot to log?** Tap 📅 at the top of Today, pick the day, and tick things there. A goal's full history is behind the 🕘 icon at the top right of its page (✓ done, ✕ missed, ↺ corrected, ✎ edited).
 
 ## Every week
 
-Open **Goals**. Each card shows its status (**on track / behind / at risk**), its habits, and its projects. Drag cards to change their order on Today. If a goal slips, you can:
+Open **Plan**. Each goal card shows its status (**on track / behind / at risk**), its habits, and its projects. Drag cards to change their order on Today. If a goal slips, you can:
 - lower a habit's target,
 - add a prep,
 - or move the goal to the backlog.

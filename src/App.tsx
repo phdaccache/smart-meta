@@ -18,7 +18,7 @@ import { Screen } from './ui/components'
 
 const TABS = [
   { path: '/', label: 'Today', Icon: IconToday },
-  { path: '/goals', label: 'Goals', Icon: IconGoals },
+  { path: '/goals', label: 'Plan', Icon: IconGoals },
   { path: '/review', label: 'Review', Icon: IconReview },
   { path: '/insights', label: 'Insights', Icon: IconInsights },
 ]

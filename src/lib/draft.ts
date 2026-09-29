@@ -20,6 +20,17 @@ export function measurementProblem(text: string): string | null {
   return null
 }
 
+/**
+ * A finish line is already a yes/no event ("I get a job offer"), so it needs
+ * no quantity; it only has to be a real sentence.
+ */
+export function doneWhenProblem(text: string): string | null {
+  const t = text.trim()
+  if (!t) return 'Required.'
+  if (t.split(/\s+/).length < 3) return 'Write it as a sentence you can answer yes or no.'
+  return null
+}
+
 export interface PrepDraft {
   title: string
   fireWeekdays: number[]
@@ -113,7 +124,7 @@ export function validateGoal(d: GoalDraft): Errors<GoalDraft> {
   // A habit is measured by its commitment; an outcome by its finish line.
   const e: Errors<GoalDraft> = outcome ? {} : { ...validateCommitment(d) }
   if (outcome) {
-    const m = measurementProblem(d.doneWhen)
+    const m = doneWhenProblem(d.doneWhen)
     if (m) e.doneWhen = m
     if (!d.targetDate) e.targetDate = 'A finish line needs a deadline.'
     if (!(d.graceDays >= 0)) e.graceDays = 'Pick how much extra time is OK.'

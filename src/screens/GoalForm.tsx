@@ -270,10 +270,10 @@ export function NewGoalScreen({ first }: { first?: boolean }) {
   const mode = settings.creationMode
 
   const save = async () => {
-    // New goals wait in the backlog until you start them; the very first one starts right away.
-    const goal = await createGoal(d, { start: first })
-    toast(goal.state === 'active' ? 'Goal saved.' : 'Saved to backlog.')
-    navigate(first ? '/' : `/goals/${goal.id}`, { replace: true })
+    // Every new goal waits in the backlog; starting it is its own decision, on the goal's page.
+    const goal = await createGoal(d)
+    toast('Saved to backlog.')
+    navigate(`/goals/${goal.id}`, { replace: true })
   }
 
   return (

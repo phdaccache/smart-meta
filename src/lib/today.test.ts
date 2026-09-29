@@ -141,7 +141,8 @@ describe('Goals must be SMART to be saved', () => {
     }
     expect(validateGoal(d)).toEqual({ targetDate: 'A finish line needs a deadline.' })
     expect(validateGoal({ ...d, targetDate: '2027-09-29' })).toEqual({})
-    expect(validateGoal({ ...d, targetDate: '2027-09-29', doneWhen: 'Get the job' }).doneWhen).toBeTruthy()
+    expect(validateGoal({ ...d, targetDate: '2027-09-29', doneWhen: 'I get a job offer' })).toEqual({})
+    expect(validateGoal({ ...d, targetDate: '2027-09-29', doneWhen: 'Job' }).doneWhen).toBeTruthy()
   })
 
   it('rejects “Be more kind” and “Go to the gym”', () => {

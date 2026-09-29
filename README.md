@@ -3,6 +3,7 @@
 A personal SMART-goals PWA for daily use on an iPhone.
 
 - **How to use it:** [docs/GUIDE.md](docs/GUIDE.md)
+- **Workflows to test:** [docs/TESTING.md](docs/TESTING.md)
 - Design spec: [docs/2026-09-24-smart-goals-pwa-design.md](docs/2026-09-24-smart-goals-pwa-design.md)
 
 Local-first: IndexedDB on the device is the source of truth, the app works fully

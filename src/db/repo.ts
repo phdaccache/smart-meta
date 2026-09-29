@@ -1,4 +1,5 @@
 import { addDays, formatTime, parseTime } from '../lib/dates'
+import { cadenceText } from '../lib/describe'
 import type { CommitmentDraft, GoalDraft, PrepDraft } from '../lib/draft'
 import { meetsTarget, type MissPrompt } from '../lib/scoring'
 import type {
@@ -174,11 +175,17 @@ export async function updateCommitment(c: Commitment, d: CommitmentDraft) {
   const next = { ...c, ...commitmentFields(d) }
   const t = now()
   const fields = ['label', 'measurementDefinition', 'checkinType', 'cadence', 'targetValue', 'comparator', 'unit'] as const
+  const names: Record<(typeof fields)[number], string> = {
+    label: 'name', measurementDefinition: 'what counts', checkinType: 'check-in', cadence: 'how often',
+    targetValue: 'target', comparator: 'direction', unit: 'unit',
+  }
+  // Readable in history: "4× per week", not {"period":"week","times":4}.
+  const text = (x: Commitment, f: (typeof fields)[number]) => (f === 'cadence' ? cadenceText(x) : show(x[f]))
   const revisions = fields
-    .filter((f) => show(c[f]) !== show(next[f]))
+    .filter((f) => text(c, f) !== text(next, f))
     .map((f) =>
       make<'revisions'>({
-        goalId: c.goalId, field: `${c.label}: ${f}`, timestamp: t, oldValue: show(c[f]), newValue: show(next[f]),
+        goalId: c.goalId, field: `${c.label} ${names[f]}`, timestamp: t, oldValue: text(c, f), newValue: text(next, f),
       }),
     )
   if (!revisions.length) return

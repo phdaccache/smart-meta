@@ -4,20 +4,21 @@ import {
   updateCommitment, updateGoal, updatePrep,
 } from '../db/repo'
 import { dayMonth, diffDays, isDateStr, relativeDay, weekdaysLabel } from '../lib/dates'
-import { cadenceText, formatValue, reasonLabel } from '../lib/describe'
+import { cadenceText } from '../lib/describe'
 import {
-  emptyCommitmentDraft, isValid, MAX_PREPS, measurementProblem, validateCommitment, validatePrep,
+  doneWhenProblem, emptyCommitmentDraft, isValid, MAX_PREPS, validateCommitment, validatePrep,
   type CommitmentDraft, type PrepDraft,
 } from '../lib/draft'
 import { activeEntries, summarizeGoal, type ScoreContext } from '../lib/scoring'
 import { dueBadge, type Snapshot } from '../lib/today'
-import type { Commitment, Entry, Goal, GoalState, Prep, Revision } from '../lib/types'
-import { DatePickerButton, Field, InfoTip, Screen, Section, Sheet, StatusWord, toast, TypeToConfirm, WeekBar } from '../ui/components'
-import { useDisplacements, useGoalReviews, useRevisions, useSettings, useSnapshot, useToday } from '../ui/hooks'
-import { IconChevronRight } from '../ui/icons'
+import type { Commitment, Goal, GoalState, Prep } from '../lib/types'
+import { Field, InfoTip, Screen, Section, Sheet, StatusWord, toast, TypeToConfirm, WeekBar } from '../ui/components'
+import { useSettings, useSnapshot, useToday } from '../ui/hooks'
+import { IconChevronRight, IconHistory } from '../ui/icons'
 import { navigate } from '../ui/router'
 import { CadenceFields, GraceField, graceLabel, MeasurementFields, PrepEditor, SHAPE_INFO, ShapeField, SmartHead, ToleranceField, WhyFields } from './GoalForm'
 import { projectProgress } from './Goals'
+import { GoalHistorySheet } from './GoalHistory'
 import { OccurrenceSheet } from './OccurrenceSheet'
 
 const STATE_LABEL: Record<GoalState, string> = {
@@ -45,6 +46,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
   const { settings, today, snap, ctx, goal } = useGoalContext(id)
   const [abandoning, setAbandoning] = useState(false)
   const [editingC, setEditingC] = useState<Commitment | 'new' | null>(null)
+  const [history, setHistory] = useState(false)
   if (!snap) return null
   if (!goal) return <NotFound />
 
@@ -63,7 +65,8 @@ export function GoalDetailScreen({ id }: { id: string }) {
   const openTasks = tasks.filter((t) => !doneTasks.has(t.id))
 
   return (
-    <Screen back="/goals" eyebrow={[value?.name, STATE_LABEL[goal.state]].filter(Boolean).join(' · ')} title={goal.title}>
+    <Screen back="/goals" eyebrow={[value?.name, STATE_LABEL[goal.state]].filter(Boolean).join(' · ')} title={goal.title}
+      actions={<button className="icon-btn" aria-label="History" onClick={() => setHistory(true)}><IconHistory /></button>}>
       {goal.state === 'backlog' && (
         <div className="banner">
           <div className="text">{full ? `In the backlog. You have ${settings.goalCap} active goals.` : 'In the backlog.'}</div>
@@ -158,8 +161,6 @@ export function GoalDetailScreen({ id }: { id: string }) {
         </Section>
       )}
 
-      <GoalHistory goal={goal} snap={snap} today={today} />
-
       <Section title="Manage">
         <div className="card pad stack">
           <button className="btn outline block" onClick={() => navigate(`/goals/${goal.id}/edit`)}>Edit goal</button>
@@ -189,6 +190,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
       </Section>
 
       <AbandonSheet goal={abandoning ? goal : null} onClose={() => setAbandoning(false)} />
+      <GoalHistorySheet goal={goal} snap={snap} today={today} open={history} onClose={() => setHistory(false)} />
       <CommitmentSheet goal={goal} editing={editingC} today={today} onClose={() => setEditingC(null)} />
     </Screen>
   )
@@ -332,103 +334,6 @@ function AbandonSheet({ goal, onClose }: { goal: Goal | null; onClose: () => voi
   )
 }
 
-// ——— history ———
-
-function GoalHistory({ goal, snap, today }: { goal: Goal; snap: Snapshot; today: string }) {
-  const revisions = useRevisions(goal.id)
-  const reviews = useGoalReviews(goal.id)
-  const displacements = useDisplacements()
-  const [limit, setLimit] = useState(30)
-  const commitments = snap.commitments.filter((c) => c.goalId === goal.id)
-  const preps = snap.preps.filter((p) => commitments.some((c) => c.id === p.commitmentId))
-  const subjects = new Map<string, { label: string; c?: Commitment }>()
-  commitments.forEach((c) => subjects.set(c.id, { label: c.label, c }))
-  preps.forEach((p) => subjects.set(p.id, { label: `prep: ${p.title}` }))
-
-  const entries = snap.entries.filter((e) => subjects.has(e.subjectId) && !e.deletedAt)
-  const supersededBy = new Map<string, Entry>()
-  entries.forEach((e) => e.supersedes && supersededBy.set(e.supersedes, e))
-  const rows = entries
-    .filter((e) => e.outcome !== 'void')
-    .sort((a, b) => b.date.localeCompare(a.date) || b.recordedAt.localeCompare(a.recordedAt))
-
-  const describe = (e: Entry) => {
-    const s = subjects.get(e.subjectId)!
-    const parts = [s.label]
-    if (e.value != null && s.c) parts.push(formatValue(s.c, e.value))
-    if (e.outcome === 'hit') parts.push(e.value != null ? '✓' : 'done')
-    if (e.outcome === 'miss') {
-      parts.push('missed')
-      if (e.missReason) parts.push(`— ${reasonLabel(e.missReason)}`)
-      const d = displacements.find((x) => x.id === e.displacementId)
-      if (d) parts.push(`(${d.label})`)
-    }
-    return parts.join(' ')
-  }
-
-  return (
-    <Section title="History" aside={
-      <DatePickerButton className="link-btn" value="" max={today} label="Backfill a day"
-        onPick={(d) => isDateStr(d) && d <= today && navigate(`/day/${d}`)}>
-        Backfill a day
-      </DatePickerButton>
-    }>
-      <div className="card">
-        {rows.length === 0 ? (
-          <div className="list-empty">No check-ins yet.</div>
-        ) : (
-          <ul className="history">
-            {rows.slice(0, limit).map((e) => {
-              const replaced = supersededBy.get(e.id)
-              return (
-                <li key={e.id}>
-                  <span className="when">{dayMonth(e.date).replace(/(\w{3})\w*$/, '$1')}</span>
-                  <span className="what">
-                    <span className={replaced ? 'superseded' : ''}>{describe(e)}</span>
-                    {replaced && <span className="tag"> {replaced.outcome === 'void' ? 'undone' : 'corrected'}</span>}
-                    {e.supersedes && <span className="tag"> correction</span>}
-                    {e.note && <div className="tag">“{e.note}”</div>}
-                  </span>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-        {rows.length > limit && <button className="list-row link-btn" onClick={() => setLimit(limit + 60)}>Show more</button>}
-      </div>
-
-      {(revisions.length > 0 || reviews.length > 0) && (
-        <div className="card" style={{ marginTop: 12 }}>
-          <ul className="history">
-            {reviews.map((r) => (
-              <li key={r.id}>
-                <span className="when">{r.timestamp.slice(0, 10)}</span>
-                <span className="what">
-                  Review: {r.hit ? 'hit it' : 'didn’t hit it'} · {r.outcome}
-                  {r.whatHappened && <div className="tag">{r.whatHappened}</div>}
-                  {r.journalNote && <div className="tag">“{r.journalNote}”</div>}
-                </span>
-              </li>
-            ))}
-            {[...revisions].sort((a, b) => b.timestamp.localeCompare(a.timestamp)).map((r) => (
-              <li key={r.id}>
-                <span className="when">{r.timestamp.slice(0, 10)}</span>
-                <span className="what">{revisionText(r)}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </Section>
-  )
-}
-
-function revisionText(r: Revision) {
-  if (r.field === 'commitment' && r.oldValue === '—') return <>Added habit: {r.newValue}</>
-  if (r.field === 'commitment' && r.newValue === 'removed') return <>Removed habit: {r.oldValue}</>
-  return <>Changed {r.field}: <s className="muted">{r.oldValue}</s> → {r.newValue}</>
-}
-
 // ——— edit ———
 
 export function GoalEditScreen({ id }: { id: string }) {
@@ -443,7 +348,7 @@ export function GoalEditScreen({ id }: { id: string }) {
   const hasHabits = snap.commitments.some((c) => c.goalId === goal.id)
   const errors = {
     title: d.title.trim() ? undefined : 'Required.',
-    doneWhen: outcome ? measurementProblem(d.doneWhen ?? '') ?? undefined : undefined,
+    doneWhen: outcome ? doneWhenProblem(d.doneWhen ?? '') ?? undefined : undefined,
     whyValueId: d.whyValueId ? undefined : 'Pick a value.',
     whyText: d.whyText.trim() ? undefined : 'Required.',
     targetDate: outcome && !d.targetDate ? 'A finish line needs a deadline.'

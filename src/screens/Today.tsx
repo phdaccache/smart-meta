@@ -5,7 +5,7 @@ import { setSettings } from '../db/settings'
 import { addDays, dayMonth, diffDays, formatTime, isDateStr, parseTime, weekdayName } from '../lib/dates'
 import { formatValue, promptQuestion, REASONS } from '../lib/describe'
 import type { MissPrompt, ScoreContext } from '../lib/scoring'
-import { buildDay, type ItemKind, type Snapshot, type TodayGroup, type TodayItem } from '../lib/today'
+import { buildDay, type Snapshot, type TodayGroup, type TodayItem } from '../lib/today'
 import type { Commitment, DateStr, ID, MissReason, Task } from '../lib/types'
 import { Badge, CheckButton, Chip, DatePickerButton, Screen, Segmented, toast } from '../ui/components'
 import { useDisplacements, useSettings, useSnapshot, useSnoozes, useToday } from '../ui/hooks'
@@ -16,18 +16,22 @@ import { OccurrenceSheet } from './OccurrenceSheet'
 import { TaskSheet } from './TaskSheet'
 
 type Filter = 'all' | 'goals' | 'projects' | 'tasks'
-const FILTER_KINDS: Record<Exclude<Filter, 'all'>, ItemKind[]> = {
-  goals: ['commitment', 'prep', 'log'],
-  projects: ['step'],
-  tasks: ['task'],
+
+/**
+ * Goals: each goal with its habits, preps and the steps of its own projects.
+ * Projects: every project step, wherever it sits. Tasks: one-off tasks.
+ */
+function keep(f: Exclude<Filter, 'all'>, g: TodayGroup, i: TodayItem): boolean {
+  if (f === 'goals') return g.kind === 'goal' && i.kind !== 'task'
+  if (f === 'projects') return i.kind === 'step'
+  return i.kind === 'task'
 }
 
-/** Keeps only one kind of item; miss prompts belong to goals. */
 function applyFilter(groups: TodayGroup[], f: Filter): TodayGroup[] {
   if (f === 'all') return groups
   return groups
     .map((g) => {
-      const items = g.items.filter((i) => FILTER_KINDS[f].includes(i.kind))
+      const items = g.items.filter((i) => keep(f, g, i))
       const prompts = f === 'goals' ? g.prompts : []
       const todos = items.filter((i) => i.kind !== 'log')
       return { ...g, items, prompts, done: prompts.length === 0 && todos.length > 0 && todos.every((i) => i.done) }
