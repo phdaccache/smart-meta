@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
-import { dismissSuggestion, markWeekReviewed, setGoalState, updateProject } from '../db/repo'
-import { dayMonth, relativeDay } from '../lib/dates'
+import { dismissInReview, markWeekReviewed, setGoalState, updateProject } from '../db/repo'
+import { dayMonth, untilText } from '../lib/dates'
 import { promptQuestion, reasonLabel } from '../lib/describe'
 import {
-  buildReview, reviewableWeeks, type DateNote, type GoalCard, type ReasonCount, type StalledProject, type Suggestion, type SuggestionKind,
+  buildReview, projectKey, reviewableWeeks, type DateNote, type GoalCard, type HandledProject, type ReasonCount, type StalledProject,
+  type Suggestion, type SuggestionKind,
 } from '../lib/review'
-import type { ScoreContext } from '../lib/scoring'
+import { missKey, type MissPrompt, type ScoreContext } from '../lib/scoring'
 import type { Commitment, Goal, Prep } from '../lib/types'
 import { DatePickerButton, InfoTip, Screen, Section, Sheet, StatusWord, toast } from '../ui/components'
 import { useAllRevisions, useDisplacements, useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
@@ -35,6 +36,7 @@ export function ReviewScreen() {
   const displacements = useDisplacements()
   const [editing, setEditing] = useState<Editing | null>(null)
   const [picking, setPicking] = useState(false)
+  const [choosing, setChoosing] = useState(false)
   const { query } = useLocation()
   const asked = query.get('week') ?? undefined
   const ctx: ScoreContext = useMemo(() => ({ today, rolloverHour: settings.rolloverHour }), [today, settings.rolloverHour])
@@ -90,10 +92,20 @@ export function ReviewScreen() {
     }
   }
 
+  const missKeys = (p: MissPrompt) => p.slots.map((s) => missKey(p.commitmentId, s.date))
   const done = async () => {
-    const open = r.goals.map((g) => g.suggestion?.key).filter((k): k is string => !!k)
+    const open = [
+      ...r.goals.map((g) => g.suggestion?.key).filter((k): k is string => !!k),
+      ...r.loose.flatMap(missKeys),
+      ...r.stalled.map((s) => projectKey(s.project.id, 'dismissed')),
+    ]
     await markWeekReviewed(r.week.start, open)
-    toast(open.length ? 'Reviewed. Open suggestions hidden for 4 weeks.' : 'Reviewed.')
+    toast(open.length ? 'Reviewed. Whatever was left open is set aside.' : 'Reviewed.')
+  }
+  const start = async (g: Goal) => {
+    await setGoalState(g, 'active')
+    setChoosing(false)
+    toast(`Started “${g.title}”.`)
   }
 
   const actions = (
@@ -119,7 +131,8 @@ export function ReviewScreen() {
                 <div key={p.commitmentId} className="card tint-goal">
                   <div className="pad" style={{ paddingBottom: 10 }}><div className="group-eyebrow">{g?.title}</div></div>
                   <MissPromptCard prompt={p} label={c.label} question={promptQuestion(p, c, today)} today={today}
-                    canLog={false} snooze={false} />
+                    canLog={false} snooze={false}
+                    onSkip={() => dismissInReview(r.week.start, missKeys(p)).then(() => toast('Skipped. It won’t ask again.'))} />
                 </div>
               )
             })}
@@ -132,7 +145,7 @@ export function ReviewScreen() {
           <div className="stack">
             {r.goals.map((card) => (
               <GoalReviewCard key={card.goal.id} card={card} onAccept={accept}
-                onDismiss={(s) => dismissSuggestion(r.week.start, s.key).then(() => toast('Hidden for 4 weeks.'))} />
+                onDismiss={(s) => dismissInReview(r.week.start, s.key).then(() => toast('Hidden for 4 weeks.'))} />
             ))}
           </div>
         </Section>
@@ -146,10 +159,11 @@ export function ReviewScreen() {
         </Section>
       )}
 
-      {r.stalled.length > 0 && (
+      {(r.stalled.length > 0 || r.handled.length > 0) && (
         <Section title="Stalled projects">
           <div className="card list tint-project">
-            {r.stalled.map((s) => <StalledRow key={s.project.id} s={s} today={today} />)}
+            {r.stalled.map((s) => <StalledRow key={s.project.id} s={s} today={today} week={r.week.start} />)}
+            {r.handled.map((h) => <HandledRow key={h.project.id} h={h} />)}
           </div>
         </Section>
       )}
@@ -162,11 +176,27 @@ export function ReviewScreen() {
               <button className="link-btn" style={{ fontWeight: 600, textAlign: 'left' }} onClick={() => navigate(`/goals/${r.next!.id}`)}>
                 {r.next.title}
               </button>
-              <button className="btn primary" onClick={() => setGoalState(r.next!, 'active').then(() => toast('Started.'))}>Start</button>
+              <button className="btn primary" onClick={() => start(r.next!)}>Start</button>
             </div>
+            {r.backlog.length > 1 && (
+              <button className="link-btn" style={{ marginTop: 10 }} onClick={() => setChoosing(true)}>Choose another</button>
+            )}
           </div>
         </Section>
       )}
+
+      <Sheet open={choosing} onClose={() => setChoosing(false)} title="Start which goal?">
+        <div className="card list">
+          {r.backlog.map((g) => (
+            <div key={g.id} className="list-row">
+              <button className="text" style={{ textAlign: 'left' }} onClick={() => navigate(`/goals/${g.id}`)}>
+                <div className="title" style={{ fontSize: 15 }}>{g.title}</div>
+              </button>
+              <button className="btn" onClick={() => start(g)}>Start</button>
+            </div>
+          ))}
+        </div>
+      </Sheet>
 
       {nothing && (
         <div className="empty">
@@ -266,22 +296,30 @@ const ACTION: Record<SuggestionKind, string> = {
 }
 
 function DateRow({ note, today }: { note: DateNote; today: string }) {
-  const sub = note.kind === 'review_due' ? 'Review due'
-    : note.kind === 'grace' ? `In extra time until ${dayMonth(note.date)}`
-    : `Deadline ${relativeDay(note.date, today)}`
-  const open = () => navigate(note.kind === 'review_due' ? `/goals/${note.goal.id}/review` : `/goals/${note.goal.id}`)
+  const when = (d: string) => `${dayMonth(d)} (${untilText(d, today)})`
+  let sub: string
+  if (note.deadline) {
+    sub = note.kind === 'deadline_soon' ? `Deadline ${when(note.deadline)}`
+      : note.kind === 'grace' ? `Deadline passed ${dayMonth(note.deadline)} · extra time until ${when(note.date)}`
+      : `Deadline was ${dayMonth(note.deadline)}; extra time ended ${when(note.date)}`
+  } else {
+    sub = `Review date was ${when(note.date)}`
+  }
+  const review = note.kind === 'review_due'
   return (
-    <button className="list-row" onClick={open}>
-      <div className="text">
+    <div className="list-row">
+      <button className="text" style={{ textAlign: 'left' }} onClick={() => navigate(`/goals/${note.goal.id}`)}>
         <div className="title">{note.goal.title}</div>
-        <div className="sub" style={note.kind === 'review_due' ? { color: 'var(--accent)', fontWeight: 600 } : undefined}>{sub}</div>
-      </div>
-      <IconChevronRight className="chev" width={18} />
-    </button>
+        <div className="sub">{sub}</div>
+      </button>
+      {review
+        ? <button className="btn primary" onClick={() => navigate(`/goals/${note.goal.id}/review`)}>Review</button>
+        : <IconChevronRight className="chev" width={18} />}
+    </div>
   )
 }
 
-function StalledRow({ s, today }: { s: StalledProject; today: string }) {
+function StalledRow({ s, today, week }: { s: StalledProject; today: string; week: string }) {
   const steps = `${s.remaining} step${s.remaining === 1 ? '' : 's'} left`
   const why = s.why === 'overdue'
     ? `Past its date (${dayMonth(s.project.targetDate)})`
@@ -294,15 +332,36 @@ function StalledRow({ s, today }: { s: StalledProject; today: string }) {
       </button>
       <div className="row" style={{ gap: 8, marginTop: 10 }}>
         <DatePickerButton value={s.project.targetDate > today ? s.project.targetDate : today} min={today} label="New date"
-          onPick={(d) => updateProject(s.project, { targetDate: d }).then(() => toast(`Moved to ${dayMonth(d)}.`))}>
+          onPick={async (d) => {
+            await updateProject(s.project, { targetDate: d })
+            await dismissInReview(week, projectKey(s.project.id, 'moved'))
+          }}>
           <span className="btn">Move date</span>
         </DatePickerButton>
         <button className="btn ghost" onClick={async () => {
           if (!confirm(`Put “${s.project.title}” down? It moves to done projects; you can reopen it.`)) return
           await updateProject(s.project, { state: 'archived' })
-          toast('Put down.')
+          await dismissInReview(week, projectKey(s.project.id, 'put_down'))
         }}>Put down</button>
+        <span className="spacer" />
+        <button className="link-btn" onClick={() => dismissInReview(week, projectKey(s.project.id, 'dismissed'))}>Dismiss</button>
       </div>
     </div>
+  )
+}
+
+/** A stalled project already dealt with in this review: what happened to it. */
+function HandledRow({ h }: { h: HandledProject }) {
+  const text = h.action === 'moved' ? `New date: ${dayMonth(h.project.targetDate)}`
+    : h.action === 'put_down' ? 'Put down · reopen it from its page'
+    : 'Dismissed for 4 weeks'
+  return (
+    <button className="list-row handled" onClick={() => navigate(`/projects/${h.project.id}`)}>
+      <span className="done-mark"><IconCheck width={13} height={13} /></span>
+      <div className="text">
+        <div className="title" style={{ fontSize: 15 }}>{h.project.title}</div>
+        <div className="sub">{text}</div>
+      </div>
+    </button>
   )
 }

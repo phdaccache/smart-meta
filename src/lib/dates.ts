@@ -141,6 +141,16 @@ export function relativeDay(s: DateStr, today: DateStr): string {
   return `${Number(s.slice(8, 10))} ${monthName(s).slice(0, 3)}`
 }
 
+/** "in 5 days", "in 3 weeks", "in 11 months", "today", or "5 days ago". */
+export function untilText(date: DateStr, today: DateStr): string {
+  const d = diffDays(today, date)
+  if (d === 0) return 'today'
+  const n = Math.abs(d)
+  const unit = n < 14 ? [n, 'day'] as const : n < 60 ? [Math.round(n / 7), 'week'] as const : [Math.round(n / 30.4), 'month'] as const
+  const text = `${unit[0]} ${unit[1]}${unit[0] === 1 ? '' : 's'}`
+  return d > 0 ? `in ${text}` : `${text} ago`
+}
+
 /** "Mon, Wed" or "every day" / "weekdays". */
 export function weekdaysLabel(days: number[]): string {
   const sorted = [...days].sort()

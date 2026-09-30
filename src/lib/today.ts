@@ -1,5 +1,8 @@
 import { diffDays, inSpan, isoWeekday, periodOf, relativeDay } from './dates'
-import { activeEntries, evaluateThreshold, meetsTarget, missPrompt, thresholdAggregate, type MissPrompt, type PeriodEval, type ScoreContext } from './scoring'
+import {
+  activeEntries, evaluateThreshold, meetsTarget, missPrompt, thresholdAggregate, withoutDismissed, type MissPrompt, type PeriodEval,
+  type ScoreContext,
+} from './scoring'
 import type {
   Commitment, DateStr, Entry, Goal, ID, Occurrence, Prep, Project, SubjectType, Task, Value,
 } from './types'
@@ -86,6 +89,8 @@ export function buildDay(
   date: DateStr,
   ctx: ScoreContext,
   snoozes: Record<ID, DateStr> = {},
+  /** Missed slots a weekly review dismissed (see missKey): never asked about again. */
+  dismissed: Set<string> = new Set(),
 ): DayView {
   const isToday = date === ctx.today
   const entries = activeEntries(s.entries)
@@ -236,7 +241,7 @@ export function buildDay(
       }
 
       if (isToday && snoozes[c.id] !== ctx.today) {
-        const prompt = missPrompt(c, s.entries, ctx)
+        const prompt = withoutDismissed(missPrompt(c, s.entries, ctx), dismissed)
         if (prompt) prompts.push(prompt)
       }
     }

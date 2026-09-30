@@ -5,9 +5,9 @@ import { cadenceText } from '../lib/describe'
 import { activeEntries, summarizeGoal, type ScoreContext } from '../lib/scoring'
 import type { Snapshot } from '../lib/today'
 import type { Goal, Project } from '../lib/types'
-import { InfoTip, Screen, Section, Segmented, StatusInfo, StatusWord, toast, WeekBar } from '../ui/components'
+import { InfoTip, Screen, Section, Segmented, Sheet, StatusInfo, StatusWord, toast, WeekBar } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
-import { IconChevronRight, IconPlus } from '../ui/icons'
+import { IconChevronRight, IconMore, IconPlus } from '../ui/icons'
 import { navigate } from '../ui/router'
 import { Sortable } from '../ui/Sortable'
 
@@ -33,6 +33,7 @@ function useStoredView(): [View, (v: View) => void] {
 
 export function GoalsScreen() {
   const [view, setView] = useStoredView()
+  const [acting, setActing] = useState<Goal | null>(null)
   const settings = useSettings()
   const today = useToday(settings.rolloverHour)
   const snap = useSnapshot()
@@ -86,14 +87,14 @@ export function GoalsScreen() {
         ) : (
           <Sortable items={active} keyOf={(g) => g.id} labelOf={(g) => g.title} className="card-stack"
             onReorder={(next) => reorderGoals([...next, ...maintenance, ...backlog])}
-            render={(g, grip) => <GoalCard goal={g} snap={snap} ctx={ctx} grip={grip} />} />
+            render={(g, grip) => <GoalCard goal={g} snap={snap} ctx={ctx} grip={grip} onMore={() => setActing(g)} />} />
         )}
       </Section>
 
       {maintenance.length > 0 && (
         <Section title={<span className="title-row">Maintenance <InfoTip label="About maintenance">Goals you keep doing without a finish line. Still scored; they don’t count toward the active limit.</InfoTip></span>}>
           <div className="card-stack">
-            {maintenance.map((g) => <GoalCard key={g.id} goal={g} snap={snap} ctx={ctx} />)}
+            {maintenance.map((g) => <GoalCard key={g.id} goal={g} snap={snap} ctx={ctx} onMore={() => setActing(g)} />)}
           </div>
         </Section>
       )}
@@ -143,7 +144,46 @@ export function GoalsScreen() {
         </Section>
       )}
       </>)}
+      <GoalStateSheet goal={acting} slotOpen={slotOpen} onClose={() => setActing(null)} />
     </Screen>
+  )
+}
+
+/** Move a goal between active, maintenance and the backlog, any time. */
+export function GoalStateSheet({ goal, slotOpen, onClose }: { goal: Goal | null; slotOpen: boolean; onClose: () => void }) {
+  if (!goal) return null
+  const move = async (state: Goal['state'], msg: string) => {
+    await setGoalState(goal, state)
+    toast(msg)
+    onClose()
+  }
+  return (
+    <Sheet open onClose={onClose} title={goal.title}>
+      <div className="card list">
+        {goal.state === 'active' && goal.kind !== 'outcome' && (
+          <button className="list-row" onClick={() => move('maintenance', 'Now in maintenance.')}>
+            <div className="text">
+              <div className="title">Move to maintenance</div>
+              <div className="sub">Stays on Today and scored; frees its slot{goal.targetDate ? ' and clears the review date' : ''}.</div>
+            </div>
+          </button>
+        )}
+        {goal.state === 'maintenance' && (
+          <button className="list-row" disabled={!slotOpen} onClick={() => move('active', 'Active again.')}>
+            <div className="text">
+              <div className="title">Make active</div>
+              <div className="sub">{slotOpen ? 'Takes one of your active slots.' : 'No free slot: pause an active goal first.'}</div>
+            </div>
+          </button>
+        )}
+        <button className="list-row" onClick={() => move('backlog', 'Paused. It’s in the backlog.')}>
+          <div className="text">
+            <div className="title">Pause</div>
+            <div className="sub">Back to the backlog: off Today, history kept. Start it again any time.</div>
+          </div>
+        </button>
+      </div>
+    </Sheet>
   )
 }
 
@@ -154,7 +194,7 @@ function habitSummary(goal: Goal, snap: Snapshot, today?: string): string {
     .join('  ·  ')
 }
 
-function GoalCard({ goal, snap, ctx, grip }: { goal: Goal; snap: Snapshot; ctx: ScoreContext; grip?: ReactNode }) {
+function GoalCard({ goal, snap, ctx, grip, onMore }: { goal: Goal; snap: Snapshot; ctx: ScoreContext; grip?: ReactNode; onMore?: () => void }) {
   const s = summarizeGoal(goal, snap.commitments, snap.entries, snap.occurrences, ctx)
   const value = snap.values.find((v) => v.id === goal.whyValueId)
   const hasHabits = snap.commitments.some((c) => c.goalId === goal.id)
@@ -169,6 +209,7 @@ function GoalCard({ goal, snap, ctx, grip }: { goal: Goal; snap: Snapshot; ctx: 
           <div className="group-eyebrow">{value?.name ?? 'Goal'}{outcome ? ' · Finish line' : ''}</div>
           <div className="goal-card-title">{goal.title}</div>
         </button>
+        {onMore && <button className="icon-btn" aria-label={`Change ${goal.title}`} onClick={onMore}><IconMore /></button>}
         {grip}
       </div>
       <button className="goal-card-body" onClick={open}>

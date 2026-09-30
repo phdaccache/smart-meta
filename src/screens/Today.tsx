@@ -9,7 +9,7 @@ import { buildDay, type Snapshot, type TodayGroup, type TodayItem } from '../lib
 import type { Commitment, DateStr, ID, MissReason, Task } from '../lib/types'
 import { Badge, CheckButton, Chip, DatePickerButton, Screen, Segmented, toast } from '../ui/components'
 import { useDisplacements, useSettings, useSnapshot, useSnoozes, useToday, useWeekReviews } from '../ui/hooks'
-import { reviewPending } from '../lib/review'
+import { dismissedMisses, reviewPending } from '../lib/review'
 import { IconCalendar, IconCheck, IconChevronRight, IconPlus } from '../ui/icons'
 import { navigate } from '../ui/router'
 import { openQuickAdd } from './QuickAdd'
@@ -70,7 +70,9 @@ export function TodayScreen({ date }: { date?: DateStr }) {
   const [filter, setFilter] = useStoredFilter()
   const viewDate = date && isDateStr(date) && date <= today ? date : today
   const ctx: ScoreContext = useMemo(() => ({ today, rolloverHour: settings.rolloverHour }), [today, settings.rolloverHour])
-  const view = useMemo(() => (snap ? buildDay(snap, viewDate, ctx, snoozes) : null), [snap, viewDate, ctx, snoozes])
+  const weekReviews = useWeekReviews()
+  const dismissed = useMemo(() => dismissedMisses(weekReviews ?? []), [weekReviews])
+  const view = useMemo(() => (snap ? buildDay(snap, viewDate, ctx, snoozes, dismissed) : null), [snap, viewDate, ctx, snoozes, dismissed])
   const isPast = viewDate !== today
 
   if (!snap || !view) return null
@@ -306,6 +308,8 @@ export function MissPromptCard(props: {
   prompt: MissPrompt; label: string; question: string; today: DateStr; canLog: boolean
   /** Today only: "Not now" hides the prompt until tomorrow. */
   snooze?: boolean
+  /** Review only: leave these misses unexplained for good. */
+  onSkip?: () => void
 }) {
   const displacements = useDisplacements()
   const [reason, setReason] = useState<MissReason | null>(null)
@@ -370,6 +374,7 @@ export function MissPromptCard(props: {
           {props.snooze !== false && (
             <button className="link-btn" onClick={() => snoozePrompt(props.prompt.commitmentId, props.today)}>Not now</button>
           )}
+          {props.onSkip && <button className="link-btn" onClick={props.onSkip}>Skip</button>}
           {props.canLog && (
             <button className="link-btn" onClick={() => navigate(`/day/${props.prompt.slots[0].date}`)}>Log it instead</button>
           )}

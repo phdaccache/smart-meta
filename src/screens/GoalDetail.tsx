@@ -3,7 +3,7 @@ import {
   addCommitment, addPrep, deleteGoal, draftFromCommitment, removeCommitment, removePrep, saveGoalReview, setGoalState,
   updateCommitment, updateGoal, updatePrep,
 } from '../db/repo'
-import { dayMonth, diffDays, isDateStr, relativeDay, weekdaysLabel } from '../lib/dates'
+import { dayMonth, isDateStr, relativeDay, untilText, weekdaysLabel } from '../lib/dates'
 import { cadenceText } from '../lib/describe'
 import {
   doneWhenProblem, emptyCommitmentDraft, isValid, MAX_PREPS, validateCommitment, validatePrep,
@@ -164,9 +164,19 @@ export function GoalDetailScreen({ id }: { id: string }) {
       <Section title="Manage">
         <div className="card pad stack">
           <button className="btn outline block" onClick={() => navigate(`/goals/${goal.id}/edit`)}>Edit goal</button>
-          {goal.state === 'active' && (
-            <button className="btn outline block" onClick={() => setGoalState(goal, 'backlog').then(() => toast('Moved to the backlog.'))}>
-              Move to backlog
+          {goal.state === 'active' && !outcome && (
+            <button className="btn outline block" onClick={() => setGoalState(goal, 'maintenance').then(() => toast('Now in maintenance.'))}>
+              Move to maintenance
+            </button>
+          )}
+          {goal.state === 'maintenance' && (
+            <button className="btn outline block" disabled={full} onClick={() => setGoalState(goal, 'active').then(() => toast('Active again.'))}>
+              {full ? `Make active (no free slot)` : 'Make active'}
+            </button>
+          )}
+          {live && (
+            <button className="btn outline block" onClick={() => setGoalState(goal, 'backlog').then(() => toast('Paused. It’s in the backlog.'))}>
+              Pause (back to backlog)
             </button>
           )}
           {goal.state === 'maintenance' && (
@@ -194,15 +204,6 @@ export function GoalDetailScreen({ id }: { id: string }) {
       <CommitmentSheet goal={goal} editing={editingC} today={today} onClose={() => setEditingC(null)} />
     </Screen>
   )
-}
-
-/** "in 5 days", "in 3 weeks", "in 11 months", or "5 days ago". */
-function untilText(date: string, today: string): string {
-  const d = diffDays(today, date)
-  const n = Math.abs(d)
-  const unit = n < 14 ? [n, 'day'] as const : n < 60 ? [Math.round(n / 7), 'week'] as const : [Math.round(n / 30.4), 'month'] as const
-  const text = `${unit[0]} ${unit[1]}${unit[0] === 1 ? '' : 's'}`
-  return d >= 0 ? `in ${text}` : `${text} ago`
 }
 
 function CommitmentCard({ c, snap, today, canRemove, onEdit }: { c: Commitment; snap: Snapshot; today: string; canRemove: boolean; onEdit: () => void }) {

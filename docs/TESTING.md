@@ -104,12 +104,19 @@ Tap **Dismiss** on a suggestion.
 - **Expect:** gone. Pretend it's 4 weeks later and it can come back if the pattern is still there.
 
 **R4. Stalled project**
-Pretend it's 3+ weeks from now.
-- **Expect:** projects with no step done appear under **Stalled projects**. **Move date** changes the date; **Put down** moves the project to done (*set aside*), and you can reopen it.
+With sample data, look at **Stalled projects** (license: idle for weeks; finances: past its date).
+- **Expect:** **Move date**, **Put down** or **Dismiss** each turn the row into a ✓ line saying what happened (new date / put down / dismissed for 4 weeks). Put-down projects are under Plan → Projects → Done as *set aside*; reopen from their page.
 
 **R5. Done**
-Tap **Done for this week**.
-- **Expect:** open suggestions disappear (hidden for 4 weeks), and so do the dot and the Today line, until next Monday.
+**Skip** one loose end, then tap **Done for this week**.
+- **Expect:** suggestions, loose ends and stalled projects left open all disappear; Today stops asking about those misses. The dot and the Today line are gone until next Monday.
+
+**R5b. Dates and slot**
+- **Expect:** *30 days without sugar* reads "Review date was … (3 days ago)" with a **Review** button. Open slot shows the top backlog goal; **Choose another** lists the rest, each with **Start**.
+
+**R5c. Manual maintenance or pause**
+In Plan, tap **⋯** on an active goal → **Move to maintenance**; on that goal → **Make active**; on any → **Pause**.
+- **Expect:** it moves between Active, Maintenance and Backlog. The same buttons are under Manage on the goal page.
 
 **R6. Older weeks**
 Tap 📅 on Review.

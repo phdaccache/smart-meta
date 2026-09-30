@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { addDays } from './dates'
-import { buildReview, reviewPending, reviewWeek, type ReviewInput } from './review'
+import { buildReview, projectKey, reviewPending, reviewWeek, type ReviewInput } from './review'
+import { missKey } from './scoring'
 import { commitment, goal, hit, miss, prep, project, snapshot, task, weeklyHits } from './testkit'
 import type { Displacement, Revision, WeekReview } from './types'
 
@@ -157,12 +158,37 @@ describe('Review — the rest', () => {
     ])
   })
 
+  it('a stalled project dealt with in this review shows what happened, then stays away', () => {
+    const idle = project({ title: 'CV', createdAt: '2026-08-01T00:00:00.000Z' })
+    const steps = [task({ projectId: idle.id })]
+    const handledNow = buildReview(input({ projects: [idle], tasks: steps }, {
+      weekReviews: [weekReview('2026-09-21', { dismissed: [projectKey(idle.id, 'moved')] })],
+    }))
+    expect(handledNow.stalled).toEqual([])
+    expect(handledNow.handled.map((h) => h.action)).toEqual(['moved'])
+    const nextWeek = buildReview(input({ projects: [idle], tasks: steps }, {
+      weekReviews: [weekReview('2026-09-14', { dismissed: [projectKey(idle.id, 'dismissed')] })],
+    }))
+    expect(nextWeek.stalled).toEqual([])
+    expect(nextWeek.handled).toEqual([])
+  })
+
+  it('skipped loose ends are never asked about again', () => {
+    const sleep = commitment(g, { label: 'sleep', shape: 'threshold', cadence: { period: 'day', times: 1 } })
+    const entries = ['2026-09-23', '2026-09-24', '2026-09-25', '2026-09-26', '2026-09-27', '2026-09-28', '2026-09-29', '2026-09-30']
+      .map((d) => hit(sleep, d))
+    const skipped = weekReview('2026-09-21', { dismissed: [missKey(sleep.id, '2026-09-21')] })
+    const r = buildReview(input({ commitments: [sleep], entries }, { weekReviews: [skipped] }))
+    expect(r.loose.flatMap((p) => p.slots.map((s) => s.date))).toEqual(['2026-09-22'])
+  })
+
   it('offers the top backlog goal when a slot is free', () => {
     const b1 = goal({ title: 'Read', state: 'backlog', priority: 2 })
     const b2 = goal({ title: 'Eat well', state: 'backlog', priority: 1 })
     const r = buildReview(input({ goals: [g, b1, b2] }, { goalCap: 2 }))
     expect(r.free).toBe(1)
     expect(r.next?.title).toBe('Eat well')
+    expect(r.backlog.map((b) => b.title)).toEqual(['Eat well', 'Read'])
   })
 
   it('is pending until marked done, once a goal ran through the week', () => {

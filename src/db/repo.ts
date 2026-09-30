@@ -435,13 +435,16 @@ async function weekReviewFor(week: DateStr): Promise<WeekReview> {
   return existing ?? make<'weekReviews'>({ week, doneAt: null, dismissed: [] })
 }
 
-/** Hides a suggestion for a few weeks (see DISMISS_WEEKS). */
-export async function dismissSuggestion(week: DateStr, key: string) {
+/**
+ * Records what a review set aside: a suggestion or stalled project (hidden for
+ * a few weeks, see DISMISS_WEEKS) or a missed slot (never asked about again).
+ */
+export async function dismissInReview(week: DateStr, keys: string | string[]) {
   const w = await weekReviewFor(week)
-  await put('weekReviews', { ...w, dismissed: [...new Set([...w.dismissed, key])] })
+  await put('weekReviews', { ...w, dismissed: [...new Set([...w.dismissed, ...[keys].flat()])] })
 }
 
-/** Marks the week reviewed; suggestions still open are dismissed with it. */
+/** Marks the week reviewed; whatever is still open (suggestions, loose ends, stalled projects) is dismissed with it. */
 export async function markWeekReviewed(week: DateStr, dismiss: string[] = []) {
   const w = await weekReviewFor(week)
   await put('weekReviews', { ...w, doneAt: now(), dismissed: [...new Set([...w.dismissed, ...dismiss])] })

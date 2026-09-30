@@ -1,7 +1,8 @@
 import { addDays, dayMonth, diffDays, inSpan, maxDate, periodOf, type Span } from './dates'
 import { MAX_PREPS } from './draft'
 import {
-  activeEntries, goalPct, missPrompt, outcomeTime, scoreCommitment, statusFor, type MissPrompt, type ScoreContext,
+  activeEntries, goalPct, missPrompt, outcomeTime, scoreCommitment, statusFor, withoutDismissed, type MissPrompt,
+  type ScoreContext,
 } from './scoring'
 import type { Snapshot } from './today'
 import type {
@@ -67,7 +68,19 @@ export type DateNoteKind = 'deadline_soon' | 'grace' | 'review_due'
 export interface DateNote {
   goal: Goal
   kind: DateNoteKind
+  /** Review date (habit), or the end of the extra time (finish line). */
   date: DateStr
+  /** Finish lines only. */
+  deadline?: DateStr
+}
+
+/** What was done about a stalled project in this review. */
+export type ProjectAction = 'dismissed' | 'moved' | 'put_down'
+export const projectKey = (id: ID, action: ProjectAction) => `project:${id}:${action}`
+
+export interface HandledProject {
+  project: Project
+  action: ProjectAction
 }
 
 export interface StalledProject {
@@ -87,9 +100,12 @@ export interface ReviewData {
   goals: GoalCard[]
   dates: DateNote[]
   stalled: StalledProject[]
-  /** Open active-goal slots, and the backlog goal that would fill one. */
+  /** Stalled projects already dealt with in this review, to show what happened. */
+  handled: HandledProject[]
+  /** Open active-goal slots, the backlog goal that would fill one, and the rest to choose from. */
   free: number
   next: Goal | null
+  backlog: Goal[]
   reviewed: boolean
   /** False until a goal has been active through a whole week. */
   ready: boolean
@@ -108,6 +124,11 @@ const REASON_ORDER: MissReason[] = ['forgot', 'chose_other', 'no_time', 'too_tir
 
 const live = <T extends { deletedAt?: string | null }>(xs: T[]) => xs.filter((x) => !x.deletedAt)
 const dayOf = (iso: string) => iso.slice(0, 10)
+
+/** Every missed slot any review dismissed. Never expires: it's about a past day. */
+export function dismissedMisses(weekReviews: WeekReview[]): Set<string> {
+  return new Set(live(weekReviews).flatMap((w) => w.dismissed.filter((k) => k.startsWith('miss:'))))
+}
 
 /** Whether last week still waits for its review. Cheap enough for the tab bar. */
 export function reviewPending(goals: Goal[], weekReviews: WeekReview[], today: DateStr): boolean {
@@ -146,7 +167,7 @@ export function buildReview(input: ReviewInput, weekStart?: DateStr): ReviewData
   const promptCtx = latest ? ctx : { ...ctx, today: addDays(week.end, 1) }
   const loose = liveGoals
     .flatMap(commitmentsOf)
-    .map((c) => missPrompt(c, snap.entries, promptCtx, diffDays(week.start, promptCtx.today)))
+    .map((c) => withoutDismissed(missPrompt(c, snap.entries, promptCtx, diffDays(week.start, promptCtx.today)), dismissedMisses(input.weekReviews)))
     .filter((p): p is MissPrompt => !!p)
 
   const cards: GoalCard[] = []
@@ -172,9 +193,10 @@ export function buildReview(input: ReviewInput, weekStart?: DateStr): ReviewData
   for (const g of latest ? liveGoals : []) {
     const t = outcomeTime(g, ctx.today)
     if (t) {
-      if (t.phase === 'overdue') dates.push({ goal: g, kind: 'review_due', date: t.graceEnd })
-      else if (t.phase === 'grace') dates.push({ goal: g, kind: 'grace', date: t.graceEnd })
-      else if (diffDays(ctx.today, t.deadline) <= DEADLINE_SOON_DAYS) dates.push({ goal: g, kind: 'deadline_soon', date: t.deadline })
+      const note = { goal: g, date: t.graceEnd, deadline: t.deadline }
+      if (t.phase === 'overdue') dates.push({ ...note, kind: 'review_due' })
+      else if (t.phase === 'grace') dates.push({ ...note, kind: 'grace' })
+      else if (diffDays(ctx.today, t.deadline) <= DEADLINE_SOON_DAYS) dates.push({ ...note, kind: 'deadline_soon' })
     } else if (g.targetDate && g.targetDate <= ctx.today) {
       dates.push({ goal: g, kind: 'review_due', date: g.targetDate })
     }
@@ -182,6 +204,18 @@ export function buildReview(input: ReviewInput, weekStart?: DateStr): ReviewData
 
   const active = goals.filter((g) => g.state === 'active').length
   const free = latest ? Math.max(0, goalCap - active) : 0
+  const backlog = free > 0 ? goals.filter((g) => g.state === 'backlog') : []
+
+  // Stalled projects: anything done about one (dismiss, new date, put down) settles it for a few weeks.
+  const recent = [...hiddenKeys(input, week)]
+  const settled = (id: ID) => recent.some((k) => k.startsWith(`project:${id}:`))
+  const thisReview = live(input.weekReviews).find((w) => w.week === week.start)
+  const handled: HandledProject[] = latest
+    ? (thisReview?.dismissed ?? [])
+        .filter((k) => k.startsWith('project:'))
+        .map((k) => ({ project: snap.projects.find((p) => p.id === k.split(':')[1])!, action: k.split(':')[2] as ProjectAction }))
+        .filter((h) => !!h.project)
+    : []
 
   return {
     week,
@@ -189,9 +223,11 @@ export function buildReview(input: ReviewInput, weekStart?: DateStr): ReviewData
     loose,
     goals: cards,
     dates,
-    stalled: latest ? stalledProjects(snap, entries, ctx.today) : [],
+    stalled: latest ? stalledProjects(snap, entries, ctx.today).filter((s) => !settled(s.project.id)) : [],
+    handled,
     free,
-    next: free > 0 ? goals.find((g) => g.state === 'backlog') ?? null : null,
+    next: backlog[0] ?? null,
+    backlog,
     reviewed,
     ready: goals.some((g) => g.state !== 'backlog' && g.startDate <= week.end),
   }

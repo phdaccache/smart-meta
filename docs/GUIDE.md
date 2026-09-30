@@ -59,11 +59,11 @@ After a week closes you see "Last week: 2 of 4 LeetCode. What happened?". Tap **
 ## Every week (a few minutes)
 
 From Monday, a dot on **Review** (and a line on Today) says last week is ready. In **Review**:
-1. **Loose ends:** answer misses that still have no reason.
+1. **Loose ends:** answer misses that still have no reason, or **Skip** them for good.
 2. **Last week:** each goal's plain counts ("gym 2 of 3"), its status and your reasons. When a reason keeps coming back, one suggestion appears with its facts, e.g. *"3 of 4 gym misses: chose something else (phone ×3)". Add a prep?* Accept it (it opens the right editor) or **Dismiss** (hidden for 4 weeks).
-3. **Dates** and **Stalled projects** (no step in 3 weeks, or past their date): open, move the date, or put down.
-4. **Open slot:** start the top backlog goal.
-5. **Done for this week.** Any suggestion you left open is dismissed with it.
+3. **Dates:** review dates and deadlines, with **Review** when one is due. **Stalled projects** (no step in 3 weeks, or past their date): move the date, put it down, or dismiss it for 4 weeks. Each shows ✓ with what you did.
+4. **Open slot:** start the top backlog goal, or **Choose another**.
+5. **Done for this week.** Anything left open (suggestions, loose ends, stalled projects) is set aside with it.
 
 Tap 📅 at the top of Review to open an older week (✓ marks the reviewed ones). Older weeks show their results and loose ends only; suggestions are always about now.
 
@@ -75,7 +75,7 @@ Tap 📅 at the top of Review to open an older week (✓ marks the reviewed ones
 | Below tolerance 3 of the last 4 weeks | Pause it |
 | On track 8 weeks straight | Maintenance |
 
-**Plan** shows every goal's status (**on track / behind / at risk**), habits and projects. Drag cards to change their order on Today.
+**Plan** shows every goal's status (**on track / behind / at risk**), habits and projects. Drag cards to change their order on Today. Tap **⋯** on a card to move it to **maintenance** (still on Today, frees its slot), **pause** it (back to the backlog) or make a maintenance goal active again, any time.
 
 For finish-line goals, the status comes from their habits until the deadline. It turns **behind** during the extra time and **at risk** after it.
 

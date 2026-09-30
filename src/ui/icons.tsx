@@ -54,3 +54,6 @@ export const IconSteps = (p: P) => (
 export const IconHistory = (p: P) => (
   <Svg {...p}><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6" /><path d="M3 4v4h4" /><path d="M12 8v4.5l3 2" /></Svg>
 )
+export const IconMore = (p: P) => (
+  <Svg {...p}><circle cx="6" cy="12" r="1.3" fill="currentColor" /><circle cx="12" cy="12" r="1.3" fill="currentColor" /><circle cx="18" cy="12" r="1.3" fill="currentColor" /></Svg>
+)

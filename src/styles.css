@@ -580,3 +580,8 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .prep-block-head { padding: 10px 16px 0; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--prep); }
 .prep-block .list-row { padding-left: 16px; border-left: 3px solid color-mix(in srgb, var(--prep) 55%, transparent); margin-left: 12px; }
 .prep-block .list-row + .list-row { border-top: 0; }
+.list-row.handled .title { color: var(--ink-2); }
+.list-row.handled .done-mark {
+  width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: var(--accent-ink);
+  display: grid; place-items: center; flex: none;
+}

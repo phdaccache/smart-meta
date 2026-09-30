@@ -227,6 +227,16 @@ export function summarizeGoal(
 
 // ——— miss prompts ———
 
+/** One missed slot that a review chose to leave unexplained. */
+export const missKey = (commitmentId: string, date: DateStr) => `miss:${commitmentId}:${date}`
+
+/** Drops the slots dismissed in a review; null when none are left. */
+export function withoutDismissed(p: MissPrompt | null, dismissed: Set<string>): MissPrompt | null {
+  if (!p) return null
+  const slots = p.slots.filter((s) => !dismissed.has(missKey(p.commitmentId, s.date)))
+  return slots.length ? { ...p, slots } : null
+}
+
 export interface MissSlot {
   /** The day a miss entry is written against (the period's last day). */
   date: DateStr
