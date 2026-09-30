@@ -225,9 +225,11 @@ function IntroNote() {
       <img className="creator" src={creator} alt="Pedro" width={96} height={96} />
       <h1 className="intro-title">A note from the creator</h1>
       <div className="note">
+        <p><b>Thank you for using the app.</b></p>
         <p>I’m always dreaming up goals, projects and new habits, but I never turn them into a real plan.</p>
         <p>I get lost in my own ideas, and by morning I’ve forgotten what I dreamed of the night before.</p>
         <p>I built this app to help me become the person I want to be. I hope it helps you too.</p>
+        <p>Thanks again and all the best,</p>
         <div className="signature" role="img" aria-label="Pedro" style={{ WebkitMaskImage: `url(${signature})`, maskImage: `url(${signature})` }} />
       </div>
     </Frame>

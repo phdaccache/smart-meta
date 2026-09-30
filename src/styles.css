@@ -898,11 +898,11 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
   display: block; width: 96px; height: 96px; margin: 12px auto 20px; border-radius: 50%; object-fit: cover;
   box-shadow: 0 0 0 4px var(--bg), 0 0 0 5px var(--line-strong);
 }
-.note { margin: 22px auto 0; max-width: 32ch; }
+.note { margin: 22px auto 0; max-width: 32ch; text-align: left; }
 .note p { font-size: 17px; line-height: 1.5; }
 .note p + p { margin-top: 14px; }
 .signature {
-  width: 56px; aspect-ratio: 360 / 304; margin: 20px auto 0; background: var(--ink);
+  width: 56px; aspect-ratio: 360 / 304; margin: 10px 0 0; background: var(--ink);
   -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
 }
 

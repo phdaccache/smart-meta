@@ -67,6 +67,8 @@ Text on the intro's screens is centered; cards and form fields stay left-aligned
 >
 > **A note from the creator**
 >
+> **Thank you for using the app.**
+>
 > I'm always dreaming up goals, projects and new habits, but I never turn them
 > into a real plan.
 >
@@ -76,7 +78,11 @@ Text on the intro's screens is centered; cards and form fields stay left-aligned
 > I built this app to help me become the person I want to be. I hope it helps
 > you too.
 >
+> Thanks again and all the best,
+>
 > *(signature, small)*
+>
+> The note and signature are left-aligned; the photo and title stay centered.
 >
 > **[Continue]**
 
