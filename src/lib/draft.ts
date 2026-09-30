@@ -126,9 +126,10 @@ export function validateGoal(d: GoalDraft): Errors<GoalDraft> {
   if (outcome) {
     const m = doneWhenProblem(d.doneWhen)
     if (m) e.doneWhen = m
-    if (!d.targetDate) e.targetDate = 'A finish line needs a deadline.'
     if (!(d.graceDays >= 0)) e.graceDays = 'Pick how much extra time is OK.'
   }
+  // Every goal gets a date: a deadline, or a day to look back on a habit.
+  if (!d.targetDate) e.targetDate = outcome ? 'A finish line needs a deadline.' : 'Pick a day to look back.'
   if (!d.title.trim()) e.title = 'Name what you want.'
   if (!(d.tolerancePct >= 1 && d.tolerancePct <= 100)) e.tolerancePct = 'Between 1 and 100%.'
   if (!d.whyValueId) e.whyValueId = 'Pick the value this serves.'

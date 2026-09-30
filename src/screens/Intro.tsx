@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
+import creator from '../assets/creator.jpg'
 import signature from '../assets/signature.png'
 import { exportData, shareOrDownload } from '../db/backup'
 import { createGoal, ensureValue } from '../db/repo'
@@ -112,7 +113,7 @@ export function introRoute(path: string): ReactNode | null {
 
 // ——— frame ———
 
-function Frame(props: { back?: string; children: ReactNode; nav?: ReactNode; className?: string }) {
+function Frame(props: { back?: string; children: ReactNode; nav?: ReactNode; below?: ReactNode; className?: string }) {
   return (
     <div className={`screen intro ${props.className ?? ''}`}>
       <div className="intro-top">
@@ -123,8 +124,13 @@ function Frame(props: { back?: string; children: ReactNode; nav?: ReactNode; cla
         ) : <span />}
         <button type="button" className="btn ghost" onClick={leaveIntro}>Skip</button>
       </div>
-      {props.children}
-      {props.nav && <div className="wizard-nav">{props.nav}</div>}
+      <div className="intro-body">{props.children}</div>
+      {props.nav && (
+        <div className="wizard-nav intro-nav">
+          {props.nav}
+          {props.below}
+        </div>
+      )}
     </div>
   )
 }
@@ -139,7 +145,7 @@ const IconShare = () => (
 
 function IntroHome() {
   return (
-    <Frame>
+    <Frame className="centered">
       <h1 className="intro-title">Put it on your Home Screen first</h1>
       <p className="intro-sub">It opens like an app and keeps your goals saved on your phone.</p>
       <ol className="intro-steps">
@@ -148,7 +154,7 @@ function IntroHome() {
         <li><span className="n">3</span>Open Smart Meta from your Home Screen</li>
       </ol>
       <p className="intro-center">
-        <button className="link-btn" onClick={() => navigate('/welcome')}>Continue in Safari</button>
+        <button className="quiet-link" onClick={() => navigate('/welcome')}>Continue in Safari</button>
       </p>
     </Frame>
   )
@@ -201,13 +207,12 @@ function WelcomeDemo() {
 
 function IntroWelcome() {
   return (
-    <Frame nav={<button className="btn primary" onClick={() => { resetIntro(); navigate('/welcome/note') }}>Get started</button>}>
+    <Frame className="centered welcome"
+      nav={<button className="btn primary" onClick={() => { resetIntro(); navigate('/welcome/note') }}>Get started</button>}
+      below={<button className="quiet-link" onClick={() => navigate('/settings?view=restore')}>Restore from a backup</button>}>
       <WelcomeDemo />
       <h1 className="intro-title">Stop dropping goals you never really defined.</h1>
       <p className="intro-sub">Turn them into a weekly plan and start improving now.</p>
-      <p className="intro-center">
-        <button className="link-btn" onClick={() => navigate('/settings')}>Restore from a backup</button>
-      </p>
     </Frame>
   )
 }
@@ -216,10 +221,12 @@ function IntroWelcome() {
 
 function IntroNote() {
   return (
-    <Frame back="/welcome" nav={<button className="btn primary" onClick={() => navigate('/welcome/areas')}>Continue</button>}>
-      <h1 className="intro-title">A note from Pedro</h1>
-      <div className="card pad note">
-        <p>I’m always dreaming up goals, projects and new habits, but I never turn them into a real plan. I get lost in my own ideas, and by morning I’ve forgotten what I dreamed of the night before.</p>
+    <Frame className="centered" back="/welcome" nav={<button className="btn primary" onClick={() => navigate('/welcome/areas')}>Continue</button>}>
+      <img className="creator" src={creator} alt="Pedro" width={96} height={96} />
+      <h1 className="intro-title">A note from the creator</h1>
+      <div className="note">
+        <p>I’m always dreaming up goals, projects and new habits, but I never turn them into a real plan.</p>
+        <p>I get lost in my own ideas, and by morning I’ve forgotten what I dreamed of the night before.</p>
         <p>I built this app to help me become the person I want to be. I hope it helps you too.</p>
         <div className="signature" role="img" aria-label="Pedro" style={{ WebkitMaskImage: `url(${signature})`, maskImage: `url(${signature})` }} />
       </div>
@@ -233,7 +240,7 @@ function IntroAreas() {
   const s = useIntro()
   const toggle = (a: Area) => setIntro({ areas: s.areas.includes(a) ? s.areas.filter((x) => x !== a) : [...s.areas, a] })
   return (
-    <Frame back="/welcome/note" nav={<button className="btn primary" onClick={() => navigate('/welcome/goal/s')}>Continue</button>}>
+    <Frame className="centered" back="/welcome/note" nav={<button className="btn primary" onClick={() => navigate('/welcome/goal/s')}>Continue</button>}>
       <h1 className="intro-title">What do you want to work on?</h1>
       <p className="intro-sub">Pick any. We’ll suggest goals to match.</p>
       <div className="chips intro-chips">
@@ -281,8 +288,8 @@ function introErrors(d: GoalDraft): Errors<GoalDraft> {
   if (outcome) {
     const m = doneWhenProblem(d.doneWhen)
     if (m) e.doneWhen = m
-    if (!d.targetDate) e.targetDate = 'A finish line needs a deadline.'
   }
+  if (!d.targetDate) e.targetDate = outcome ? 'A finish line needs a deadline.' : 'Pick a day to look back.'
   if (d.targetDate && d.targetDate <= d.startDate) e.targetDate = 'Must be after the start date.'
   if (d.preps.some((p) => Object.keys(validatePrep(p)).length)) e.preps = 'Finish or remove the prep.'
   return e
@@ -485,8 +492,10 @@ function IntroGoal({ step }: { step: Step }) {
   return (
     <Frame back={prev}
       nav={<button className="btn primary" disabled={busy} onClick={next}>{label}</button>}>
-      <div className="eyebrow">Your first goal</div>
-      <h1 className="intro-title">Let’s make it SMART.</h1>
+      <div className="intro-head">
+        <div className="eyebrow">Your first goal</div>
+        <h1 className="intro-title">Let’s make it SMART.</h1>
+      </div>
       <SmartBar current={letter} />
       <p className="smart-line">{LINE[letter]}</p>
       <div className="card pad smart-card">
@@ -582,9 +591,11 @@ function IntroPlan() {
     <Frame nav={<button className="btn primary" onClick={() => (s.short ? leaveIntro() : navigate('/welcome/week/1'))}>
       {s.short ? 'Go to Today' : 'Continue'}
     </button>}>
-      <div className="eyebrow">Your plan</div>
-      <h1 className="intro-title">{waiting ? `${goal.title} is in your backlog` : `${goal.title} starts ${when}`}</h1>
-      {waiting && <p className="intro-sub">You already have {settings.goalCap} active goals. Start it from Plan when there’s room.</p>}
+      <div className="intro-head">
+        <div className="eyebrow">Your plan</div>
+        <h1 className="intro-title">{waiting ? `${goal.title} is in your backlog` : `${goal.title} starts ${when}`}</h1>
+        {waiting && <p className="intro-sub">You already have {settings.goalCap} active goals. Start it from Plan when there’s room.</p>}
+      </div>
       <GoalPreview goal={goal} snap={snap} />
       {line && <p className="intro-projection">{line}</p>}
     </Frame>
@@ -651,9 +662,11 @@ function IntroWeek({ n }: { n: number }) {
         else if (dx > 60) goBack(backTo)
       }}>
       <Frame back={backTo} nav={<button className="btn primary" onClick={forward}>{n >= 3 ? 'Go to Today' : 'Next'}</button>}>
-        <div className="intro-dots" aria-label={`${n} of 3`}>{[1, 2, 3].map((i) => <i key={i} className={i === n ? 'on' : ''} />)}</div>
-        <h1 className="intro-title">{title}</h1>
-        <p className="intro-sub">{text}</p>
+        <div className="intro-head">
+          <div className="intro-dots" aria-label={`${n} of 3`}>{[1, 2, 3].map((i) => <i key={i} className={i === n ? 'on' : ''} />)}</div>
+          <h1 className="intro-title">{title}</h1>
+          <p className="intro-sub">{text}</p>
+        </div>
         {demo}
       </Frame>
     </div>

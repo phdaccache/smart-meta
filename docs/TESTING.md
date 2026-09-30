@@ -176,7 +176,7 @@ In Safari, go to Share → **Add to Home Screen**, then open the app from the ic
 
 **O1. The whole intro**
 Erase all data (or open a private window), then open the app.
-- **Expect:** the welcome with an example week filling up, then Pedro's note with the signature, then the areas. Pick *Creativity* and *Health & fitness*: the first goal offers *Exercise 3× a week*, *Practise 4× a week* and *Sleep 7.5 hours*. Tap *Practise*: every step comes filled in, each with one line on its SMART letter. The value step offers *Creativity* (picked) and *Health*. Tap *3 months* on the date step, *Forgot* on the prep step (a prep appears), then **Create goal**.
+- **Expect:** the welcome with an example week filling up, then the note from the creator (photo, three short paragraphs, a small signature), then the areas. Pick *Creativity* and *Health & fitness*: the first goal offers *Exercise 3× a week*, *Practise 4× a week* and *Sleep 7.5 hours*. Tap *Practise*: every step comes filled in, each with one line on its SMART letter. The value step offers *Creativity* (picked) and *Health*. Tap *3 months* on the date step, *Forgot* on the prep step (a prep appears), then **Create goal**.
 - **Expect:** "Practise 4× a week starts today", its card as on Today, and "about 42 times by …". Then three short screens (one tap, say why, review). **Go to Today** shows the goal and a Getting started card with the goal ticked.
 
 **O2. Skip everything**

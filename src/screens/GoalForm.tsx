@@ -447,12 +447,12 @@ function Wizard({ d, set, patch, errors, onSave }: FormProps) {
 export function DateFields({ d, set, err }: { d: GoalDraft; set: SetField; err: (k: keyof GoalDraft) => string | undefined }) {
   const outcome = d.goalKind === 'outcome'
   return (
-    <div className="inline-fields">
+    <div className="inline-fields top">
       <Field label="Start" htmlFor="start" error={err('startDate')}>
         <input id="start" type="date" value={d.startDate} onChange={(e) => set('startDate', e.target.value)} />
       </Field>
       <Field label={outcome ? 'Deadline' : 'Review on'} htmlFor="target" error={err('targetDate')}
-        info={outcome ? undefined : 'Optional. On this date the goal asks: did you hit it, what happened, what next.'}>
+        info={outcome ? undefined : 'On this date the goal asks: did you hit it, what happened, what next.'}>
         <input id="target" type="date" value={d.targetDate} min={d.startDate} onChange={(e) => set('targetDate', e.target.value)} />
       </Field>
     </div>

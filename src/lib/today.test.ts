@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { measurementProblem, emptyGoalDraft, validateGoal } from './draft'
 import { commitment, goal, hit, miss, prep, project, snapshot, task, value } from './testkit'
 import { buildDay } from './today'
+import { addDays } from './dates'
 
 const today = '2026-09-30' // Wednesday
 const ctx = { today, rolloverHour: 4 }
@@ -160,13 +161,14 @@ describe('Goals must be SMART to be saved', () => {
     expect(measurementProblem('Slept at least 8 hours')).toBeNull()
   })
 
-  it('requires a why and a value', () => {
+  it('requires a why, a value and a day to look back', () => {
     const d = {
       ...emptyGoalDraft(today), title: 'Exercise regularly', label: 'gym',
       measurementDefinition: 'Did at least 45 minutes of exercise',
     }
     const e = validateGoal(d)
-    expect(Object.keys(e).sort()).toEqual(['whyText', 'whyValueId'])
-    expect(validateGoal({ ...d, whyValueId: 'v', whyText: 'Health and energy.' })).toEqual({})
+    expect(Object.keys(e).sort()).toEqual(['targetDate', 'whyText', 'whyValueId'])
+    expect(e.targetDate).toBe('Pick a day to look back.')
+    expect(validateGoal({ ...d, whyValueId: 'v', whyText: 'Health and energy.', targetDate: addDays(today, 90) })).toEqual({})
   })
 })

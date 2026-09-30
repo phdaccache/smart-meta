@@ -381,8 +381,9 @@ enforces structure only.
 - **Achievable** — tolerance percentage, with guidance on first use
 - **Relevant** — the *why*: a personal value, plus a sentence linking this goal
   to it *(v1: optional for a goal made in the intro; it then shows as "No value")*
-- **Time-bound** — start date; target date optional for ongoing behaviors
-  *(v1: required for a finish line, as its deadline)*
+- **Time-bound** — start date and a target date: a finish line's deadline, or
+  the day a habit goal is reviewed *(v1: required for both; a habit in
+  maintenance has none)*
 
 A goal with no measurable definition **cannot be saved**. "Be more kind" is
 correctly rejected until converted into something like "message one friend I

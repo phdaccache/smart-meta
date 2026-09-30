@@ -56,18 +56,27 @@ complete example; it is only watched, never saved.
 > Turn them into a weekly plan and start improving now.
 >
 > **[Get started]**
-> link: *Restore from a backup*
+> small, quiet link under it: *Restore from a backup* (opens Settings with only
+> Backup and Developer)
 
-### 2 · A note from Pedro
+Text on the intro's screens is centered; cards and form fields stay left-aligned.
 
+### 2 · A note from the creator
+
+> (round photo of Pedro)
+>
+> **A note from the creator**
+>
 > I'm always dreaming up goals, projects and new habits, but I never turn them
-> into a real plan. I get lost in my own ideas, and by morning I've forgotten
-> what I dreamed of the night before.
+> into a real plan.
+>
+> I get lost in my own ideas, and by morning I've forgotten what I dreamed of
+> the night before.
 >
 > I built this app to help me become the person I want to be. I hope it helps
 > you too.
 >
-> *(signature image)*
+> *(signature, small)*
 >
 > **[Continue]**
 
@@ -139,8 +148,8 @@ explaining the current letter.
 
 **9 · T — Time-bound** · *A date gives you urgency and focus.*
 > **When?**
-> Start: today. *Review on* (optional) with quick chips `In 1 month`
-> `3 months` `6 months`. Finish line: *Deadline*.
+> Start: today. *Review on* (required, here and in the normal form) with quick
+> chips `In 1 month` `3 months` `6 months`. Finish line: *Deadline*.
 
 **10 · Prep** (habits only) · *Make the next try easier.*
 > **What usually gets in the way?**
@@ -166,7 +175,7 @@ explaining the current letter.
 > - Standard: "Each time it comes up, you'll log yes or no."
 > - Finish line: "12 weeks to your deadline, 30 December."
 >
-> The date is the review date if set, otherwise 3 months from today.
+> The date is the review date.
 >
 > **[Continue]**
 

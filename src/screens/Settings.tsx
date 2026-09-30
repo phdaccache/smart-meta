@@ -8,13 +8,24 @@ import { eraseAllData, signIn, signOut, syncNow, useSyncStatus } from '../sync/c
 import { Field, Screen, Section, Segmented, Stepper, toast, TypeToConfirm } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconClose } from '../ui/icons'
-import { navigate } from '../ui/router'
+import { navigate, useLocation } from '../ui/router'
 import { resetIntro } from './Intro'
 
 export function SettingsScreen() {
   const settings = useSettings()
   const snap = useSnapshot()
+  const { query } = useLocation()
   const values = snap?.values ?? []
+
+  // From the intro's "Restore from a backup": only what restoring needs.
+  if (query.get('view') === 'restore') {
+    return (
+      <Screen back="/" title="Restore">
+        <DataSection lastExportAt={settings.lastExportAt} />
+        <DevSection devToday={settings.devToday} />
+      </Screen>
+    )
+  }
 
   return (
     <Screen back="/" title="Settings">

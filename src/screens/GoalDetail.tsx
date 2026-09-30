@@ -367,7 +367,9 @@ export function GoalEditScreen({ id }: { id: string }) {
     // A goal made in the intro may have no reason yet; one that has a reason keeps it.
     whyValueId: d.whyValueId || !goal.whyValueId ? undefined : 'Pick a value.',
     whyText: d.whyText.trim() || !goal.whyText ? undefined : 'Required.',
+    // A habit kept in maintenance has no date to look back on; every other running goal does.
     targetDate: outcome && !d.targetDate ? 'A finish line needs a deadline.'
+      : !d.targetDate && (goal.state === 'active' || goal.state === 'backlog') ? 'Pick a day to look back.'
       : d.targetDate && d.targetDate <= d.startDate ? 'Must be after the start date.' : undefined,
   }
   const ok = !Object.values(errors).some(Boolean)
@@ -412,7 +414,7 @@ export function GoalEditScreen({ id }: { id: string }) {
       </section>
       <section className="card pad smart-section">
         <SmartHead k="T" />
-        <div className="inline-fields">
+        <div className="inline-fields top">
           <Field label="Start" htmlFor="start">
             <input id="start" type="date" value={d.startDate} onChange={(e) => isDateStr(e.target.value) && setD({ ...d, startDate: e.target.value })} />
           </Field>

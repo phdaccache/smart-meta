@@ -2,7 +2,7 @@
 
 ## First run
 
-A short intro (every screen has **Skip**): what the app is for, a note from Pedro, what you want to work on, then your first goal, built one SMART letter at a time with examples matched to your answers. Value and why are optional there. The goal starts right away, and a **Getting started** card on Today lists what's left (first check-in, first review, a backup). **Settings → Replay intro** runs it again; it only adds a goal.
+A short intro (every screen has **Skip**): what the app is for, a note from the creator, what you want to work on, then your first goal, built one SMART letter at a time with examples matched to your answers. Value and why are optional there. The goal starts right away, and a **Getting started** card on Today lists what's left (first check-in, first review, a backup). **Settings → Replay intro** runs it again; it only adds a goal.
 
 On an iPhone, add the app to the Home Screen *before* setting it up: Safari and the Home Screen app keep separate data.
 
@@ -96,7 +96,7 @@ Review is about next week; **Insights** is about the long run. Pick the period a
 ## The end
 
 - **Finish line:** tap **I did it** on the goal page whenever you get it. If the deadline and extra time run out first, the goal asks you to review it.
-- **Habit goal with a review date:** on that date the goal asks: *Did you hit it? What happened?* It also asks for a journal note.
+- **Habit goal:** every one has a review date. On that date the goal asks: *Did you hit it? What happened?* It also asks for a journal note.
 
 Then choose **Renew**, **Maintenance** (habit goals only) or **Close it out**.
 
