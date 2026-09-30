@@ -379,8 +379,8 @@ enforces structure only.
 - **Specific** — title and a measurement definition sentence
 - **Measurable** — check-in type, target value, cadence
 - **Achievable** — tolerance percentage, with guidance on first use
-- **Relevant** — the *why*: a personal value selected from those declared at
-  first run, plus a sentence linking this goal to it
+- **Relevant** — the *why*: a personal value, plus a sentence linking this goal
+  to it *(v1: optional for a goal made in the intro; it then shows as "No value")*
 - **Time-bound** — start date; target date optional for ongoing behaviors
   *(v1: required for a finish line, as its deadline)*
 
@@ -639,9 +639,9 @@ app working as intended.
 
 ### First run
 
-1. Write 3–5 personal values.
-2. Create the first goal via the guided wizard.
-3. Land on Today.
+See `2026-09-30-onboarding-spec.md`. In short: a skippable intro, a guided
+first goal that teaches SMART as it's filled in (values are chosen in its R
+step, not up front), how a week works, then Today with a Getting started card.
 
 ## 15. Planned future work
 

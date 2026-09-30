@@ -112,8 +112,8 @@ export function ProjectScreen({ id }: { id: string }) {
           {goal && (
             <button className="card-head pad list-row" style={{ borderRadius: 0 }} onClick={() => navigate(`/goals/${goal.id}`)}>
               <div className="text">
-                <div className="group-eyebrow">{goal.title}</div>
-                <div className="group-why">{goal.whyText}</div>
+                {goal.whyText && <div className="group-eyebrow">{goal.title}</div>}
+                <div className="group-why">{goal.whyText || goal.title}</div>
               </div>
               <IconChevronRight className="chev" width={18} />
             </button>

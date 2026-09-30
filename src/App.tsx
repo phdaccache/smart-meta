@@ -16,7 +16,7 @@ import { SettingsScreen, ValuesScreen } from './screens/Settings'
 import { ReviewScreen } from './screens/Review'
 import { GoalInsightsScreen, InsightsScreen } from './screens/Insights'
 import { TodayScreen } from './screens/Today'
-import { WelcomeScreen } from './screens/Welcome'
+import { introRoute, IntroStart } from './screens/Intro'
 import { Screen } from './ui/components'
 
 const TABS = [
@@ -31,7 +31,7 @@ function route(path: string, query: URLSearchParams) {
   if (path === '/') return <TodayScreen />
   if ((m = match('/day/:date', path))) return <TodayScreen key={m.date} date={m.date} />
   if (path === '/goals') return <GoalsScreen />
-  if (path === '/goals/new') return <NewGoalScreen first={query.get('first') === '1'} />
+  if (path === '/goals/new') return <NewGoalScreen />
   if ((m = match('/goals/:id/edit', path))) return <GoalEditScreen id={m.id} />
   if ((m = match('/goals/:id/review', path))) return <GoalReviewScreen id={m.id} presetHit={query.get('hit') === '1' ? true : undefined} />
   if ((m = match('/goals/:id', path))) return <GoalDetailScreen key={m.id} id={m.id} />
@@ -42,7 +42,7 @@ function route(path: string, query: URLSearchParams) {
   if (path === '/review') return <ReviewScreen />
   if (path === '/insights') return <InsightsScreen />
   if ((m = match('/insights/goals/:id', path))) return <GoalInsightsScreen key={m.id} id={m.id} />
-  return <NotFound />
+  return introRoute(path) ?? <NotFound />
 }
 
 function NotFound() {
@@ -55,19 +55,18 @@ function NotFound() {
 
 export function App() {
   const settings = useSettingsLoaded()
-  const valueCount = useLiveQuery(() => db.values.count(), [])
+  const goalCount = useLiveQuery(() => db.goals.filter((g) => !g.deletedAt).count(), [])
   const { path, query } = useLocation()
   const today = useToday(settings?.rolloverHour ?? 4)
   const reviewDot = useLiveQuery(
     async () => reviewPending(await db.goals.toArray(), await db.weekReviews.toArray(), today),
     [today],
   )
-  if (!settings || valueCount == null) return null
+  if (!settings || goalCount == null) return null
 
-  // Settings live on the device; values arrive with sync, so a restored phone skips first run.
-  const onboarding = !settings.onboarded && valueCount === 0
-  const inFirstGoal = path === '/goals/new' && query.get('first') === '1'
-  const content = onboarding && !inFirstGoal && path !== '/settings' ? <WelcomeScreen /> : route(path, query)
+  // Settings live on the device; goals arrive with sync, so a restored phone skips first run.
+  const onboarding = !settings.onboarded && goalCount === 0
+  const content = onboarding && !path.startsWith('/welcome') && path !== '/settings' ? <IntroStart /> : route(path, query)
   const tabbed = !onboarding && (TABS.some((t) => t.path === path) || path.startsWith('/day/'))
 
   return (

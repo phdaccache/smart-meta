@@ -221,6 +221,17 @@ describe('Insights — big picture', () => {
     expect(b.takeaway).toBe('No goal for Freedom in the last 12 weeks.')
   })
 
+  it('puts goals with no value in their own row, left out of the takeaway', () => {
+    const health = { id: 'v0', name: 'Health', description: '', createdAt: T, updatedAt: T }
+    const bare = goal({ title: 'Read more', whyValueId: '', whyText: '', startDate: '2026-06-01' })
+    const reading = commitment(bare, { label: 'reading' })
+    const entries = [...weeklyHits(gym, '2026-06-01', Array(17).fill(3), addDays), ...weeklyHits(reading, '2026-06-01', Array(17).fill(3), addDays)]
+    const b = valueBalance(prepare(input({ values: [health], goals: [g, bare], commitments: [gym, reading], entries })))
+    expect(b.values.map((v) => v.name)).toEqual(['Health', 'No value'])
+    expect(b.months[1].counts).toEqual([5, 5])
+    expect(b.takeaway).toBe('Every value had kept weeks lately.')
+  })
+
   it('sums up the year so far', () => {
     const done = goal({ title: 'Run a 10k', startDate: '2026-03-02', state: 'completed' })
     const runs = commitment(done, { label: 'runs' })

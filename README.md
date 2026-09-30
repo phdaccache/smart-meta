@@ -21,14 +21,19 @@ offline, and an optional Supabase sync copies everything off the phone.
   Status words plus a last-4-weeks bar. Goal detail with commitments, preps,
   full check-in history (corrections visible), revisions, edit, abandon,
   deliberately awkward delete, and the end-of-goal review.
+- **First run**: a skippable intro that builds the first goal one SMART letter
+  at a time, with examples picked from what the person wants to work on (plain
+  lookup tables in `src/lib/intro.ts`), then a Getting started card on Today.
+  Replayable from Settings. Spec: `docs/2026-09-30-onboarding-spec.md`.
 - **Goal creation**: guided wizard or compact form. A goal cannot be saved
-  without a checkable measurement sentence, a value and a why.
+  without a checkable measurement sentence, a value and a why (except the
+  intro's goal, where value and why are optional).
 - **Projects** with ordered steps (Today shows only the current step), and
   **tasks** via quick-add from anywhere; a task can be turned into a project.
 - **Standard commitments** (e.g. punctuality) are logged from a "Log" row on
   Today or the goal page.
-- **Settings**: values, day rollover (default 04:00), goal cap, creation mode,
-  JSON export/import, sync sign-in.
+- **Settings**: values, replay intro, day rollover (default 04:00), goal cap,
+  creation mode, JSON export/import, sync sign-in.
 
 - **Review**: the weekly ritual: loose ends, last week per goal with reasons,
   one evidence-backed suggestion per goal, dates, stalled projects, an open

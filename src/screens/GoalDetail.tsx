@@ -87,7 +87,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
 
       <Section title="Details">
         <div className="card tint-goal">
-          <div className="pad card-head"><div className="group-why">{goal.whyText}</div></div>
+          {goal.whyText && <div className="pad card-head"><div className="group-why">{goal.whyText}</div></div>}
           <div className="pad">
             <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}>
               <span className="row" style={{ gap: 0 }}><StatusWord status={summary.status} /><StatusInfo /></span>
@@ -364,8 +364,9 @@ export function GoalEditScreen({ id }: { id: string }) {
   const errors = {
     title: d.title.trim() ? undefined : 'Required.',
     doneWhen: outcome ? doneWhenProblem(d.doneWhen ?? '') ?? undefined : undefined,
-    whyValueId: d.whyValueId ? undefined : 'Pick a value.',
-    whyText: d.whyText.trim() ? undefined : 'Required.',
+    // A goal made in the intro may have no reason yet; one that has a reason keeps it.
+    whyValueId: d.whyValueId || !goal.whyValueId ? undefined : 'Pick a value.',
+    whyText: d.whyText.trim() || !goal.whyText ? undefined : 'Required.',
     targetDate: outcome && !d.targetDate ? 'A finish line needs a deadline.'
       : d.targetDate && d.targetDate <= d.startDate ? 'Must be after the start date.' : undefined,
   }

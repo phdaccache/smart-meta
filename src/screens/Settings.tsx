@@ -9,6 +9,7 @@ import { Field, Screen, Section, Segmented, Stepper, toast, TypeToConfirm } from
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconClose } from '../ui/icons'
 import { navigate } from '../ui/router'
+import { resetIntro } from './Intro'
 
 export function SettingsScreen() {
   const settings = useSettings()
@@ -23,6 +24,13 @@ export function SettingsScreen() {
             <div className="text">
               <div className="title">Values</div>
               <div className="sub">{values.length ? values.map((v) => v.name).join(' · ') : 'None yet'}</div>
+            </div>
+            <IconChevronRight className="chev" width={18} />
+          </button>
+          <button className="list-row" onClick={() => { resetIntro(); navigate('/welcome') }}>
+            <div className="text">
+              <div className="title">Replay intro</div>
+              <div className="sub">The welcome and a guided new goal</div>
             </div>
             <IconChevronRight className="chev" width={18} />
           </button>
@@ -251,7 +259,7 @@ interface ValueDraft {
   description: string
 }
 
-export function ValuesEditor(props: { onboarding?: boolean; onSaved?: () => void }) {
+export function ValuesEditor(props: { onSaved?: () => void }) {
   const snap = useSnapshot()
   const [drafts, setDrafts] = useState<ValueDraft[] | null>(null)
   const [tried, setTried] = useState(false)
@@ -262,8 +270,8 @@ export function ValuesEditor(props: { onboarding?: boolean; onSaved?: () => void
   if (!snap || !drafts) return null
 
   const filled = drafts.filter((d) => d.name.trim())
-  const min = props.onboarding ? 3 : 1
-  const max = props.onboarding ? 5 : 12
+  const min = 1
+  const max = 12
   const ok = filled.length >= min && filled.length <= max
   const inUse = (id?: string) => !!id && snap.goals.some((g) => g.whyValueId === id)
   const update = (i: number, p: Partial<ValueDraft>) => setDrafts(drafts.map((x, j) => (j === i ? { ...x, ...p } : x)))
@@ -303,7 +311,7 @@ export function ValuesEditor(props: { onboarding?: boolean; onSaved?: () => void
       )}
       {tried && !ok && <p className="field-error" style={{ marginTop: 12 }}>Write {min} to {max}.</p>}
       <div className="wizard-nav">
-        <button className="btn primary" onClick={save}>{props.onboarding ? 'Continue' : 'Save'}</button>
+        <button className="btn primary" onClick={save}>Save</button>
       </div>
     </div>
   )

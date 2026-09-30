@@ -261,7 +261,9 @@ export function buildDay(
     if (items.length || prompts.length) {
       groups.push({
         key: `goal:${g.id}`, kind: 'goal', goalId: g.id,
-        eyebrow: value ? `${value.name} · ${g.title}` : g.title, title: g.title, why: g.whyText,
+        // With no reason written, the title takes the reason's place and the eyebrow keeps just the value.
+        eyebrow: g.whyText ? (value ? `${value.name} · ${g.title}` : g.title) : value?.name ?? '',
+        title: g.title, why: g.whyText || undefined,
         items, prompts, done: prompts.length === 0 && items.filter(isTodo).length > 0 && items.filter(isTodo).every((i) => i.done),
       })
     }
@@ -276,7 +278,7 @@ export function buildDay(
     const goal = p.goalId ? s.goals.find((g) => g.id === p.goalId) : undefined
     groups.push({
       key: `project:${p.id}`, kind: 'project', projectId: p.id,
-      eyebrow: `Project · due ${relativeDay(p.targetDate, date)}`, title: p.title, why: goal?.whyText,
+      eyebrow: `Project · due ${relativeDay(p.targetDate, date)}`, title: p.title, why: goal?.whyText || undefined,
       items, prompts: [], done: items.every((i) => i.done),
     })
   }

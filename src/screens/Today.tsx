@@ -17,6 +17,7 @@ import { OccurrenceSheet } from './OccurrenceSheet'
 import { useSyncStatus } from '../sync/controller'
 import { dashboardUrl } from '../sync/supabase'
 import { TaskSheet } from './TaskSheet'
+import { GettingStarted } from './Intro'
 
 type Filter = 'all' | 'goals' | 'projects' | 'tasks'
 
@@ -104,6 +105,7 @@ export function TodayScreen({ date }: { date?: DateStr }) {
         </DatePickerButton>
       </>}
     >
+      {!isPast && <GettingStarted snap={snap} />}
       {view.groups.length === 0 ? (
         <EmptyDay snap={snap} ctx={ctx} isPast={isPast} />
       ) : (
@@ -162,7 +164,7 @@ function Group(props: {
           <div className="group-why">Errands</div>
         ) : (
           <>
-            <div className="group-eyebrow">{group.eyebrow}</div>
+            {group.eyebrow && <div className="group-eyebrow">{group.eyebrow}</div>}
             <div className="group-why">{group.why ?? group.title}</div>
             {group.kind === 'project' && group.why && <div className="group-sub">{group.title}</div>}
           </>

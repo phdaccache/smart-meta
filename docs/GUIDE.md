@@ -1,5 +1,11 @@
 # How to use Smart Meta
 
+## First run
+
+A short intro (every screen has **Skip**): what the app is for, a note from Pedro, what you want to work on, then your first goal, built one SMART letter at a time with examples matched to your answers. Value and why are optional there. The goal starts right away, and a **Getting started** card on Today lists what's left (first check-in, first review, a backup). **Settings → Replay intro** runs it again; it only adds a goal.
+
+On an iPhone, add the app to the Home Screen *before* setting it up: Safari and the Home Screen app keep separate data.
+
 ## The pieces
 
 | Piece | What it is | Example |

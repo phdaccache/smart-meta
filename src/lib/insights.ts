@@ -575,9 +575,15 @@ export interface ValueBalance {
   takeaway: string
 }
 
+/** Stands in for goals with no value. Its empty id is how charts know to grey it. */
+export const NO_VALUE: Value = { id: '', name: 'No value', description: '', createdAt: '', updatedAt: '' }
+
 /** Weeks on track, per value, per month: what the effort actually went to. */
 export function valueBalance(p: Prepared, monthsBack = 6): ValueBalance {
-  const values = live(p.snap.values)
+  const named = live(p.snap.values)
+  // Goals without a value (skipped in the intro, or its value deleted) share a grey "No value" row.
+  const orphan = (g: Goal) => !named.some((v) => v.id === g.whyValueId)
+  const values = p.snap.goals.some((g) => orphan(g) && p.commitmentsOf(g).length > 0) ? [...named, NO_VALUE] : named
   const [y, m] = p.ctx.today.split('-').map(Number)
   const back = y * 12 + (m - 1) - (monthsBack - 1)
   const first = `${Math.floor(back / 12)}-${String((back % 12) + 1).padStart(2, '0')}-01`
@@ -585,7 +591,7 @@ export function valueBalance(p: Prepared, monthsBack = 6): ValueBalance {
   const runningLately = values.map(() => false)
   const recentFrom = addDays(p.lastWeek.start, -7 * (LOOKBACK_WEEKS - 1))
   for (const g of p.snap.goals) {
-    const vi = values.findIndex((v) => v.id === g.whyValueId)
+    const vi = orphan(g) ? values.indexOf(NO_VALUE) : values.findIndex((v) => v.id === g.whyValueId)
     if (vi < 0 || p.commitmentsOf(g).length === 0) continue
     for (const w of weekPoints(p, g, first, p.lastWeek.end)) {
       if (w.pct == null) continue
@@ -595,8 +601,8 @@ export function valueBalance(p: Prepared, monthsBack = 6): ValueBalance {
     }
   }
   const totals = values.map((_, i) => months.reduce((a, m) => a + m.counts[i], 0))
-  const idle = values.filter((_, i) => !runningLately[i]).map((v) => v.name)
-  const struggling = values.filter((_, i) => runningLately[i] && months.slice(-3).every((m) => m.counts[i] === 0)).map((v) => v.name)
+  const idle = values.filter((v, i) => v !== NO_VALUE && !runningLately[i]).map((v) => v.name)
+  const struggling = values.filter((v, i) => v !== NO_VALUE && runningLately[i] && months.slice(-3).every((m) => m.counts[i] === 0)).map((v) => v.name)
   const parts: string[] = []
   if (idle.length) parts.push(`No goal for ${idle.join(' or ')} in the last ${LOOKBACK_WEEKS} weeks.`)
   if (struggling.length) parts.push(`${struggling.join(' and ')}: no week on track lately.`)

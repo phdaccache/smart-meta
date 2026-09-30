@@ -6,8 +6,10 @@ export interface Settings {
   /** Active goals allowed at once; the rest wait in the backlog. */
   goalCap: number
   creationMode: 'wizard' | 'compact'
-  /** First run finished (values written). */
+  /** First run finished or skipped. */
   onboarded: boolean
+  /** The Getting started card on Today, shown after first run until done or closed. */
+  gettingStarted: boolean
   lastExportAt: string | null
   /** Testing only: the app behaves as if this is today. */
   devToday: string | null
@@ -18,6 +20,7 @@ export const DEFAULT_SETTINGS: Settings = {
   goalCap: 4,
   creationMode: 'wizard',
   onboarded: false,
+  gettingStarted: false,
   lastExportAt: null,
   devToday: null,
 }

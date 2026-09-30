@@ -78,6 +78,14 @@ export async function saveValues(list: { id?: ID; name: string; description: str
   if (writes.length) await putAll(writes)
 }
 
+/** The id of the value with this name, adding it if there's none yet. */
+export async function ensureValue(name: string): Promise<ID> {
+  const n = name.trim()
+  const found = (await db.values.toArray()).find((v) => !v.deletedAt && v.name.trim().toLowerCase() === n.toLowerCase())
+  if (found) return found.id
+  return (await put('values', make<'values'>({ name: n, description: '' }))).id
+}
+
 export async function deleteValue(v: Value) {
   await tombstone('values', [v.id])
 }

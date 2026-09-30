@@ -37,7 +37,7 @@ const PERIODS: { value: Period; label: string }[] = [
   { value: 'month', label: 'Month' },
 ]
 
-type SetField = <K extends keyof GoalDraft>(k: K, v: GoalDraft[K]) => void
+export type SetField = <K extends keyof GoalDraft>(k: K, v: GoalDraft[K]) => void
 
 // ——— shared field groups (used by the wizard, the compact form and commitment editing) ———
 
@@ -78,11 +78,11 @@ function KindField({ d, patch }: { d: GoalDraft; patch: (p: Partial<GoalDraft>) 
   )
 }
 
-function DoneWhenField({ d, set, error }: { d: GoalDraft; set: SetField; error?: string }) {
+export function DoneWhenField({ d, set, error, placeholder }: { d: GoalDraft; set: SetField; error?: string; placeholder?: string }) {
   return (
     <Field label="Done when" htmlFor="done-when" error={error}
       info="The yes/no question that ends the goal. Make it something no one could argue about.">
-      <textarea id="done-when" rows={2} value={d.doneWhen} placeholder="Signed an offer from a big tech company paying at least 10k a month"
+      <textarea id="done-when" rows={2} value={d.doneWhen} placeholder={placeholder ?? 'Signed an offer from a big tech company paying at least 10k a month'}
         onChange={(e) => set('doneWhen', e.target.value)} />
     </Field>
   )
@@ -110,19 +110,20 @@ export function GraceField({ value, onChange }: { value: number; onChange: (n: n
   )
 }
 
-export function MeasurementFields({ d, set, e, showErrors }: {
+export function MeasurementFields({ d, set, e, showErrors, placeholders }: {
   d: CommitmentDraft; set: (p: Partial<CommitmentDraft>) => void; e: Errors<CommitmentDraft>; showErrors: boolean
+  placeholders?: { definition: string; label: string }
 }) {
   return (
     <>
       <Field label="What counts" htmlFor="m-def" error={showErrors ? e.measurementDefinition : undefined}
         info={<>The sentence you’ll answer yes or no to, with no judgment call. “Go to the gym” can’t be checked; “At least 45 minutes of exercise” can.</>}>
         <textarea id="m-def" value={d.measurementDefinition} rows={2}
-          placeholder={d.shape === 'standard' ? 'Arrived at or before the agreed time' : d.shape === 'threshold' ? 'Slept at least 8 hours' : 'Did at least 45 minutes of exercise'}
+          placeholder={placeholders?.definition ?? (d.shape === 'standard' ? 'Arrived at or before the agreed time' : d.shape === 'threshold' ? 'Slept at least 8 hours' : 'Did at least 45 minutes of exercise')}
           onChange={(ev) => set({ measurementDefinition: ev.target.value })} />
       </Field>
       <Field label="Short name" htmlFor="m-label" error={showErrors ? e.label : undefined}>
-        <input id="m-label" value={d.label} placeholder={d.shape === 'threshold' ? 'sleep' : d.shape === 'standard' ? 'punctuality' : 'gym'}
+        <input id="m-label" value={d.label} placeholder={placeholders?.label ?? (d.shape === 'threshold' ? 'sleep' : d.shape === 'standard' ? 'punctuality' : 'gym')}
           onChange={(ev) => set({ label: ev.target.value })} autoCapitalize="off" />
       </Field>
     </>
@@ -260,7 +261,7 @@ export function WhyFields({ valueId, text, onValue, onText, errors, showErrors }
 
 // ——— new goal screen ———
 
-export function NewGoalScreen({ first }: { first?: boolean }) {
+export function NewGoalScreen() {
   const settings = useSettings()
   const today = useToday(settings.rolloverHour)
   const [d, setD] = useState<GoalDraft>(() => emptyGoalDraft(today))
@@ -277,12 +278,12 @@ export function NewGoalScreen({ first }: { first?: boolean }) {
   }
 
   return (
-    <Screen back={first ? undefined : '/goals'} title="New goal"
+    <Screen back="/goals" title="New goal"
       actions={<button className="btn ghost" onClick={() => setSettings({ creationMode: mode === 'wizard' ? 'compact' : 'wizard' })}>
         {mode === 'wizard' ? 'Compact' : 'Guided'}
       </button>}>
       {mode === 'wizard'
-        ? <Wizard d={d} set={set} patch={patch} errors={errors} onSave={save} first={first} />
+        ? <Wizard d={d} set={set} patch={patch} errors={errors} onSave={save} />
         : <Compact d={d} set={set} patch={patch} errors={errors} onSave={save} />}
     </Screen>
   )
@@ -294,7 +295,6 @@ interface FormProps {
   patch: (p: Partial<GoalDraft>) => void
   errors: Errors<GoalDraft>
   onSave: () => void
-  first?: boolean
 }
 
 const SMART = [
@@ -307,7 +307,7 @@ const SMART = [
 export type Letter = (typeof SMART)[number]['k'] | '+'
 
 /** S M A R T, with the current letter lit, so the method is visible without explaining it. */
-function SmartBar({ current }: { current: Letter }) {
+export function SmartBar({ current }: { current: Letter }) {
   const idx = current === '+' ? SMART.length : SMART.findIndex((x) => x.k === current)
   const word = current === '+' ? 'Extra · Prep' : SMART[idx].word
   return (
@@ -341,7 +341,7 @@ interface Step {
   body: ReactNode
 }
 
-function Wizard({ d, set, patch, errors, onSave, first }: FormProps) {
+function Wizard({ d, set, patch, errors, onSave }: FormProps) {
   const [i, setI] = useState(0)
   const [tried, setTried] = useState(false)
   const outcome = d.goalKind === 'outcome'
@@ -437,15 +437,14 @@ function Wizard({ d, set, patch, errors, onSave, first }: FormProps) {
         {step.body}
       </div>
       <div className="wizard-nav">
-        {at > 0 ? <button className="btn" onClick={() => { setTried(false); setI(at - 1) }}>Back</button>
-          : first ? <button className="btn" onClick={() => navigate('/', { replace: true })}>Later</button> : null}
+        {at > 0 ? <button className="btn" onClick={() => { setTried(false); setI(at - 1) }}>Back</button> : null}
         <button className="btn primary" onClick={next}>{last ? 'Save' : 'Next'}</button>
       </div>
     </div>
   )
 }
 
-function DateFields({ d, set, err }: { d: GoalDraft; set: SetField; err: (k: keyof GoalDraft) => string | undefined }) {
+export function DateFields({ d, set, err }: { d: GoalDraft; set: SetField; err: (k: keyof GoalDraft) => string | undefined }) {
   const outcome = d.goalKind === 'outcome'
   return (
     <div className="inline-fields">

@@ -172,6 +172,33 @@ Turn on airplane mode, open the installed app, and tick things.
 In Safari, go to Share → **Add to Home Screen**, then open the app from the icon.
 - **Expect:** full screen, the check icon, and your data kept between opens.
 
+## First run
+
+**O1. The whole intro**
+Erase all data (or open a private window), then open the app.
+- **Expect:** the welcome with an example week filling up, then Pedro's note with the signature, then the areas. Pick *Creativity* and *Health & fitness*: the first goal offers *Exercise 3× a week*, *Practise 4× a week* and *Sleep 7.5 hours*. Tap *Practise*: every step comes filled in, each with one line on its SMART letter. The value step offers *Creativity* (picked) and *Health*. Tap *3 months* on the date step, *Forgot* on the prep step (a prep appears), then **Create goal**.
+- **Expect:** "Practise 4× a week starts today", its card as on Today, and "about 42 times by …". Then three short screens (one tap, say why, review). **Go to Today** shows the goal and a Getting started card with the goal ticked.
+
+**O2. Skip everything**
+Erase all data, open the app, tap **Skip** on the welcome.
+- **Expect:** Today, empty, with the Getting started card. *Create your first goal* opens just the goal steps and ends with **Go to Today**.
+
+**O3. No value**
+In the intro, leave value and why empty on the R step (the button reads **Skip**).
+- **Expect:** the goal saves; its card on Today shows the title as the big line with no value above it. Insights → Big picture puts it in a grey *No value* row once it has weeks.
+
+**O4. Card ticks itself**
+With the Getting started card showing, tick something on Today, then export a backup.
+- **Expect:** those rows tick. The × hides the card for good.
+
+**O5. Replay**
+Settings → **Replay intro**.
+- **Expect:** the same intro; finishing it adds a goal and changes nothing else. No Getting started card appears.
+
+**O6. iPhone, from Safari**
+Open the link in Safari on a fresh phone.
+- **Expect:** "Put it on your Home Screen first" before anything else. Opened from the Home Screen icon, the intro starts at the welcome.
+
 ## Sync
 
 **25. It uploads**

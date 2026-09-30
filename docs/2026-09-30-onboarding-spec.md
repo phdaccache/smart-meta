@@ -1,4 +1,4 @@
-# Onboarding — spec (approved 2026-09-30, not implemented yet)
+# Onboarding — spec (approved and implemented 2026-09-30)
 
 Goal: a friend opens the app for the first time, understands what it is for, and
 leaves with one real, SMART goal running, knowing the daily check-in, why misses
@@ -115,7 +115,7 @@ explaining the current letter.
 > - **Threshold** — over or under a line
 > - **Standard** — a rule for when it comes up
 >
-> *Not sure? Pick one — you can change it later.*
+> *Not sure? Pick one, you can change it later.*
 > Then *What counts* and *Short name*, as today, with placeholders matched to
 > their area.
 
