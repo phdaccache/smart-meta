@@ -10,10 +10,19 @@
 //   projects one idle for weeks, one past its date          → Stalled projects
 //   7 of 8 slots active                                     → Open slot
 // Last week is left unexplained (Loose ends) and unreviewed; so is one older week.
+//
+// And for Insights, seven months back:
+//   a 10k finished in June, a journal abandoned in May, weekly calls in maintenance → timeline, year so far
+//   sleep: phone out of the bedroom seven weeks ago    → trend jump; the prep works, skipped on Fridays
+//   punctuality: a prep added five weeks ago           → no more late arrivals
+//   gym bag packed or not, same result                 → prep with no clear difference
+//   phone beats gym and replies                        → "might deserve a goal of its own"
+//   no goal for Freedom                                → value balance
+//   projects with steps spread over weeks, one done    → burn-up
 import { db } from '../db/db'
 import {
   addCommitment, addDisplacement, addPrep, check, createGoal, createProject, createTask, explainMiss, logOccurrence,
-  logValue, markWeekReviewed, saveValues,
+  logValue, markWeekReviewed, saveGoalReview, saveValues, setGoalState, updateProject,
 } from '../db/repo'
 import { setSettings } from '../db/settings'
 import { addDays, isoWeekday, periodOf } from '../lib/dates'
@@ -33,6 +42,17 @@ const prep = (title: string, fireWeekdays: number[], fireTime: string): PrepDraf
 
 async function commitmentsOf(g: Goal): Promise<Commitment[]> {
   return db.commitments.where('goalId').equals(g.id).toArray()
+}
+
+/** Moves a goal's state changes (and its end-of-goal review) back to the day they happened. */
+async function backdateState(goalId: string, day: DateStr) {
+  const at = `${day}T18:00:00.000Z`
+  for (const r of await db.revisions.where('goalId').equals(goalId).toArray()) {
+    if (r.field === 'state') await db.revisions.put({ ...r, timestamp: at, createdAt: at, updatedAt: at })
+  }
+  for (const r of await db.goalReviews.where('goalId').equals(goalId).toArray()) {
+    await db.goalReviews.put({ ...r, timestamp: at, createdAt: at, updatedAt: at })
+  }
 }
 
 type Reason = [MissReason, string | null]
@@ -84,6 +104,58 @@ export async function loadSampleData(today: DateStr): Promise<void> {
   const v = (name: string) => values.find((x) => x.name === name)!.id
 
   const goal = (d: Partial<GoalDraft>, start = false) => createGoal({ ...emptyGoalDraft(today), ...d } as GoalDraft, { start })
+  const rhythm = { checkinType: 'binary' as const, period: 'week' as const, targetValue: '', targetTime: '', comparator: 'gte' as const, unit: '' }
+  const noTime: Reason = ['no_time', null]
+
+  // ——— past goals, made first while every slot is free ———
+
+  // A 10k: three runs a week from March, raced in June.
+  const tenK = await goal({
+    goalKind: 'outcome', title: 'Run a 10k', whyValueId: v('Health'), whyText: 'To prove I can train for something and finish it.',
+    doneWhen: 'Finished a 10k race', graceDays: 14, tolerancePct: 75, startDate: weeksAgo(30), targetDate: addDays(weeksAgo(15), 5),
+  }, true)
+  const runs = await addCommitment((await db.goals.get(tenK.id))!, {
+    ...rhythm, shape: 'rhythm', label: 'runs', measurementDefinition: 'Ran at least 3 km', times: 3,
+  }, weeksAgo(30))
+  const training = Array.from({ length: 16 }, (_, i) => weeksAgo(30 - i))
+  await rhythmHistory(runs, training,
+    [2, 3, 3, 2, 3, 3, 3, 1, 3, 3, 3, 3, 2, 3, 3, 3],
+    [['too_tired', null], null, null, noTime, null, null, null, ['chose_other', 'going out with friends'], null, null, null, null, noTime],
+    [2, 4, 6], today)
+  const raceDay = addDays(weeksAgo(15), 5)
+  await saveGoalReview((await db.goals.get(tenK.id))!, {
+    hit: true, whatHappened: 'Ran it in 58 minutes without walking.', journalNote: 'Three runs a week was enough. Sign up for the race first next time.',
+  }, 'completed')
+  await backdateState(tenK.id, raceDay)
+
+  // A journal that never stuck: abandoned after six weeks.
+  const journal = await goal({
+    title: 'Journal every evening', whyValueId: v('Growth'), whyText: 'To notice what my days are actually made of.',
+    shape: 'threshold', label: 'journal', measurementDefinition: 'Wrote at least three lines before bed', checkinType: 'binary',
+    period: 'day', tolerancePct: 80, startDate: weeksAgo(26),
+  }, true)
+  const [journalC] = await commitmentsOf(journal)
+  const quit = addDays(weeksAgo(20), 3)
+  for (const d of days(journalC.startDate, addDays(quit, -1))) {
+    const wd = isoWeekday(d)
+    if ([1, 2, 4].includes(wd) || (d < weeksAgo(24) && wd === 3)) await check({ subjectType: 'commitment', subjectId: journalC.id }, d)
+    else if (wd === 5 || wd === 3) await explainMiss({ commitmentId: journalC.id, period: 'day', slots: [{ date: d, count: 1 }] }, { reason: 'too_tired' })
+  }
+  await setGoalState((await db.goals.get(journal.id))!, 'abandoned', 'Felt like homework. A few notes on my phone are enough.')
+  await backdateState(journal.id, quit)
+
+  // Weekly calls home: steady, so moved to maintenance twelve weeks ago.
+  const parents = await goal({
+    title: 'Call my parents every week', whyValueId: v('People'), whyText: 'They won’t be around forever.',
+    shape: 'rhythm', label: 'call', measurementDefinition: 'A real call with my parents, not just texts', times: 1, period: 'week',
+    tolerancePct: 80, startDate: weeksAgo(24),
+  }, true)
+  const [callC] = await commitmentsOf(parents)
+  const callWeeks = Array.from({ length: 25 }, (_, i) => weeksAgo(24 - i))
+  await rhythmHistory(callC, callWeeks, callWeeks.map((_, i) => (i === 2 || i === 5 ? 0 : 1)),
+    [null, null, ['chose_other', 'going out with friends'], null, null, noTime], [7], today)
+  await setGoalState((await db.goals.get(parents.id))!, 'maintenance')
+  await backdateState(parents.id, weeksAgo(12))
 
   // ——— active goals (7 of 8 slots) ———
 
@@ -97,13 +169,11 @@ export async function loadSampleData(today: DateStr): Promise<void> {
     title: 'Sleep well', whyValueId: v('Health'), whyText: 'So I stop losing mornings.',
     shape: 'threshold', label: 'sleep', measurementDefinition: 'Slept at least 7.5 hours', checkinType: 'quantity',
     period: 'day', targetValue: '7.5', comparator: 'gte', unit: 'h', tolerancePct: 70, startDate: weeksAgo(10),
-    preps: [prep('Phone charging outside the bedroom', [1, 2, 3, 4, 5, 6, 7], '23:00')],
   }, true)
   const onTime = await goal({
     title: 'Be on time', whyValueId: v('People'), whyText: 'Because other people’s time matters as much as mine.',
     shape: 'standard', label: 'punctuality', measurementDefinition: 'Arrived at or before the agreed time',
     checkinType: 'timestamp', tolerancePct: 90, startDate: weeksAgo(8),
-    preps: [prep('Check tomorrow’s first appointment and when to leave', [7, 1, 2, 3, 4], '22:00')],
   }, true)
   const sugar = await goal({
     title: '30 days without sugar', whyValueId: v('Health'), whyText: 'To prove to myself cravings pass.',
@@ -120,7 +190,6 @@ export async function loadSampleData(today: DateStr): Promise<void> {
     tolerancePct: 70, startDate: weeksAgo(6), targetDate: addDays(weeksAgo(6), 365),
   }, true)
   const bigTechGoal = (await db.goals.get(bigTech.id))!
-  const rhythm = { checkinType: 'binary' as const, period: 'week' as const, targetValue: '', targetTime: '', comparator: 'gte' as const, unit: '' }
   const leetcode = await addCommitment(bigTechGoal, {
     ...rhythm, shape: 'rhythm', label: 'LeetCode', measurementDefinition: 'Solved at least 2 LeetCode problems', times: 4,
   }, weeksAgo(6))
@@ -172,15 +241,28 @@ export async function loadSampleData(today: DateStr): Promise<void> {
     [null, null, ['too_tired', null], null, ['chose_other', 'going out with friends'], null, phone, phone, null, null],
     [1, 3, 5, 6], today)
 
-  // Sleep: short on Saturdays only, so every week stays on track.
+  // Sleep: short on weeknights until the phone left the bedroom seven weeks ago; since then only on
+  // Saturdays after a Friday the prep was skipped. On track every week of the last eight.
   const [sleepC] = await commitmentsOf(sleep)
+  const phoneOut = await addPrep(sleepC.id, prep('Phone charging outside the bedroom', [1, 2, 3, 4, 5, 6, 7], '23:00'))
+  const phoneOutFrom = weeksAgo(7)
+  const skippedFriday = (d: DateStr) => isoWeekday(d) === 5 && Number(d.slice(8)) % 4 !== 0
   for (const d of days(sleepC.startDate, yesterday)) {
+    const wd = isoWeekday(d)
+    if (d >= phoneOutFrom && !skippedFriday(d)) await check({ subjectType: 'prep', subjectId: phoneOut.id }, d)
     if (d === addDays(today, -2)) continue // one unlogged night → a prompt on Today
-    await logValue(sleepC, d, isoWeekday(d) === 6 ? 6.5 : 7.5 + (Number(d.slice(8)) % 3) * 0.5)
+    const short = d < phoneOutFrom
+      ? wd === 6 || wd === 3 || (d < weeksAgo(8) && wd === 4)
+      : wd === 6 && skippedFriday(addDays(d, -1))
+    await logValue(sleepC, d, short ? (wd === 6 ? 7 : 6.2) : 7.5 + (Number(d.slice(8)) % 3) * 0.5)
   }
 
-  // Punctuality: two appointments a week, late twice, weeks ago.
+  // Punctuality: two appointments a week, late twice, until a prep five weeks ago (always done since).
   const [onTimeC] = await commitmentsOf(onTime)
+  const checkFirst = await addPrep(onTimeC.id, prep('Check tomorrow’s first appointment and when to leave', [7, 1, 2, 3, 4], '22:00'))
+  for (const d of days(weeksAgo(5), yesterday)) {
+    if (checkFirst.fireWeekdays.includes(isoWeekday(d))) await check({ subjectType: 'prep', subjectId: checkFirst.id }, d)
+  }
   const lateDays = [addDays(weeksAgo(7), 1), addDays(weeksAgo(6), 3)]
   for (const monday of withThisWeek.slice(WEEKS - 8)) {
     for (const [offset, agreed, onTimeAt, lateAt] of [[1, '09:00', '08:55', '09:12'], [3, '19:30', '19:28', '19:45']] as const) {
@@ -208,7 +290,6 @@ export async function loadSampleData(today: DateStr): Promise<void> {
 
   // LeetCode: no time, again and again. Mock interviews: every week but the last.
   const recent = (n: number) => withThisWeek.slice(-n)
-  const noTime: Reason = ['no_time', null]
   await rhythmHistory(leetcode, recent(7), [4, 3, 4, 2, 3, 2, 1], [null, noTime, null, noTime, noTime, null, null], [1, 2, 4, 6], today)
   await rhythmHistory(mock, recent(7), [1, 1, 1, 1, 1, 0, 0], [], [6], today)
 
@@ -217,17 +298,23 @@ export async function loadSampleData(today: DateStr): Promise<void> {
   const forgot: Reason = ['forgot', null]
   await rhythmHistory(readingC, recent(6), [4, 2, 3, 2, 3, 1], [null, forgot, forgot, forgot, null, null], [1, 2, 3, 4], today)
 
-  // Replies: 4 days a week, never explained → failing.
+  // Replies: 4 days a week, one miss explained (the phone again) → failing.
   const [repliesC] = await commitmentsOf(friends)
   for (const d of days(repliesC.startDate, yesterday)) {
     if ([1, 2, 4, 6].includes(isoWeekday(d))) await check({ subjectType: 'commitment', subjectId: repliesC.id }, d)
   }
+  const phoneId = (await addDisplacement('phone')).id
+  await explainMiss({ commitmentId: repliesC.id, period: 'day', slots: [{ date: addDays(weeksAgo(3), 2), count: 1 }] }, { reason: 'chose_other', displacementId: phoneId })
 
-  // Preps done on most evenings they fired.
+  // Other preps done on most evenings they fired (the past goals had none). The gym bag is
+  // skipped only on Sundays, before the one gym day that happens anyway: no clear effect.
   for (const p of await db.preps.toArray()) {
+    if (p.id === phoneOut.id || p.id === checkFirst.id) continue
     const c = await db.commitments.get(p.commitmentId)
     for (const d of days(c!.startDate, yesterday)) {
-      if (p.fireWeekdays.includes(isoWeekday(d)) && Number(d.slice(8)) % 5 !== 0) {
+      const [wd, n] = [isoWeekday(d), Number(d.slice(8))]
+      const skipped = c!.id === gymC.id ? wd === 7 && n % 2 === 0 : n % 5 === 0
+      if (p.fireWeekdays.includes(wd) && !skipped) {
         await check({ subjectType: 'prep', subjectId: p.id }, d)
       }
     }
@@ -247,15 +334,19 @@ export async function loadSampleData(today: DateStr): Promise<void> {
     title: 'Try a new hobby', targetDate: addDays(today, 45),
     steps: ['List 3 hobbies to try', 'Try the first one', 'Try the second one', 'Pick one to keep'],
   })
-  await createProject({
+  const app = await createProject({
     title: 'Build my app', targetDate: addDays(today, 90),
     steps: ['Write a one-page idea', 'Sketch the main screens', 'Build a first version', 'Show it to 5 friends'],
+  })
+  const bike = await createProject({
+    title: 'Buy a bike', targetDate: addDays(weeksAgo(16), 4),
+    steps: ['Pick a budget', 'Test ride three bikes', 'Buy one'],
   })
   const cv = await createProject({
     title: 'CV & LinkedIn', targetDate: addDays(today, 10), goalId: bigTech.id,
     steps: ['Update CV', 'Get CV reviewed by a friend', 'Update LinkedIn', 'List 20 target companies'],
   })
-  await createProject({
+  const systemDesign = await createProject({
     title: 'System design prep', targetDate: addDays(today, 60), goalId: bigTech.id,
     steps: ['Read a system design primer', 'Design a URL shortener', 'Design a chat app', 'Design a news feed', 'Do 2 timed practice designs'],
   })
@@ -263,15 +354,24 @@ export async function loadSampleData(today: DateStr): Promise<void> {
     title: 'Interview stories', targetDate: addDays(today, 30), goalId: bigTech.id,
     steps: ['List 8 situations from past work', 'Write each as a STAR story', 'Rehearse them out loud', 'Record one and review it'],
   })
-  const firstStep = async (projectId: string) => (await db.tasks.where('projectId').equals(projectId).toArray()).find((t) => t.order === 0)!
+  // Steps done on these days, in order.
+  const doSteps = async (projectId: string, dates: DateStr[]) => {
+    const steps = (await db.tasks.where('projectId').equals(projectId).toArray()).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    for (const [i, d] of dates.entries()) await check({ subjectType: 'task', subjectId: steps[i].id }, d)
+  }
   // The license stalled after its first step, five weeks ago.
-  await check({ subjectType: 'task', subjectId: (await firstStep(license.id)).id }, weeksAgo(5))
-  for (const p of [finances, cv]) await check({ subjectType: 'task', subjectId: (await firstStep(p.id)).id }, addDays(today, -3))
+  await doSteps(license.id, [weeksAgo(5)])
+  for (const p of [finances, cv]) await doSteps(p.id, [addDays(today, -3)])
+  await doSteps(systemDesign.id, [addDays(weeksAgo(5), 2), addDays(weeksAgo(3), 4), addDays(weeksAgo(1), 1)])
+  await doSteps(app.id, [addDays(weeksAgo(8), 5), addDays(weeksAgo(2), 6)])
+  await doSteps(bike.id, [addDays(weeksAgo(19), 1), addDays(weeksAgo(18), 3), addDays(weeksAgo(16), 6)])
+  await updateProject(bike, { state: 'done' })
 
   // Backdate the plan to when it would have been set up: commitments and preps
-  // to their start dates (Review only counts prep edits made after that), and
-  // the license project to seven weeks ago.
-  await db.transaction('rw', db.commitments, db.preps, db.projects, async () => {
+  // to their start dates (Review only counts prep edits made after that), the
+  // two later preps to when they were added, "commitment added" revisions to
+  // their goal's start, and projects to when they were begun.
+  await db.transaction('rw', [db.commitments, db.preps, db.projects, db.revisions, db.goals], async () => {
     for (const c of await db.commitments.toArray()) {
       const at = `${c.startDate}T08:00:00.000Z`
       await db.commitments.put({ ...c, createdAt: at, updatedAt: at })
@@ -279,14 +379,29 @@ export async function loadSampleData(today: DateStr): Promise<void> {
         await db.preps.put({ ...p, createdAt: at, updatedAt: at })
       }
     }
-    const at = `${weeksAgo(7)}T08:00:00.000Z`
-    await db.projects.update(license.id, { createdAt: at, updatedAt: at })
+    for (const [p, day] of [[phoneOut, phoneOutFrom], [checkFirst, weeksAgo(5)]] as const) {
+      const at = `${day}T21:00:00.000Z`
+      await db.preps.update(p.id, { createdAt: at, updatedAt: at })
+    }
+    for (const r of await db.revisions.toArray()) {
+      if (r.field !== 'commitment') continue
+      const g = await db.goals.get(r.goalId)
+      const at = `${g!.startDate}T08:00:00.000Z`
+      await db.revisions.put({ ...r, timestamp: at, createdAt: at, updatedAt: at })
+    }
+    const started: [string, DateStr][] = [
+      [license.id, weeksAgo(7)], [systemDesign.id, weeksAgo(6)], [app.id, weeksAgo(9)], [bike.id, weeksAgo(20)], [cv.id, weeksAgo(2)],
+    ]
+    for (const [id, day] of started) {
+      const at = `${day}T08:00:00.000Z`
+      await db.projects.update(id, { createdAt: at, updatedAt: at })
+    }
   })
 
-  // ——— weekly reviews: all done except last week and the one four weeks back ———
+  // ——— weekly reviews: all done except last week, the one four weeks back, and two in the spring ———
 
-  for (const monday of mondays) {
-    if (monday === lastMonday || monday === weeksAgo(4)) continue
+  for (let monday = weeksAgo(30); monday < thisMonday; monday = addDays(monday, 7)) {
+    if ([lastMonday, weeksAgo(4), weeksAgo(17), weeksAgo(25)].includes(monday)) continue
     await markWeekReviewed(monday)
   }
 

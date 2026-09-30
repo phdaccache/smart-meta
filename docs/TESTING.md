@@ -120,7 +120,29 @@ In Plan, tap **⋯** on an active goal → **Move to maintenance**; on that goal
 
 **R6. Older weeks**
 Tap 📅 on Review.
-- **Expect:** weeks listed newest first, ✓ on reviewed ones; in the sample, last week and the week of 4 weeks ago aren't. Open the unreviewed old one: its results and loose ends (dated, e.g. "on 5 Sep"), no suggestions. **Mark reviewed** adds its ✓.
+- **Expect:** weeks listed newest first, ✓ on reviewed ones; in the sample, last week and the week of 4 weeks ago aren't (nor two in the spring). Open the unreviewed old one: its results and loose ends (dated, e.g. "on 5 Sep"), no suggestions. **Mark reviewed** adds its ✓.
+
+## Insights
+
+**I1. Goal trends**
+Load sample data, open **Insights → Goals**.
+- **Expect:** one row per running goal with its % over the last 12 weeks and a line of weekly results. *Sleep well* says "Prep added: Phone charging outside the bedroom (…): 62% → 93%"; *Be on time* says the same for its prep. **Tolerance vs actual** flags *Call my parents* (well above) and *Answer my friends* (far below). **Ended goals**: *Run a 10k* (completed) and *Journal every evening* (abandoned).
+
+**I2. One goal**
+Tap *Sleep well* (or 📊 on its goal page).
+- **Expect:** a chart with the 70% tolerance dashed, a numbered marker at the prep, and below it "62% in the weeks before, 93% after"; then its prep (earns its place), weekdays (Saturdays) and how far off.
+
+**I3. Patterns**
+Open **Patterns**.
+- **Expect:** "“phone” got in the way of “Exercise regularly” and “Answer my friends”…"; the gym bag prep: *No clear difference*; the phone prep: *Earns its place*; weekdays: sleep on Saturdays, replies on Wed, Fri, Sun; how far off: sleep ~0.8 h short, punctuality ~14 min late.
+
+**I4. Big picture**
+Open **Big picture**.
+- **Expect:** *2026 so far* (10 goals started, the 10k finished, best month, most kept, what got in the way most, reviews and plan changes); value balance saying nothing is running for Freedom; a timeline with the 10k ending in June and the journal in May; projects with their pace (e.g. the license months late, *Buy a bike* done 2 days late).
+
+**I5. Too new**
+Create and start a new goal.
+- **Expect:** it isn't charted; a line under Trends says charts come after 4 weeks of data.
 
 ## Ends
 

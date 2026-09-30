@@ -778,3 +778,23 @@ above:
 
 Deliberately excluded: an overall "life score" across goals, streaks, charts of
 tasks completed (workload, not willpower), badges.
+
+*(v1)* Built as three tabs so no screen is long: **Goals** (trend per goal with
+markers, tolerance vs actual, ended goals; each goal has its own page with the
+full chart and its patterns), **Patterns** (what gets in the way, prep effect,
+weekdays, near misses; last 12 weeks, running goals) and **Big picture** (year
+so far, value balance, timeline, project burn-up). Every chart leads with one
+sentence saying what it means. Details worth knowing:
+
+- Weekly percentages only count the days a goal was active or in maintenance,
+  rebuilt from its state revisions, so paused and ended stretches are gaps, not
+  misses. Trends stop at the last full week.
+- A marker's effect is the mean of up to 4 weeks before versus after (at least 2
+  each side); it's stated when the difference is 10 points or more.
+- Prep effect: each firing owns the days until the next one (an evening prep
+  counts from the next day). Shown as done vs skipped; "works" at 15+ points.
+  Always done means nothing to compare, and it says so.
+- Value balance counts weeks on track, not hits, so a daily commitment doesn't
+  outweigh a weekly one.
+- Year in review shows "so far" until December (and in January, for the year
+  before).

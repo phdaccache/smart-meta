@@ -14,6 +14,7 @@ import { NewProjectScreen, ProjectScreen } from './screens/Projects'
 import { openQuickAdd, QuickAdd } from './screens/QuickAdd'
 import { SettingsScreen, ValuesScreen } from './screens/Settings'
 import { ReviewScreen } from './screens/Review'
+import { GoalInsightsScreen, InsightsScreen } from './screens/Insights'
 import { TodayScreen } from './screens/Today'
 import { WelcomeScreen } from './screens/Welcome'
 import { Screen } from './ui/components'
@@ -39,14 +40,15 @@ function route(path: string, query: URLSearchParams) {
   if (path === '/settings') return <SettingsScreen />
   if (path === '/settings/values') return <ValuesScreen />
   if (path === '/review') return <ReviewScreen />
-  if (path === '/insights') return <Later title="Insights" />
-  return <Later title="Not found" />
+  if (path === '/insights') return <InsightsScreen />
+  if ((m = match('/insights/goals/:id', path))) return <GoalInsightsScreen key={m.id} id={m.id} />
+  return <NotFound />
 }
 
-function Later({ title }: { title: string }) {
+function NotFound() {
   return (
-    <Screen title={title} settings>
-      <p className="muted">{title === 'Not found' ? 'Nothing here.' : 'Coming soon.'}</p>
+    <Screen title="Not found" settings>
+      <p className="muted">Nothing here.</p>
     </Screen>
   )
 }

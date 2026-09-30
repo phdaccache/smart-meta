@@ -14,7 +14,7 @@ import { dueBadge, type Snapshot } from '../lib/today'
 import type { Commitment, Goal, GoalState, Prep } from '../lib/types'
 import { Field, InfoTip, Screen, Section, Sheet, StatusInfo, StatusWord, toast, TypeToConfirm, WeekBar } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
-import { IconChevronRight, IconHistory } from '../ui/icons'
+import { IconChevronRight, IconHistory, IconInsights } from '../ui/icons'
 import { navigate } from '../ui/router'
 import { CadenceFields, GraceField, graceLabel, MeasurementFields, PrepEditor, SHAPE_INFO, ShapeField, SmartHead, ToleranceField, WhyFields } from './GoalForm'
 import { projectProgress } from './Goals'
@@ -66,7 +66,12 @@ export function GoalDetailScreen({ id }: { id: string }) {
 
   return (
     <Screen back="/goals" eyebrow={[value?.name, STATE_LABEL[goal.state]].filter(Boolean).join(' · ')} title={goal.title}
-      actions={<button className="icon-btn" aria-label="History" onClick={() => setHistory(true)}><IconHistory /></button>}>
+      actions={<>
+        {commitments.length > 0 && (
+          <button className="icon-btn" aria-label="Insights" onClick={() => navigate(`/insights/goals/${goal.id}`)}><IconInsights /></button>
+        )}
+        <button className="icon-btn" aria-label="History" onClick={() => setHistory(true)}><IconHistory /></button>
+      </>}>
       {goal.state === 'backlog' && (
         <div className="banner">
           <div className="text">{full ? `In the backlog. You have ${settings.goalCap} active goals.` : 'In the backlog.'}</div>

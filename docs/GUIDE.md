@@ -79,6 +79,14 @@ Tap 📅 at the top of Review to open an older week (✓ marks the reviewed ones
 
 For finish-line goals, the status comes from their habits until the deadline. It turns **behind** during the extra time and **at risk** after it.
 
+## Now and then: Insights
+
+Review is about next week; **Insights** is about the long run. Each chart comes with one line saying what it means.
+
+- **Goals:** each goal's weekly percentage over the last months (a goal needs 4 weeks of data first). Changes to the plan (a prep added, a target lowered) are marked, with the weeks before and after, e.g. *"Prep added: Phone outside the bedroom: 62% → 93%"*. That's how you know a change worked. **Tolerance vs actual** shows where your bar sits against what you really do. Tap a goal for its full chart and patterns. The 📊 button on a goal's page opens it too.
+- **Patterns** (last 12 weeks): what gets in the way (a distraction beating several goals may deserve a goal of its own); which **preps** earn their place (how it went after doing the prep versus skipping it); which **weekdays** slip; and **how far off** the misses are (6.5 h of sleep needs a different fix than 5 h).
+- **Big picture:** the year so far, **value balance** (weeks on track per value: is anything being done for all of them?), a **timeline** of every goal, and **projects** at their current pace against their target dates.
+
 ## The end
 
 - **Finish line:** tap **I did it** on the goal page whenever you get it. If the deadline and extra time run out first, the goal asks you to review it.
@@ -89,5 +97,5 @@ Then choose **Renew**, **Maintenance** (habit goals only) or **Close it out**.
 ## Try it without waiting
 
 In **Settings → Developer** (temporary):
-- **Load sample data** replaces everything with this example plus other goals and ten weeks of history, shaped so Review shows one of each suggestion, loose ends, a review date, stalled projects and an open slot. It erases your data first, including the synced copy if you're signed in.
+- **Load sample data** replaces everything with this example plus other goals and seven months of history, shaped so Review shows one of each suggestion, loose ends, a review date, stalled projects and an open slot, and Insights has something in every chart (a finished and an abandoned goal, preps that work and one that doesn't). It erases your data first, including the synced copy if you're signed in. It takes a few seconds.
 - **Pretend today is** moves the app to any date. Tap the orange pill to go back to the real date.

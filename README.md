@@ -34,7 +34,11 @@ offline, and an optional Supabase sync copies everything off the phone.
   one evidence-backed suggestion per goal, dates, stalled projects, an open
   slot. Rules in `src/lib/review.ts`, design in spec §16.
 
-Insights is a placeholder for now; its design is in spec §16.
+- **Insights**: the long run, in three tabs. *Goals*: weekly trend per goal
+  with plan changes marked and their before/after, and tolerance vs actual.
+  *Patterns*: what gets in the way, prep effect, weekdays, how far off the
+  misses are. *Big picture*: year so far, value balance, goals timeline,
+  project burn-up. Logic in `src/lib/insights.ts`, charts in `src/ui/charts.tsx`.
 
 ## Develop
 
