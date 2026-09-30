@@ -10,12 +10,30 @@ const isRoot = (to: string) => ROOTS.includes(to.split('?')[0])
 interface NavState {
   /** How many in-app screens sit below this one. 0 on a tab screen. */
   depth: number
+  /** Where the screen was scrolled when we left it, to put it back on Back. */
+  scrollY?: number
 }
 
 const depth = () => (history.state as NavState | null)?.depth ?? 0
 
 // Entries made before this app ran (or by a reload) count as the bottom of the stack.
 if (!(history.state as NavState | null)?.depth) history.replaceState({ depth: 0 }, '')
+
+// The browser restores scroll before the screen has re-rendered, which on iOS can leave half
+// the page unpainted. We restore it ourselves once the content is tall enough.
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual'
+
+const rememberScroll = () => history.replaceState({ ...(history.state as NavState), scrollY: window.scrollY }, '')
+
+function restoreScroll(y: number) {
+  let frames = 0
+  const attempt = () => {
+    const room = document.documentElement.scrollHeight - window.innerHeight
+    if (room >= y || ++frames > 60) window.scrollTo(0, Math.min(y, Math.max(0, room)))
+    else requestAnimationFrame(attempt)
+  }
+  requestAnimationFrame(attempt)
+}
 
 /** Set while unwinding the stack to a tab: where to land once the browser gets there. */
 let pendingRoot: string | null = null
@@ -24,8 +42,12 @@ window.addEventListener('popstate', () => {
   if (pendingRoot != null) {
     history.replaceState({ depth: 0 }, '', pendingRoot)
     pendingRoot = null
+    notify()
+    window.scrollTo(0, 0)
+    return
   }
   notify()
+  restoreScroll((history.state as NavState | null)?.scrollY ?? 0)
 })
 
 export function navigate(to: string, opts: { replace?: boolean } = {}) {
@@ -41,6 +63,7 @@ export function navigate(to: string, opts: { replace?: boolean } = {}) {
   } else if (opts.replace) {
     history.replaceState({ depth: depth() }, '', to)
   } else {
+    rememberScroll()
     history.pushState({ depth: depth() + 1 }, '', to)
   }
   notify()

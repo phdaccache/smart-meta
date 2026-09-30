@@ -10,20 +10,28 @@ const live = <T extends { deletedAt?: string | null }>(rows: T[]) => rows.filter
 /** IndexedDB returns rows by id (random); show them in the order they were made. */
 const byCreation = <T extends { createdAt: string }>(rows: T[]) => rows.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
 
+// The last result of each app-wide query, handed back on mount so a screen
+// reached with Back draws at once instead of flashing empty.
+let lastSnapshot: Snapshot | undefined
+let lastRevisions: Revision[] | undefined
+let lastWeekReviews: WeekReview[] | undefined
+let lastDisplacements: Displacement[] | undefined
+
 export async function loadSnapshot(): Promise<Snapshot> {
   const [values, goals, commitments, preps, projects, tasks, entries, occurrences] = await Promise.all([
     db.values.toArray(), db.goals.toArray(), db.commitments.toArray(), db.preps.toArray(),
     db.projects.toArray(), db.tasks.toArray(), db.entries.toArray(), db.occurrences.toArray(),
   ])
-  return {
+  lastSnapshot = {
     values: byCreation(live(values)), goals: live(goals), commitments: byCreation(live(commitments)),
     preps: byCreation(live(preps)), projects: byCreation(live(projects)), tasks: live(tasks), entries,
     occurrences: live(occurrences),
   }
+  return lastSnapshot
 }
 
 export function useSnapshot(): Snapshot | undefined {
-  return useLiveQuery(loadSnapshot, [])
+  return useLiveQuery(loadSnapshot, [], lastSnapshot)
 }
 
 export function useSettings(): Settings {
@@ -39,7 +47,10 @@ export function useSnoozes(): Record<ID, DateStr> {
 }
 
 export function useDisplacements(): Displacement[] {
-  return useLiveQuery(async () => live(await db.displacements.toArray()).sort((a, b) => a.label.localeCompare(b.label)), []) ?? []
+  return useLiveQuery(
+    async () => (lastDisplacements = live(await db.displacements.toArray()).sort((a, b) => a.label.localeCompare(b.label))),
+    [], lastDisplacements,
+  ) ?? []
 }
 
 export function useRevisions(goalId: ID): Revision[] {
@@ -47,11 +58,11 @@ export function useRevisions(goalId: ID): Revision[] {
 }
 
 export function useAllRevisions(): Revision[] | undefined {
-  return useLiveQuery(async () => live(await db.revisions.toArray()), [])
+  return useLiveQuery(async () => (lastRevisions = live(await db.revisions.toArray())), [], lastRevisions)
 }
 
 export function useWeekReviews(): WeekReview[] | undefined {
-  return useLiveQuery(async () => live(await db.weekReviews.toArray()), [])
+  return useLiveQuery(async () => (lastWeekReviews = live(await db.weekReviews.toArray())), [], lastWeekReviews)
 }
 
 export function useGoalReviews(goalId: ID): GoalReview[] {

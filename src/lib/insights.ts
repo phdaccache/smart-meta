@@ -8,6 +8,9 @@ import type {
 
 /** A goal's charts stay hidden until it has this many weeks of data. */
 export const MIN_WEEKS = 4
+/** How far back the Goals and Patterns tabs look, in weeks. Infinity: since the start. */
+export const RANGES = [13, 26, 52, Infinity] as const
+export type Range = (typeof RANGES)[number]
 /** Trends and prep effects look back this far. */
 export const TREND_WEEKS = 26
 /** Patterns (reasons, weekdays, near misses) look back this far. */
@@ -39,6 +42,9 @@ const live = <T extends { deletedAt?: string | null }>(xs: T[]) => xs.filter((x)
 const dayOf = (iso: string) => iso.slice(0, 10)
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null)
 const isLive = (s: string) => s === 'active' || s === 'maintenance'
+/** First day of a range that ends with the last full week. */
+export const rangeStart = (p: Prepared, weeks: number) =>
+  Number.isFinite(weeks) ? addDays(p.lastWeek.start, -7 * (weeks - 1)) : '0000-01-01'
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 
 export function prepare(input: InsightsInput): Prepared {
@@ -162,7 +168,7 @@ export interface GoalTrend {
   goal: Goal
   points: WeekPoint[]
   weeksWithData: number
-  /** Mean of the last LOOKBACK_WEEKS weeks with data. */
+  /** Mean of the weeks with data in the range. */
   recent: number | null
   markers: Marker[]
   takeaway: string
@@ -202,11 +208,12 @@ function planChanges(p: Prepared, g: Goal): Omit<Marker, 'before' | 'after'>[] {
   return out.sort((a, b) => a.date.localeCompare(b.date))
 }
 
-export function goalTrend(p: Prepared, g: Goal): GoalTrend | null {
+export function goalTrend(p: Prepared, g: Goal, weeks: number = TREND_WEEKS): GoalTrend | null {
   const life = p.lives.get(g.id)!
   if (life.segments.length === 0 || p.commitmentsOf(g).length === 0) return null
   const end = minDate(p.lastWeek.end, life.segments.at(-1)!.end)
-  const start = maxDate(life.segments[0].start, addDays(periodOf(end, 'week').start, -7 * (TREND_WEEKS - 1)))
+  const back = Number.isFinite(weeks) ? addDays(periodOf(end, 'week').start, -7 * (weeks - 1)) : life.segments[0].start
+  const start = maxDate(life.segments[0].start, back)
   if (start > end) return null
   const points = weekPoints(p, g, start, end)
   const valued = points.filter((x) => x.pct != null)
@@ -224,7 +231,7 @@ export function goalTrend(p: Prepared, g: Goal): GoalTrend | null {
         after: side(points.filter((x) => x.start > week).slice(0, EFFECT_WEEKS)),
       }
     })
-  const recent = mean(valued.slice(-LOOKBACK_WEEKS).map((x) => x.pct!))
+  const recent = mean(valued.map((x) => x.pct!))
   return { goal: g, points, weeksWithData: valued.length, recent, markers, takeaway: trendTakeaway(points, markers, recent) }
 }
 
@@ -278,10 +285,15 @@ function list(xs: string[]): string {
 
 // ——— what gets in the way ———
 
+export interface GoalCount {
+  goal: Goal
+  count: number
+}
+
 export interface Obstacles {
   total: number
-  reasons: { reason: MissReason; count: number }[]
-  displacements: { label: string; count: number; goals: { goal: Goal; count: number }[] }[]
+  reasons: { reason: MissReason; count: number; goals: GoalCount[] }[]
+  displacements: { label: string; count: number; goals: GoalCount[] }[]
   takeaway: string
 }
 
@@ -302,10 +314,13 @@ export function obstacles(p: Prepared, from: DateStr, goalId?: ID): Obstacles {
     .filter((id) => !goalId || owner.get(id) === goalId)
     .flatMap((id) => p.entriesOf(id))
     .filter((e) => e.outcome === 'miss' && e.missReason && e.date >= from && e.date <= p.ctx.today)
-  const reasons = new Map<MissReason, number>()
+  const reasons = new Map<MissReason, Map<ID, number>>()
   const disp = new Map<string, Map<ID, number>>()
+  const bump = (m: Map<ID, number>, id: ID) => m.set(id, (m.get(id) ?? 0) + 1)
   for (const e of misses) {
-    reasons.set(e.missReason!, (reasons.get(e.missReason!) ?? 0) + 1)
+    const byGoal = reasons.get(e.missReason!) ?? new Map<ID, number>()
+    bump(byGoal, owner.get(e.subjectId)!)
+    reasons.set(e.missReason!, byGoal)
     const label = e.displacementId && p.displacements.find((d) => d.id === e.displacementId)?.label
     if (label) {
       const byGoal = disp.get(label) ?? new Map<ID, number>()
@@ -314,18 +329,18 @@ export function obstacles(p: Prepared, from: DateStr, goalId?: ID): Obstacles {
       disp.set(label, byGoal)
     }
   }
+  const goalCounts = (byGoal: Map<ID, number>): GoalCount[] => [...byGoal]
+    .map(([id, count]) => ({ goal: p.snap.goals.find((g) => g.id === id)!, count }))
+    .filter((x) => x.goal)
+    .sort((a, b) => b.count - a.count)
+  const total = (byGoal: Map<ID, number>) => [...byGoal.values()].reduce((a, b) => a + b, 0)
   const out: Obstacles = {
     total: misses.length,
-    reasons: [...reasons].map(([reason, count]) => ({ reason, count })).sort((a, b) => b.count - a.count),
+    reasons: [...reasons]
+      .map(([reason, byGoal]) => ({ reason, count: total(byGoal), goals: goalCounts(byGoal) }))
+      .sort((a, b) => b.count - a.count),
     displacements: [...disp]
-      .map(([label, byGoal]) => ({
-        label,
-        count: [...byGoal.values()].reduce((a, b) => a + b, 0),
-        goals: [...byGoal]
-          .map(([id, count]) => ({ goal: p.snap.goals.find((g) => g.id === id)!, count }))
-          .filter((x) => x.goal)
-          .sort((a, b) => b.count - a.count),
-      }))
+      .map(([label, byGoal]) => ({ label, count: total(byGoal), goals: goalCounts(byGoal) }))
       .sort((a, b) => b.count - a.count),
     takeaway: '',
   }
@@ -357,12 +372,12 @@ export interface PrepEffect {
  * owns the days until the next one: an evening prep counts from the next day,
  * a morning one from the same day.
  */
-export function prepEffect(p: Prepared, prep: Prep): PrepEffect | null {
+export function prepEffect(p: Prepared, prep: Prep, from: DateStr = rangeStart(p, TREND_WEEKS)): PrepEffect | null {
   const c = live(p.snap.commitments).find((x) => x.id === prep.commitmentId)
   const goal = c && p.snap.goals.find((g) => g.id === c.goalId)
   if (!c || !goal || prep.fireWeekdays.length === 0) return null
   const evening = (parseTime(prep.fireTime) ?? 0) >= 12 * 60
-  const since = maxDate(maxDate(dayOf(prep.createdAt), c.startDate), addDays(p.lastWeek.start, -7 * (TREND_WEEKS - 1)))
+  const since = maxDate(maxDate(dayOf(prep.createdAt), c.startDate), from)
   const doneDays = new Set(p.entriesOf(prep.id).filter((e) => e.outcome === 'hit').map((e) => e.date))
   const life = p.lives.get(goal.id)!
   const done: number[] = []
@@ -462,7 +477,44 @@ export interface NearMiss {
   misses: number
   /** How far misses fall from the target, on average: units, or minutes. */
   avgGap: number
-  close: boolean
+  /** Buckets of equal width with the target on an edge, so each is all hits or all misses. */
+  bins: MissBin[]
+}
+
+export interface MissBin {
+  from: number
+  to: number
+  count: number
+  /** The side of the target this bucket is on. */
+  hit: boolean
+}
+
+const QUANTITY_STEPS = [0.1, 0.25, 0.5, 1, 2, 5, 10, 20, 50, 100, 250, 500, 1000]
+const MINUTE_STEPS = [5, 10, 15, 30, 60, 120]
+
+/**
+ * Buckets for a distribution around a target. `atMost`: hitting means being at
+ * or under the target (a bedtime, minutes late); otherwise at or over it.
+ */
+export function missBins(values: number[], target: number, atMost: boolean, minutes: boolean): MissBin[] {
+  if (values.length === 0) return []
+  const lo = Math.min(...values, target)
+  const hi = Math.max(...values, target)
+  const steps = minutes ? MINUTE_STEPS : QUANTITY_STEPS
+  let si = steps.findIndex((s) => s >= (hi - lo) / 6)
+  if (si < 0) si = steps.length - 1
+  const k = (v: number, step: number) => (atMost ? Math.ceil((v - target) / step - 1e-9) : Math.floor((v - target) / step + 1e-9))
+  let step = steps[si]
+  while (si < steps.length - 1 && k(hi, step) - k(lo, step) + 1 > 10) step = steps[++si]
+  const kMin = k(lo, step)
+  const kMax = k(hi, step)
+  const bins: MissBin[] = []
+  for (let i = kMin; i <= kMax; i++) {
+    const from = atMost ? target + (i - 1) * step : target + i * step
+    bins.push({ from, to: from + step, count: 0, hit: atMost ? i <= 0 : i >= 0 })
+  }
+  for (const v of values) bins[k(v, step) - kMin].count++
+  return bins
 }
 
 /** How far off the misses are, for commitments with a number: 7.4 h and 5 h need different fixes. */
@@ -501,8 +553,9 @@ export function nearMiss(p: Prepared, c: Commitment, from: DateStr): NearMiss | 
   const missed = values.filter((v) => !v.hit)
   if (missed.length < 2) return null
   const avgGap = mean(missed.map((v) => Math.abs(v.value - target)))!
-  const close = kind === 'quantity' ? avgGap <= Math.abs(target) * 0.1 : avgGap <= 15
-  return { commitment: c, goal, kind, values, target, misses: missed.length, avgGap, close }
+  const atMost = kind === 'late' || c.comparator === 'lte'
+  const bins = missBins(values.map((v) => v.value), target, atMost, kind !== 'quantity')
+  return { commitment: c, goal, kind, values, target, misses: missed.length, avgGap, bins }
 }
 
 // ——— value balance ———
@@ -545,9 +598,9 @@ export function valueBalance(p: Prepared, monthsBack = 6): ValueBalance {
   const idle = values.filter((_, i) => !runningLately[i]).map((v) => v.name)
   const struggling = values.filter((_, i) => runningLately[i] && months.slice(-3).every((m) => m.counts[i] === 0)).map((v) => v.name)
   const parts: string[] = []
-  if (idle.length) parts.push(`Nothing running for ${idle.join(' or ')} in the last ${LOOKBACK_WEEKS} weeks.`)
-  if (struggling.length) parts.push(`${struggling.join(' and ')}: goals running, but no week on track lately.`)
-  return { values, months, totals, takeaway: parts.join(' ') || 'Every value got some kept weeks lately.' }
+  if (idle.length) parts.push(`No goal for ${idle.join(' or ')} in the last ${LOOKBACK_WEEKS} weeks.`)
+  if (struggling.length) parts.push(`${struggling.join(' and ')}: no week on track lately.`)
+  return { values, months, totals, takeaway: parts.join(' ') || 'Every value had kept weeks lately.' }
 }
 
 // ——— goals timeline ———
@@ -590,10 +643,15 @@ export interface Burnup {
   /** Day each step was done, oldest first. */
   done: DateStr[]
   start: DateStr
-  /** At the pace so far; null with nothing done yet, or nothing left. */
+  /** When the last step lands if steps keep coming as fast as so far; null with nothing done yet, or nothing left. */
   projected: DateStr | null
+  status: ProjectPace
+  /** Share of the time from start to target already gone (can pass 1). */
+  timeUsed: number
   text: string
 }
+
+export type ProjectPace = 'done' | 'all_done' | 'not_started' | 'on_pace' | 'behind' | 'overdue'
 
 function lateness(days: number): string {
   const n = Math.abs(days)
@@ -609,23 +667,29 @@ export function burnup(p: Prepared, project: Project): Burnup {
   const start = minDate(dayOf(project.createdAt), done[0] ?? dayOf(project.createdAt))
   const remaining = steps.length - done.length
   let projected: DateStr | null = null
+  let status: ProjectPace
   let text: string
   if (project.state === 'done') {
     const end = done.at(-1) ?? dayOf(project.updatedAt)
     const d = diffDays(end, project.targetDate)
-    text = `Done ${dayMonth(end)}, ${d === 0 ? 'on the day' : d > 0 ? `${lateness(d)} early` : `${lateness(d)} late`}`
+    status = 'done'
+    text = `Done ${dayMonth(end)} · ${d === 0 ? 'on the day' : d > 0 ? `${lateness(d)} early` : `${lateness(d)} late`}`
   } else if (remaining === 0) {
-    text = `All ${steps.length} steps done`
-  } else if (done.length === 0) {
-    text = `No steps done yet · due ${dayMonth(project.targetDate)}`
+    status = 'all_done'
+    text = 'Every step done: mark it done'
   } else {
-    const pace = done.length / Math.max(7, diffDays(start, p.ctx.today))
-    projected = addDays(p.ctx.today, Math.ceil(remaining / pace))
-    const late = diffDays(project.targetDate, projected)
-    text = `${done.length} of ${steps.length} · at this pace, done ${dayMonth(projected)}`
-      + (late > 0 ? ` (${lateness(late)} after the target)` : ' (in time)')
+    if (done.length > 0) {
+      const pace = done.length / Math.max(7, diffDays(start, p.ctx.today))
+      projected = addDays(p.ctx.today, Math.ceil(remaining / pace))
+    }
+    const due = project.targetDate < p.ctx.today ? `Was due ${dayMonth(project.targetDate)}` : `Due ${dayMonth(project.targetDate)}`
+    if (project.targetDate < p.ctx.today) status = 'overdue'
+    else if (!projected) status = 'not_started'
+    else status = projected > project.targetDate ? 'behind' : 'on_pace'
+    text = projected ? `${due} · at your pace, ~${dayMonth(projected)}` : due
   }
-  return { project, total: steps.length, done, start, projected, text }
+  const timeUsed = diffDays(start, p.ctx.today) / Math.max(1, diffDays(start, project.targetDate))
+  return { project, total: steps.length, done, start, projected, status, timeUsed, text }
 }
 
 export function burnups(p: Prepared): Burnup[] {
@@ -650,6 +714,8 @@ export interface YearReview {
   mostKept: { goal: Goal; onTrack: number; weeks: number } | null
   topDisplacement: { label: string; count: number } | null
   reviews: number
+  /** Weeks this year that had a running goal, up to the last full week. */
+  reviewable: number
   planChanges: number
   projectsDone: number
 }
@@ -705,6 +771,8 @@ export function yearReview(p: Prepared): YearReview {
     mostKept,
     topDisplacement: top ? { label: top[0], count: top[1] } : null,
     reviews: live(p.weekReviews).filter((w) => w.doneAt && inYear(w.week)).length,
+    reviewable: periodsBetween(span.start, span.end, 'week')
+      .filter((w) => w.start >= span.start && [...p.lives.values()].some((l) => liveParts(l, w).length > 0)).length,
     planChanges: live(p.revisions).filter((r) => r.field !== 'state' && inYear(dayOf(r.timestamp))).length,
     projectsDone: burnupsDoneIn(p, year),
   }
@@ -726,11 +794,11 @@ export interface GoalsView {
   tolerance: ReturnType<typeof toleranceCheck>
 }
 
-export function goalsView(p: Prepared): GoalsView {
+export function goalsView(p: Prepared, weeks: number = TREND_WEEKS): GoalsView {
   const trends = p.snap.goals
     .slice()
     .sort((a, b) => a.priority - b.priority)
-    .map((g) => goalTrend(p, g))
+    .map((g) => goalTrend(p, g, weeks))
     .filter((t): t is GoalTrend => !!t)
   const running = trends.filter((t) => isLive(t.goal.state))
   return {
@@ -751,18 +819,19 @@ export interface PatternsView {
   nearMisses: NearMiss[]
 }
 
-export function patternsView(p: Prepared): PatternsView {
-  const from = addDays(p.lastWeek.start, -7 * (LOOKBACK_WEEKS - 1))
-  const running = new Set(p.snap.goals.filter((g) => isLive(g.state)).map((g) => g.id))
+/** Patterns across running goals, or for one goal (`goalId`, from `since`: an ended goal looks back from its end). */
+export function patternsView(p: Prepared, weeks: number = LOOKBACK_WEEKS, goalId?: ID, since?: DateStr): PatternsView {
+  const from = since ?? rangeStart(p, weeks)
+  const running = new Set(p.snap.goals.filter((g) => (goalId ? g.id === goalId : isLive(g.state))).map((g) => g.id))
   const order = new Map(p.snap.goals.map((g) => [g.id, g.priority]))
   const cs = live(p.snap.commitments)
     .filter((c) => running.has(c.goalId))
     .sort((a, b) => order.get(a.goalId)! - order.get(b.goalId)!)
   return {
     from,
-    obstacles: obstacles(p, from),
+    obstacles: obstacles(p, from, goalId),
     preps: cs.flatMap((c) => live(p.snap.preps).filter((x) => x.commitmentId === c.id))
-      .map((x) => prepEffect(p, x))
+      .map((x) => prepEffect(p, x, from))
       .filter((x): x is PrepEffect => !!x && x.verdict !== 'too_new'),
     weekdays: cs.map((c) => weekdayPattern(p, c, from)).filter((x): x is WeekdayPattern => !!x),
     nearMisses: cs.map((c) => nearMiss(p, c, from)).filter((x): x is NearMiss => !!x),

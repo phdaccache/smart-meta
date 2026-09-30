@@ -1,38 +1,53 @@
-import { useMemo, useState } from 'react'
-import { addDays, dayMonth, formatTime, monthName, weekdayShort } from '../lib/dates'
-import { reasonLabel } from '../lib/describe'
+import { useMemo, useState, type ReactNode } from 'react'
+import { dayMonth, formatTime, monthName } from '../lib/dates'
 import {
-  burnups, goalsView, goalTrend, LOOKBACK_WEEKS, MIN_WEEKS, nearMiss, obstacles, patternsView, prepare, prepEffect, timeline,
-  valueBalance, weekdayPattern, yearReview, type GoalTrend, type Marker, type NearMiss, type Obstacles, type PrepEffect,
-  type Prepared, type PrepVerdict, type WeekdayPattern,
+  burnups, goalsView, goalTrend, MIN_WEEKS, patternsView, prepare, RANGES, timeline, valueBalance, yearReview,
+  type GoalTrend, type Marker, type NearMiss, type PatternsView, type Prepared, type PrepEffect, type PrepVerdict, type Range,
 } from '../lib/insights'
 import { statusFor, type ScoreContext } from '../lib/scoring'
+import type { Goal } from '../lib/types'
+import {
+  Distribution, GoalChips, ProjectPace, ReasonBars, Sparkline, TimelineChart, ToleranceTrack, TrendChart, ValueMonths,
+  WeekdayGrid,
+} from '../ui/charts'
 import { InfoTip, Screen, Section, Segmented } from '../ui/components'
-import { BurnupSpark, HBar, Histogram, Sparkline, TimelineChart, ToleranceTrack, TrendChart, ValueMonths, WeekdayGrid } from '../ui/charts'
 import { useAllRevisions, useDisplacements, useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
 import { IconChevronRight } from '../ui/icons'
 import { navigate } from '../ui/router'
 
 type View = 'goals' | 'patterns' | 'big'
-const weekdayName = (iso: number) => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][iso - 1]
 
-function useStoredView(): [View, (v: View) => void] {
-  const [v, setV] = useState<View>(() => {
+function stored<T extends string | number>(key: string, parse: (s: string | null) => T): [T, (v: T) => void] {
+  const [v, setV] = useState<T>(() => {
     try {
-      const s = localStorage.getItem('insights-view')
-      return s === 'patterns' || s === 'big' ? s : 'goals'
+      return parse(localStorage.getItem(key))
     } catch {
-      return 'goals'
+      return parse(null)
     }
   })
   return [v, (next) => {
     setV(next)
     try {
-      localStorage.setItem('insights-view', next)
+      localStorage.setItem(key, String(next))
     } catch {
       // private mode: just not remembered
     }
   }]
+}
+
+const useView = () => stored<View>('insights-view', (s) => (s === 'patterns' || s === 'big' ? s : 'goals'))
+const useRange = () => stored<Range>('insights-range', (s) => RANGES.find((r) => String(r) === s) ?? 13)
+
+const RANGE_LABEL: Record<string, string> = { 13: '3 months', 26: '6 months', 52: '1 year', Infinity: 'All' }
+
+/** The last computed result per slot, so coming Back to Insights draws at once instead of recomputing. */
+const memo = new Map<string, { deps: unknown[]; value: unknown }>()
+function remember<T>(slot: string, deps: unknown[], compute: () => T): T {
+  const hit = memo.get(slot)
+  if (hit && hit.deps.length === deps.length && hit.deps.every((d, i) => d === deps[i])) return hit.value as T
+  const value = compute()
+  memo.set(slot, { deps, value })
+  return value
 }
 
 function usePrepared(): Prepared | null {
@@ -43,24 +58,28 @@ function usePrepared(): Prepared | null {
   const weekReviews = useWeekReviews()
   const displacements = useDisplacements()
   const ctx: ScoreContext = useMemo(() => ({ today, rolloverHour: settings.rolloverHour }), [today, settings.rolloverHour])
-  return useMemo(
-    () => (snap && revisions && weekReviews ? prepare({ snap, revisions, weekReviews, displacements, ctx }) : null),
-    [snap, revisions, weekReviews, displacements, ctx],
-  )
+  if (!snap || !revisions || !weekReviews) return null
+  return remember('prepared', [snap, revisions, weekReviews, displacements, today, settings.rolloverHour],
+    () => prepare({ snap, revisions, weekReviews, displacements, ctx }))
 }
 
 const pct = (n: number | null) => (n == null ? '—' : `${Math.round(n)}%`)
 const pctClass = (n: number | null, tol: number) => `st-text-${(statusFor(n, tol) ?? 'none').replace(' ', '-')}`
 
+function Tip({ title, children }: { title: string; children: ReactNode }) {
+  return <span className="title-row">{title}<InfoTip label={`About ${title.toLowerCase()}`}>{children}</InfoTip></span>
+}
+
 export function InsightsScreen() {
   const p = usePrepared()
-  const [view, setView] = useStoredView()
+  const [view, setView] = useView()
+  const [range, setRange] = useRange()
   if (!p) return null
   const title = (
     <span className="title-row">Insights
       <InfoTip label="About insights">
-        What months of check-ins say: whether goals are working, what gets in the way, and where the effort goes.
-        Review is for next week; this is for the long run.
+        The long run: whether goals are working, what gets in the way, and where the effort goes.
+        Review is for next week; this is for the months behind you.
       </InfoTip>
     </span>
   )
@@ -68,8 +87,17 @@ export function InsightsScreen() {
     <Screen title={title} settings>
       <Segmented label="Insights view" value={view} onChange={setView}
         options={[{ value: 'goals', label: 'Goals' }, { value: 'patterns', label: 'Patterns' }, { value: 'big', label: 'Big picture' }]} />
-      {view === 'goals' && <GoalsTab p={p} />}
-      {view === 'patterns' && <PatternsTab p={p} />}
+      {view !== 'big' && (
+        <div className="range-row" role="radiogroup" aria-label="Period">
+          {RANGES.map((r) => (
+            <button key={r} role="radio" aria-checked={range === r} className={range === r ? 'on' : ''} onClick={() => setRange(r)}>
+              {RANGE_LABEL[String(r)]}
+            </button>
+          ))}
+        </div>
+      )}
+      {view === 'goals' && <GoalsTab p={p} range={range} />}
+      {view === 'patterns' && <PatternsTab p={p} range={range} />}
       {view === 'big' && <BigPictureTab p={p} />}
     </Screen>
   )
@@ -77,8 +105,10 @@ export function InsightsScreen() {
 
 // ——— Goals ———
 
-function GoalsTab({ p }: { p: Prepared }) {
-  const v = useMemo(() => goalsView(p), [p])
+const END_LABEL: Record<string, string> = { completed: 'Completed', abandoned: 'Abandoned', backlog: 'Paused' }
+
+function GoalsTab({ p, range }: { p: Prepared; range: Range }) {
+  const v = remember('goals', [p, range], () => goalsView(p, range))
   if (v.trends.length === 0 && v.ended.length === 0) {
     return (
       <div className="empty">
@@ -89,30 +119,37 @@ function GoalsTab({ p }: { p: Prepared }) {
   }
   return (
     <>
-      <Section title="Trends" aside={<span>weekly · last {Math.min(26, Math.max(...v.trends.map((t) => t.points.length), 0))} weeks</span>}>
-        <div className="card list">
-          {v.trends.map((t) => <TrendRow key={t.goal.id} t={t} />)}
-        </div>
-        {v.tooNew.length > 0 && (
-          <p className="small muted note">Charts after {MIN_WEEKS} weeks of data: {v.tooNew.map((g) => g.title).join(', ')}.</p>
-        )}
-      </Section>
+      {v.trends.length > 0 && (
+        <Section title={<Tip title="Trends">
+          Each line is a goal’s result week by week; the dashed line is its tolerance and the green ticks are changes to the plan
+          (a prep added, a target lowered). The number is its average over the period. Tap a goal for the full chart.
+        </Tip>}>
+          <div className="card list">
+            {v.trends.map((t) => <TrendRow key={t.goal.id} t={t} />)}
+          </div>
+          {v.tooNew.length > 0 && (
+            <p className="small muted note">Charts after {MIN_WEEKS} weeks of data: {v.tooNew.map((g) => g.title).join(', ')}.</p>
+          )}
+        </Section>
+      )}
 
       {v.tolerance.rows.length > 0 && (
-        <Section title={<span className="title-row">Tolerance vs actual
-          <InfoTip label="About tolerance vs actual">
-            The tick is each goal’s tolerance; the dot is what you actually did over the last {LOOKBACK_WEEKS} weeks.
-            Far above means the bar may be too easy; far below, the goal may be too big for now.
-          </InfoTip></span>}>
+        <Section title={<Tip title="Tolerance vs actual">
+          The tick is each goal’s tolerance, the dot what you actually did over the period.
+          A dot far to the right of its tick means the bar may be too easy; far to the left, the goal may be too big for now.
+        </Tip>}>
           <div className="card pad">
-            <p className="takeaway">{v.tolerance.takeaway}</p>
+            <div className="legend tol-legend">
+              <span><i className="key-tick" />tolerance</span>
+              <span><i className="dot st-on-track" />actual</span>
+            </div>
             <div className="tol-rows">
               {v.tolerance.rows.map((r) => (
-                <div key={r.goal.id} className="tol-row">
+                <button key={r.goal.id} className="tol-row" onClick={() => navigate(`/insights/goals/${r.goal.id}`)}>
                   <span className="tol-name">{r.goal.title}</span>
                   <ToleranceTrack tolerance={r.tolerance} actual={r.actual} />
-                  <span className={`tol-num ${pctClass(r.actual, r.tolerance)}`}>{pct(r.actual)}</span>
-                </div>
+                  <span className="tol-num">{pct(r.actual)}</span>
+                </button>
               ))}
             </div>
           </div>
@@ -124,12 +161,14 @@ function GoalsTab({ p }: { p: Prepared }) {
           <div className="card list">
             {v.ended.map((t) => {
               const end = p.lives.get(t.goal.id)!.ended
-              const how = end ? { completed: 'Completed', abandoned: 'Abandoned', backlog: 'Paused' }[end.state as string] ?? end.state : ''
               return (
                 <button key={t.goal.id} className="list-row" onClick={() => navigate(`/insights/goals/${t.goal.id}`)}>
                   <div className="text">
                     <div className="title" style={{ fontSize: 15 }}>{t.goal.title}</div>
-                    <div className="sub">{how}{end ? ` ${dayMonth(end.date)}` : ''} · {pct(t.recent)} over its last weeks</div>
+                    <div className="meta">
+                      {end && <span className={`pill end-${end.state}`}>{END_LABEL[end.state] ?? end.state}</span>}
+                      <span className="small muted">{end ? `${dayMonth(end.date)} · ` : ''}averaged {pct(t.recent)}</span>
+                    </div>
                   </div>
                   <IconChevronRight className="chev" width={18} />
                 </button>
@@ -151,7 +190,7 @@ function TrendRow({ t }: { t: GoalTrend }) {
           <span className={`trend-pct ${pctClass(t.recent, t.goal.tolerancePct)}`}>{pct(t.recent)}</span>
         </div>
         <Sparkline points={t.points} tolerance={t.goal.tolerancePct} markers={t.markers} />
-        <div className="sub">{t.takeaway}</div>
+        <div className="sub trend-takeaway">{t.takeaway}</div>
       </div>
       <IconChevronRight className="chev" width={18} />
     </button>
@@ -160,82 +199,76 @@ function TrendRow({ t }: { t: GoalTrend }) {
 
 // ——— Patterns ———
 
-function PatternsTab({ p }: { p: Prepared }) {
-  const data = useMemo(() => patternsView(p), [p])
-  const from = data.from
+function PatternsTab({ p, range }: { p: Prepared; range: Range }) {
+  const data = remember('patterns', [p, range], () => patternsView(p, range))
+  return <PatternSections p={p} data={data} empty />
+}
+
+function PatternSections({ p, data, empty }: { p: Prepared; data: PatternsView; empty?: boolean }) {
   const nothing = data.obstacles.total === 0 && !data.preps.length && !data.weekdays.length && !data.nearMisses.length
+  if (nothing) {
+    return empty ? (
+      <div className="empty">
+        <h2>No patterns yet.</h2>
+        <p className="muted">They show up as misses get reasons and preps get checked off.</p>
+      </div>
+    ) : null
+  }
   return (
     <>
-      <p className="small muted note">Across all running goals, since {dayMonth(from)}.</p>
-      {nothing && (
-        <div className="empty">
-          <h2>No patterns yet.</h2>
-          <p className="muted">They show up as misses get reasons and preps get checked off.</p>
-        </div>
+      {data.obstacles.total > 0 && (
+        <Section title={<Tip title="What gets in the way">
+          The reasons you gave for misses. Under “Something else”: what you chose instead.
+          Tap a row to see which goals it hit.
+        </Tip>} aside={<span>{data.obstacles.total} misses</span>}>
+          <div className="card pad"><ReasonBars o={data.obstacles} /></div>
+        </Section>
       )}
-      {data.obstacles.total > 0 && <ObstaclesSection o={data.obstacles} />}
       {data.preps.length > 0 && <PrepsSection effects={data.preps} />}
-      {data.weekdays.length > 0 && <WeekdaysSection rows={data.weekdays} />}
-      {data.nearMisses.length > 0 && <NearMissSection items={data.nearMisses} p={p} />}
+      {data.weekdays.length > 0 && (
+        <Section title={<Tip title="Weekdays">
+          How often each daily commitment was missed on each weekday: the stronger the red, the more often. Tap a square for the numbers.
+        </Tip>}>
+          <div className="card pad"><WeekdayGrid rows={data.weekdays} /></div>
+        </Section>
+      )}
+      {data.nearMisses.length > 0 && (
+        <Section title={<Tip title="How far off">
+          For commitments with a number or a time: every value you logged, grouped. Green columns met the target, red ones missed it.
+          Misses just past the dashed line are close calls; far ones need a bigger change.
+        </Tip>}>
+          <div className="stack">
+            {data.nearMisses.map((n) => <NearMissCard key={n.commitment.id} n={n} rolloverHour={p.ctx.rolloverHour} />)}
+          </div>
+        </Section>
+      )}
     </>
   )
 }
 
-function ObstaclesSection({ o, title = 'What gets in the way' }: { o: Obstacles; title?: string }) {
-  const max = o.reasons[0]?.count ?? 1
-  return (
-    <Section title={title} aside={<span>{o.total} explained misses</span>}>
-      <div className="card pad">
-        <p className="takeaway">{o.takeaway}</p>
-        <div className="hbars">
-          {o.reasons.map((r) => <HBar key={r.reason} label={reasonLabel(r.reason)} value={r.count} max={max} tone="miss" />)}
-        </div>
-        {o.displacements.length > 0 && (
-          <>
-            <div className="mini-head">Chose instead</div>
-            <ul className="plain-list">
-              {o.displacements.slice(0, 5).map((d) => (
-                <li key={d.label}>
-                  <b>{d.label}</b> ×{d.count}
-                  <span className="muted"> · {d.goals.map((x) => `${x.goal.title}${d.goals.length > 1 ? ` ${x.count}` : ''}`).join(', ')}</span>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </div>
-    </Section>
-  )
-}
-
 const VERDICT: Record<PrepVerdict, string> = {
-  works: 'Earns its place.',
-  some: 'Helps a little.',
-  no_difference: 'No clear difference: change it, or drop it?',
-  always: 'Done almost every time, so there’s nothing to compare it with.',
-  too_new: 'Too new to tell.',
+  works: 'Earns its place', some: 'Helps a little', no_difference: 'No clear effect', always: 'Always done', too_new: 'Too new',
 }
 
-function PrepsSection({ effects, title = 'Preps' }: { effects: PrepEffect[]; title?: string }) {
+function PrepsSection({ effects }: { effects: PrepEffect[] }) {
   return (
-    <Section title={<span className="title-row">{title}
-      <InfoTip label="About prep effect">
-        How often the commitment went well after you did the prep, versus after you skipped it.
-        An evening prep counts toward the next day.
-      </InfoTip></span>}>
+    <Section title={<Tip title="Preps">
+      How the commitment went after you did the prep, versus after you skipped it (an evening prep counts toward the next day).
+      “Always done” means there are no skipped days to compare with.
+    </Tip>}>
       <div className="card list">
         {effects.map((e) => (
           <div key={e.prep.id} className="list-row prep-effect">
             <div className="text">
-              <div className="title" style={{ fontSize: 15 }}>{e.prep.title}</div>
-              <div className="sub">for {e.commitment.label}</div>
-              <div className="hbars" style={{ marginTop: 8 }}>
-                <HBar label={`Done (${e.done.n})`} value={e.done.rate ?? 0} max={100} detail={pct(e.done.rate)} tone="prep" />
-                {e.verdict !== 'always' && (
-                  <HBar label={`Skipped (${e.skipped.n})`} value={e.skipped.rate ?? 0} max={100} detail={pct(e.skipped.rate)} tone="muted" />
-                )}
+              <div className="title">{e.prep.title}</div>
+              <div className="meta">
+                <span className={`pill verdict-${e.verdict}`}>{VERDICT[e.verdict]}</span>
+                <span className="small muted">for {e.commitment.label}</span>
               </div>
-              <div className={`verdict verdict-${e.verdict}`}>{VERDICT[e.verdict]}</div>
+              <div className="bars">
+                <Bar label="Done" n={e.done.n} rate={e.done.rate} tone="prep" />
+                {e.verdict !== 'always' && <Bar label="Skipped" n={e.skipped.n} rate={e.skipped.rate} tone="muted" />}
+              </div>
             </div>
           </div>
         ))}
@@ -244,90 +277,85 @@ function PrepsSection({ effects, title = 'Preps' }: { effects: PrepEffect[]; tit
   )
 }
 
-function WeekdaysSection({ rows }: { rows: WeekdayPattern[] }) {
-  const notes = rows.filter((r) => r.slips.length)
+function Bar({ label, n, rate, tone }: { label: string; n: number; rate: number | null; tone: string }) {
   return (
-    <Section title={<span className="title-row">Weekdays
-      <InfoTip label="About weekdays">Daily commitments by weekday: the darker the square, the more often it was missed.</InfoTip></span>}>
-      <div className="card pad">
-        <p className="takeaway">
-          {notes.length
-            ? notes.map((r) => r.slips.length === 1
-              ? `${r.commitment.label}: most misses on ${weekdayName(r.slips[0].weekday)}s (${r.slips[0].missed} of ${r.slips[0].judged}).`
-              : `${r.commitment.label}: misses cluster on ${r.slips.map((d) => weekdayShort(d.weekday)).join(', ')}.`).join(' ')
-            : 'No weekday stands out.'}
-        </p>
-        <WeekdayGrid rows={rows} />
-      </div>
-    </Section>
+    <>
+      <span className="bar-label">{label} <span className="muted">×{n}</span></span>
+      <span className="bar-track"><i className={`tone-${tone}`} style={{ width: `${rate ?? 0}%` }} /></span>
+      <span className="bar-value">{pct(rate)}</span>
+    </>
   )
 }
 
-function missFormat(n: NearMiss, rolloverHour: number) {
+function NearMissCard({ n, rolloverHour }: { n: NearMiss; rolloverHour: number }) {
   const unit = n.commitment.unit ? ` ${n.commitment.unit}` : ''
-  if (n.kind === 'quantity') return (v: number) => `${Math.round(v * 10) / 10}${unit}`
-  if (n.kind === 'time') return (v: number) => formatTime(v + rolloverHour * 60)
-  return (v: number) => `${v > 0 ? '+' : ''}${Math.round(v)} min`
-}
-
-function nearMissText(n: NearMiss): string {
-  const gap = n.kind === 'quantity'
-    ? `${Math.round(n.avgGap * 10) / 10}${n.commitment.unit ? ` ${n.commitment.unit}` : ''} ${n.commitment.comparator === 'lte' ? 'over' : 'short'}`
-    : `${Math.round(n.avgGap)} min ${n.kind === 'late' ? 'late' : 'off'}`
-  const lead = n.kind === 'late' ? `Late ${n.misses} times` : `${n.misses} misses`
-  return `${lead}, ${gap} on average. ${n.close ? 'Close calls: a small push should do it.' : 'Not close: something bigger is in the way.'}`
-}
-
-function NearMissSection({ items, p, title = 'How far off' }: { items: NearMiss[]; p: Prepared; title?: string }) {
+  const format = n.kind === 'quantity' ? (v: number) => `${Math.round(v * 100) / 100}${unit}`
+    : n.kind === 'time' ? (v: number) => formatTime(v + rolloverHour * 60)
+    : (v: number) => `${v > 0 ? '+' : ''}${Math.round(v)} min`
+  const gap = n.kind === 'quantity' ? `${Math.round(n.avgGap * 10) / 10}${unit}` : `${Math.round(n.avgGap)} min`
+  const noun = n.commitment.shape === 'standard' ? 'time' : n.commitment.cadence.period
   return (
-    <Section title={<span className="title-row">{title}
-      <InfoTip label="About how far off">
-        For commitments with a number or a time: how far the misses fall from the target.
-        Just missing and missing badly need different fixes.
-      </InfoTip></span>}>
-      <div className="card list">
-        {items.map((n) => (
-          <div key={n.commitment.id} className="list-row near-miss">
-            <div className="text">
-              <div className="title" style={{ fontSize: 15 }}>{n.commitment.label}</div>
-              <div className="sub">{nearMissText(n)}</div>
-              <Histogram n={n} format={missFormat(n, p.ctx.rolloverHour)} />
-            </div>
-          </div>
-        ))}
+    <div className="card pad">
+      <div className="nm-head">
+        <span className="nm-title">{n.commitment.label}</span>
+        <span className="nm-stats">
+          <span><b>{n.misses}</b> missed</span>
+          <span><b>{gap}</b> {n.kind === 'late' ? 'late' : 'off'} on average</span>
+        </span>
       </div>
-    </Section>
+      <Distribution n={n} format={format} noun={noun} />
+    </div>
   )
 }
 
 // ——— Big picture ———
 
+type YearList = 'started' | 'finished' | 'habits'
+
 function BigPictureTab({ p }: { p: Prepared }) {
-  const data = useMemo(() => ({
-    year: yearReview(p), balance: valueBalance(p), timeline: timeline(p), burnups: burnups(p),
-  }), [p])
+  const data = remember('big', [p], () => ({ year: yearReview(p), balance: valueBalance(p), timeline: timeline(p), burnups: burnups(p) }))
+  const [list, setList] = useState<YearList | null>(null)
   const y = data.year
+  const lists: Record<YearList, Goal[]> = { started: y.started, finished: y.finished, habits: y.toMaintenance }
+  const tile = (key: YearList, n: number, label: string) => (
+    <button className={`year-tile tile-${key} ${list === key ? 'on' : ''}`} aria-expanded={list === key} disabled={n === 0}
+      onClick={() => setList(list === key ? null : key)}>
+      <span className="year-num">{n}</span>
+      <span className="year-label">{label}</span>
+    </button>
+  )
+  const active = data.burnups.filter((b) => b.project.state === 'active')
+  const done = data.burnups.filter((b) => b.project.state === 'done')
   return (
     <>
       <Section title={y.final ? `${y.year} in review` : `${y.year} so far`}>
         <div className="card pad year">
-          <div className="year-grid">
-            <Stat big={`${y.started.length}`} label={`goals started${y.finished.length ? ` · ${y.finished.length} finished` : ''}${y.toMaintenance.length ? ` · ${y.toMaintenance.length} to maintenance` : ''}`} />
-            <Stat big={y.bestMonth ? monthName(y.bestMonth.month) : '—'} label={y.bestMonth ? `best month · ${pct(y.bestMonth.pct)} of the plan kept` : 'best month'} />
-            <Stat big={y.mostKept ? y.mostKept.goal.title : '—'} label={y.mostKept ? `most kept · on track ${y.mostKept.onTrack} of ${y.mostKept.weeks} weeks` : 'most kept'} />
-            <Stat big={y.topDisplacement ? y.topDisplacement.label : '—'} label={y.topDisplacement ? `got in the way most · ×${y.topDisplacement.count}` : 'got in the way most'} />
-            <Stat big={`${y.reviews}`} label={`weekly reviews · ${y.planChanges} plan changes`} />
-            <Stat big={`${y.projectsDone}`} label={y.projectsDone === 1 ? 'project done' : 'projects done'} />
+          <div className="year-tiles">
+            {tile('started', y.started.length, 'goals started')}
+            {tile('finished', y.finished.length, 'finished')}
+            {tile('habits', y.toMaintenance.length, 'became habits')}
           </div>
-          {y.finished.length > 0 && <p className="small muted" style={{ marginTop: 12 }}>Finished: {y.finished.map((g) => g.title).join(', ')}.</p>}
+          {list && <GoalChips goals={lists[list]} />}
+          <dl className="year-facts">
+            <dt>Best month</dt>
+            <dd>{y.bestMonth ? <>{monthName(y.bestMonth.month)} <span className="muted">{pct(y.bestMonth.pct)}</span></> : '—'}</dd>
+            <dt>Most kept</dt>
+            <dd>{y.mostKept ? <>{y.mostKept.goal.title} <span className="muted">{y.mostKept.onTrack}/{y.mostKept.weeks} wk</span></> : '—'}</dd>
+            <dt>In the way most</dt>
+            <dd>{y.topDisplacement ? <>{y.topDisplacement.label} <span className="muted">×{y.topDisplacement.count}</span></> : '—'}</dd>
+            <dt>Weeks reviewed</dt>
+            <dd>{y.reviews} <span className="muted">of {y.reviewable}</span></dd>
+            <dt>Plan changes</dt><dd>{y.planChanges}</dd>
+            <dt>Projects done</dt><dd>{y.projectsDone}</dd>
+          </dl>
         </div>
       </Section>
 
       {data.balance.values.length > 0 && (
-        <Section title={<span className="title-row">Value balance
-          <InfoTip label="About value balance">
-            Weeks on track each month, by the value each goal serves. Is anything being done for all of them?
-          </InfoTip></span>}>
+        <Section title={<Tip title="Value balance">
+          Each bar is a month. Every week a goal was on track adds a block to it, in the colour of the value that goal serves.
+          So a tall bar is a good month, and a value with no blocks got nothing done for it.
+        </Tip>}>
           <div className="card pad">
             <p className="takeaway">{data.balance.takeaway}</p>
             <ValueMonths b={data.balance} />
@@ -336,31 +364,28 @@ function BigPictureTab({ p }: { p: Prepared }) {
       )}
 
       {data.timeline.rows.length > 0 && (
-        <Section title={<span className="title-row">Goals timeline
-          <InfoTip label="About the timeline">
-            Every goal that ran in the last year. Dark: active; light: maintenance. Small ticks are plan changes.
-          </InfoTip></span>}>
-          <div className="card pad">
-            <TimelineChart t={data.timeline} />
-          </div>
+        <Section title={<Tip title="Goals timeline">
+          Every goal of the last year as a bar from when it started. Blue while active, green once it became a habit (maintenance).
+          A mark at the end says how it ended. Tap one for its insights.
+        </Tip>}>
+          <div className="card pad"><TimelineChart t={data.timeline} /></div>
         </Section>
       )}
 
-      {data.burnups.length > 0 && (
-        <Section title={<span className="title-row">Projects
-          <InfoTip label="About project burn-up">
-            Steps done over time. The dashed line is the pace that reaches the target date; the upright line is the target.
-          </InfoTip></span>}>
+      {active.length > 0 && (
+        <Section title={<Tip title="Projects">
+          Steps done against the time gone since the project began. When the steps bar trails the time bar, it’s behind.
+          “At your pace” is when you’d finish if steps keep coming as fast as they have so far.
+        </Tip>}>
           <div className="card list tint-project">
-            {data.burnups.map((b) => (
-              <button key={b.project.id} className="list-row burnup-row" onClick={() => navigate(`/projects/${b.project.id}`)}>
-                <div className="text">
-                  <div className="title" style={{ fontSize: 15 }}>{b.project.title}</div>
-                  <div className="sub">{b.text}</div>
-                </div>
-                <BurnupSpark b={b} today={p.ctx.today} />
-              </button>
-            ))}
+            {active.map((b) => <ProjectPace key={b.project.id} b={b} />)}
+          </div>
+        </Section>
+      )}
+      {done.length > 0 && (
+        <Section title="Done projects">
+          <div className="card list tint-project">
+            {done.map((b) => <ProjectPace key={b.project.id} b={b} />)}
           </div>
         </Section>
       )}
@@ -368,65 +393,52 @@ function BigPictureTab({ p }: { p: Prepared }) {
   )
 }
 
-function Stat({ big, label }: { big: string; label: string }) {
-  return (
-    <div className="stat">
-      <div className="stat-big">{big}</div>
-      <div className="stat-label">{label}</div>
-    </div>
-  )
-}
-
 // ——— one goal ———
 
 export function GoalInsightsScreen({ id }: { id: string }) {
   const p = usePrepared()
-  const data = useMemo(() => {
-    const goal = p?.snap.goals.find((g) => g.id === id)
-    if (!p || !goal) return null
-    const from = addDays(p.lastWeek.start, -7 * (LOOKBACK_WEEKS - 1))
-    const cs = p.commitmentsOf(goal)
-    return {
-      goal,
-      from,
-      trend: goalTrend(p, goal),
-      obstacles: obstacles(p, from, goal.id),
-      preps: cs.flatMap((c) => p.snap.preps.filter((x) => x.commitmentId === c.id))
-        .map((x) => prepEffect(p, x)).filter((x): x is PrepEffect => !!x && x.verdict !== 'too_new'),
-      weekdays: cs.map((c) => weekdayPattern(p, c, from)).filter((x): x is WeekdayPattern => !!x),
-      nearMisses: cs.map((c) => nearMiss(p, c, from)).filter((x): x is NearMiss => !!x),
-    }
-  }, [p, id])
+  const [range, setRange] = useRange()
+  const goal = p?.snap.goals.find((g) => g.id === id)
   if (!p) return null
-  if (!data) {
-    return <Screen back="/insights" title="Not found"><p className="muted">This goal doesn’t exist, or was deleted.</p></Screen>
-  }
-  const { goal, trend } = data
+  if (!goal) return <Screen back="/insights" title="Not found"><p className="muted">This goal doesn’t exist, or was deleted.</p></Screen>
+  const trend = remember(`trend:${id}`, [p, range], () => goalTrend(p, goal, range))
+  const patterns = remember(`patterns:${id}`, [p, range], () => patternsView(p, range, goal.id, trend?.points[0]?.start))
   const enough = !!trend && trend.weeksWithData >= MIN_WEEKS
   return (
     <Screen back="/insights" eyebrow="Insights" title={goal.title}>
+      <div className="range-row" role="radiogroup" aria-label="Period">
+        {RANGES.map((r) => (
+          <button key={r} role="radio" aria-checked={range === r} className={range === r ? 'on' : ''} onClick={() => setRange(r)}>
+            {RANGE_LABEL[String(r)]}
+          </button>
+        ))}
+      </div>
       {!enough ? (
-        <div className="card pad" style={{ marginTop: 8 }}>
+        <div className="card pad" style={{ marginTop: 16 }}>
           <p className="muted">Charts appear after {MIN_WEEKS} weeks of data{trend ? ` (${trend.weeksWithData} so far)` : ''}.</p>
         </div>
       ) : (
-        <Section title="Trend">
-          <div className="card pad">
-            <div className="trend-summary">
-              <span className={`trend-pct big ${pctClass(trend.recent, goal.tolerancePct)}`}>{pct(trend.recent)}</span>
-              <span className="muted small">over the last {Math.min(LOOKBACK_WEEKS, trend.weeksWithData)} weeks · tolerance {goal.tolerancePct}%</span>
+        <>
+          <Section title="Trend">
+            <div className="card pad">
+              <div className="trend-summary">
+                <span className={`hero ${pctClass(trend.recent, goal.tolerancePct)}`}>{pct(trend.recent)}</span>
+                <span className="muted small">average over {trend.weeksWithData} weeks<br />tolerance {goal.tolerancePct}%</span>
+              </div>
+              <TrendChart points={trend.points} tolerance={goal.tolerancePct} markers={trend.markers} />
             </div>
-            <p className="takeaway">{trend.takeaway}</p>
-            <TrendChart points={trend.points} tolerance={goal.tolerancePct} markers={trend.markers} />
-            {trend.markers.length > 0 && <MarkerList markers={trend.markers} />}
-          </div>
-        </Section>
+          </Section>
+          {trend.markers.length > 0 && (
+            <Section title={<Tip title="Plan changes">
+              Each change to the plan, with the average of up to 4 weeks before and after it. That’s how you tell whether a change worked.
+            </Tip>}>
+              <MarkerList markers={trend.markers} />
+            </Section>
+          )}
+          <PatternSections p={p} data={patterns} />
+        </>
       )}
-      {enough && data.obstacles.total > 0 && <ObstaclesSection o={data.obstacles} title="What gets in the way" />}
-      {enough && data.preps.length > 0 && <PrepsSection effects={data.preps} />}
-      {enough && data.weekdays.length > 0 && <WeekdaysSection rows={data.weekdays} />}
-      {enough && data.nearMisses.length > 0 && <NearMissSection items={data.nearMisses} p={p} />}
-      <div style={{ marginTop: 24 }}>
+      <div style={{ marginTop: 28 }}>
         <button className="btn outline block" onClick={() => navigate(`/goals/${goal.id}`)}>Open the goal</button>
       </div>
     </Screen>
@@ -435,20 +447,27 @@ export function GoalInsightsScreen({ id }: { id: string }) {
 
 function MarkerList({ markers }: { markers: Marker[] }) {
   return (
-    <ol className="marker-list">
-      {markers.map((m, i) => (
-        <li key={i}>
-          <span className="marker-badge">{i + 1}</span>
-          <div>
-            <div>{m.text}</div>
-            <div className="small muted">
-              {dayMonth(m.date)} · {m.before != null && m.after != null
-                ? `${pct(m.before)} in the weeks before, ${pct(m.after)} after`
-                : 'too soon to tell'}
+    <div className="card list">
+      {markers.map((m, i) => {
+        const diff = m.before != null && m.after != null ? m.after - m.before : null
+        return (
+          <div key={i} className="list-row marker-row">
+            <b className="marker-badge">{i + 1}</b>
+            <div className="text">
+              <div className="title">{m.text}</div>
+              <div className="sub">{dayMonth(m.date)}</div>
+            </div>
+            <div className="marker-effect">
+              {diff == null ? <span className="muted small">too soon</span> : (
+                <>
+                  <span className="muted">{pct(m.before)} →</span>{' '}
+                  <b className={diff >= 10 ? 'st-text-on-track' : diff <= -10 ? 'st-text-at-risk' : ''}>{pct(m.after)}</b>
+                </>
+              )}
             </div>
           </div>
-        </li>
-      ))}
-    </ol>
+        )
+      })}
+    </div>
   )
 }

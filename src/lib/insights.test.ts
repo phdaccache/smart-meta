@@ -115,7 +115,8 @@ describe('Insights — what gets in the way', () => {
     ]
     const o = obstacles(prepare(input({ goals: [g, g2], commitments: [gym, sleep], entries }, { displacements: [phone] })), '2026-07-01')
     expect(o.total).toBe(4)
-    expect(o.reasons[0]).toEqual({ reason: 'chose_other', count: 3 })
+    expect(o.reasons[0]).toMatchObject({ reason: 'chose_other', count: 3 })
+    expect(o.reasons[0].goals.map((x) => x.count)).toEqual([2, 1])
     expect(o.displacements[0].goals.map((x) => [x.goal.title, x.count])).toEqual([['Exercise regularly', 2], ['Sleep well', 1]])
     expect(o.takeaway).toBe('“phone” got in the way of “Exercise regularly” and “Sleep well”. It might deserve a goal of its own.')
   })
@@ -173,7 +174,9 @@ describe('Insights — weekday pattern and near misses', () => {
     expect(n.kind).toBe('quantity')
     expect(n.misses).toBe(12)
     expect(n.avgGap).toBe(1)
-    expect(n.close).toBe(false)
+    // Buckets start at the target, so each is all hits or all misses.
+    expect(n.bins[0]).toEqual({ from: 6.5, to: 6.75, count: 12, hit: false })
+    expect(n.bins.find((b) => b.from === 7.5)!.hit).toBe(true)
   })
 
   it('measures lateness for on-time commitments', () => {
@@ -191,7 +194,7 @@ describe('Insights — weekday pattern and near misses', () => {
     expect(n.kind).toBe('late')
     expect(n.values.map((v) => v.value)).toEqual([12, 8, -5])
     expect(n.avgGap).toBe(10)
-    expect(n.close).toBe(true)
+    expect(n.bins.map((b) => [b.from, b.count, b.hit])).toEqual([[-10, 1, true], [-5, 0, true], [0, 0, false], [5, 1, false], [10, 1, false]])
   })
 })
 
@@ -204,7 +207,8 @@ describe('Insights — big picture', () => {
     expect(b.done).toEqual(['2026-09-08', '2026-09-22'])
     // 2 steps in 30 days: 2 more take 30 more days.
     expect(b.projected).toBe('2026-10-31')
-    expect(b.text).toBe('2 of 4 · at this pace, done 31 October (2 weeks after the target)')
+    expect(b.status).toBe('behind')
+    expect(b.text).toBe('Due 15 October · at your pace, ~31 October')
   })
 
   it('counts kept weeks per value, and names a value with nothing running', () => {
@@ -214,7 +218,7 @@ describe('Insights — big picture', () => {
     const b = valueBalance(prepare(input({ values: [health, freedom], entries })))
     expect(b.months.map((m) => m.month)).toEqual(['2026-05-01', '2026-06-01', '2026-07-01', '2026-08-01', '2026-09-01'])
     expect(b.months[1].counts).toEqual([5, 0])
-    expect(b.takeaway).toBe('Nothing running for Freedom in the last 12 weeks.')
+    expect(b.takeaway).toBe('No goal for Freedom in the last 12 weeks.')
   })
 
   it('sums up the year so far', () => {

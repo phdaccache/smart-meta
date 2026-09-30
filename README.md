@@ -38,7 +38,7 @@ offline, and an optional Supabase sync copies everything off the phone.
   with plan changes marked and their before/after, and tolerance vs actual.
   *Patterns*: what gets in the way, prep effect, weekdays, how far off the
   misses are. *Big picture*: year so far, value balance, goals timeline,
-  project burn-up. Logic in `src/lib/insights.ts`, charts in `src/ui/charts.tsx`.
+  project pace. Logic in `src/lib/insights.ts`, charts in `src/ui/charts.tsx`.
 
 ## Develop
 

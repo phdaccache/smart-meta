@@ -125,20 +125,20 @@ Tap 📅 on Review.
 ## Insights
 
 **I1. Goal trends**
-Load sample data, open **Insights → Goals**.
-- **Expect:** one row per running goal with its % over the last 12 weeks and a line of weekly results. *Sleep well* says "Prep added: Phone charging outside the bedroom (…): 62% → 93%"; *Be on time* says the same for its prep. **Tolerance vs actual** flags *Call my parents* (well above) and *Answer my friends* (far below). **Ended goals**: *Run a 10k* (completed) and *Journal every evening* (abandoned).
+Load sample data, open **Insights → Goals** (3 months).
+- **Expect:** one row per running goal with its average and a line of weekly results. *Sleep well* says "Prep added: Phone charging outside the bedroom (…): 62% → 93%"; *Be on time* the same for its prep. **Tolerance vs actual**: *Call my parents* far right of its tick, *Answer my friends* far left. **Ended goals**: *Run a 10k* with a green *Completed*, *Journal every evening* with a red *Abandoned*. Switch to **All**: the lines get longer and the averages change.
 
 **I2. One goal**
-Tap *Sleep well* (or 📊 on its goal page).
-- **Expect:** a chart with the 70% tolerance dashed, a numbered marker at the prep, and below it "62% in the weeks before, 93% after"; then its prep (earns its place), weekdays (Saturdays) and how far off.
+Tap *Sleep well* (or 📊 on its goal page). Tap or drag across the chart.
+- **Expect:** the line above the chart follows your finger ("Week of 3 August · 71%"), with the status colour. A legend explains the dots and the dashed tolerance. **Plan changes** lists the prep with 62% → 93%. Then its prep (*Earns its place*), weekdays and how far off. Back returns to the same place in the list, fully drawn.
 
 **I3. Patterns**
 Open **Patterns**.
-- **Expect:** "“phone” got in the way of “Exercise regularly” and “Answer my friends”…"; the gym bag prep: *No clear difference*; the phone prep: *Earns its place*; weekdays: sleep on Saturdays, replies on Wed, Fri, Sun; how far off: sleep ~0.8 h short, punctuality ~14 min late.
+- **Expect:** reasons as bars, with *phone*, *going out with friends* and *birthday party* under *Something else*; tapping *phone* shows "Exercise regularly ×2 · Answer my friends ×1". Preps: gym bag *No clear effect*, phone *Earns its place*, the others *Always done*. Weekdays: tapping sleep's Saturday says "missed 8 of 10"; a legend reads never → always. How far off: sleep with red columns left of the dashed 7.5 h, green right; tapping a column says its range and count.
 
 **I4. Big picture**
 Open **Big picture**.
-- **Expect:** *2026 so far* (10 goals started, the 10k finished, best month, most kept, what got in the way most, reviews and plan changes); value balance saying nothing is running for Freedom; a timeline with the 10k ending in June and the journal in May; projects with their pace (e.g. the license months late, *Buy a bike* done 2 days late).
+- **Expect:** *2026 so far* with three numbers (tap *finished* to see *Run a 10k*) and a short list (best month, most kept, weeks reviewed 26 of 30…). Value balance: tapping a month lists it by value. Timeline: *Running* then *Ended*; *Call my parents* turns green (habit) in July; the 10k ends with ✓, the journal with ✕. Projects: *CV & LinkedIn* **Behind**, *Organize my finances* **Overdue**, *System design prep* **On pace**; *Buy a bike* under Done projects.
 
 **I5. Too new**
 Create and start a new goal.

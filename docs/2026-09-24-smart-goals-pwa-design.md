@@ -783,8 +783,10 @@ tasks completed (workload, not willpower), badges.
 markers, tolerance vs actual, ended goals; each goal has its own page with the
 full chart and its patterns), **Patterns** (what gets in the way, prep effect,
 weekdays, near misses; last 12 weeks, running goals) and **Big picture** (year
-so far, value balance, timeline, project burn-up). Every chart leads with one
-sentence saying what it means. Details worth knowing:
+so far, value balance, timeline, project pace). A period switch (3 months, 6
+months, 1 year, all) scopes Goals and Patterns. Charts explain themselves with
+legends and an (i), not paragraphs; tapping one reads its values in a line
+above it. Details worth knowing:
 
 - Weekly percentages only count the days a goal was active or in maintenance,
   rebuilt from its state revisions, so paused and ended stretches are gaps, not
@@ -798,3 +800,5 @@ sentence saying what it means. Details worth knowing:
   outweigh a weekly one.
 - Year in review shows "so far" until December (and in January, for the year
   before).
+- Projects show steps done against time gone rather than a burn-up line, which
+  read as confusing; "at your pace" projects the finish from steps so far.
