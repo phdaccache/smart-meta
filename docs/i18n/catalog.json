@@ -1,0 +1,7426 @@
+[
+{
+"key": "glossary.goal",
+"group": "Glossary",
+"en": "Goal / Goals",
+"pt": "Meta / Metas",
+"note": "Sets the word used everywhere.",
+"ask": ""
+},
+{
+"key": "glossary.habit",
+"group": "Glossary",
+"en": "Habit",
+"pt": "Hábito",
+"note": "Sets the word used everywhere.",
+"ask": ""
+},
+{
+"key": "glossary.commitment",
+"group": "Glossary",
+"en": "Commitment",
+"pt": "Compromisso",
+"note": "What a habit goal is scored on (\"At least 30 minutes of exercise, 3× a week\"). Shown as a section title on a goal's page.",
+"ask": "Compromisso, or just call it Hábito everywhere?"
+},
+{
+"key": "glossary.prep",
+"group": "Glossary",
+"en": "Prep",
+"pt": "Preparo",
+"note": "A small step beforehand that makes the habit easier (pack the gym bag the night before). Never scored.",
+"ask": "Preparo, Preparação, Gatilho, or something else?"
+},
+{
+"key": "glossary.finishLine",
+"group": "Glossary",
+"en": "Finish line",
+"pt": "Linha de chegada",
+"note": "A goal reached once, by a deadline.",
+"ask": ""
+},
+{
+"key": "glossary.rhythm",
+"group": "Glossary",
+"en": "Rhythm",
+"pt": "Ritmo",
+"note": "A number of times a week or month.",
+"ask": "Ritmo OK?"
+},
+{
+"key": "glossary.threshold",
+"group": "Glossary",
+"en": "Threshold",
+"pt": "Limite",
+"note": "Stay over or under a line (sleep ≥ 8 h).",
+"ask": "Limite, Patamar, or Meta mínima?"
+},
+{
+"key": "glossary.standard",
+"group": "Glossary",
+"en": "Standard",
+"pt": "Regra",
+"note": "A rule for when something comes up (arrive on time).",
+"ask": "Regra, Padrão, or Conduta?"
+},
+{
+"key": "glossary.tolerance",
+"group": "Glossary",
+"en": "Tolerance",
+"pt": "Tolerância",
+"note": "",
+"ask": ""
+},
+{
+"key": "glossary.extraTime",
+"group": "Glossary",
+"en": "Extra time",
+"pt": "Prazo extra",
+"note": "For finish lines: how late is still fine.",
+"ask": ""
+},
+{
+"key": "glossary.backlog",
+"group": "Glossary",
+"en": "Backlog",
+"pt": "Fila",
+"note": "Goals waiting to be started.",
+"ask": "Fila, Em espera, or keep Backlog?"
+},
+{
+"key": "glossary.maintenance",
+"group": "Glossary",
+"en": "Maintenance",
+"pt": "Manutenção",
+"note": "A habit kept going without a finish line.",
+"ask": ""
+},
+{
+"key": "glossary.value",
+"group": "Glossary",
+"en": "Value",
+"pt": "Valor",
+"note": "A personal value (Health, Family…).",
+"ask": ""
+},
+{
+"key": "glossary.why",
+"group": "Glossary",
+"en": "Why",
+"pt": "Motivo",
+"note": "The sentence shown above the goal on Today.",
+"ask": "Motivo or Por quê?"
+},
+{
+"key": "glossary.project",
+"group": "Glossary",
+"en": "Project / Step",
+"pt": "Projeto / Etapa",
+"note": "",
+"ask": ""
+},
+{
+"key": "glossary.task",
+"group": "Glossary",
+"en": "Task",
+"pt": "Tarefa",
+"note": "",
+"ask": ""
+},
+{
+"key": "glossary.review",
+"group": "Glossary",
+"en": "Review",
+"pt": "Revisão",
+"note": "The weekly review, and a goal's review on its date.",
+"ask": ""
+},
+{
+"key": "glossary.insights",
+"group": "Glossary",
+"en": "Insights",
+"pt": "Insights",
+"note": "The long-run charts tab.",
+"ask": "Keep Insights, or Análises / Visão geral?"
+},
+{
+"key": "glossary.checkIn",
+"group": "Glossary",
+"en": "Check in / Log",
+"pt": "Registrar",
+"note": "The daily tick, or logging a number or an appointment.",
+"ask": "Registrar OK for both?"
+},
+{
+"key": "glossary.errands",
+"group": "Glossary",
+"en": "Errands",
+"pt": "Avulsas",
+"note": "The group on Today for tasks that belong to no goal or project.",
+"ask": "Avulsas, Tarefas soltas, or Outras tarefas?"
+},
+{
+"key": "glossary.quickAdd",
+"group": "Glossary",
+"en": "Quick add",
+"pt": "Adicionar rápido",
+"note": "The + button.",
+"ask": "Adicionar rápido or Adição rápida?"
+},
+{
+"key": "glossary.onTrack",
+"group": "Glossary",
+"en": "On track / Behind / At risk",
+"pt": "Em dia / Com atraso / Em risco",
+"note": "Status words. Chosen so they work for a meta (feminine) and a projeto (masculine).",
+"ask": ""
+},
+{
+"key": "nav.today",
+"group": "Tabs and navigation",
+"en": "Today",
+"pt": "Hoje",
+"note": "",
+"ask": ""
+},
+{
+"key": "nav.plan",
+"group": "Tabs and navigation",
+"en": "Plan",
+"pt": "Plano",
+"note": "",
+"ask": ""
+},
+{
+"key": "nav.review",
+"group": "Tabs and navigation",
+"en": "Review",
+"pt": "Revisão",
+"note": "",
+"ask": ""
+},
+{
+"key": "nav.insights",
+"group": "Tabs and navigation",
+"en": "Insights",
+"pt": "Insights",
+"note": "",
+"ask": ""
+},
+{
+"key": "nav.settings",
+"group": "Tabs and navigation",
+"en": "Settings",
+"pt": "Ajustes",
+"note": "iPhone calls it Ajustes in Portuguese.",
+"ask": "Ajustes or Configurações?"
+},
+{
+"key": "nav.back",
+"group": "Tabs and navigation",
+"en": "Back",
+"pt": "Voltar",
+"note": "",
+"ask": ""
+},
+{
+"key": "nav.close",
+"group": "Tabs and navigation",
+"en": "Close",
+"pt": "Fechar",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "nav.main",
+"group": "Tabs and navigation",
+"en": "Main",
+"pt": "Principal",
+"note": "Screen reader label for the tab bar.",
+"ask": ""
+},
+{
+"key": "nav.quickAdd",
+"group": "Tabs and navigation",
+"en": "Quick add",
+"pt": "Adicionar rápido",
+"note": "Screen reader label for the + button.",
+"ask": ""
+},
+{
+"key": "nav.reviewReady",
+"group": "Tabs and navigation",
+"en": "Review ready",
+"pt": "Revisão pronta",
+"note": "Screen reader label for the dot on the Review tab.",
+"ask": ""
+},
+{
+"key": "nav.notFound",
+"group": "Tabs and navigation",
+"en": "Not found",
+"pt": "Não encontrado",
+"note": "",
+"ask": ""
+},
+{
+"key": "nav.nothingHere",
+"group": "Tabs and navigation",
+"en": "Nothing here.",
+"pt": "Nada aqui.",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.save",
+"group": "Common buttons and words",
+"en": "Save",
+"pt": "Salvar",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.saveChanges",
+"group": "Common buttons and words",
+"en": "Save changes",
+"pt": "Salvar alterações",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.saved",
+"group": "Common buttons and words",
+"en": "Saved.",
+"pt": "Salvo.",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.cancel",
+"group": "Common buttons and words",
+"en": "Cancel",
+"pt": "Cancelar",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.add",
+"group": "Common buttons and words",
+"en": "Add",
+"pt": "Adicionar",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.added",
+"group": "Common buttons and words",
+"en": "Added.",
+"pt": "Adicionado.",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.edit",
+"group": "Common buttons and words",
+"en": "Edit",
+"pt": "Editar",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.doneEditing",
+"group": "Common buttons and words",
+"en": "Done",
+"pt": "Pronto",
+"note": "The button that ends editing (Edit ↔ Done).",
+"ask": ""
+},
+{
+"key": "common.delete",
+"group": "Common buttons and words",
+"en": "Delete",
+"pt": "Excluir",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.deleted",
+"group": "Common buttons and words",
+"en": "Deleted.",
+"pt": "Excluído.",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.remove",
+"group": "Common buttons and words",
+"en": "Remove",
+"pt": "Remover",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.next",
+"group": "Common buttons and words",
+"en": "Next",
+"pt": "Avançar",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.continue",
+"group": "Common buttons and words",
+"en": "Continue",
+"pt": "Continuar",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.skip",
+"group": "Common buttons and words",
+"en": "Skip",
+"pt": "Pular",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.start",
+"group": "Common buttons and words",
+"en": "Start",
+"pt": "Iniciar",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.started",
+"group": "Common buttons and words",
+"en": "Started.",
+"pt": "Iniciada.",
+"note": "Toast after starting a goal (meta is feminine).",
+"ask": ""
+},
+{
+"key": "common.yes",
+"group": "Common buttons and words",
+"en": "Yes",
+"pt": "Sim",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.no",
+"group": "Common buttons and words",
+"en": "No",
+"pt": "Não",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.none",
+"group": "Common buttons and words",
+"en": "None",
+"pt": "Nenhum",
+"note": "Empty choice in a picker.",
+"ask": ""
+},
+{
+"key": "common.noneYet",
+"group": "Common buttons and words",
+"en": "None yet.",
+"pt": "Nenhum ainda.",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.nothingYet",
+"group": "Common buttons and words",
+"en": "Nothing yet.",
+"pt": "Nada ainda.",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.log",
+"group": "Common buttons and words",
+"en": "Log",
+"pt": "Registrar",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.logged",
+"group": "Common buttons and words",
+"en": "Logged.",
+"pt": "Registrado.",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.dismiss",
+"group": "Common buttons and words",
+"en": "Dismiss",
+"pt": "Dispensar",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.manage",
+"group": "Common buttons and words",
+"en": "Manage",
+"pt": "Gerenciar",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.details",
+"group": "Common buttons and words",
+"en": "Details",
+"pt": "Detalhes",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.open",
+"group": "Common buttons and words",
+"en": "Open",
+"pt": "Abrir",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.showMore",
+"group": "Common buttons and words",
+"en": "Show more",
+"pt": "Mostrar mais",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.all",
+"group": "Common buttons and words",
+"en": "All",
+"pt": "Tudo",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.show",
+"group": "Common buttons and words",
+"en": "Show",
+"pt": "Mostrar",
+"note": "Screen reader label for filters.",
+"ask": ""
+},
+{
+"key": "common.less",
+"group": "Common buttons and words",
+"en": "Less",
+"pt": "Menos",
+"note": "Screen reader label on − buttons.",
+"ask": ""
+},
+{
+"key": "common.more",
+"group": "Common buttons and words",
+"en": "More",
+"pt": "Mais",
+"note": "Screen reader label on + buttons.",
+"ask": ""
+},
+{
+"key": "common.day",
+"group": "Common buttons and words",
+"en": "Day",
+"pt": "Dia",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.week",
+"group": "Common buttons and words",
+"en": "Week",
+"pt": "Semana",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.month",
+"group": "Common buttons and words",
+"en": "Month",
+"pt": "Mês",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.days",
+"group": "Common buttons and words",
+"en": "Days",
+"pt": "Dias",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.time",
+"group": "Common buttons and words",
+"en": "Time",
+"pt": "Horário",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.goal",
+"group": "Common buttons and words",
+"en": "Goal",
+"pt": "Meta",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.project",
+"group": "Common buttons and words",
+"en": "Project",
+"pt": "Projeto",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.task",
+"group": "Common buttons and words",
+"en": "Task",
+"pt": "Tarefa",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.step",
+"group": "Common buttons and words",
+"en": "Step",
+"pt": "Etapa",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.prep",
+"group": "Common buttons and words",
+"en": "Prep",
+"pt": "Preparo",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.about",
+"group": "Common buttons and words",
+"en": "About {topic}",
+"pt": "Sobre {topic}",
+"note": "Screen reader label on (i) buttons.",
+"ask": ""
+},
+{
+"key": "common.moreAboutStep",
+"group": "Common buttons and words",
+"en": "More about this step",
+"pt": "Mais sobre esta etapa",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "common.typeToConfirm",
+"group": "Common buttons and words",
+"en": "Type “{phrase}” to confirm",
+"pt": "Digite “{phrase}” para confirmar",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.goalGone",
+"group": "Common buttons and words",
+"en": "This goal doesn’t exist, or was deleted.",
+"pt": "Esta meta não existe ou foi excluída.",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.projectGone",
+"group": "Common buttons and words",
+"en": "This project doesn’t exist, or was deleted.",
+"pt": "Este projeto não existe ou foi excluído.",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.exportedKeep",
+"group": "Common buttons and words",
+"en": "Exported. Keep it somewhere that isn’t this phone.",
+"pt": "Exportado. Guarde em algum lugar fora deste celular.",
+"note": "",
+"ask": ""
+},
+{
+"key": "common.reorder",
+"group": "Common buttons and words",
+"en": "Reorder {name}",
+"pt": "Reordenar {name}",
+"note": "Screen reader label on drag handles.",
+"ask": ""
+},
+{
+"key": "common.change",
+"group": "Common buttons and words",
+"en": "Change {name}",
+"pt": "Alterar {name}",
+"note": "Screen reader label on the ⋯ button.",
+"ask": ""
+},
+{
+"key": "dates.monday",
+"group": "Dates and numbers",
+"en": "Monday",
+"pt": "Segunda-feira",
+"note": "Full weekday. Also the big title on Today.",
+"ask": ""
+},
+{
+"key": "dates.tuesday",
+"group": "Dates and numbers",
+"en": "Tuesday",
+"pt": "Terça-feira",
+"note": "Full weekday. Also the big title on Today.",
+"ask": ""
+},
+{
+"key": "dates.wednesday",
+"group": "Dates and numbers",
+"en": "Wednesday",
+"pt": "Quarta-feira",
+"note": "Full weekday. Also the big title on Today.",
+"ask": ""
+},
+{
+"key": "dates.thursday",
+"group": "Dates and numbers",
+"en": "Thursday",
+"pt": "Quinta-feira",
+"note": "Full weekday. Also the big title on Today.",
+"ask": ""
+},
+{
+"key": "dates.friday",
+"group": "Dates and numbers",
+"en": "Friday",
+"pt": "Sexta-feira",
+"note": "Full weekday. Also the big title on Today.",
+"ask": ""
+},
+{
+"key": "dates.saturday",
+"group": "Dates and numbers",
+"en": "Saturday",
+"pt": "Sábado",
+"note": "Full weekday. Also the big title on Today.",
+"ask": ""
+},
+{
+"key": "dates.sunday",
+"group": "Dates and numbers",
+"en": "Sunday",
+"pt": "Domingo",
+"note": "Full weekday. Also the big title on Today.",
+"ask": ""
+},
+{
+"key": "dates.weekdaysShort",
+"group": "Dates and numbers",
+"en": "Mon Tue Wed Thu Fri Sat Sun",
+"pt": "seg ter qua qui sex sáb dom",
+"note": "Short weekdays, in this order, separated by spaces.",
+"ask": ""
+},
+{
+"key": "dates.weekdayInitials",
+"group": "Dates and numbers",
+"en": "M T W T F S S",
+"pt": "S T Q Q S S D",
+"note": "Day picker for preps and the Welcome demo.",
+"ask": ""
+},
+{
+"key": "dates.months",
+"group": "Dates and numbers",
+"en": "January February March April May June July August September October November December",
+"pt": "janeiro fevereiro março abril maio junho julho agosto setembro outubro novembro dezembro",
+"note": "Lowercase in Portuguese inside sentences; capitalized automatically at the start of a line.",
+"ask": ""
+},
+{
+"key": "dates.monthsShort",
+"group": "Dates and numbers",
+"en": "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec",
+"pt": "jan fev mar abr mai jun jul ago set out nov dez",
+"note": "",
+"ask": ""
+},
+{
+"key": "dates.dayMonth",
+"group": "Dates and numbers",
+"en": "{day} {month}",
+"pt": "{day} de {month}",
+"note": "e.g. 30 September → 30 de setembro",
+"ask": ""
+},
+{
+"key": "dates.dayMonthShort",
+"group": "Dates and numbers",
+"en": "{day} {mon}",
+"pt": "{day} {mon}",
+"note": "e.g. 30 Sep → 30 set",
+"ask": ""
+},
+{
+"key": "dates.historyDay",
+"group": "Dates and numbers",
+"en": "{wd} {day} {mon}",
+"pt": "{wd}, {day} {mon}",
+"note": "Day headings in a goal's history: Wed 30 Sep → qua, 30 set",
+"ask": ""
+},
+{
+"key": "dates.today",
+"group": "Dates and numbers",
+"en": "today",
+"pt": "hoje",
+"note": "",
+"ask": ""
+},
+{
+"key": "dates.tomorrow",
+"group": "Dates and numbers",
+"en": "tomorrow",
+"pt": "amanhã",
+"note": "",
+"ask": ""
+},
+{
+"key": "dates.yesterday",
+"group": "Dates and numbers",
+"en": "yesterday",
+"pt": "ontem",
+"note": "",
+"ask": ""
+},
+{
+"key": "dates.Today",
+"group": "Dates and numbers",
+"en": "Today",
+"pt": "Hoje",
+"note": "",
+"ask": ""
+},
+{
+"key": "dates.Tomorrow",
+"group": "Dates and numbers",
+"en": "Tomorrow",
+"pt": "Amanhã",
+"note": "",
+"ask": ""
+},
+{
+"key": "dates.Yesterday",
+"group": "Dates and numbers",
+"en": "Yesterday",
+"pt": "Ontem",
+"note": "",
+"ask": ""
+},
+{
+"key": "dates.inTime",
+"group": "Dates and numbers",
+"en": "in {time}",
+"pt": "em {time}",
+"note": "e.g. in 3 weeks → em 3 semanas",
+"ask": ""
+},
+{
+"key": "dates.agoTime",
+"group": "Dates and numbers",
+"en": "{time} ago",
+"pt": "há {time}",
+"note": "e.g. 5 days ago → há 5 dias",
+"ask": ""
+},
+{
+"key": "dates.day.one",
+"group": "Dates and numbers",
+"en": "{n} day",
+"pt": "{n} dia",
+"note": "",
+"ask": ""
+},
+{
+"key": "dates.day.other",
+"group": "Dates and numbers",
+"en": "{n} days",
+"pt": "{n} dias",
+"note": "",
+"ask": ""
+},
+{
+"key": "dates.week.one",
+"group": "Dates and numbers",
+"en": "{n} week",
+"pt": "{n} semana",
+"note": "",
+"ask": ""
+},
+{
+"key": "dates.week.other",
+"group": "Dates and numbers",
+"en": "{n} weeks",
+"pt": "{n} semanas",
+"note": "",
+"ask": ""
+},
+{
+"key": "dates.month.one",
+"group": "Dates and numbers",
+"en": "{n} month",
+"pt": "{n} mês",
+"note": "",
+"ask": ""
+},
+{
+"key": "dates.month.other",
+"group": "Dates and numbers",
+"en": "{n} months",
+"pt": "{n} meses",
+"note": "",
+"ask": ""
+},
+{
+"key": "dates.everyDay",
+"group": "Dates and numbers",
+"en": "every day",
+"pt": "todo dia",
+"note": "",
+"ask": ""
+},
+{
+"key": "dates.weekdays",
+"group": "Dates and numbers",
+"en": "weekdays",
+"pt": "dias úteis",
+"note": "",
+"ask": ""
+},
+{
+"key": "dates.weekends",
+"group": "Dates and numbers",
+"en": "weekends",
+"pt": "fins de semana",
+"note": "",
+"ask": ""
+},
+{
+"key": "dates.thisWeek",
+"group": "Dates and numbers",
+"en": "this week",
+"pt": "nesta semana",
+"note": "",
+"ask": ""
+},
+{
+"key": "dates.thisMonth",
+"group": "Dates and numbers",
+"en": "this month",
+"pt": "neste mês",
+"note": "",
+"ask": ""
+},
+{
+"key": "dates.lastWeek",
+"group": "Dates and numbers",
+"en": "Last week",
+"pt": "Semana passada",
+"note": "",
+"ask": ""
+},
+{
+"key": "dates.weekOf",
+"group": "Dates and numbers",
+"en": "Week of {date}",
+"pt": "Semana de {date}",
+"note": "",
+"ask": ""
+},
+{
+"key": "numbers.decimal",
+"group": "Dates and numbers",
+"en": "7.5",
+"pt": "7,5",
+"note": "Decimal separator shown in numbers. Typing either works.",
+"ask": ""
+},
+{
+"key": "status.onTrack",
+"group": "Status",
+"en": "on track",
+"pt": "em dia",
+"note": "",
+"ask": ""
+},
+{
+"key": "status.behind",
+"group": "Status",
+"en": "behind",
+"pt": "com atraso",
+"note": "",
+"ask": ""
+},
+{
+"key": "status.atRisk",
+"group": "Status",
+"en": "at risk",
+"pt": "em risco",
+"note": "",
+"ask": ""
+},
+{
+"key": "status.noData",
+"group": "Status",
+"en": "no data yet",
+"pt": "sem dados ainda",
+"note": "",
+"ask": ""
+},
+{
+"key": "status.infoLabel",
+"group": "Status",
+"en": "What the status means",
+"pt": "O que o status significa",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "status.infoIntro",
+"group": "Status",
+"en": "Counted from the goal’s start, against its tolerance (say 80%):",
+"pt": "Contado desde o início da meta, em relação à tolerância (por exemplo, 80%):",
+"note": "",
+"ask": ""
+},
+{
+"key": "status.infoOnTrack",
+"group": "Status",
+"en": "On track: at or above it.",
+"pt": "Em dia: igual ou acima dela.",
+"note": "",
+"ask": ""
+},
+{
+"key": "status.infoBehind",
+"group": "Status",
+"en": "Behind: below it, by up to 15 points (65–79%).",
+"pt": "Com atraso: abaixo dela, por até 15 pontos (65–79%).",
+"note": "",
+"ask": ""
+},
+{
+"key": "status.infoAtRisk",
+"group": "Status",
+"en": "At risk: more than 15 points below.",
+"pt": "Em risco: mais de 15 pontos abaixo.",
+"note": "",
+"ask": ""
+},
+{
+"key": "status.infoFinish",
+"group": "Status",
+"en": "Finish lines turn behind during their extra time and at risk after it.",
+"pt": "Linhas de chegada ficam com atraso durante o prazo extra e em risco depois dele.",
+"note": "",
+"ask": ""
+},
+{
+"key": "status.infoBars",
+"group": "Status",
+"en": "The four bars are the last four weeks, oldest first; grey means nothing to judge yet.",
+"pt": "As quatro barras são as últimas quatro semanas, da mais antiga para a mais recente; cinza quer dizer que ainda não há o que avaliar.",
+"note": "",
+"ask": ""
+},
+{
+"key": "status.last4Weeks",
+"group": "Status",
+"en": "Last 4 weeks",
+"pt": "Últimas 4 semanas",
+"note": "",
+"ask": ""
+},
+{
+"key": "status.weekN",
+"group": "Status",
+"en": "week {n}: {status}",
+"pt": "semana {n}: {status}",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "state.active",
+"group": "Status",
+"en": "Active",
+"pt": "Ativa",
+"note": "Goal states (meta is feminine).",
+"ask": ""
+},
+{
+"key": "state.backlog",
+"group": "Status",
+"en": "Backlog",
+"pt": "Na fila",
+"note": "",
+"ask": ""
+},
+{
+"key": "state.maintenance",
+"group": "Status",
+"en": "Maintenance",
+"pt": "Manutenção",
+"note": "",
+"ask": ""
+},
+{
+"key": "state.completed",
+"group": "Status",
+"en": "Completed",
+"pt": "Concluída",
+"note": "",
+"ask": ""
+},
+{
+"key": "state.abandoned",
+"group": "Status",
+"en": "Abandoned",
+"pt": "Abandonada",
+"note": "",
+"ask": ""
+},
+{
+"key": "state.paused",
+"group": "Status",
+"en": "Paused",
+"pt": "Pausada",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.things.one",
+"group": "Today",
+"en": "{n} thing",
+"pt": "{n} item",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.things.other",
+"group": "Today",
+"en": "{n} things",
+"pt": "{n} itens",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.left",
+"group": "Today",
+"en": "{n} left",
+"pt": "faltam {n}",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.allDone",
+"group": "Today",
+"en": "all done",
+"pt": "tudo feito",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.pastDay",
+"group": "Today",
+"en": "{date} · past day",
+"pt": "{date} · dia passado",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.goToPastDay",
+"group": "Today",
+"en": "Go to a past day",
+"pt": "Ir para um dia passado",
+"note": "Screen reader label for the calendar button.",
+"ask": ""
+},
+{
+"key": "today.filterGoals",
+"group": "Today",
+"en": "Goals",
+"pt": "Metas",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.filterProjects",
+"group": "Today",
+"en": "Projects",
+"pt": "Projetos",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.filterTasks",
+"group": "Today",
+"en": "Tasks",
+"pt": "Tarefas",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.nothingHere",
+"group": "Today",
+"en": "Nothing here today.",
+"pt": "Nada aqui hoje.",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.errands",
+"group": "Today",
+"en": "Errands",
+"pt": "Avulsas",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.logItem",
+"group": "Today",
+"en": "Log {name}",
+"pt": "Registrar {name}",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.nOfTimesToday",
+"group": "Today",
+"en": "{n} of {times} today",
+"pt": "{n} de {times} hoje",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.nOfTimesPeriod",
+"group": "Today",
+"en": "{n} of {times} {period}",
+"pt": "{n} de {times} {period}",
+"note": "{period} is \"this week\" or \"this month\" from Dates.",
+"ask": ""
+},
+{
+"key": "today.doneForPeriod",
+"group": "Today",
+"en": "Done for {period}",
+"pt": "Feito {period}",
+"note": "e.g. Feito nesta semana",
+"ask": ""
+},
+{
+"key": "today.loggedThisWeek",
+"group": "Today",
+"en": "{n} logged this week",
+"pt": "{n} registrados nesta semana",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.prepFor",
+"group": "Today",
+"en": "{time} · for {name}",
+"pt": "{time} · para {name}",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.projectDue",
+"group": "Today",
+"en": "Project · due {when}",
+"pt": "Projeto · vence {when}",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.due",
+"group": "Today",
+"en": "due {when}",
+"pt": "vence {when}",
+"note": "e.g. vence amanhã",
+"ask": ""
+},
+{
+"key": "today.overdue",
+"group": "Today",
+"en": "overdue · {when}",
+"pt": "atrasada · {when}",
+"note": "For a task (tarefa is feminine).",
+"ask": ""
+},
+{
+"key": "today.stepOf",
+"group": "Today",
+"en": "{project} · due {when}",
+"pt": "{project} · vence {when}",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.periodTotal",
+"group": "Today",
+"en": "{total} {period} · target {cmp} {target}",
+"pt": "{total} {period} · alvo {cmp} {target}",
+"note": "\"target\" here is the number to reach; \"meta\" would clash with goal.",
+"ask": ""
+},
+{
+"key": "today.nothingScheduled",
+"group": "Today",
+"en": "Nothing scheduled that day.",
+"pt": "Nada agendado nesse dia.",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.nothingDue",
+"group": "Today",
+"en": "Nothing due today.",
+"pt": "Nada para hoje.",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.allowed",
+"group": "Today",
+"en": "That’s allowed.",
+"pt": "Tudo bem.",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.nextUp",
+"group": "Today",
+"en": "Next up is {when}: {item}",
+"pt": "O próximo é {when}: {item}",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.addSomething",
+"group": "Today",
+"en": "Add something for today",
+"pt": "Adicionar algo para hoje",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.createGoal",
+"group": "Today",
+"en": "Create a goal",
+"pt": "Criar uma meta",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.reviewReady",
+"group": "Today",
+"en": "Last week is ready to review.",
+"pt": "A semana passada está pronta para revisão.",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.notSynced",
+"group": "Today",
+"en": "Not synced {since}. Supabase may have paused the project.",
+"pt": "Sem sincronizar {since}. O Supabase pode ter pausado o projeto.",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.since",
+"group": "Today",
+"en": "since {date}",
+"pt": "desde {date}",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.yet",
+"group": "Today",
+"en": "yet",
+"pt": "ainda",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.pendingSafe",
+"group": "Today",
+"en": "{n} changes are waiting here, safe.",
+"pt": "{n} alterações estão guardadas aqui, em segurança.",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.restore",
+"group": "Today",
+"en": "Restore",
+"pt": "Restaurar",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.backupOld",
+"group": "Today",
+"en": "Last backup over a month ago.",
+"pt": "Último backup há mais de um mês.",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.noBackup",
+"group": "Today",
+"en": "No backup yet.",
+"pt": "Nenhum backup ainda.",
+"note": "",
+"ask": ""
+},
+{
+"key": "today.export",
+"group": "Today",
+"en": "Export",
+"pt": "Exportar",
+"note": "",
+"ask": ""
+},
+{
+"key": "miss.yesterday",
+"group": "Misses (Today and Review)",
+"en": "You missed yesterday’s {name}. What happened?",
+"pt": "Ontem: você não fez {name}. O que aconteceu?",
+"note": "Original has a dash; Portuguese starts with the day to avoid \"na segunda / no sábado\".",
+"ask": "Is \"você não fez {name}\" natural with names like \"academia\", \"sono\", \"pontualidade\"?"
+},
+{
+"key": "miss.weekday",
+"group": "Misses (Today and Review)",
+"en": "You missed {weekday}’s {name}. What happened?",
+"pt": "{weekday}: você não fez {name}. O que aconteceu?",
+"note": "",
+"ask": ""
+},
+{
+"key": "miss.onDate",
+"group": "Misses (Today and Review)",
+"en": "You missed {name} on {date}. What happened?",
+"pt": "{date}: você não fez {name}. O que aconteceu?",
+"note": "",
+"ask": ""
+},
+{
+"key": "miss.onDays",
+"group": "Misses (Today and Review)",
+"en": "You missed {name} on {days}. What happened?",
+"pt": "{days}: você não fez {name}. O que aconteceu?",
+"note": "",
+"ask": ""
+},
+{
+"key": "miss.period",
+"group": "Misses (Today and Review)",
+"en": "{when}: {hits} of {target} {name}. What happened?",
+"pt": "{when}: {hits} de {target} {name}. O que aconteceu?",
+"note": "e.g. Semana passada: 2 de 3 academia.",
+"ask": ""
+},
+{
+"key": "reason.noTime",
+"group": "Misses (Today and Review)",
+"en": "No time",
+"pt": "Sem tempo",
+"note": "",
+"ask": ""
+},
+{
+"key": "reason.tooTired",
+"group": "Misses (Today and Review)",
+"en": "Too tired",
+"pt": "Cansaço",
+"note": "Avoids cansado/cansada.",
+"ask": "Cansaço, or \"Cansado(a)\"?"
+},
+{
+"key": "reason.forgot",
+"group": "Misses (Today and Review)",
+"en": "Forgot",
+"pt": "Esqueci",
+"note": "",
+"ask": ""
+},
+{
+"key": "reason.choseOther",
+"group": "Misses (Today and Review)",
+"en": "Chose something else",
+"pt": "Escolhi outra coisa",
+"note": "",
+"ask": ""
+},
+{
+"key": "reason.noTime.lower",
+"group": "Misses (Today and Review)",
+"en": "no time",
+"pt": "sem tempo",
+"note": "Inside sentences.",
+"ask": ""
+},
+{
+"key": "reason.tooTired.lower",
+"group": "Misses (Today and Review)",
+"en": "too tired",
+"pt": "cansaço",
+"note": "",
+"ask": ""
+},
+{
+"key": "reason.forgot.lower",
+"group": "Misses (Today and Review)",
+"en": "forgot",
+"pt": "esqueci",
+"note": "",
+"ask": ""
+},
+{
+"key": "reason.choseOther.lower",
+"group": "Misses (Today and Review)",
+"en": "chose something else",
+"pt": "escolhi outra coisa",
+"note": "",
+"ask": ""
+},
+{
+"key": "miss.tookItsPlace",
+"group": "Misses (Today and Review)",
+"en": "What took its place?",
+"pt": "O que ocupou o lugar?",
+"note": "",
+"ask": ""
+},
+{
+"key": "miss.tookItsPlaceLabel",
+"group": "Misses (Today and Review)",
+"en": "What took its place",
+"pt": "O que ocupou o lugar",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "miss.insteadPlaceholder",
+"group": "Misses (Today and Review)",
+"en": "e.g. what you did instead",
+"pt": "ex.: o que você fez no lugar",
+"note": "",
+"ask": ""
+},
+{
+"key": "miss.addAnother",
+"group": "Misses (Today and Review)",
+"en": "Add another",
+"pt": "Adicionar outro",
+"note": "",
+"ask": ""
+},
+{
+"key": "miss.noteOptional",
+"group": "Misses (Today and Review)",
+"en": "Note (optional)",
+"pt": "Observação (opcional)",
+"note": "",
+"ask": ""
+},
+{
+"key": "miss.note",
+"group": "Misses (Today and Review)",
+"en": "Note",
+"pt": "Observação",
+"note": "",
+"ask": ""
+},
+{
+"key": "miss.notNow",
+"group": "Misses (Today and Review)",
+"en": "Not now",
+"pt": "Agora não",
+"note": "",
+"ask": ""
+},
+{
+"key": "miss.logInstead",
+"group": "Misses (Today and Review)",
+"en": "Log it instead",
+"pt": "Registrar o valor",
+"note": "On a missed number (e.g. sleep): log the value you forgot instead of a reason.",
+"ask": ""
+},
+{
+"key": "occ.agreedTime",
+"group": "Misses (Today and Review)",
+"en": "Agreed time",
+"pt": "Horário combinado",
+"note": "",
+"ask": ""
+},
+{
+"key": "occ.youArrived",
+"group": "Misses (Today and Review)",
+"en": "You arrived",
+"pt": "Você chegou",
+"note": "",
+"ask": ""
+},
+{
+"key": "occ.keptIt",
+"group": "Misses (Today and Review)",
+"en": "Did you keep it?",
+"pt": "Você cumpriu?",
+"note": "",
+"ask": ""
+},
+{
+"key": "occ.whatHappened",
+"group": "Misses (Today and Review)",
+"en": "What happened?",
+"pt": "O que aconteceu?",
+"note": "",
+"ask": ""
+},
+{
+"key": "occ.logKept",
+"group": "Misses (Today and Review)",
+"en": "Log: kept",
+"pt": "Registrar: cumpri",
+"note": "",
+"ask": ""
+},
+{
+"key": "occ.logMissed",
+"group": "Misses (Today and Review)",
+"en": "Log: missed",
+"pt": "Registrar: não cumpri",
+"note": "",
+"ask": ""
+},
+{
+"key": "qa.title",
+"group": "Quick add",
+"en": "Quick add",
+"pt": "Adicionar rápido",
+"note": "",
+"ask": ""
+},
+{
+"key": "qa.placeholder",
+"group": "Quick add",
+"en": "What needs doing?",
+"pt": "O que precisa ser feito?",
+"note": "",
+"ask": ""
+},
+{
+"key": "qa.stepPlaceholder",
+"group": "Quick add",
+"en": "Next step…",
+"pt": "Próxima etapa…",
+"note": "",
+"ask": ""
+},
+{
+"key": "qa.dueDate",
+"group": "Quick add",
+"en": "Due date",
+"pt": "Prazo",
+"note": "",
+"ask": ""
+},
+{
+"key": "qa.clearDueDate",
+"group": "Quick add",
+"en": "Clear due date",
+"pt": "Limpar prazo",
+"note": "",
+"ask": ""
+},
+{
+"key": "qa.clear",
+"group": "Quick add",
+"en": "Clear {name}",
+"pt": "Limpar {name}",
+"note": "",
+"ask": ""
+},
+{
+"key": "qa.stepAdded",
+"group": "Quick add",
+"en": "Step added to {project}.",
+"pt": "Etapa adicionada a {project}.",
+"note": "",
+"ask": ""
+},
+{
+"key": "cadence.once",
+"group": "Habit wording",
+"en": "once a {period}",
+"pt": "uma vez por {period}",
+"note": "{period}: dia / semana / mês",
+"ask": ""
+},
+{
+"key": "cadence.times",
+"group": "Habit wording",
+"en": "{n}× per {period}",
+"pt": "{n}× por {period}",
+"note": "",
+"ask": ""
+},
+{
+"key": "cadence.whenItComesUpTimed",
+"group": "Habit wording",
+"en": "when it comes up · on time or not",
+"pt": "quando acontecer · no horário ou não",
+"note": "",
+"ask": ""
+},
+{
+"key": "cadence.whenItComesUp",
+"group": "Habit wording",
+"en": "when it comes up",
+"pt": "quando acontecer",
+"note": "",
+"ask": ""
+},
+{
+"key": "cadence.daily",
+"group": "Habit wording",
+"en": "daily",
+"pt": "diário",
+"note": "",
+"ask": ""
+},
+{
+"key": "cadence.weekly",
+"group": "Habit wording",
+"en": "weekly",
+"pt": "semanal",
+"note": "",
+"ask": ""
+},
+{
+"key": "cadence.monthly",
+"group": "Habit wording",
+"en": "monthly",
+"pt": "mensal",
+"note": "",
+"ask": ""
+},
+{
+"key": "cadence.by",
+"group": "Habit wording",
+"en": "by",
+"pt": "até",
+"note": "Before a time: até 23:00",
+"ask": ""
+},
+{
+"key": "cadence.atOrAfter",
+"group": "Habit wording",
+"en": "at or after",
+"pt": "a partir de",
+"note": "A time: a partir de 06:00",
+"ask": ""
+},
+{
+"key": "plan.title",
+"group": "Plan",
+"en": "Plan",
+"pt": "Plano",
+"note": "",
+"ask": ""
+},
+{
+"key": "plan.newGoal",
+"group": "Plan",
+"en": "New goal",
+"pt": "Nova meta",
+"note": "",
+"ask": ""
+},
+{
+"key": "plan.newProject",
+"group": "Plan",
+"en": "New project",
+"pt": "Novo projeto",
+"note": "",
+"ask": ""
+},
+{
+"key": "plan.goals",
+"group": "Plan",
+"en": "Goals",
+"pt": "Metas",
+"note": "",
+"ask": ""
+},
+{
+"key": "plan.projects",
+"group": "Plan",
+"en": "Projects",
+"pt": "Projetos",
+"note": "",
+"ask": ""
+},
+{
+"key": "plan.active",
+"group": "Plan",
+"en": "Active",
+"pt": "Ativas",
+"note": "Section title for goals.",
+"ask": ""
+},
+{
+"key": "plan.activeProjects",
+"group": "Plan",
+"en": "Active",
+"pt": "Ativos",
+"note": "Section title for projects.",
+"ask": ""
+},
+{
+"key": "plan.noProjects",
+"group": "Plan",
+"en": "No projects.",
+"pt": "Nenhum projeto.",
+"note": "",
+"ask": ""
+},
+{
+"key": "plan.createProject",
+"group": "Plan",
+"en": "Create one",
+"pt": "Criar um",
+"note": "",
+"ask": ""
+},
+{
+"key": "plan.createGoal",
+"group": "Plan",
+"en": "Create one",
+"pt": "Criar uma",
+"note": "",
+"ask": ""
+},
+{
+"key": "plan.startFromBacklog",
+"group": "Plan",
+"en": "Start one from the backlog.",
+"pt": "Inicie uma da fila.",
+"note": "",
+"ask": ""
+},
+{
+"key": "plan.maintenance",
+"group": "Plan",
+"en": "Maintenance",
+"pt": "Manutenção",
+"note": "",
+"ask": ""
+},
+{
+"key": "plan.maintenanceInfo",
+"group": "Plan",
+"en": "Goals you keep doing without a finish line. Still scored; they don’t count toward the active limit.",
+"pt": "Metas que você continua fazendo, sem linha de chegada. Continuam sendo pontuadas, mas não contam no limite de ativas.",
+"note": "",
+"ask": ""
+},
+{
+"key": "plan.backlog",
+"group": "Plan",
+"en": "Backlog",
+"pt": "Fila",
+"note": "",
+"ask": ""
+},
+{
+"key": "plan.archive",
+"group": "Plan",
+"en": "Archive",
+"pt": "Arquivo",
+"note": "",
+"ask": ""
+},
+{
+"key": "plan.doneProjects",
+"group": "Plan",
+"en": "Done",
+"pt": "Concluídos",
+"note": "",
+"ask": ""
+},
+{
+"key": "plan.abandonedBecause",
+"group": "Plan",
+"en": "Abandoned · {reason}",
+"pt": "Abandonada · {reason}",
+"note": "",
+"ask": ""
+},
+{
+"key": "plan.finishLineTag",
+"group": "Plan",
+"en": " · Finish line",
+"pt": " · Linha de chegada",
+"note": "",
+"ask": ""
+},
+{
+"key": "plan.reviewDue",
+"group": "Plan",
+"en": "Review due",
+"pt": "Revisão pendente",
+"note": "",
+"ask": ""
+},
+{
+"key": "plan.stepsOf",
+"group": "Plan",
+"en": "{done} of {total} steps",
+"pt": "{done} de {total} etapas",
+"note": "",
+"ask": ""
+},
+{
+"key": "plan.noSteps",
+"group": "Plan",
+"en": "No steps yet",
+"pt": "Nenhuma etapa ainda",
+"note": "",
+"ask": ""
+},
+{
+"key": "plan.setAside",
+"group": "Plan",
+"en": " · set aside",
+"pt": " · deixado de lado",
+"note": "",
+"ask": ""
+},
+{
+"key": "plan.done",
+"group": "Plan",
+"en": " · done",
+"pt": " · concluído",
+"note": "",
+"ask": ""
+},
+{
+"key": "plan.fromDate",
+"group": "Plan",
+"en": "(from {when})",
+"pt": "(a partir de {when})",
+"note": "A habit that starts later.",
+"ask": ""
+},
+{
+"key": "move.toMaintenance",
+"group": "Plan",
+"en": "Move to maintenance",
+"pt": "Mover para manutenção",
+"note": "",
+"ask": ""
+},
+{
+"key": "move.toMaintenanceSub",
+"group": "Plan",
+"en": "Stays on Today and scored; frees its slot.",
+"pt": "Continua em Hoje e sendo pontuada; libera a vaga.",
+"note": "",
+"ask": ""
+},
+{
+"key": "move.toMaintenanceSubDate",
+"group": "Plan",
+"en": "Stays on Today and scored; frees its slot and clears the review date.",
+"pt": "Continua em Hoje e sendo pontuada; libera a vaga e remove a data de revisão.",
+"note": "",
+"ask": ""
+},
+{
+"key": "move.nowMaintenance",
+"group": "Plan",
+"en": "Now in maintenance.",
+"pt": "Agora em manutenção.",
+"note": "",
+"ask": ""
+},
+{
+"key": "move.makeActive",
+"group": "Plan",
+"en": "Make active",
+"pt": "Tornar ativa",
+"note": "",
+"ask": ""
+},
+{
+"key": "move.makeActiveNoSlot",
+"group": "Plan",
+"en": "Make active (no free slot)",
+"pt": "Tornar ativa (sem vaga livre)",
+"note": "",
+"ask": ""
+},
+{
+"key": "move.takesSlot",
+"group": "Plan",
+"en": "Takes one of your active slots.",
+"pt": "Ocupa uma das suas vagas ativas.",
+"note": "",
+"ask": ""
+},
+{
+"key": "move.noSlot",
+"group": "Plan",
+"en": "No free slot: pause an active goal first.",
+"pt": "Sem vaga livre: pause uma meta ativa antes.",
+"note": "",
+"ask": ""
+},
+{
+"key": "move.activeAgain",
+"group": "Plan",
+"en": "Active again.",
+"pt": "Ativa de novo.",
+"note": "",
+"ask": ""
+},
+{
+"key": "move.pause",
+"group": "Plan",
+"en": "Pause",
+"pt": "Pausar",
+"note": "",
+"ask": ""
+},
+{
+"key": "move.pauseToBacklog",
+"group": "Plan",
+"en": "Pause (back to backlog)",
+"pt": "Pausar (voltar para a fila)",
+"note": "",
+"ask": ""
+},
+{
+"key": "move.pauseSub",
+"group": "Plan",
+"en": "Back to the backlog: off Today, history kept. Start it again any time.",
+"pt": "De volta à fila: sai de Hoje e o histórico fica. Inicie de novo quando quiser.",
+"note": "",
+"ask": ""
+},
+{
+"key": "move.paused",
+"group": "Plan",
+"en": "Paused. It’s in the backlog.",
+"pt": "Pausada. Está na fila.",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.inBacklogFull",
+"group": "Goal page",
+"en": "In the backlog. You have {n} active goals.",
+"pt": "Na fila. Você tem {n} metas ativas.",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.inBacklog",
+"group": "Goal page",
+"en": "In the backlog.",
+"pt": "Na fila.",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.deadlineOver",
+"group": "Goal page",
+"en": "Deadline and extra time are over.",
+"pt": "O prazo e o prazo extra acabaram.",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.reviewReached",
+"group": "Goal page",
+"en": "Review date reached.",
+"pt": "Chegou a data de revisão.",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.review",
+"group": "Goal page",
+"en": "Review",
+"pt": "Revisar",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.insights",
+"group": "Goal page",
+"en": "Insights",
+"pt": "Insights",
+"note": "Screen reader label for the chart button.",
+"ask": ""
+},
+{
+"key": "goal.history",
+"group": "Goal page",
+"en": "History",
+"pt": "Histórico",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.timeUsed",
+"group": "Goal page",
+"en": "Time used",
+"pt": "Tempo usado",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.doneWhen",
+"group": "Goal page",
+"en": "Done when",
+"pt": "Concluída quando",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.deadline",
+"group": "Goal page",
+"en": "Deadline",
+"pt": "Prazo",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.extraTime",
+"group": "Goal page",
+"en": "Extra time",
+"pt": "Prazo extra",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.since",
+"group": "Goal page",
+"en": "Since",
+"pt": "Desde",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.tolerance",
+"group": "Goal page",
+"en": "Tolerance",
+"pt": "Tolerância",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.reviewOn",
+"group": "Goal page",
+"en": "Review",
+"pt": "Revisão",
+"note": "The review date in the details list.",
+"ask": ""
+},
+{
+"key": "goal.iDidIt",
+"group": "Goal page",
+"en": "I did it",
+"pt": "Consegui",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.supportingHabits",
+"group": "Goal page",
+"en": "Supporting habits",
+"pt": "Hábitos de apoio",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.commitments",
+"group": "Goal page",
+"en": "Commitments",
+"pt": "Compromissos",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.supportingHabit",
+"group": "Goal page",
+"en": "Supporting habit",
+"pt": "Hábito de apoio",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.commitment",
+"group": "Goal page",
+"en": "Commitment",
+"pt": "Compromisso",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.aboutSupporting",
+"group": "Goal page",
+"en": "About supporting habits",
+"pt": "Sobre hábitos de apoio",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.supportingInfo",
+"group": "Goal page",
+"en": "Optional habits that get you to the finish line, like LeetCode 4× a week. Each can start on its own date, so you can prepare first and apply later.",
+"pt": "Hábitos opcionais que levam você até a linha de chegada, como LeetCode 4× por semana. Cada um pode começar na sua própria data, para você se preparar antes e aplicar depois.",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.projects",
+"group": "Goal page",
+"en": "Projects",
+"pt": "Projetos",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.tasks",
+"group": "Goal page",
+"en": "Tasks",
+"pt": "Tarefas",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.editGoal",
+"group": "Goal page",
+"en": "Edit goal",
+"pt": "Editar meta",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.closeItOut",
+"group": "Goal page",
+"en": "Close it out",
+"pt": "Encerrar",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.restoreToBacklog",
+"group": "Goal page",
+"en": "Restore to backlog",
+"pt": "Voltar para a fila",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.abandonEllipsis",
+"group": "Goal page",
+"en": "Abandon…",
+"pt": "Abandonar…",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.deletePermanently",
+"group": "Goal page",
+"en": "Delete permanently",
+"pt": "Excluir para sempre",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.deleteConfirm",
+"group": "Goal page",
+"en": "Delete goal and its history",
+"pt": "Excluir a meta e o histórico",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.removeCommitment",
+"group": "Goal page",
+"en": "Remove “{name}”? Its history stays, but it stops being scored.",
+"pt": "Remover “{name}”? O histórico fica, mas deixa de ser pontuado.",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.aboutPreps",
+"group": "Goal page",
+"en": "About preps",
+"pt": "Sobre preparos",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.prepsInfo",
+"group": "Goal page",
+"en": "Small things done ahead, like packing the bag the night before, so the commitment is easier. They show on Today on their days, and never count toward the score.",
+"pt": "Pequenas coisas feitas antes, como arrumar a mochila na noite anterior, para facilitar o compromisso. Aparecem em Hoje nos dias delas e nunca contam na pontuação.",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.prepFor",
+"group": "Goal page",
+"en": "Prep for {name}",
+"pt": "Preparo para {name}",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.editPrep",
+"group": "Goal page",
+"en": "Edit prep",
+"pt": "Editar preparo",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.newCommitment",
+"group": "Goal page",
+"en": "New commitment",
+"pt": "Novo compromisso",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.editCommitment",
+"group": "Goal page",
+"en": "Edit commitment",
+"pt": "Editar compromisso",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.kind",
+"group": "Goal page",
+"en": "Kind",
+"pt": "Tipo",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.starts",
+"group": "Goal page",
+"en": "Starts",
+"pt": "Começa em",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.startsInfo",
+"group": "Goal page",
+"en": "Scoring starts on this day. Pick a later date to prepare first. It won’t show on Today until then.",
+"pt": "A pontuação começa neste dia. Escolha uma data mais tarde para se preparar antes. Não aparece em Hoje até lá.",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.abandonTitle",
+"group": "Goal page",
+"en": "Abandon this goal?",
+"pt": "Abandonar esta meta?",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.abandonReason",
+"group": "Goal page",
+"en": "Reason (optional)",
+"pt": "Motivo (opcional)",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.abandonInfo",
+"group": "Goal page",
+"en": "It leaves Today but stays in your history. A decision, not a failure.",
+"pt": "Sai de Hoje, mas fica no seu histórico. Uma decisão, não um fracasso.",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.keepIt",
+"group": "Goal page",
+"en": "Keep it",
+"pt": "Manter",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.abandon",
+"group": "Goal page",
+"en": "Abandon",
+"pt": "Abandonar",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.abandoned",
+"group": "Goal page",
+"en": "Abandoned.",
+"pt": "Abandonada.",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.editEyebrow",
+"group": "Goal page",
+"en": "Edit",
+"pt": "Editar",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.commitmentsEditedElsewhere",
+"group": "Goal page",
+"en": "Commitments are edited on the goal’s page.",
+"pt": "Os compromissos são editados na página da meta.",
+"note": "",
+"ask": ""
+},
+{
+"key": "goal.pickValue",
+"group": "Goal page",
+"en": "Pick a value.",
+"pt": "Escolha um valor.",
+"note": "",
+"ask": ""
+},
+{
+"key": "goalReview.title",
+"group": "Goal page",
+"en": "Goal review",
+"pt": "Revisão da meta",
+"note": "",
+"ask": ""
+},
+{
+"key": "goalReview.q1",
+"group": "Goal page",
+"en": "1. Did you hit it?",
+"pt": "1. Você atingiu?",
+"note": "",
+"ask": ""
+},
+{
+"key": "goalReview.q1Label",
+"group": "Goal page",
+"en": "Did you hit it",
+"pt": "Você atingiu",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "goalReview.q2",
+"group": "Goal page",
+"en": "2. What happened?",
+"pt": "2. O que aconteceu?",
+"note": "",
+"ask": ""
+},
+{
+"key": "goalReview.journal",
+"group": "Goal page",
+"en": "Journal",
+"pt": "Diário",
+"note": "",
+"ask": ""
+},
+{
+"key": "goalReview.journalInfo",
+"group": "Goal page",
+"en": "Kept with the goal. Write what would make it make sense to you a year from now.",
+"pt": "Fica guardado com a meta. Escreva o que vai fazer sentido para você daqui a um ano.",
+"note": "",
+"ask": ""
+},
+{
+"key": "goalReview.q3",
+"group": "Goal page",
+"en": "3. What next?",
+"pt": "3. E agora?",
+"note": "",
+"ask": ""
+},
+{
+"key": "goalReview.q3Label",
+"group": "Goal page",
+"en": "What next",
+"pt": "E agora",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "goalReview.renew",
+"group": "Goal page",
+"en": "Renew",
+"pt": "Renovar",
+"note": "",
+"ask": ""
+},
+{
+"key": "goalReview.renewDeadline",
+"group": "Goal page",
+"en": "New deadline.",
+"pt": "Novo prazo.",
+"note": "",
+"ask": ""
+},
+{
+"key": "goalReview.renewReview",
+"group": "Goal page",
+"en": "New review date.",
+"pt": "Nova data de revisão.",
+"note": "",
+"ask": ""
+},
+{
+"key": "goalReview.maintenanceSub",
+"group": "Goal page",
+"en": "Keep doing it, no finish line.",
+"pt": "Continuar fazendo, sem linha de chegada.",
+"note": "",
+"ask": ""
+},
+{
+"key": "goalReview.closeSubDone",
+"group": "Goal page",
+"en": "Done. It moves to your history.",
+"pt": "Concluída. Vai para o seu histórico.",
+"note": "",
+"ask": ""
+},
+{
+"key": "goalReview.closeSubArchive",
+"group": "Goal page",
+"en": "Archive it.",
+"pt": "Arquivar.",
+"note": "",
+"ask": ""
+},
+{
+"key": "goalReview.newDeadline",
+"group": "Goal page",
+"en": "New deadline",
+"pt": "Novo prazo",
+"note": "",
+"ask": ""
+},
+{
+"key": "goalReview.newReviewDate",
+"group": "Goal page",
+"en": "New review date",
+"pt": "Nova data de revisão",
+"note": "",
+"ask": ""
+},
+{
+"key": "goalReview.save",
+"group": "Goal page",
+"en": "Save review",
+"pt": "Salvar revisão",
+"note": "",
+"ask": ""
+},
+{
+"key": "history.fillPastDay",
+"group": "Goal page",
+"en": "Fill in a past day",
+"pt": "Preencher um dia passado",
+"note": "",
+"ask": ""
+},
+{
+"key": "history.added",
+"group": "Goal page",
+"en": "Added {what}",
+"pt": "Adicionado: {what}",
+"note": "",
+"ask": ""
+},
+{
+"key": "history.removed",
+"group": "Goal page",
+"en": "Removed {what}",
+"pt": "Removido: {what}",
+"note": "",
+"ask": ""
+},
+{
+"key": "history.review",
+"group": "Goal page",
+"en": "Review · {result} · {outcome}",
+"pt": "Revisão · {result} · {outcome}",
+"note": "",
+"ask": ""
+},
+{
+"key": "history.hitIt",
+"group": "Goal page",
+"en": "hit it",
+"pt": "atingiu",
+"note": "",
+"ask": ""
+},
+{
+"key": "history.didntHitIt",
+"group": "Goal page",
+"en": "didn’t hit it",
+"pt": "não atingiu",
+"note": "",
+"ask": ""
+},
+{
+"key": "history.field.name",
+"group": "Goal page",
+"en": "name",
+"pt": "nome",
+"note": "Names of habit fields in the history of changes.",
+"ask": ""
+},
+{
+"key": "history.field.whatCounts",
+"group": "Goal page",
+"en": "what counts",
+"pt": "o que conta",
+"note": "",
+"ask": ""
+},
+{
+"key": "history.field.checkIn",
+"group": "Goal page",
+"en": "check-in",
+"pt": "registro",
+"note": "",
+"ask": ""
+},
+{
+"key": "history.field.howOften",
+"group": "Goal page",
+"en": "how often",
+"pt": "frequência",
+"note": "",
+"ask": ""
+},
+{
+"key": "history.field.target",
+"group": "Goal page",
+"en": "target",
+"pt": "alvo",
+"note": "",
+"ask": ""
+},
+{
+"key": "history.field.direction",
+"group": "Goal page",
+"en": "direction",
+"pt": "direção",
+"note": "",
+"ask": ""
+},
+{
+"key": "history.field.unit",
+"group": "Goal page",
+"en": "unit",
+"pt": "unidade",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.newGoal",
+"group": "New goal form",
+"en": "New goal",
+"pt": "Nova meta",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.compact",
+"group": "New goal form",
+"en": "Compact",
+"pt": "Compacto",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.guided",
+"group": "New goal form",
+"en": "Guided",
+"pt": "Guiado",
+"note": "",
+"ask": ""
+},
+{
+"key": "smart.specific",
+"group": "New goal form",
+"en": "Specific",
+"pt": "Específica",
+"note": "SMART letters stay S M A R T; the words describe the meta (feminine).",
+"ask": "OK to keep the SMART letters even though Específica starts with E?"
+},
+{
+"key": "smart.measurable",
+"group": "New goal form",
+"en": "Measurable",
+"pt": "Mensurável",
+"note": "",
+"ask": ""
+},
+{
+"key": "smart.achievable",
+"group": "New goal form",
+"en": "Achievable",
+"pt": "Atingível",
+"note": "",
+"ask": ""
+},
+{
+"key": "smart.relevant",
+"group": "New goal form",
+"en": "Relevant",
+"pt": "Relevante",
+"note": "",
+"ask": ""
+},
+{
+"key": "smart.timeBound",
+"group": "New goal form",
+"en": "Time-bound",
+"pt": "Temporal",
+"note": "",
+"ask": "Temporal, or \"Com prazo\"?"
+},
+{
+"key": "smart.extraPrep",
+"group": "New goal form",
+"en": "Extra · Prep",
+"pt": "Extra · Preparo",
+"note": "",
+"ask": ""
+},
+{
+"key": "smart.prepOptional",
+"group": "New goal form",
+"en": "Prep · optional",
+"pt": "Preparo · opcional",
+"note": "",
+"ask": ""
+},
+{
+"key": "smart.label",
+"group": "New goal form",
+"en": "SMART: {word}",
+"pt": "SMART: {word}",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "form.qWhat",
+"group": "New goal form",
+"en": "What do you want?",
+"pt": "O que você quer?",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.goal",
+"group": "New goal form",
+"en": "Goal",
+"pt": "Meta",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.goalPlaceholder",
+"group": "New goal form",
+"en": "Work at a big tech, earning 10k+",
+"pt": "Trabalhar numa big tech, ganhando 10 mil+",
+"note": "Placeholder in the normal form.",
+"ask": ""
+},
+{
+"key": "form.qHowKnow",
+"group": "New goal form",
+"en": "How will you know?",
+"pt": "Como você vai saber?",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.qHowOften",
+"group": "New goal form",
+"en": "How often?",
+"pt": "Com que frequência?",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.qLine",
+"group": "New goal form",
+"en": "Where’s the line?",
+"pt": "Qual é o limite?",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.qCheckIn",
+"group": "New goal form",
+"en": "How will you check in?",
+"pt": "Como você vai registrar?",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.badWeek",
+"group": "New goal form",
+"en": "Pick a number you could hit in a bad week, not a good one.",
+"pt": "Escolha um número que você bateria numa semana ruim, não numa boa.",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.qSlack",
+"group": "New goal form",
+"en": "How much slack?",
+"pt": "Quanta folga?",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.qWhy",
+"group": "New goal form",
+"en": "Why does it matter?",
+"pt": "Por que isso importa?",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.qWhen",
+"group": "New goal form",
+"en": "When?",
+"pt": "Quando?",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.qStops",
+"group": "New goal form",
+"en": "What usually stops you?",
+"pt": "O que costuma atrapalhar?",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.prepInfo",
+"group": "New goal form",
+"en": "A prep is a small step beforehand, like packing the gym bag the night before, that makes the real thing easier. Optional, and never scored.",
+"pt": "Um preparo é um pequeno passo antes, como arrumar a mochila da academia na noite anterior, que facilita o principal. É opcional e nunca é pontuado.",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.kindInfoFinish",
+"group": "New goal form",
+"en": "Finish line: reached once, by a deadline (get the job). Habits that help can be added after.",
+"pt": "Linha de chegada: atingida uma vez, até um prazo (conseguir o emprego). Hábitos que ajudam podem ser adicionados depois.",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.kindInfoRhythm",
+"group": "New goal form",
+"en": "Rhythm: a number of times per week or month, any days (gym 3× a week).",
+"pt": "Ritmo: um número de vezes por semana ou mês, em quaisquer dias (academia 3× por semana).",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.kindInfoThreshold",
+"group": "New goal form",
+"en": "Threshold: stay over or under a line every day, week or month (sleep ≥ 8 h).",
+"pt": "Limite: ficar acima ou abaixo de uma linha todo dia, semana ou mês (sono ≥ 8 h).",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.kindInfoStandard",
+"group": "New goal form",
+"en": "Standard: a rule for when something comes up, logged when it happens (arrive on time).",
+"pt": "Regra: uma regra para quando algo acontece, registrada quando acontece (chegar no horário).",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.aboutKinds",
+"group": "New goal form",
+"en": "About kinds",
+"pt": "Sobre os tipos",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.doneWhen",
+"group": "New goal form",
+"en": "Done when",
+"pt": "Concluída quando",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.doneWhenInfo",
+"group": "New goal form",
+"en": "The yes/no question that ends the goal. Make it something no one could argue about.",
+"pt": "A pergunta de sim ou não que encerra a meta. Faça dela algo que ninguém possa discutir.",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.doneWhenPlaceholder",
+"group": "New goal form",
+"en": "Signed an offer from a big tech company paying at least 10k a month",
+"pt": "Assinei uma proposta de uma big tech pagando pelo menos 10 mil por mês",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.extraTime",
+"group": "New goal form",
+"en": "Extra time",
+"pt": "Prazo extra",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.extraTimeInfo",
+"group": "New goal form",
+"en": "If it takes longer than the deadline, how much extra time is still fine? Until then the goal is “behind”, after it “at risk”.",
+"pt": "Se passar do prazo, quanto tempo extra ainda está tudo bem? Até lá a meta fica “com atraso”; depois, “em risco”.",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.grace.none",
+"group": "New goal form",
+"en": "None",
+"pt": "Nenhum",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.grace.2w",
+"group": "New goal form",
+"en": "2 weeks",
+"pt": "2 semanas",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.grace.1m",
+"group": "New goal form",
+"en": "1 month",
+"pt": "1 mês",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.grace.2m",
+"group": "New goal form",
+"en": "2 months",
+"pt": "2 meses",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.grace.3m",
+"group": "New goal form",
+"en": "3 months",
+"pt": "3 meses",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.grace.6m",
+"group": "New goal form",
+"en": "6 months",
+"pt": "6 meses",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.whatCounts",
+"group": "New goal form",
+"en": "What counts",
+"pt": "O que conta",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.whatCountsInfo",
+"group": "New goal form",
+"en": "The sentence you’ll answer yes or no to, with no judgment call. “Go to the gym” can’t be checked; “At least 45 minutes of exercise” can.",
+"pt": "A frase que você vai responder com sim ou não, sem dúvida. “Ir à academia” não dá para checar; “Pelo menos 45 minutos de exercício” dá.",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.phStandard",
+"group": "New goal form",
+"en": "Arrived at or before the agreed time",
+"pt": "Cheguei no horário combinado ou antes",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.phThreshold",
+"group": "New goal form",
+"en": "Slept at least 8 hours",
+"pt": "Dormi pelo menos 8 horas",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.phRhythm",
+"group": "New goal form",
+"en": "Did at least 45 minutes of exercise",
+"pt": "Fiz pelo menos 45 minutos de exercício",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.shortName",
+"group": "New goal form",
+"en": "Short name",
+"pt": "Nome curto",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.phShortThreshold",
+"group": "New goal form",
+"en": "sleep",
+"pt": "sono",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.phShortStandard",
+"group": "New goal form",
+"en": "punctuality",
+"pt": "pontualidade",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.phShortRhythm",
+"group": "New goal form",
+"en": "gym",
+"pt": "academia",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.checkYesNo",
+"group": "New goal form",
+"en": "Yes / no",
+"pt": "Sim / não",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.checkNumber",
+"group": "New goal form",
+"en": "A number",
+"pt": "Um número",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.checkTime",
+"group": "New goal form",
+"en": "A time",
+"pt": "Um horário",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.target",
+"group": "New goal form",
+"en": "Target",
+"pt": "Alvo",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.times",
+"group": "New goal form",
+"en": "Times",
+"pt": "Vezes",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "form.timesPer",
+"group": "New goal form",
+"en": "times per",
+"pt": "vezes por",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.period",
+"group": "New goal form",
+"en": "Period",
+"pt": "Período",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.checkInWith",
+"group": "New goal form",
+"en": "You check in with",
+"pt": "Você registra com",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.checkInType",
+"group": "New goal form",
+"en": "Check-in type",
+"pt": "Tipo de registro",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "form.judgedPer",
+"group": "New goal form",
+"en": "Judged per",
+"pt": "Avaliado por",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.theLimit",
+"group": "New goal form",
+"en": "The limit",
+"pt": "O limite",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.limitInfo",
+"group": "New goal form",
+"en": "Everything you log in a {period} is added up and compared with this.",
+"pt": "Tudo o que você registra numa {period} é somado e comparado com isso.",
+"note": "{period}: semana / mês. \"numa semana\" works; \"num mês\" would need \"num\".",
+"ask": "For month it becomes \"numa mês\". Should I write two versions (semana / mês)?"
+},
+{
+"key": "form.direction",
+"group": "New goal form",
+"en": "Direction",
+"pt": "Direção",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "form.atLeast",
+"group": "New goal form",
+"en": "At least",
+"pt": "Pelo menos",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.atMost",
+"group": "New goal form",
+"en": "At most",
+"pt": "No máximo",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.limit",
+"group": "New goal form",
+"en": "Limit",
+"pt": "Limite",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "form.unit",
+"group": "New goal form",
+"en": "Unit",
+"pt": "Unidade",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "form.phUnit",
+"group": "New goal form",
+"en": "hours",
+"pt": "horas",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.theTime",
+"group": "New goal form",
+"en": "The time",
+"pt": "O horário",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.by",
+"group": "New goal form",
+"en": "By",
+"pt": "Até",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.notBefore",
+"group": "New goal form",
+"en": "Not before",
+"pt": "Não antes de",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.prepN",
+"group": "New goal form",
+"en": "Prep {n}",
+"pt": "Preparo {n}",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.phPrep",
+"group": "New goal form",
+"en": "Pack the gym bag and pick tomorrow’s routine",
+"pt": "Arrumar a mochila da academia e escolher o treino de amanhã",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.addPrep",
+"group": "New goal form",
+"en": "Add prep",
+"pt": "Adicionar preparo",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.tolerance",
+"group": "New goal form",
+"en": "Tolerance",
+"pt": "Tolerância",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.toleranceInfo",
+"group": "New goal form",
+"en": "The share of check-ins you need to hit to count as on track. Misses are always recorded; tolerance only sets the status. 70–80% is a good start.",
+"pt": "A parte dos registros que você precisa cumprir para ficar em dia. As falhas são sempre registradas; a tolerância só define o status. 70–80% é um bom começo.",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.tolerancePercent",
+"group": "New goal form",
+"en": "Tolerance percent",
+"pt": "Percentual de tolerância",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "form.value",
+"group": "New goal form",
+"en": "Value",
+"pt": "Valor",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.addValues",
+"group": "New goal form",
+"en": "Add values",
+"pt": "Adicionar valores",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.why",
+"group": "New goal form",
+"en": "Why",
+"pt": "Motivo",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.whyInfo",
+"group": "New goal form",
+"en": "Shown above this goal’s items on Today, so the reason is there when you decide.",
+"pt": "Aparece acima dos itens desta meta em Hoje, para o motivo estar ali na hora de decidir.",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.phWhy",
+"group": "New goal form",
+"en": "So I can carry Mia on my shoulders without my back giving out.",
+"pt": "Para eu conseguir carregar a Mia nos ombros sem minhas costas travarem.",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.savedBacklog",
+"group": "New goal form",
+"en": "Saved to backlog.",
+"pt": "Salva na fila.",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.start",
+"group": "New goal form",
+"en": "Start",
+"pt": "Início",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.deadline",
+"group": "New goal form",
+"en": "Deadline",
+"pt": "Prazo",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.reviewOn",
+"group": "New goal form",
+"en": "Review on",
+"pt": "Revisar em",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.reviewOnInfo",
+"group": "New goal form",
+"en": "On this date the goal asks: did you hit it, what happened, what next.",
+"pt": "Nesta data a meta pergunta: você atingiu, o que aconteceu, e agora.",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.aboutPreps",
+"group": "New goal form",
+"en": "About preps",
+"pt": "Sobre preparos",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.prepInfoShort",
+"group": "New goal form",
+"en": "A small step beforehand, like packing the gym bag the night before, that makes the real thing easier. Never scored.",
+"pt": "Um pequeno passo antes, como arrumar a mochila da academia na noite anterior, que facilita o principal. Nunca é pontuado.",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.checkFields",
+"group": "New goal form",
+"en": "Check the fields above.",
+"pt": "Confira os campos acima.",
+"note": "",
+"ask": ""
+},
+{
+"key": "form.saveGoal",
+"group": "New goal form",
+"en": "Save goal",
+"pt": "Salvar meta",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.new",
+"group": "Projects and tasks",
+"en": "New project",
+"pt": "Novo projeto",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.outcome",
+"group": "Projects and tasks",
+"en": "Outcome",
+"pt": "Resultado",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.phOutcome",
+"group": "Projects and tasks",
+"en": "Get driver’s license",
+"pt": "Tirar a carteira de motorista",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.targetDate",
+"group": "Projects and tasks",
+"en": "Target date",
+"pt": "Data-alvo",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.steps",
+"group": "Projects and tasks",
+"en": "Steps",
+"pt": "Etapas",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.stepsHint",
+"group": "Projects and tasks",
+"en": "Today shows only the current step.",
+"pt": "Hoje mostra só a etapa atual.",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.stepN",
+"group": "Projects and tasks",
+"en": "Step {n}",
+"pt": "Etapa {n}",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.phStep",
+"group": "Projects and tasks",
+"en": "Book the theory exam",
+"pt": "Marcar a prova teórica",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.addStepPlus",
+"group": "Projects and tasks",
+"en": "+ Add step",
+"pt": "+ Adicionar etapa",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.save",
+"group": "Projects and tasks",
+"en": "Save project",
+"pt": "Salvar projeto",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.saved",
+"group": "Projects and tasks",
+"en": "Project saved.",
+"pt": "Projeto salvo.",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.nameOutcome",
+"group": "Projects and tasks",
+"en": "Name the outcome.",
+"pt": "Dê um nome ao resultado.",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.dateFromToday",
+"group": "Projects and tasks",
+"en": "Pick a date from today on.",
+"pt": "Escolha uma data de hoje em diante.",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.eyebrow",
+"group": "Projects and tasks",
+"en": "Project",
+"pt": "Projeto",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.eyebrowSetAside",
+"group": "Projects and tasks",
+"en": "Project · set aside",
+"pt": "Projeto · deixado de lado",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.eyebrowDone",
+"group": "Projects and tasks",
+"en": "Project · done",
+"pt": "Projeto · concluído",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.everyStepDone",
+"group": "Projects and tasks",
+"en": "Every step is done.",
+"pt": "Todas as etapas estão feitas.",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.doneArchived",
+"group": "Projects and tasks",
+"en": "Done and archived.",
+"pt": "Concluído e arquivado.",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.markDone",
+"group": "Projects and tasks",
+"en": "Mark done",
+"pt": "Marcar como concluído",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.addAStep",
+"group": "Projects and tasks",
+"en": "Add a step",
+"pt": "Adicionar uma etapa",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.newStep",
+"group": "Projects and tasks",
+"en": "New step",
+"pt": "Nova etapa",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "project.markDoneArchive",
+"group": "Projects and tasks",
+"en": "Mark done and archive",
+"pt": "Concluir e arquivar",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.reopen",
+"group": "Projects and tasks",
+"en": "Reopen",
+"pt": "Reabrir",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.delete",
+"group": "Projects and tasks",
+"en": "Delete project",
+"pt": "Excluir projeto",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.deleteConfirm",
+"group": "Projects and tasks",
+"en": "Delete project and its steps",
+"pt": "Excluir o projeto e as etapas",
+"note": "",
+"ask": ""
+},
+{
+"key": "project.stepTitle",
+"group": "Projects and tasks",
+"en": "Step title",
+"pt": "Título da etapa",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "project.current",
+"group": "Projects and tasks",
+"en": "Current",
+"pt": "Atual",
+"note": "",
+"ask": ""
+},
+{
+"key": "task.noDate",
+"group": "Projects and tasks",
+"en": "No date",
+"pt": "Sem data",
+"note": "",
+"ask": ""
+},
+{
+"key": "task.pickDate",
+"group": "Projects and tasks",
+"en": "Pick a date",
+"pt": "Escolher data",
+"note": "",
+"ask": ""
+},
+{
+"key": "task.due",
+"group": "Projects and tasks",
+"en": "Due",
+"pt": "Prazo",
+"note": "",
+"ask": ""
+},
+{
+"key": "task.nowProject",
+"group": "Projects and tasks",
+"en": "Now a project.",
+"pt": "Agora é um projeto.",
+"note": "",
+"ask": ""
+},
+{
+"key": "task.toProject",
+"group": "Projects and tasks",
+"en": "Turn into project",
+"pt": "Transformar em projeto",
+"note": "",
+"ask": ""
+},
+{
+"key": "task.delete",
+"group": "Projects and tasks",
+"en": "Delete task",
+"pt": "Excluir tarefa",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.title",
+"group": "Weekly review",
+"en": "Review",
+"pt": "Revisão",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.about",
+"group": "Weekly review",
+"en": "About the review",
+"pt": "Sobre a revisão",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.aboutText",
+"group": "Weekly review",
+"en": "Once a week: answer what’s left, look at last week, and change what isn’t working.",
+"pt": "Uma vez por semana: responda o que ficou pendente, olhe a semana passada e mude o que não está funcionando.",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.aboutSuggestions",
+"group": "Weekly review",
+"en": "Suggestions come from your miss reasons over the last four weeks.",
+"pt": "As sugestões vêm dos motivos das suas falhas nas últimas quatro semanas.",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.nothingYet",
+"group": "Weekly review",
+"en": "Nothing to review yet.",
+"pt": "Nada para revisar ainda.",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.firstOpens",
+"group": "Weekly review",
+"en": "The first review opens the Monday after an active goal’s first full week.",
+"pt": "A primeira revisão abre na segunda-feira depois da primeira semana completa de uma meta ativa.",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.reviewedSetAside",
+"group": "Weekly review",
+"en": "Reviewed. Whatever was left open is set aside.",
+"pt": "Revisada. O que ficou em aberto foi deixado de lado.",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.reviewed",
+"group": "Weekly review",
+"en": "Reviewed.",
+"pt": "Revisada.",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.startedGoal",
+"group": "Weekly review",
+"en": "Started “{name}”.",
+"pt": "“{name}” iniciada.",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.lastWeek",
+"group": "Weekly review",
+"en": "Last week",
+"pt": "Semana passada",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.otherWeeks",
+"group": "Weekly review",
+"en": "Other weeks",
+"pt": "Outras semanas",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.weekOf",
+"group": "Weekly review",
+"en": "Week of {date}",
+"pt": "Semana de {date}",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.reviewedTag",
+"group": "Weekly review",
+"en": " · reviewed",
+"pt": " · revisada",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.looseEnds",
+"group": "Weekly review",
+"en": "Loose ends",
+"pt": "Pendências",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.skippedNoAsk",
+"group": "Weekly review",
+"en": "Skipped. It won’t ask again.",
+"pt": "Pulado. Não vai perguntar de novo.",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.thatWeek",
+"group": "Weekly review",
+"en": "That week",
+"pt": "Aquela semana",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.hidden4",
+"group": "Weekly review",
+"en": "Hidden for 4 weeks.",
+"pt": "Oculto por 4 semanas.",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.dates",
+"group": "Weekly review",
+"en": "Dates",
+"pt": "Datas",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.stalled",
+"group": "Weekly review",
+"en": "Stalled projects",
+"pt": "Projetos parados",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.openSlot",
+"group": "Weekly review",
+"en": "Open slot",
+"pt": "Vaga livre",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.freeOf",
+"group": "Weekly review",
+"en": "{free} of {cap} free · top of your backlog:",
+"pt": "{free} de {cap} livres · no topo da sua fila:",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.chooseAnother",
+"group": "Weekly review",
+"en": "Choose another",
+"pt": "Escolher outra",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.startWhich",
+"group": "Weekly review",
+"en": "Start which goal?",
+"pt": "Iniciar qual meta?",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.nothingToChange",
+"group": "Weekly review",
+"en": "Nothing to change.",
+"pt": "Nada para mudar.",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.noMisses",
+"group": "Weekly review",
+"en": "No misses to explain and nothing stalled.",
+"pt": "Nenhuma falha para explicar e nada parado.",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.nextMonday",
+"group": "Weekly review",
+"en": "Reviewed. The next one opens on Monday.",
+"pt": "Revisada. A próxima abre na segunda-feira.",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.doneForWeek",
+"group": "Weekly review",
+"en": "Done for this week",
+"pt": "Pronto por esta semana",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.markReviewed",
+"group": "Weekly review",
+"en": "Mark reviewed",
+"pt": "Marcar como revisada",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.weeks",
+"group": "Weekly review",
+"en": "Weeks",
+"pt": "Semanas",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.lastWeekTag",
+"group": "Weekly review",
+"en": " · last week",
+"pt": " · semana passada",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.reviewedLower",
+"group": "Weekly review",
+"en": "reviewed",
+"pt": "revisada",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.notReviewed",
+"group": "Weekly review",
+"en": "not reviewed",
+"pt": "não revisada",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.q.addPrep",
+"group": "Weekly review",
+"en": "Add a prep?",
+"pt": "Adicionar um preparo?",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.q.changePrep",
+"group": "Weekly review",
+"en": "The prep isn’t helping yet. Change it?",
+"pt": "O preparo ainda não está ajudando. Mudar?",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.q.lowerTarget",
+"group": "Weekly review",
+"en": "Lower the target, or change how often?",
+"pt": "Baixar o alvo ou mudar a frequência?",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.q.pause",
+"group": "Weekly review",
+"en": "Pause it and free the slot?",
+"pt": "Pausar e liberar a vaga?",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.q.maintenance",
+"group": "Weekly review",
+"en": "Switch to maintenance? It stays on Today and frees a slot.",
+"pt": "Passar para manutenção? Continua em Hoje e libera uma vaga.",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.a.addPrep",
+"group": "Weekly review",
+"en": "Add prep",
+"pt": "Adicionar preparo",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.a.editPrep",
+"group": "Weekly review",
+"en": "Edit prep",
+"pt": "Editar preparo",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.a.edit",
+"group": "Weekly review",
+"en": "Edit",
+"pt": "Editar",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.a.pause",
+"group": "Weekly review",
+"en": "Pause",
+"pt": "Pausar",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.a.maintenance",
+"group": "Weekly review",
+"en": "Maintenance",
+"pt": "Manutenção",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.editTarget",
+"group": "Weekly review",
+"en": "Edit target",
+"pt": "Editar alvo",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.line.nothingLogged",
+"group": "Weekly review",
+"en": "{name}: nothing logged",
+"pt": "{name}: nada registrado",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.line.kept",
+"group": "Weekly review",
+"en": "{name}: {n} of {expected} kept",
+"pt": "{name}: {n} de {expected} cumpridos",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.line.of",
+"group": "Weekly review",
+"en": "{name}: {n} of {expected}",
+"pt": "{name}: {n} de {expected}",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.line.ofDays",
+"group": "Weekly review",
+"en": "{name}: {n} of {expected} days",
+"pt": "{name}: {n} de {expected} dias",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.ev.share",
+"group": "Weekly review",
+"en": "{n} of {total} {name} misses since {date}",
+"pt": "{n} de {total} falhas de {name} desde {date}",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.ev.choseOther",
+"group": "Weekly review",
+"en": "chose something else ({what} ×{n})",
+"pt": "escolhi outra coisa ({what} ×{n})",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.ev.changed",
+"group": "Weekly review",
+"en": "You’ve already changed this target {times}.",
+"pt": "Você já mudou esse alvo {times}.",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.ev.twice",
+"group": "Weekly review",
+"en": "twice",
+"pt": "duas vezes",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.ev.nTimes",
+"group": "Weekly review",
+"en": "{n} times",
+"pt": "{n} vezes",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.ev.below",
+"group": "Weekly review",
+"en": "Below {pct}% in {n} of the last {total} weeks.",
+"pt": "Abaixo de {pct}% em {n} das últimas {total} semanas.",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.ev.onTrackAll",
+"group": "Weekly review",
+"en": "On track every week for the last {n} weeks.",
+"pt": "Em dia todas as semanas nas últimas {n} semanas.",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.date.when",
+"group": "Weekly review",
+"en": "{date} ({relative})",
+"pt": "{date} ({relative})",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.date.deadline",
+"group": "Weekly review",
+"en": "Deadline {when}",
+"pt": "Prazo {when}",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.date.inExtra",
+"group": "Weekly review",
+"en": "Deadline passed {date} · extra time until {when}",
+"pt": "O prazo passou em {date} · prazo extra até {when}",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.date.extraEnded",
+"group": "Weekly review",
+"en": "Deadline was {date}; extra time ended {when}",
+"pt": "O prazo era {date}; o prazo extra acabou {when}",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.date.reviewWas",
+"group": "Weekly review",
+"en": "Review date was {when}",
+"pt": "A data de revisão era {when}",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.stepsLeft.one",
+"group": "Weekly review",
+"en": "{n} step left",
+"pt": "falta {n} etapa",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.stepsLeft.other",
+"group": "Weekly review",
+"en": "{n} steps left",
+"pt": "faltam {n} etapas",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.pastDate",
+"group": "Weekly review",
+"en": "Past its date ({date})",
+"pt": "Passou da data ({date})",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.noStepSince",
+"group": "Weekly review",
+"en": "No step done since {date}",
+"pt": "Nenhuma etapa feita desde {date}",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.noStepYet",
+"group": "Weekly review",
+"en": "No step done yet",
+"pt": "Nenhuma etapa feita ainda",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.moveDate",
+"group": "Weekly review",
+"en": "Move date",
+"pt": "Mudar data",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.putDownQ",
+"group": "Weekly review",
+"en": "Put “{name}” down? It moves to done projects; you can reopen it.",
+"pt": "Deixar “{name}” de lado? Vai para os projetos concluídos; dá para reabrir.",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.putDown",
+"group": "Weekly review",
+"en": "Put down",
+"pt": "Deixar de lado",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.newDateFor",
+"group": "Weekly review",
+"en": "New date for “{name}”",
+"pt": "Nova data para “{name}”",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.newDate",
+"group": "Weekly review",
+"en": "New date: {date}",
+"pt": "Nova data: {date}",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.putDownDone",
+"group": "Weekly review",
+"en": "Put down · reopen it from its page",
+"pt": "Deixado de lado · reabra pela página dele",
+"note": "",
+"ask": ""
+},
+{
+"key": "review.dismissed4",
+"group": "Weekly review",
+"en": "Dismissed for 4 weeks",
+"pt": "Dispensado por 4 semanas",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.about",
+"group": "Insights",
+"en": "About insights",
+"pt": "Sobre os insights",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.aboutText",
+"group": "Insights",
+"en": "The long run: whether goals are working, what gets in the way, and where the effort goes. Review is for next week; this is for the months behind you.",
+"pt": "O longo prazo: se as metas estão funcionando, o que atrapalha e para onde vai o esforço. A revisão é para a próxima semana; isto é para os meses que ficaram para trás.",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.view",
+"group": "Insights",
+"en": "Insights view",
+"pt": "Visão dos insights",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "ins.tabGoals",
+"group": "Insights",
+"en": "Goals",
+"pt": "Metas",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.tabPatterns",
+"group": "Insights",
+"en": "Patterns",
+"pt": "Padrões",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.tabBig",
+"group": "Insights",
+"en": "Big picture",
+"pt": "Visão geral",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.period",
+"group": "Insights",
+"en": "Period",
+"pt": "Período",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "ins.range3m",
+"group": "Insights",
+"en": "3 months",
+"pt": "3 meses",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.range6m",
+"group": "Insights",
+"en": "6 months",
+"pt": "6 meses",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.range1y",
+"group": "Insights",
+"en": "1 year",
+"pt": "1 ano",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.rangeAll",
+"group": "Insights",
+"en": "All",
+"pt": "Tudo",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.nothingToChart",
+"group": "Insights",
+"en": "Nothing to chart yet.",
+"pt": "Nada para mostrar ainda.",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.chartsAfter",
+"group": "Insights",
+"en": "A goal’s charts appear after {n} weeks of check-ins.",
+"pt": "Os gráficos de uma meta aparecem depois de {n} semanas de registros.",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.gettingThere",
+"group": "Insights",
+"en": "Getting there: {names}.",
+"pt": "Quase lá: {names}.",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.chartsAfterData",
+"group": "Insights",
+"en": "Charts after {n} weeks of data: {names}.",
+"pt": "Gráficos depois de {n} semanas de dados: {names}.",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.trends",
+"group": "Insights",
+"en": "Trends",
+"pt": "Tendências",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.trendsInfo",
+"group": "Insights",
+"en": "Each line is a goal’s result week by week; the dashed line is its tolerance and the green ticks are changes to the plan (a prep added, a target lowered). The number is its average over the period. Tap a goal for the full chart.",
+"pt": "Cada linha é o resultado de uma meta semana a semana; a linha tracejada é a tolerância e as marcas verdes são mudanças no plano (um preparo adicionado, um alvo reduzido). O número é a média no período. Toque numa meta para ver o gráfico completo.",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.tolerance",
+"group": "Insights",
+"en": "Tolerance vs actual",
+"pt": "Tolerância x real",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.toleranceInfo",
+"group": "Insights",
+"en": "The tick is each goal’s tolerance, the dot what you actually did over the period. A dot far to the right of its tick means the bar may be too easy; far to the left, the goal may be too big for now.",
+"pt": "A marca é a tolerância de cada meta e o ponto é o que você fez de fato no período. Um ponto bem à direita da marca quer dizer que a barra pode estar fácil demais; bem à esquerda, que a meta pode estar grande demais por enquanto.",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.ended",
+"group": "Insights",
+"en": "Ended goals",
+"pt": "Metas encerradas",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.averaged",
+"group": "Insights",
+"en": "averaged {pct}",
+"pt": "média de {pct}",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.noPatterns",
+"group": "Insights",
+"en": "No patterns yet.",
+"pt": "Nenhum padrão ainda.",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.noPatternsText",
+"group": "Insights",
+"en": "They show up as misses get reasons and preps get checked off.",
+"pt": "Eles aparecem conforme as falhas ganham motivos e os preparos são marcados.",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.inTheWay",
+"group": "Insights",
+"en": "What gets in the way",
+"pt": "O que atrapalha",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.inTheWayInfo",
+"group": "Insights",
+"en": "The reasons you gave for misses. Under “Something else”: what you chose instead. Tap a row to see which goals it hit.",
+"pt": "Os motivos que você deu para as falhas. Em “Outra coisa”: o que você escolheu no lugar. Toque numa linha para ver quais metas foram afetadas.",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.misses",
+"group": "Insights",
+"en": "{n} misses",
+"pt": "{n} falhas",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.weekdays",
+"group": "Insights",
+"en": "Weekdays",
+"pt": "Dias da semana",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.weekdaysInfo",
+"group": "Insights",
+"en": "How often each daily commitment was missed on each weekday: the stronger the red, the more often. Tap a square for the numbers.",
+"pt": "Com que frequência cada compromisso diário falhou em cada dia da semana: quanto mais forte o vermelho, mais vezes. Toque num quadrado para ver os números.",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.howFar",
+"group": "Insights",
+"en": "How far off",
+"pt": "Por quanto errou",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.howFarInfo",
+"group": "Insights",
+"en": "For commitments with a number or a time: every value you logged, grouped. Green columns met the target, red ones missed it. Misses just past the dashed line are close calls; far ones need a bigger change.",
+"pt": "Para compromissos com número ou horário: todos os valores registrados, agrupados. Colunas verdes bateram o alvo, as vermelhas não. Falhas logo depois da linha tracejada foram por pouco; as distantes pedem uma mudança maior.",
+"note": "",
+"ask": "\"Por quanto errou\" or \"Quão longe\"?"
+},
+{
+"key": "ins.preps",
+"group": "Insights",
+"en": "Preps",
+"pt": "Preparos",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.prepsInfo",
+"group": "Insights",
+"en": "How the commitment went after you did the prep, versus after you skipped it (an evening prep counts toward the next day). “Always done” means there are no skipped days to compare with.",
+"pt": "Como o compromisso foi quando você fez o preparo, comparado a quando pulou (um preparo à noite conta para o dia seguinte). “Sempre feito” quer dizer que não há dias pulados para comparar.",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.verdict.works",
+"group": "Insights",
+"en": "Earns its place",
+"pt": "Vale a pena",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.verdict.some",
+"group": "Insights",
+"en": "Helps a little",
+"pt": "Ajuda um pouco",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.verdict.none",
+"group": "Insights",
+"en": "No clear effect",
+"pt": "Sem efeito claro",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.verdict.always",
+"group": "Insights",
+"en": "Always done",
+"pt": "Sempre feito",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.verdict.tooNew",
+"group": "Insights",
+"en": "Too new",
+"pt": "Muito recente",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.for",
+"group": "Insights",
+"en": "for {name}",
+"pt": "para {name}",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.done",
+"group": "Insights",
+"en": "Done",
+"pt": "Feito",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.skipped",
+"group": "Insights",
+"en": "Skipped",
+"pt": "Pulado",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.missed",
+"group": "Insights",
+"en": "{n} missed",
+"pt": "{n} falhas",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.offAvg",
+"group": "Insights",
+"en": "{gap} off on average",
+"pt": "{gap} de diferença em média",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.lateAvg",
+"group": "Insights",
+"en": "{gap} late on average",
+"pt": "{gap} de atraso em média",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.min",
+"group": "Insights",
+"en": "{n} min",
+"pt": "{n} min",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.yearReview",
+"group": "Insights",
+"en": "{year} in review",
+"pt": "{year} em revisão",
+"note": "",
+"ask": "\"{year} em revisão\" or \"Retrospectiva {year}\"?"
+},
+{
+"key": "ins.yearSoFar",
+"group": "Insights",
+"en": "{year} so far",
+"pt": "{year} até agora",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.goalsStarted",
+"group": "Insights",
+"en": "goals started",
+"pt": "metas iniciadas",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.finished",
+"group": "Insights",
+"en": "finished",
+"pt": "concluídas",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.newHabit",
+"group": "Insights",
+"en": "new habit",
+"pt": "novo hábito",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.newHabits",
+"group": "Insights",
+"en": "new habits",
+"pt": "novos hábitos",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.bestMonth",
+"group": "Insights",
+"en": "Best month",
+"pt": "Melhor mês",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.mostKept",
+"group": "Insights",
+"en": "Most kept",
+"pt": "Mais cumprida",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.wk",
+"group": "Insights",
+"en": "{n}/{total} wk",
+"pt": "{n}/{total} sem",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.inWayMost",
+"group": "Insights",
+"en": "In the way most",
+"pt": "O que mais atrapalhou",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.weeksReviewed",
+"group": "Insights",
+"en": "Weeks reviewed",
+"pt": "Semanas revisadas",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.ofN",
+"group": "Insights",
+"en": "of {n}",
+"pt": "de {n}",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.planChanges",
+"group": "Insights",
+"en": "Plan changes",
+"pt": "Mudanças no plano",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.projectsDone",
+"group": "Insights",
+"en": "Projects done",
+"pt": "Projetos concluídos",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.valueBalance",
+"group": "Insights",
+"en": "Value balance",
+"pt": "Equilíbrio de valores",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.valueBalanceInfo",
+"group": "Insights",
+"en": "Each bar is a month. Every week a goal was on track adds a block to it, in the colour of the value that goal serves. So a tall bar is a good month, and a value with no blocks got nothing done for it.",
+"pt": "Cada barra é um mês. Cada semana em que uma meta ficou em dia adiciona um bloco, na cor do valor que essa meta atende. Então uma barra alta é um bom mês, e um valor sem blocos não recebeu nada.",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.noValue",
+"group": "Insights",
+"en": "No value",
+"pt": "Sem valor",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.timeline",
+"group": "Insights",
+"en": "Goals timeline",
+"pt": "Linha do tempo das metas",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.timelineInfo",
+"group": "Insights",
+"en": "Every goal of the last year as a bar from when it started. Blue while active, green once it became a habit (maintenance). A bar reaching the right edge is still running; a mark at its end says how it ended. Tap one for its dates.",
+"pt": "Cada meta do último ano como uma barra desde o início. Azul enquanto ativa, verde quando virou hábito (manutenção). Uma barra que chega à borda direita ainda está em andamento; a marca no fim diz como terminou. Toque numa para ver as datas.",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.projects",
+"group": "Insights",
+"en": "Projects",
+"pt": "Projetos",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.projectsInfo",
+"group": "Insights",
+"en": "Steps done against the time gone since the project began. When the steps bar trails the time bar, it’s behind. “At your pace” is when you’d finish if steps keep coming as fast as they have so far.",
+"pt": "Etapas feitas comparadas ao tempo que passou desde o início do projeto. Quando a barra de etapas fica atrás da de tempo, ele está atrasado. “No seu ritmo” é quando você terminaria se as etapas continuarem no ritmo de até agora.",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.doneProjects",
+"group": "Insights",
+"en": "Done projects",
+"pt": "Projetos concluídos",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.chartsAfterSoFar",
+"group": "Insights",
+"en": "Charts appear after {n} weeks of data ({sofar} so far).",
+"pt": "Os gráficos aparecem depois de {n} semanas de dados ({sofar} até agora).",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.trend",
+"group": "Insights",
+"en": "Trend",
+"pt": "Tendência",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.avgOver",
+"group": "Insights",
+"en": "average over {n} weeks",
+"pt": "média de {n} semanas",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.toleranceN",
+"group": "Insights",
+"en": "tolerance {n}%",
+"pt": "tolerância {n}%",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.planChangesInfo",
+"group": "Insights",
+"en": "Each change to the plan, with the average of up to 4 weeks before and after it. That’s how you tell whether a change worked.",
+"pt": "Cada mudança no plano, com a média de até 4 semanas antes e depois. É assim que você sabe se a mudança funcionou.",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.tooSoon",
+"group": "Insights",
+"en": "too soon",
+"pt": "cedo demais",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.openGoal",
+"group": "Insights",
+"en": "Open the goal",
+"pt": "Abrir a meta",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.marker.maintenance",
+"group": "Insights",
+"en": "Moved to maintenance",
+"pt": "Passou para manutenção",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.marker.active",
+"group": "Insights",
+"en": "Made active again",
+"pt": "Ativada de novo",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.marker.paused",
+"group": "Insights",
+"en": "Paused",
+"pt": "Pausada",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.marker.tolerance",
+"group": "Insights",
+"en": "Tolerance {old}% → {new}%",
+"pt": "Tolerância {old}% → {new}%",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.marker.target",
+"group": "Insights",
+"en": "{name} {old} → {new}",
+"pt": "{name} {old} → {new}",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.marker.removed",
+"group": "Insights",
+"en": "Commitment removed",
+"pt": "Compromisso removido",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.marker.added",
+"group": "Insights",
+"en": "Commitment added",
+"pt": "Compromisso adicionado",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.marker.prepAdded",
+"group": "Insights",
+"en": "Prep added: {name}",
+"pt": "Preparo adicionado: {name}",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.marker.prepChanged",
+"group": "Insights",
+"en": "Prep changed: {name}",
+"pt": "Preparo alterado: {name}",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.take.effect",
+"group": "Insights",
+"en": "{change} ({date}): {before}% → {after}%",
+"pt": "{change} ({date}): {before}% → {after}%",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.take.up",
+"group": "Insights",
+"en": "Up from {a}% to {b}% over {n} weeks",
+"pt": "Subiu de {a}% para {b}% em {n} semanas",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.take.down",
+"group": "Insights",
+"en": "Down from {a}% to {b}% over {n} weeks",
+"pt": "Caiu de {a}% para {b}% em {n} semanas",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.take.nothing",
+"group": "Insights",
+"en": "Nothing to judge yet",
+"pt": "Nada para avaliar ainda",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.take.steady",
+"group": "Insights",
+"en": "Steady around {pct}%",
+"pt": "Estável em torno de {pct}%",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.balance.idle",
+"group": "Insights",
+"en": "No goal for {values} in the last {n} weeks.",
+"pt": "Nenhuma meta para {values} nas últimas {n} semanas.",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.balance.struggling",
+"group": "Insights",
+"en": "{values}: no week on track lately.",
+"pt": "{values}: nenhuma semana em dia ultimamente.",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.balance.fine",
+"group": "Insights",
+"en": "Every value had kept weeks lately.",
+"pt": "Todos os valores tiveram semanas cumpridas ultimamente.",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.list.and",
+"group": "Insights",
+"en": "{a} and {b}",
+"pt": "{a} e {b}",
+"note": "Joining names in a list.",
+"ask": ""
+},
+{
+"key": "ins.list.or",
+"group": "Insights",
+"en": "{a} or {b}",
+"pt": "{a} ou {b}",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.pace.done",
+"group": "Insights",
+"en": "Done {date} · {when}",
+"pt": "Concluído em {date} · {when}",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.pace.onTheDay",
+"group": "Insights",
+"en": "on the day",
+"pt": "no dia",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.pace.early",
+"group": "Insights",
+"en": "{time} early",
+"pt": "{time} antes",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.pace.late",
+"group": "Insights",
+"en": "{time} late",
+"pt": "{time} depois",
+"note": "",
+"ask": "\"{time} depois\" or \"{time} de atraso\"?"
+},
+{
+"key": "ins.pace.allDone",
+"group": "Insights",
+"en": "Every step done: mark it done",
+"pt": "Todas as etapas feitas: marque como concluído",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.pace.wasDue",
+"group": "Insights",
+"en": "Was due {date}",
+"pt": "Vencia em {date}",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.pace.due",
+"group": "Insights",
+"en": "Due {date}",
+"pt": "Vence em {date}",
+"note": "",
+"ask": ""
+},
+{
+"key": "ins.pace.atYourPace",
+"group": "Insights",
+"en": "{due} · at your pace, ~{date}",
+"pt": "{due} · no seu ritmo, ~{date}",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.tapWeek",
+"group": "Charts",
+"en": "Tap the chart to read a week",
+"pt": "Toque no gráfico para ver uma semana",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.weeklyPct",
+"group": "Charts",
+"en": "Weekly percentage. Use the arrow keys to move between weeks.",
+"pt": "Percentual semanal. Use as setas para passar entre as semanas.",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "chart.weekLegend",
+"group": "Charts",
+"en": "week",
+"pt": "semana",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.toleranceLegend",
+"group": "Charts",
+"en": "tolerance {n}%",
+"pt": "tolerância {n}%",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.planChange",
+"group": "Charts",
+"en": "plan change",
+"pt": "mudança no plano",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.tapGoal",
+"group": "Charts",
+"en": "Tap a goal to see its numbers",
+"pt": "Toque numa meta para ver os números",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.toleranceActual",
+"group": "Charts",
+"en": "Tolerance {tol}%, actual {actual}%",
+"pt": "Tolerância {tol}%, real {actual}%",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "chart.toleranceWord",
+"group": "Charts",
+"en": "tolerance",
+"pt": "tolerância",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.actual",
+"group": "Charts",
+"en": "actual",
+"pt": "real",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.somethingElse",
+"group": "Charts",
+"en": "Something else",
+"pt": "Outra coisa",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.tapSquare",
+"group": "Charts",
+"en": "Tap a square to see the numbers",
+"pt": "Toque num quadrado para ver os números",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.missedOf",
+"group": "Charts",
+"en": "missed {n} of {total}",
+"pt": "falhou {n} de {total}",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.nothingToJudge",
+"group": "Charts",
+"en": "nothing to judge",
+"pt": "nada para avaliar",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.missesByWeekday",
+"group": "Charts",
+"en": "Misses by weekday",
+"pt": "Falhas por dia da semana",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "chart.neverMissed",
+"group": "Charts",
+"en": "never missed",
+"pt": "nunca falhou",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.always",
+"group": "Charts",
+"en": "always",
+"pt": "sempre",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.tapColumn",
+"group": "Charts",
+"en": "Tap a column to see the numbers",
+"pt": "Toque numa coluna para ver os números",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.binRange",
+"group": "Charts",
+"en": "{from} to {to}: {n} {unit}, {result}",
+"pt": "{from} a {to}: {n} {unit}, {result}",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.kept",
+"group": "Charts",
+"en": "kept",
+"pt": "cumpriu",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.missed",
+"group": "Charts",
+"en": "missed",
+"pt": "falhou",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.target",
+"group": "Charts",
+"en": "target",
+"pt": "alvo",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.unit.days",
+"group": "Charts",
+"en": "days",
+"pt": "dias",
+"note": "Units in the \"How far off\" chart.",
+"ask": ""
+},
+{
+"key": "chart.unit.weeks",
+"group": "Charts",
+"en": "weeks",
+"pt": "semanas",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.unit.months",
+"group": "Charts",
+"en": "months",
+"pt": "meses",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.unit.times",
+"group": "Charts",
+"en": "times",
+"pt": "vezes",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.tapMonth",
+"group": "Charts",
+"en": "Tap a month to see it by value",
+"pt": "Toque num mês para ver por valor",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.noWeeksOnTrack",
+"group": "Charts",
+"en": "no weeks on track",
+"pt": "nenhuma semana em dia",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.habitSince",
+"group": "Charts",
+"en": "habit since {date}",
+"pt": "hábito desde {date}",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.endedOn",
+"group": "Charts",
+"en": "{how} {date}",
+"pt": "{how} em {date}",
+"note": "e.g. Concluída em 14 de junho",
+"ask": ""
+},
+{
+"key": "chart.startedOn",
+"group": "Charts",
+"en": "Started {date}",
+"pt": "Iniciada em {date}",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.active",
+"group": "Charts",
+"en": "active",
+"pt": "ativa",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.habitMaintenance",
+"group": "Charts",
+"en": "habit (maintenance)",
+"pt": "hábito (manutenção)",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.completed",
+"group": "Charts",
+"en": "completed",
+"pt": "concluída",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.abandoned",
+"group": "Charts",
+"en": "abandoned",
+"pt": "abandonada",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.pace.done",
+"group": "Charts",
+"en": "Done",
+"pt": "Concluído",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.pace.allDone",
+"group": "Charts",
+"en": "Steps done",
+"pt": "Etapas feitas",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.pace.notStarted",
+"group": "Charts",
+"en": "Not started",
+"pt": "Não começou",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.pace.onPace",
+"group": "Charts",
+"en": "On pace",
+"pt": "No ritmo",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.pace.behind",
+"group": "Charts",
+"en": "Behind",
+"pt": "Atrasado",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.pace.overdue",
+"group": "Charts",
+"en": "Overdue",
+"pt": "Vencido",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.steps",
+"group": "Charts",
+"en": "Steps",
+"pt": "Etapas",
+"note": "",
+"ask": ""
+},
+{
+"key": "chart.time",
+"group": "Charts",
+"en": "Time",
+"pt": "Tempo",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.langEnglish",
+"group": "Intro: first screens",
+"en": "English",
+"pt": "English",
+"note": "Screen reader label for the 🇺🇸 flag.",
+"ask": ""
+},
+{
+"key": "intro.langPortuguese",
+"group": "Intro: first screens",
+"en": "Português",
+"pt": "Português",
+"note": "Screen reader label for the 🇧🇷 flag.",
+"ask": ""
+},
+{
+"key": "intro.homeTitle",
+"group": "Intro: first screens",
+"en": "Put it on your Home Screen first",
+"pt": "Coloque na Tela de Início primeiro",
+"note": "iPhone calls it \"Tela de Início\".",
+"ask": ""
+},
+{
+"key": "intro.homeSub",
+"group": "Intro: first screens",
+"en": "It opens like an app and keeps your goals saved on your phone.",
+"pt": "Ele abre como um app e mantém suas metas salvas no celular.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.homeTap",
+"group": "Intro: first screens",
+"en": "Tap",
+"pt": "Toque em",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.homeShare",
+"group": "Intro: first screens",
+"en": "Share",
+"pt": "Compartilhar",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.homeAdd",
+"group": "Intro: first screens",
+"en": "Add to Home Screen",
+"pt": "Adicionar à Tela de Início",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.homeOpen",
+"group": "Intro: first screens",
+"en": "Open Smart Meta from your Home Screen",
+"pt": "Abra o Smart Meta pela Tela de Início",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.continueSafari",
+"group": "Intro: first screens",
+"en": "Continue in Safari",
+"pt": "Continuar no Safari",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.demoEyebrow",
+"group": "Intro: first screens",
+"en": "Health · Exercise 3× a week",
+"pt": "Saúde · Exercício 3× por semana",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.demoWhy",
+"group": "Intro: first screens",
+"en": "So I have energy to play with my kids.",
+"pt": "Para ter energia para brincar com meus filhos.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.demoWhat",
+"group": "Intro: first screens",
+"en": "At least 30 minutes of exercise",
+"pt": "Pelo menos 30 minutos de exercício",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.demoOnTrack",
+"group": "Intro: first screens",
+"en": "3 of 3 · on track",
+"pt": "3 de 3 · em dia",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.headline",
+"group": "Intro: first screens",
+"en": "Stop dropping goals you never really defined.",
+"pt": "Pare de largar metas que você nunca definiu de verdade.",
+"note": "",
+"ask": "Headline: \"Pare de largar metas…\" or \"Pare de abandonar metas…\"?"
+},
+{
+"key": "intro.sub",
+"group": "Intro: first screens",
+"en": "Turn them into a weekly plan and start improving now.",
+"pt": "Transforme-as num plano semanal e comece a melhorar agora.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.getStarted",
+"group": "Intro: first screens",
+"en": "Get started",
+"pt": "Começar",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.restore",
+"group": "Intro: first screens",
+"en": "Restore from a backup",
+"pt": "Restaurar de um backup",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.noteTitle",
+"group": "Intro: first screens",
+"en": "A note from the creator",
+"pt": "Um recado do criador",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.noteThanks",
+"group": "Intro: first screens",
+"en": "Thank you for using the app.",
+"pt": "Obrigado por usar o app.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.note1",
+"group": "Intro: first screens",
+"en": "I’m always dreaming up goals, projects and new habits, but I never turn them into a real plan.",
+"pt": "Vivo idealizando metas, projetos e hábitos novos, mas nunca transformo isso num plano de verdade.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.note2",
+"group": "Intro: first screens",
+"en": "I get lost in my own ideas, and by morning I’ve forgotten what I dreamed of the night before.",
+"pt": "Me perco nas minhas próprias ideias e, na manhã seguinte, já esqueci o que sonhei na noite anterior.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.note3",
+"group": "Intro: first screens",
+"en": "I built this app to help me become the person I want to be. I hope it helps you too.",
+"pt": "Criei este app para me ajudar a me tornar a pessoa que quero ser. Espero que ajude você também.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.noteBye",
+"group": "Intro: first screens",
+"en": "Thanks again and all the best,",
+"pt": "Obrigado mais uma vez, e tudo de bom,",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.areasTitle",
+"group": "Intro: first screens",
+"en": "What do you want to work on?",
+"pt": "No que você quer trabalhar?",
+"note": "",
+"ask": "\"No que você quer trabalhar?\" or \"O que você quer melhorar?\""
+},
+{
+"key": "intro.areasSub",
+"group": "Intro: first screens",
+"en": "Pick any. We’ll suggest goals to match.",
+"pt": "Escolha quantas quiser. Vamos sugerir metas que combinam.",
+"note": "",
+"ask": ""
+},
+{
+"key": "area.health",
+"group": "Intro: areas and examples",
+"en": "Health & fitness",
+"pt": "Saúde e forma física",
+"note": "Area chip.",
+"ask": ""
+},
+{
+"key": "area.health.value",
+"group": "Intro: areas and examples",
+"en": "Health",
+"pt": "Saúde",
+"note": "The value suggested for this area.",
+"ask": ""
+},
+{
+"key": "area.health.why",
+"group": "Intro: areas and examples",
+"en": "So I have energy to play with my kids.",
+"pt": "Para ter energia para brincar com meus filhos.",
+"note": "Placeholder for the why.",
+"ask": ""
+},
+{
+"key": "area.health.title",
+"group": "Intro: areas and examples",
+"en": "Exercise regularly",
+"pt": "Me exercitar com frequência",
+"note": "Placeholder for the goal title.",
+"ask": ""
+},
+{
+"key": "area.work",
+"group": "Intro: areas and examples",
+"en": "Work & career",
+"pt": "Trabalho e carreira",
+"note": "Area chip.",
+"ask": ""
+},
+{
+"key": "area.work.value",
+"group": "Intro: areas and examples",
+"en": "Career",
+"pt": "Carreira",
+"note": "The value suggested for this area.",
+"ask": ""
+},
+{
+"key": "area.work.why",
+"group": "Intro: areas and examples",
+"en": "So I do work I’m proud of.",
+"pt": "Para fazer um trabalho do qual eu tenha orgulho.",
+"note": "Placeholder for the why.",
+"ask": ""
+},
+{
+"key": "area.work.title",
+"group": "Intro: areas and examples",
+"en": "Get a new job",
+"pt": "Conseguir um emprego novo",
+"note": "Placeholder for the goal title.",
+"ask": ""
+},
+{
+"key": "area.study",
+"group": "Intro: areas and examples",
+"en": "Studies",
+"pt": "Estudos",
+"note": "Area chip.",
+"ask": ""
+},
+{
+"key": "area.study.value",
+"group": "Intro: areas and examples",
+"en": "Growth",
+"pt": "Crescimento",
+"note": "The value suggested for this area.",
+"ask": ""
+},
+{
+"key": "area.study.why",
+"group": "Intro: areas and examples",
+"en": "So I stop feeling behind.",
+"pt": "Para parar de me sentir para trás.",
+"note": "Placeholder for the why.",
+"ask": ""
+},
+{
+"key": "area.study.title",
+"group": "Intro: areas and examples",
+"en": "Learn English",
+"pt": "Aprender inglês",
+"note": "Placeholder for the goal title.",
+"ask": ""
+},
+{
+"key": "area.money",
+"group": "Intro: areas and examples",
+"en": "Money",
+"pt": "Dinheiro",
+"note": "Area chip.",
+"ask": ""
+},
+{
+"key": "area.money.value",
+"group": "Intro: areas and examples",
+"en": "Money",
+"pt": "Dinheiro",
+"note": "The value suggested for this area.",
+"ask": ""
+},
+{
+"key": "area.money.why",
+"group": "Intro: areas and examples",
+"en": "So an emergency never becomes a crisis.",
+"pt": "Para uma emergência nunca virar uma crise.",
+"note": "Placeholder for the why.",
+"ask": ""
+},
+{
+"key": "area.money.title",
+"group": "Intro: areas and examples",
+"en": "Save for a trip",
+"pt": "Juntar dinheiro para uma viagem",
+"note": "Placeholder for the goal title.",
+"ask": ""
+},
+{
+"key": "area.people",
+"group": "Intro: areas and examples",
+"en": "Family & friends",
+"pt": "Família e amigos",
+"note": "Area chip.",
+"ask": ""
+},
+{
+"key": "area.people.value",
+"group": "Intro: areas and examples",
+"en": "Relationships",
+"pt": "Relacionamentos",
+"note": "The value suggested for this area.",
+"ask": ""
+},
+{
+"key": "area.people.why",
+"group": "Intro: areas and examples",
+"en": "So the people I love feel it.",
+"pt": "Para as pessoas que eu amo sentirem isso.",
+"note": "Placeholder for the why.",
+"ask": ""
+},
+{
+"key": "area.people.title",
+"group": "Intro: areas and examples",
+"en": "Call my parents more",
+"pt": "Ligar mais para os meus pais",
+"note": "Placeholder for the goal title.",
+"ask": ""
+},
+{
+"key": "area.create",
+"group": "Intro: areas and examples",
+"en": "Creativity",
+"pt": "Criatividade",
+"note": "Area chip.",
+"ask": ""
+},
+{
+"key": "area.create.value",
+"group": "Intro: areas and examples",
+"en": "Creativity",
+"pt": "Criatividade",
+"note": "The value suggested for this area.",
+"ask": ""
+},
+{
+"key": "area.create.why",
+"group": "Intro: areas and examples",
+"en": "So the ideas in my head get out into the world.",
+"pt": "Para as ideias saírem da minha cabeça e irem para o mundo.",
+"note": "Placeholder for the why.",
+"ask": ""
+},
+{
+"key": "area.create.title",
+"group": "Intro: areas and examples",
+"en": "Play guitar again",
+"pt": "Voltar a tocar violão",
+"note": "Placeholder for the goal title.",
+"ask": ""
+},
+{
+"key": "area.mind",
+"group": "Intro: areas and examples",
+"en": "Peace of mind",
+"pt": "Paz de espírito",
+"note": "Area chip.",
+"ask": ""
+},
+{
+"key": "area.mind.value",
+"group": "Intro: areas and examples",
+"en": "Peace of mind",
+"pt": "Paz de espírito",
+"note": "The value suggested for this area.",
+"ask": ""
+},
+{
+"key": "area.mind.why",
+"group": "Intro: areas and examples",
+"en": "So I end the day calm, not drained.",
+"pt": "Para terminar o dia calmo, não esgotado.",
+"note": "Placeholder for the why.",
+"ask": ""
+},
+{
+"key": "area.mind.title",
+"group": "Intro: areas and examples",
+"en": "Less phone at night",
+"pt": "Menos celular à noite",
+"note": "Placeholder for the goal title.",
+"ask": ""
+},
+{
+"key": "area.home",
+"group": "Intro: areas and examples",
+"en": "Home",
+"pt": "Casa",
+"note": "Area chip.",
+"ask": ""
+},
+{
+"key": "area.home.value",
+"group": "Intro: areas and examples",
+"en": "Home",
+"pt": "Casa",
+"note": "The value suggested for this area.",
+"ask": ""
+},
+{
+"key": "area.home.why",
+"group": "Intro: areas and examples",
+"en": "So home feels like rest, not another to-do.",
+"pt": "Para a casa ser descanso, não mais uma tarefa.",
+"note": "Placeholder for the why.",
+"ask": ""
+},
+{
+"key": "area.home.title",
+"group": "Intro: areas and examples",
+"en": "Keep the house tidy",
+"pt": "Manter a casa arrumada",
+"note": "Placeholder for the goal title.",
+"ask": ""
+},
+{
+"key": "area.mind.whyNote",
+"group": "Intro: areas and examples",
+"en": "(gender)",
+"pt": "",
+"note": "The \"mind\" why uses calmo/esgotado.",
+"ask": "Placeholder \"Para terminar o dia calmo, não esgotado.\" is masculine. OK, or rephrase to \"Para terminar o dia em paz, sem esgotamento.\"?"
+},
+{
+"key": "example.exercise",
+"group": "Intro: areas and examples",
+"en": "Exercise 3× a week",
+"pt": "Exercício 3× por semana",
+"note": "Example goal chip (becomes the goal title).",
+"ask": ""
+},
+{
+"key": "example.exercise.what",
+"group": "Intro: areas and examples",
+"en": "At least 30 minutes of exercise",
+"pt": "Pelo menos 30 minutos de exercício",
+"note": "Its \"What counts\" / \"Done when\".",
+"ask": ""
+},
+{
+"key": "example.sleep",
+"group": "Intro: areas and examples",
+"en": "Sleep 7.5 hours",
+"pt": "Dormir 7,5 horas",
+"note": "Example goal chip (becomes the goal title).",
+"ask": ""
+},
+{
+"key": "example.sleep.what",
+"group": "Intro: areas and examples",
+"en": "Slept at least 7.5 hours",
+"pt": "Dormi pelo menos 7,5 horas",
+"note": "Its \"What counts\" / \"Done when\".",
+"ask": ""
+},
+{
+"key": "example.job",
+"group": "Intro: areas and examples",
+"en": "Get a new job",
+"pt": "Conseguir um emprego novo",
+"note": "Example goal chip (becomes the goal title).",
+"ask": ""
+},
+{
+"key": "example.job.what",
+"group": "Intro: areas and examples",
+"en": "Signed an offer for a role I want",
+"pt": "Assinei uma proposta para uma vaga que eu quero",
+"note": "Its \"What counts\" / \"Done when\".",
+"ask": ""
+},
+{
+"key": "example.focus",
+"group": "Intro: areas and examples",
+"en": "Focused work",
+"pt": "Trabalho focado",
+"note": "Example goal chip (becomes the goal title).",
+"ask": ""
+},
+{
+"key": "example.focus.what",
+"group": "Intro: areas and examples",
+"en": "At least 90 minutes of work with the phone away",
+"pt": "Pelo menos 90 minutos de trabalho com o celular longe",
+"note": "Its \"What counts\" / \"Done when\".",
+"ask": ""
+},
+{
+"key": "example.study",
+"group": "Intro: areas and examples",
+"en": "Study 4× a week",
+"pt": "Estudar 4× por semana",
+"note": "Example goal chip (becomes the goal title).",
+"ask": ""
+},
+{
+"key": "example.study.what",
+"group": "Intro: areas and examples",
+"en": "At least 45 minutes of study",
+"pt": "Pelo menos 45 minutos de estudo",
+"note": "Its \"What counts\" / \"Done when\".",
+"ask": ""
+},
+{
+"key": "example.course",
+"group": "Intro: areas and examples",
+"en": "Finish a course",
+"pt": "Terminar um curso",
+"note": "Example goal chip (becomes the goal title).",
+"ask": ""
+},
+{
+"key": "example.course.what",
+"group": "Intro: areas and examples",
+"en": "Got the certificate",
+"pt": "Recebi o certificado",
+"note": "Its \"What counts\" / \"Done when\".",
+"ask": ""
+},
+{
+"key": "example.fund",
+"group": "Intro: areas and examples",
+"en": "Build an emergency fund",
+"pt": "Montar uma reserva de emergência",
+"note": "Example goal chip (becomes the goal title).",
+"ask": ""
+},
+{
+"key": "example.fund.what",
+"group": "Intro: areas and examples",
+"en": "Have 3 months of expenses saved",
+"pt": "Ter 3 meses de despesas guardados",
+"note": "Its \"What counts\" / \"Done when\".",
+"ask": ""
+},
+{
+"key": "example.spending",
+"group": "Intro: areas and examples",
+"en": "Check my spending",
+"pt": "Revisar meus gastos",
+"note": "Example goal chip (becomes the goal title).",
+"ask": ""
+},
+{
+"key": "example.spending.what",
+"group": "Intro: areas and examples",
+"en": "Went through every expense of the week",
+"pt": "Revisei cada gasto da semana",
+"note": "Its \"What counts\" / \"Done when\".",
+"ask": ""
+},
+{
+"key": "example.family",
+"group": "Intro: areas and examples",
+"en": "Call my family",
+"pt": "Ligar para a família",
+"note": "Example goal chip (becomes the goal title).",
+"ask": ""
+},
+{
+"key": "example.family.what",
+"group": "Intro: areas and examples",
+"en": "A call of at least 15 minutes",
+"pt": "Uma ligação de pelo menos 15 minutos",
+"note": "Its \"What counts\" / \"Done when\".",
+"ask": ""
+},
+{
+"key": "example.ontime",
+"group": "Intro: areas and examples",
+"en": "Be on time",
+"pt": "Ser pontual",
+"note": "Example goal chip (becomes the goal title).",
+"ask": ""
+},
+{
+"key": "example.ontime.what",
+"group": "Intro: areas and examples",
+"en": "Arrived at or before the agreed time",
+"pt": "Cheguei no horário combinado ou antes",
+"note": "Its \"What counts\" / \"Done when\".",
+"ask": ""
+},
+{
+"key": "example.practise",
+"group": "Intro: areas and examples",
+"en": "Practise 4× a week",
+"pt": "Praticar 4× por semana",
+"note": "Example goal chip (becomes the goal title).",
+"ask": ""
+},
+{
+"key": "example.practise.what",
+"group": "Intro: areas and examples",
+"en": "At least 20 minutes of practice",
+"pt": "Pelo menos 20 minutos de prática",
+"note": "Its \"What counts\" / \"Done when\".",
+"ask": ""
+},
+{
+"key": "example.project",
+"group": "Intro: areas and examples",
+"en": "Finish a creative project",
+"pt": "Terminar um projeto criativo",
+"note": "Example goal chip (becomes the goal title).",
+"ask": ""
+},
+{
+"key": "example.project.what",
+"group": "Intro: areas and examples",
+"en": "Showed the finished work to someone",
+"pt": "Mostrei o trabalho pronto para alguém",
+"note": "Its \"What counts\" / \"Done when\".",
+"ask": ""
+},
+{
+"key": "example.phone",
+"group": "Intro: areas and examples",
+"en": "Phone away at night",
+"pt": "Celular longe à noite",
+"note": "Example goal chip (becomes the goal title).",
+"ask": ""
+},
+{
+"key": "example.phone.what",
+"group": "Intro: areas and examples",
+"en": "Phone away by 23:00",
+"pt": "Celular longe até as 23:00",
+"note": "Its \"What counts\" / \"Done when\".",
+"ask": ""
+},
+{
+"key": "example.meditate",
+"group": "Intro: areas and examples",
+"en": "Meditate",
+"pt": "Meditar",
+"note": "Example goal chip (becomes the goal title).",
+"ask": ""
+},
+{
+"key": "example.meditate.what",
+"group": "Intro: areas and examples",
+"en": "At least 10 minutes of meditation",
+"pt": "Pelo menos 10 minutos de meditação",
+"note": "Its \"What counts\" / \"Done when\".",
+"ask": ""
+},
+{
+"key": "example.tidy",
+"group": "Intro: areas and examples",
+"en": "Tidy up weekly",
+"pt": "Arrumar a casa toda semana",
+"note": "Example goal chip (becomes the goal title).",
+"ask": ""
+},
+{
+"key": "example.tidy.what",
+"group": "Intro: areas and examples",
+"en": "At least 30 minutes tidying the house",
+"pt": "Pelo menos 30 minutos arrumando a casa",
+"note": "Its \"What counts\" / \"Done when\".",
+"ask": ""
+},
+{
+"key": "example.cook",
+"group": "Intro: areas and examples",
+"en": "Cook at home",
+"pt": "Cozinhar em casa",
+"note": "Example goal chip (becomes the goal title).",
+"ask": ""
+},
+{
+"key": "example.cook.what",
+"group": "Intro: areas and examples",
+"en": "Cooked at least one meal at home",
+"pt": "Cozinhei pelo menos uma refeição em casa",
+"note": "Its \"What counts\" / \"Done when\".",
+"ask": ""
+},
+{
+"key": "example.read",
+"group": "Intro: areas and examples",
+"en": "Read more",
+"pt": "Ler mais",
+"note": "Example goal chip (becomes the goal title).",
+"ask": ""
+},
+{
+"key": "example.read.what",
+"group": "Intro: areas and examples",
+"en": "Read at least 20 pages",
+"pt": "Li pelo menos 20 páginas",
+"note": "Its \"What counts\" / \"Done when\".",
+"ask": ""
+},
+{
+"key": "example.exercise.short",
+"group": "Intro: areas and examples",
+"en": "exercise",
+"pt": "exercício",
+"note": "Short name of the example habit (used in \"What got in the way of {name}?\").",
+"ask": ""
+},
+{
+"key": "example.sleep.short",
+"group": "Intro: areas and examples",
+"en": "sleep",
+"pt": "sono",
+"note": "Short name of the example habit (used in \"What got in the way of {name}?\").",
+"ask": ""
+},
+{
+"key": "example.focus.short",
+"group": "Intro: areas and examples",
+"en": "focus",
+"pt": "foco",
+"note": "Short name of the example habit (used in \"What got in the way of {name}?\").",
+"ask": ""
+},
+{
+"key": "example.study.short",
+"group": "Intro: areas and examples",
+"en": "study",
+"pt": "estudo",
+"note": "Short name of the example habit (used in \"What got in the way of {name}?\").",
+"ask": ""
+},
+{
+"key": "example.spending.short",
+"group": "Intro: areas and examples",
+"en": "spending",
+"pt": "gastos",
+"note": "Short name of the example habit (used in \"What got in the way of {name}?\").",
+"ask": ""
+},
+{
+"key": "example.family.short",
+"group": "Intro: areas and examples",
+"en": "call",
+"pt": "ligação",
+"note": "Short name of the example habit (used in \"What got in the way of {name}?\").",
+"ask": ""
+},
+{
+"key": "example.ontime.short",
+"group": "Intro: areas and examples",
+"en": "punctuality",
+"pt": "pontualidade",
+"note": "Short name of the example habit (used in \"What got in the way of {name}?\").",
+"ask": ""
+},
+{
+"key": "example.practise.short",
+"group": "Intro: areas and examples",
+"en": "practice",
+"pt": "prática",
+"note": "Short name of the example habit (used in \"What got in the way of {name}?\").",
+"ask": ""
+},
+{
+"key": "example.phone.short",
+"group": "Intro: areas and examples",
+"en": "phone",
+"pt": "celular",
+"note": "Short name of the example habit (used in \"What got in the way of {name}?\").",
+"ask": ""
+},
+{
+"key": "example.meditate.short",
+"group": "Intro: areas and examples",
+"en": "meditation",
+"pt": "meditação",
+"note": "Short name of the example habit (used in \"What got in the way of {name}?\").",
+"ask": ""
+},
+{
+"key": "example.tidy.short",
+"group": "Intro: areas and examples",
+"en": "tidy",
+"pt": "arrumação",
+"note": "Short name of the example habit (used in \"What got in the way of {name}?\").",
+"ask": ""
+},
+{
+"key": "example.cook.short",
+"group": "Intro: areas and examples",
+"en": "cooking",
+"pt": "cozinha",
+"note": "Short name of the example habit (used in \"What got in the way of {name}?\").",
+"ask": ""
+},
+{
+"key": "example.read.short",
+"group": "Intro: areas and examples",
+"en": "reading",
+"pt": "leitura",
+"note": "Short name of the example habit (used in \"What got in the way of {name}?\").",
+"ask": ""
+},
+{
+"key": "example.sleep.unit",
+"group": "Intro: areas and examples",
+"en": "hours",
+"pt": "horas",
+"note": "Unit of the sleep example.",
+"ask": ""
+},
+{
+"key": "obstacle.forgot",
+"group": "Intro: areas and examples",
+"en": "Leave a reminder where I’ll see it",
+"pt": "Deixar um lembrete onde eu vou ver",
+"note": "Prep suggested for \"Forgot\".",
+"ask": ""
+},
+{
+"key": "obstacle.noTime",
+"group": "Intro: areas and examples",
+"en": "Block the time in my calendar",
+"pt": "Reservar o horário na agenda",
+"note": "Prep suggested for \"No time\".",
+"ask": ""
+},
+{
+"key": "obstacle.tooTired",
+"group": "Intro: areas and examples",
+"en": "Get it ready the night before",
+"pt": "Deixar tudo pronto na noite anterior",
+"note": "Prep suggested for \"Too tired\".",
+"ask": ""
+},
+{
+"key": "obstacle.choseOther",
+"group": "Intro: areas and examples",
+"en": "Decide the day and time in advance",
+"pt": "Decidir o dia e o horário com antecedência",
+"note": "Prep suggested for \"Chose something else\".",
+"ask": ""
+},
+{
+"key": "intro.goalEyebrow",
+"group": "Intro: first goal",
+"en": "Your first goal",
+"pt": "Sua primeira meta",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.goalTitle",
+"group": "Intro: first goal",
+"en": "Let’s make it SMART.",
+"pt": "Vamos deixá-la SMART.",
+"note": "",
+"ask": "\"Vamos deixá-la SMART.\" or \"Vamos torná-la SMART.\"?"
+},
+{
+"key": "intro.lineS",
+"group": "Intro: first goal",
+"en": "One clear thing, not a wish.",
+"pt": "Uma coisa clara, não um desejo.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.lineM",
+"group": "Intro: first goal",
+"en": "Decide now what counts, so you never wonder later if you really did it.",
+"pt": "Decida agora o que conta, para nunca ficar na dúvida depois se fez mesmo.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.lineA",
+"group": "Intro: first goal",
+"en": "Nobody hits 100%. Choose what still counts as on track.",
+"pt": "Ninguém acerta 100%. Escolha o que ainda conta como em dia.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.lineR",
+"group": "Intro: first goal",
+"en": "Tie it to something you care about.",
+"pt": "Ligue a meta a algo que importa para você.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.lineT",
+"group": "Intro: first goal",
+"en": "A date gives you urgency and focus.",
+"pt": "Uma data dá urgência e foco.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.linePrep",
+"group": "Intro: first goal",
+"en": "Make the next try easier.",
+"pt": "Facilite a próxima tentativa.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.qAchieve",
+"group": "Intro: first goal",
+"en": "What do you want to achieve?",
+"pt": "O que você quer alcançar?",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.orExample",
+"group": "Intro: first goal",
+"en": "Or start from an example",
+"pt": "Ou comece com um exemplo",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.kindFinish",
+"group": "Intro: first goal",
+"en": "Done once, by a date",
+"pt": "Feita uma vez, até uma data",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.kindRhythm",
+"group": "Intro: first goal",
+"en": "A number of times a week",
+"pt": "Um número de vezes por semana",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.kindThreshold",
+"group": "Intro: first goal",
+"en": "Over or under a line",
+"pt": "Acima ou abaixo de uma linha",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.kindStandard",
+"group": "Intro: first goal",
+"en": "A rule for when it comes up",
+"pt": "Uma regra para quando acontecer",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.notSure",
+"group": "Intro: first goal",
+"en": "Not sure? Pick one, you can change it later.",
+"pt": "Na dúvida? Escolha uma, dá para mudar depois.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.phDoneWhen",
+"group": "Intro: first goal",
+"en": "Signed an offer for a role I want",
+"pt": "Assinei uma proposta para uma vaga que eu quero",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.realNumber",
+"group": "Intro: first goal",
+"en": "Pick a number you can really hit, not the ideal one.",
+"pt": "Escolha um número que você consegue bater de verdade, não o ideal.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.toleranceLine",
+"group": "Intro: first goal",
+"en": "At {pct}%, missing {miss} in {of} still counts as on track.",
+"pt": "Com {pct}%, falhar {miss} a cada {of} ainda conta como em dia.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.toleranceAll",
+"group": "Intro: first goal",
+"en": "At 100%, every miss puts you off track.",
+"pt": "Com 100%, qualquer falha tira você do dia.",
+"note": "",
+"ask": "Better phrasing for \"puts you off track\"?"
+},
+{
+"key": "intro.other",
+"group": "Intro: first goal",
+"en": "Other…",
+"pt": "Outro…",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.yourValue",
+"group": "Intro: first goal",
+"en": "Your value",
+"pt": "Seu valor",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "intro.phValue",
+"group": "Intro: first goal",
+"en": "Freedom",
+"pt": "Liberdade",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.seeOnToday",
+"group": "Intro: first goal",
+"en": "You’ll see this on Today, right when it’s hard.",
+"pt": "Você vai ver isso em Hoje, bem na hora difícil.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.in1Month",
+"group": "Intro: first goal",
+"en": "In 1 month",
+"pt": "Em 1 mês",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.nMonths",
+"group": "Intro: first goal",
+"en": "{n} months",
+"pt": "{n} meses",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.qInTheWay",
+"group": "Intro: first goal",
+"en": "What usually gets in the way?",
+"pt": "O que costuma atrapalhar?",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.prepHint",
+"group": "Intro: first goal",
+"en": "A prep is a small step beforehand. It’s never scored, and Insights will show whether it helps.",
+"pt": "Um preparo é um pequeno passo antes. Nunca é pontuado, e os Insights vão mostrar se ajuda.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.createGoal",
+"group": "Intro: first goal",
+"en": "Create goal",
+"pt": "Criar meta",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.planEyebrow",
+"group": "Intro: plan and week",
+"en": "Your plan",
+"pt": "Seu plano",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.startsToday",
+"group": "Intro: plan and week",
+"en": "{name} starts today",
+"pt": "{name} começa hoje",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.startsTomorrow",
+"group": "Intro: plan and week",
+"en": "{name} starts tomorrow",
+"pt": "{name} começa amanhã",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.startsOn",
+"group": "Intro: plan and week",
+"en": "{name} starts on {date}",
+"pt": "{name} começa em {date}",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.inBacklog",
+"group": "Intro: plan and week",
+"en": "{name} is in your backlog",
+"pt": "{name} está na sua fila",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.inBacklogSub",
+"group": "Intro: plan and week",
+"en": "You already have {n} active goals. Start it from Plan when there’s room.",
+"pt": "Você já tem {n} metas ativas. Inicie pelo Plano quando houver vaga.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.proj.rhythm",
+"group": "Intro: plan and week",
+"en": "{n}× a {period}, {pct}% of the time: about {total} times by {date}.",
+"pt": "{n}× por {period}, {pct}% das vezes: cerca de {total} vezes até {date}.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.proj.threshold",
+"group": "Intro: plan and week",
+"en": "About {n} {unit} on track by {date}.",
+"pt": "Cerca de {n} {unit} em dia até {date}.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.proj.standard",
+"group": "Intro: plan and week",
+"en": "Each time it comes up, you’ll log yes or no.",
+"pt": "Cada vez que acontecer, você registra sim ou não.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.proj.deadline",
+"group": "Intro: plan and week",
+"en": "{time} to your deadline, {date}.",
+"pt": "{time} até o seu prazo, {date}.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.goToday",
+"group": "Intro: plan and week",
+"en": "Go to Today",
+"pt": "Ir para Hoje",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.weekOneTitle",
+"group": "Intro: plan and week",
+"en": "Every day, one tap",
+"pt": "Todo dia, um toque",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.weekOneText",
+"group": "Intro: plan and week",
+"en": "Open Today and tick {name} when you do it.",
+"pt": "Abra Hoje e marque {name} quando fizer.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.weekOneFinish",
+"group": "Intro: plan and week",
+"en": "Break {name} into steps and tasks. They show up on Today, one tap to tick.",
+"pt": "Divida {name} em etapas e tarefas. Elas aparecem em Hoje, um toque para marcar.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.weekTwoTitle",
+"group": "Intro: plan and week",
+"en": "Missed? Say why",
+"pt": "Falhou? Diga o porquê",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.weekTwoText",
+"group": "Intro: plan and week",
+"en": "No guilt in missing. Just log it, and later you’ll discover why.",
+"pt": "Sem culpa por falhar. É só registrar, e depois você descobre o porquê.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.weekTwoQ",
+"group": "Intro: plan and week",
+"en": "What got in the way of {name}?",
+"pt": "O que atrapalhou {name}?",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.weekTwoIt",
+"group": "Intro: plan and week",
+"en": "it",
+"pt": "isso",
+"note": "Used as {name} for finish lines.",
+"ask": ""
+},
+{
+"key": "intro.weekTwoAfter",
+"group": "Intro: plan and week",
+"en": "Later, Insights shows what gets in your way most.",
+"pt": "Depois, os Insights mostram o que mais atrapalha você.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.weekThreeTitle",
+"group": "Intro: plan and week",
+"en": "Review your goals",
+"pt": "Revise suas metas",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.weekThreeText",
+"group": "Intro: plan and week",
+"en": "Once a week, Review looks back at last week and suggests a fix, like a prep when you keep forgetting.",
+"pt": "Uma vez por semana, a Revisão olha a semana passada e sugere um ajuste, como um preparo quando você vive esquecendo.",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.forgot2",
+"group": "Intro: plan and week",
+"en": "Forgot 2 times",
+"pt": "Esqueci 2 vezes",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.addAPrep",
+"group": "Intro: plan and week",
+"en": "Add a prep",
+"pt": "Adicionar um preparo",
+"note": "",
+"ask": ""
+},
+{
+"key": "intro.nOf3",
+"group": "Intro: plan and week",
+"en": "{n} of 3",
+"pt": "{n} de 3",
+"note": "Screen reader label for the dots.",
+"ask": ""
+},
+{
+"key": "gs.title",
+"group": "Intro: plan and week",
+"en": "Getting started",
+"pt": "Primeiros passos",
+"note": "",
+"ask": ""
+},
+{
+"key": "gs.hide",
+"group": "Intro: plan and week",
+"en": "Hide Getting started",
+"pt": "Ocultar Primeiros passos",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "gs.firstGoal",
+"group": "Intro: plan and week",
+"en": "Create your first goal",
+"pt": "Crie sua primeira meta",
+"note": "",
+"ask": ""
+},
+{
+"key": "gs.firstCheckIn",
+"group": "Intro: plan and week",
+"en": "Check in for the first time",
+"pt": "Faça seu primeiro registro",
+"note": "",
+"ask": ""
+},
+{
+"key": "gs.firstReview",
+"group": "Intro: plan and week",
+"en": "Do your first weekly review",
+"pt": "Faça sua primeira revisão semanal",
+"note": "",
+"ask": ""
+},
+{
+"key": "gs.fromMonday",
+"group": "Intro: plan and week",
+"en": "From Monday",
+"pt": "A partir de segunda",
+"note": "",
+"ask": ""
+},
+{
+"key": "gs.backup",
+"group": "Intro: plan and week",
+"en": "Back up your data",
+"pt": "Faça backup dos seus dados",
+"note": "",
+"ask": ""
+},
+{
+"key": "gs.backupSub",
+"group": "Intro: plan and week",
+"en": "Your goals live only on this phone",
+"pt": "Suas metas ficam só neste celular",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.title",
+"group": "Settings",
+"en": "Settings",
+"pt": "Ajustes",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.restoreTitle",
+"group": "Settings",
+"en": "Restore",
+"pt": "Restaurar",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.language",
+"group": "Settings",
+"en": "Language",
+"pt": "Idioma",
+"note": "New setting.",
+"ask": ""
+},
+{
+"key": "set.langAuto",
+"group": "Settings",
+"en": "Automatic",
+"pt": "Automático",
+"note": "Follows the phone.",
+"ask": ""
+},
+{
+"key": "set.langEnglish",
+"group": "Settings",
+"en": "English",
+"pt": "English",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.langPortuguese",
+"group": "Settings",
+"en": "Português",
+"pt": "Português",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.values",
+"group": "Settings",
+"en": "Values",
+"pt": "Valores",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.noneYet",
+"group": "Settings",
+"en": "None yet",
+"pt": "Nenhum ainda",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.replay",
+"group": "Settings",
+"en": "Replay intro",
+"pt": "Rever a introdução",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.replaySub",
+"group": "Settings",
+"en": "The welcome and a guided new goal",
+"pt": "As boas-vindas e uma nova meta guiada",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.newDay",
+"group": "Settings",
+"en": "New day starts at",
+"pt": "O dia começa às",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.newDayInfo",
+"group": "Settings",
+"en": "Anything logged before this time counts for the previous day, so a late night lands on the day you lived.",
+"pt": "O que for registrado antes desse horário conta para o dia anterior, então uma noite longa fica no dia que você viveu.",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.activeGoals",
+"group": "Settings",
+"en": "Active goals",
+"pt": "Metas ativas",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.activeGoalsInfo",
+"group": "Settings",
+"en": "More than this and new goals wait in the backlog. Projects and tasks aren’t limited.",
+"pt": "Passando disso, as novas metas esperam na fila. Projetos e tarefas não têm limite.",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.goalCap",
+"group": "Settings",
+"en": "Goal cap",
+"pt": "Limite de metas",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "set.newGoals",
+"group": "Settings",
+"en": "New goals",
+"pt": "Novas metas",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.creationMode",
+"group": "Settings",
+"en": "Creation mode",
+"pt": "Modo de criação",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "set.sync",
+"group": "Settings",
+"en": "Sync",
+"pt": "Sincronização",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.syncOff",
+"group": "Settings",
+"en": "Off. Data is only on this phone.",
+"pt": "Desligada. Os dados ficam só neste celular.",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.email",
+"group": "Settings",
+"en": "Email",
+"pt": "E-mail",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.emailInfo",
+"group": "Settings",
+"en": "Signing in copies your data to your private database, so losing this phone loses nothing.",
+"pt": "Entrar copia seus dados para o seu banco de dados privado, então perder o celular não perde nada.",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.password",
+"group": "Settings",
+"en": "Password",
+"pt": "Senha",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.signIn",
+"group": "Settings",
+"en": "Sign in",
+"pt": "Entrar",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.account",
+"group": "Settings",
+"en": "Account",
+"pt": "Conta",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.synced",
+"group": "Settings",
+"en": "Synced",
+"pt": "Sincronizado",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.offlineRetry",
+"group": "Settings",
+"en": "{when} · offline, will retry",
+"pt": "{when} · sem conexão, vai tentar de novo",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.syncing",
+"group": "Settings",
+"en": "syncing…",
+"pt": "sincronizando…",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.waiting",
+"group": "Settings",
+"en": "Waiting",
+"pt": "Aguardando",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.syncNow",
+"group": "Settings",
+"en": "Sync now",
+"pt": "Sincronizar agora",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.signOut",
+"group": "Settings",
+"en": "Sign out",
+"pt": "Sair",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.never",
+"group": "Settings",
+"en": "never",
+"pt": "nunca",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.justNow",
+"group": "Settings",
+"en": "just now",
+"pt": "agora mesmo",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.minAgo",
+"group": "Settings",
+"en": "{n} min ago",
+"pt": "há {n} min",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.hAgo",
+"group": "Settings",
+"en": "{n} h ago",
+"pt": "há {n} h",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.daysAgo",
+"group": "Settings",
+"en": "{n} days ago",
+"pt": "há {n} dias",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.backup",
+"group": "Settings",
+"en": "Backup",
+"pt": "Backup",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.export",
+"group": "Settings",
+"en": "Export",
+"pt": "Exportar",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.import",
+"group": "Settings",
+"en": "Import",
+"pt": "Importar",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.exported",
+"group": "Settings",
+"en": "Exported.",
+"pt": "Exportado.",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.last",
+"group": "Settings",
+"en": "Last: {when}",
+"pt": "Último: {when}",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.mergeQ",
+"group": "Settings",
+"en": "Merge the export from {date}? Newer records win.",
+"pt": "Juntar o backup de {date}? Os registros mais novos prevalecem.",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.imported.one",
+"group": "Settings",
+"en": "Imported {n} record.",
+"pt": "{n} registro importado.",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.imported.other",
+"group": "Settings",
+"en": "Imported {n} records.",
+"pt": "{n} registros importados.",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.nothingNew",
+"group": "Settings",
+"en": "Nothing new in that file.",
+"pt": "Nada novo nesse arquivo.",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.addHome",
+"group": "Settings",
+"en": "Add to Home Screen so the browser keeps your data.",
+"pt": "Adicione à Tela de Início para o navegador manter seus dados.",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.eraseAll",
+"group": "Settings",
+"en": "Erase all data…",
+"pt": "Apagar todos os dados…",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.eraseQ",
+"group": "Settings",
+"en": "Erase everything?",
+"pt": "Apagar tudo?",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.eraseText",
+"group": "Settings",
+"en": "Every goal, check-in, project, task and value. This can’t be undone.",
+"pt": "Todas as metas, registros, projetos, tarefas e valores. Isso não pode ser desfeito.",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.eraseTextSync",
+"group": "Settings",
+"en": "Every goal, check-in, project, task and value, on this phone and in sync. This can’t be undone.",
+"pt": "Todas as metas, registros, projetos, tarefas e valores, neste celular e na sincronização. Isso não pode ser desfeito.",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.exportFirst",
+"group": "Settings",
+"en": "Export first",
+"pt": "Exportar antes",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.erasePhrase",
+"group": "Settings",
+"en": "erase",
+"pt": "apagar",
+"note": "The word to type to confirm.",
+"ask": ""
+},
+{
+"key": "set.eraseButton",
+"group": "Settings",
+"en": "Erase all data",
+"pt": "Apagar todos os dados",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.valueN",
+"group": "Settings",
+"en": "Value {n}",
+"pt": "Valor {n}",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "set.valuePlaceholders",
+"group": "Settings",
+"en": "Health Family Craft Kindness Freedom",
+"pt": "Saúde Família Ofício Gentileza Liberdade",
+"note": "Placeholders for the value fields, in order.",
+"ask": ""
+},
+{
+"key": "set.valueMeansN",
+"group": "Settings",
+"en": "What value {n} means",
+"pt": "O que o valor {n} significa",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "set.valueMeans",
+"group": "Settings",
+"en": "What it means (optional)",
+"pt": "O que significa (opcional)",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.removeValueN",
+"group": "Settings",
+"en": "Remove value {n}",
+"pt": "Remover valor {n}",
+"note": "Screen reader label.",
+"ask": ""
+},
+{
+"key": "set.addValue",
+"group": "Settings",
+"en": "+ Add value",
+"pt": "+ Adicionar valor",
+"note": "",
+"ask": ""
+},
+{
+"key": "set.writeN",
+"group": "Settings",
+"en": "Write {min} to {max}.",
+"pt": "Escreva de {min} a {max}.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.required",
+"group": "Errors and checks",
+"en": "Required.",
+"pt": "Obrigatório.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.tooShort",
+"group": "Errors and checks",
+"en": "Too short to judge. Write it as the sentence you’ll answer yes or no to.",
+"pt": "Curto demais para avaliar. Escreva como a frase que você vai responder com sim ou não.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.notCheckable",
+"group": "Errors and checks",
+"en": "Not checkable yet. Add how much, how long, when, or how often, so a check-in needs no judgment call.",
+"pt": "Ainda não dá para checar. Diga quanto, por quanto tempo, quando ou com que frequência, para o registro não depender de opinião.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.yesNoSentence",
+"group": "Errors and checks",
+"en": "Write it as a sentence you can answer yes or no.",
+"pt": "Escreva como uma frase que dá para responder com sim ou não.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.shortName",
+"group": "Errors and checks",
+"en": "Give it a short name, like “gym” or “sleep”.",
+"pt": "Dê um nome curto, como “academia” ou “sono”.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.checkInType",
+"group": "Errors and checks",
+"en": "Pick how you’ll check in.",
+"pt": "Escolha como você vai registrar.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.timesRange",
+"group": "Errors and checks",
+"en": "How many times per period? (1–31)",
+"pt": "Quantas vezes por período? (1–31)",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.limitNumber",
+"group": "Errors and checks",
+"en": "Enter the limit as a number.",
+"pt": "Digite o limite como número.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.timeLike",
+"group": "Errors and checks",
+"en": "Enter a time like {example}.",
+"pt": "Digite um horário como {example}.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.prepWhat",
+"group": "Errors and checks",
+"en": "What will you do?",
+"pt": "O que você vai fazer?",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.oneDay",
+"group": "Errors and checks",
+"en": "Pick at least one day.",
+"pt": "Escolha pelo menos um dia.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.graceOk",
+"group": "Errors and checks",
+"en": "Pick how much extra time is OK.",
+"pt": "Escolha quanto prazo extra está OK.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.needsDeadline",
+"group": "Errors and checks",
+"en": "A finish line needs a deadline.",
+"pt": "Uma linha de chegada precisa de prazo.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.lookBack",
+"group": "Errors and checks",
+"en": "Pick a day to look back.",
+"pt": "Escolha um dia para revisar.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.nameWhat",
+"group": "Errors and checks",
+"en": "Name what you want.",
+"pt": "Diga o que você quer.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.pctRange",
+"group": "Errors and checks",
+"en": "Between 1 and 100%.",
+"pt": "Entre 1 e 100%.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.pickValue",
+"group": "Errors and checks",
+"en": "Pick the value this serves.",
+"pt": "Escolha o valor que isso atende.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.sayHow",
+"group": "Errors and checks",
+"en": "Say how this goal serves it. This is what you’ll see every day.",
+"pt": "Diga como esta meta atende esse valor. É isso que você vai ver todo dia.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.startDate",
+"group": "Errors and checks",
+"en": "Pick a start date.",
+"pt": "Escolha uma data de início.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.afterStart",
+"group": "Errors and checks",
+"en": "Must be after the start date.",
+"pt": "Precisa ser depois da data de início.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.maxPreps",
+"group": "Errors and checks",
+"en": "At most {n}. Needing more means the commitment is too big.",
+"pt": "No máximo {n}. Precisar de mais quer dizer que o compromisso está grande demais.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.finishPrep",
+"group": "Errors and checks",
+"en": "Finish or remove the prep.",
+"pt": "Termine ou remova o preparo.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.notJson",
+"group": "Errors and checks",
+"en": "That file isn’t valid JSON.",
+"pt": "Esse arquivo não é um JSON válido.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.notExport",
+"group": "Errors and checks",
+"en": "That file isn’t a Smart Meta export.",
+"pt": "Esse arquivo não é um backup do Smart Meta.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.newerVersion",
+"group": "Errors and checks",
+"en": "Data is from a newer version of the app (v{n}). Update the app first.",
+"pt": "Os dados são de uma versão mais nova do app (v{n}). Atualize o app antes.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.syncNotConfigured",
+"group": "Errors and checks",
+"en": "Sync is not configured for this build.",
+"pt": "A sincronização não está configurada nesta versão.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.wrongLogin",
+"group": "Errors and checks",
+"en": "Wrong email or password.",
+"pt": "E-mail ou senha incorretos.",
+"note": "",
+"ask": ""
+},
+{
+"key": "err.offlineErase",
+"group": "Errors and checks",
+"en": "You’re offline. Connect first so the synced copy is erased too.",
+"pt": "Você está sem conexão. Conecte-se antes para apagar também a cópia sincronizada.",
+"note": "",
+"ask": ""
+},
+{
+"key": "check.words",
+"group": "Errors and checks",
+"en": "at least, at most, no more than, or more, or less, less than, more than, every, each, never, always, only, without, before, after, by, within, until, once, twice",
+"pt": "pelo menos, no mínimo, no máximo, não mais que, ou mais, ou menos, menos de, mais de, todo, toda, todos, todas, cada, nunca, sempre, só, somente, apenas, sem, antes, depois, até, dentro de, uma vez, duas vezes, vezes",
+"note": "Not shown: words that make a \"What counts\" sentence checkable. Numbers always count. The app will accept both lists whatever the language.",
+"ask": "Any words to add or remove?"
+}
+]
