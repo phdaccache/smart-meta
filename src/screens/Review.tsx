@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { dismissInReview, markWeekReviewed, setGoalState, updateProject } from '../db/repo'
-import { dayMonth, untilText } from '../lib/dates'
+import { dayMonth, isDateStr, untilText } from '../lib/dates'
 import { promptQuestion, reasonLabel } from '../lib/describe'
 import {
   buildReview, projectKey, reviewableWeeks, type DateNote, type GoalCard, type HandledProject, type ReasonCount, type StalledProject,
@@ -8,7 +8,7 @@ import {
 } from '../lib/review'
 import { missKey, type MissPrompt, type ScoreContext } from '../lib/scoring'
 import type { Commitment, Goal, Prep } from '../lib/types'
-import { DatePickerButton, InfoTip, Screen, Section, Sheet, StatusWord, toast } from '../ui/components'
+import { Field, InfoTip, Screen, Section, Sheet, StatusWord, toast } from '../ui/components'
 import { useAllRevisions, useDisplacements, useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
 import { IconCalendar, IconCheck, IconChevronRight } from '../ui/icons'
 import { navigate, useLocation } from '../ui/router'
@@ -324,6 +324,14 @@ function StalledRow({ s, today, week }: { s: StalledProject; today: string; week
   const why = s.why === 'overdue'
     ? `Past its date (${dayMonth(s.project.targetDate)})`
     : s.lastDone ? `No step done since ${dayMonth(s.lastDone)}` : 'No step done yet'
+  const [moving, setMoving] = useState(false)
+  const [date, setDate] = useState(s.project.targetDate > today ? s.project.targetDate : today)
+  const save = async () => {
+    if (!isDateStr(date)) return
+    await updateProject(s.project, { targetDate: date })
+    await dismissInReview(week, projectKey(s.project.id, 'moved'))
+    setMoving(false)
+  }
   return (
     <div className="list-row" style={{ display: 'block' }}>
       <button className="text" style={{ textAlign: 'left', width: '100%' }} onClick={() => navigate(`/projects/${s.project.id}`)}>
@@ -331,13 +339,7 @@ function StalledRow({ s, today, week }: { s: StalledProject; today: string; week
         <div className="sub">{why} · {steps}</div>
       </button>
       <div className="row" style={{ gap: 8, marginTop: 10 }}>
-        <DatePickerButton value={s.project.targetDate > today ? s.project.targetDate : today} min={today} label="New date"
-          onPick={async (d) => {
-            await updateProject(s.project, { targetDate: d })
-            await dismissInReview(week, projectKey(s.project.id, 'moved'))
-          }}>
-          <span className="btn">Move date</span>
-        </DatePickerButton>
+        <button className="btn" onClick={() => setMoving(true)}>Move date</button>
         <button className="btn ghost" onClick={async () => {
           if (!confirm(`Put “${s.project.title}” down? It moves to done projects; you can reopen it.`)) return
           await updateProject(s.project, { state: 'archived' })
@@ -346,6 +348,16 @@ function StalledRow({ s, today, week }: { s: StalledProject; today: string; week
         <span className="spacer" />
         <button className="link-btn" onClick={() => dismissInReview(week, projectKey(s.project.id, 'dismissed'))}>Dismiss</button>
       </div>
+      {/* A sheet with Save, not an instant picker: iOS reports a date while you're still scrolling. */}
+      <Sheet open={moving} onClose={() => setMoving(false)} title={`New date for “${s.project.title}”`}>
+        <Field label="Target date" htmlFor={`move-${s.project.id}`}>
+          <input id={`move-${s.project.id}`} type="date" value={date} min={today} onChange={(e) => setDate(e.target.value)} />
+        </Field>
+        <div className="sheet-actions">
+          <button className="btn" onClick={() => setMoving(false)}>Cancel</button>
+          <button className="btn primary" disabled={!isDateStr(date) || date < today} onClick={save}>Save</button>
+        </div>
+      </Sheet>
     </div>
   )
 }
