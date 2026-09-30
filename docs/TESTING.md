@@ -95,9 +95,9 @@ Tap a task on Today → **Turn into project**, then add steps.
 Pretend it's a Monday.
 - **Expect:** a dot on the **Review** tab and "Last week is ready to review" on Today.
 
-**R2. A suggestion from your reasons**
-In Review → Loose ends, answer a gym miss with **Chose something else → phone**. Do it again for another week, or backfill another miss with the same reason.
-- **Expect:** the gym card asks *Add a prep?* (or *Change it?* if it has one), quoting "… chose something else (phone ×2)". Accept, save the prep, and the suggestion goes away.
+**R2. One of each suggestion**
+Load sample data, then open Review.
+- **Expect:** gym → *Change it?* (phone ×2, despite the prep); reading → *Add a prep?* (forgot); big tech → *Lower the target* (LeetCode, no time); answer my friends → *Pause it?*; sleep → *Maintenance?*. Accept one (e.g. edit the gym prep and save) and it goes away.
 
 **R3. Dismiss**
 Tap **Dismiss** on a suggestion.
@@ -109,7 +109,11 @@ Pretend it's 3+ weeks from now.
 
 **R5. Done**
 Tap **Done for this week**.
-- **Expect:** the dot and the Today line disappear until next Monday.
+- **Expect:** open suggestions disappear (hidden for 4 weeks), and so do the dot and the Today line, until next Monday.
+
+**R6. Older weeks**
+Tap 📅 on Review.
+- **Expect:** weeks listed newest first, ✓ on reviewed ones; in the sample, last week and the week of 4 weeks ago aren't. Open the unreviewed old one: its results and loose ends (dated, e.g. "on 5 Sep"), no suggestions. **Mark reviewed** adds its ✓.
 
 ## Ends
 

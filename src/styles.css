@@ -570,3 +570,13 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .suggestion .actions { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; gap: 8px; }
 .tab-icon { position: relative; display: inline-grid; }
 .tab-dot { position: absolute; top: -1px; right: -4px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.week-done { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: var(--on-track); }
+.list-row[aria-current="true"] { background: var(--surface-2); }
+
+.commitment-card { overflow: hidden; }
+.commitment-kind { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+/* Preps sit inside their commitment's card, set apart: support, not the habit itself. */
+.prep-block { border-top: 1px solid var(--line); background: color-mix(in srgb, var(--prep) 6%, var(--surface)); }
+.prep-block-head { padding: 10px 16px 0; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--prep); }
+.prep-block .list-row { padding-left: 16px; border-left: 3px solid color-mix(in srgb, var(--prep) 55%, transparent); margin-left: 12px; }
+.prep-block .list-row + .list-row { border-top: 0; }

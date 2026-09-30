@@ -209,9 +209,11 @@ function CommitmentCard({ c, snap, today, canRemove, onEdit }: { c: Commitment; 
   const preps = snap.preps.filter((p) => p.commitmentId === c.id)
   const [editingPrep, setEditingPrep] = useState<Prep | 'new' | null>(null)
   const [logging, setLogging] = useState(false)
+  const outcome = snap.goals.find((g) => g.id === c.goalId)?.kind === 'outcome'
   return (
-    <div className="card">
+    <div className="card commitment-card">
       <div className="pad">
+        <div className="commitment-kind">{outcome ? 'Supporting habit' : 'Commitment'}</div>
         <div className="group-eyebrow">{c.label} · {cadenceText(c)}{c.startDate > today && <> · <b>starts {relativeDay(c.startDate, today)}</b></>}</div>
         <div style={{ fontWeight: 600 }}>{c.measurementDefinition}</div>
         <div className="row" style={{ marginTop: 10, gap: 4, flexWrap: 'wrap' }}>
@@ -224,21 +226,28 @@ function CommitmentCard({ c, snap, today, canRemove, onEdit }: { c: Commitment; 
           )}
         </div>
       </div>
-      <div className="list" style={{ borderTop: '1px solid var(--line)' }}>
-        {preps.map((p) => (
-          <button key={p.id} className="list-row" onClick={() => setEditingPrep(p)}>
-            <div className="text">
-              <div className="title" style={{ fontSize: 15 }}>{p.title}</div>
-              <div className="sub">Prep · {weekdaysLabel(p.fireWeekdays)} at {p.fireTime}</div>
-            </div>
-            <IconChevronRight className="chev" width={18} />
-          </button>
-        ))}
-        {preps.length < MAX_PREPS && (
-          <button className="list-row link-btn" style={{ minHeight: 48 }} onClick={() => setEditingPrep('new')}>
-            + Add prep
-          </button>
-        )}
+      <div className="prep-block">
+        <div className="prep-block-head">
+          <span className="title-row">Preps
+            <InfoTip label="About preps">Small things done ahead, like packing the bag the night before, so the commitment is easier. They show on Today on their days, and never count toward the score.</InfoTip>
+          </span>
+        </div>
+        <div className="list">
+          {preps.map((p) => (
+            <button key={p.id} className="list-row" onClick={() => setEditingPrep(p)}>
+              <div className="text">
+                <div className="title" style={{ fontSize: 15 }}>{p.title}</div>
+                <div className="sub">{weekdaysLabel(p.fireWeekdays)} at {p.fireTime}</div>
+              </div>
+              <IconChevronRight className="chev" width={18} />
+            </button>
+          ))}
+          {preps.length < MAX_PREPS && (
+            <button className="list-row link-btn" style={{ minHeight: 48 }} onClick={() => setEditingPrep('new')}>
+              + Add prep
+            </button>
+          )}
+        </div>
       </div>
       <PrepSheet commitment={c} editing={editingPrep} onClose={() => setEditingPrep(null)} />
       <OccurrenceSheet commitment={logging ? c : null} date={today} today={today} onClose={() => setLogging(false)} />

@@ -441,7 +441,8 @@ export async function dismissSuggestion(week: DateStr, key: string) {
   await put('weekReviews', { ...w, dismissed: [...new Set([...w.dismissed, key])] })
 }
 
-export async function markWeekReviewed(week: DateStr) {
+/** Marks the week reviewed; suggestions still open are dismissed with it. */
+export async function markWeekReviewed(week: DateStr, dismiss: string[] = []) {
   const w = await weekReviewFor(week)
-  await put('weekReviews', { ...w, doneAt: now() })
+  await put('weekReviews', { ...w, doneAt: now(), dismissed: [...new Set([...w.dismissed, ...dismiss])] })
 }

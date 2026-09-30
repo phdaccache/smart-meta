@@ -3,14 +3,14 @@ import { dismissSuggestion, markWeekReviewed, setGoalState, updateProject } from
 import { dayMonth, relativeDay } from '../lib/dates'
 import { promptQuestion, reasonLabel } from '../lib/describe'
 import {
-  buildReview, type DateNote, type GoalCard, type ReasonCount, type StalledProject, type Suggestion, type SuggestionKind,
+  buildReview, reviewableWeeks, type DateNote, type GoalCard, type ReasonCount, type StalledProject, type Suggestion, type SuggestionKind,
 } from '../lib/review'
 import type { ScoreContext } from '../lib/scoring'
 import type { Commitment, Goal, Prep } from '../lib/types'
-import { DatePickerButton, InfoTip, Screen, Section, StatusWord, toast } from '../ui/components'
+import { DatePickerButton, InfoTip, Screen, Section, Sheet, StatusWord, toast } from '../ui/components'
 import { useAllRevisions, useDisplacements, useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
-import { IconChevronRight } from '../ui/icons'
-import { navigate } from '../ui/router'
+import { IconCalendar, IconCheck, IconChevronRight } from '../ui/icons'
+import { navigate, useLocation } from '../ui/router'
 import { CommitmentSheet, PrepSheet } from './GoalDetail'
 import { MissPromptCard } from './Today'
 
@@ -34,13 +34,20 @@ export function ReviewScreen() {
   const weekReviews = useWeekReviews()
   const displacements = useDisplacements()
   const [editing, setEditing] = useState<Editing | null>(null)
+  const [picking, setPicking] = useState(false)
+  const { query } = useLocation()
+  const asked = query.get('week') ?? undefined
   const ctx: ScoreContext = useMemo(() => ({ today, rolloverHour: settings.rolloverHour }), [today, settings.rolloverHour])
 
   const r = useMemo(
     () => snap && revisions && weekReviews
-      ? buildReview({ snap, revisions, displacements, weekReviews, ctx, goalCap: settings.goalCap })
+      ? buildReview({ snap, revisions, displacements, weekReviews, ctx, goalCap: settings.goalCap }, asked)
       : null,
-    [snap, revisions, weekReviews, displacements, ctx, settings.goalCap],
+    [snap, revisions, weekReviews, displacements, ctx, settings.goalCap, asked],
+  )
+  const weeks = useMemo(
+    () => snap && weekReviews ? reviewableWeeks(snap.goals, weekReviews, today) : [],
+    [snap, weekReviews, today],
   )
   if (!snap || !r) return null
 
@@ -83,10 +90,25 @@ export function ReviewScreen() {
     }
   }
 
+  const done = async () => {
+    const open = r.goals.map((g) => g.suggestion?.key).filter((k): k is string => !!k)
+    await markWeekReviewed(r.week.start, open)
+    toast(open.length ? 'Reviewed. Open suggestions hidden for 4 weeks.' : 'Reviewed.')
+  }
+
+  const actions = (
+    <>
+      {!r.latest && <button className="btn" onClick={() => navigate('/review')}>Last week</button>}
+      {weeks.length > 1 && (
+        <button className="icon-btn" aria-label="Other weeks" onClick={() => setPicking(true)}><IconCalendar /></button>
+      )}
+    </>
+  )
+
   const nothing = !r.loose.length && !r.goals.length && !r.dates.length && !r.stalled.length && !r.next
 
   return (
-    <Screen eyebrow={`Week of ${dayMonth(r.week.start)}`} title={title} settings>
+    <Screen eyebrow={`Week of ${dayMonth(r.week.start)}${r.reviewed ? ' · reviewed' : ''}`} title={title} actions={actions} settings>
       {r.loose.length > 0 && (
         <Section title="Loose ends">
           <div className="stack">
@@ -106,7 +128,7 @@ export function ReviewScreen() {
       )}
 
       {r.goals.length > 0 && (
-        <Section title="Last week">
+        <Section title={r.latest ? 'Last week' : 'That week'}>
           <div className="stack">
             {r.goals.map((card) => (
               <GoalReviewCard key={card.goal.id} card={card} onAccept={accept}
@@ -155,13 +177,29 @@ export function ReviewScreen() {
 
       <div style={{ marginTop: 24 }}>
         {r.reviewed ? (
-          <p className="muted small" style={{ textAlign: 'center' }}>Reviewed. The next one opens on Monday.</p>
+          <p className="muted small" style={{ textAlign: 'center' }}>
+            {r.latest ? 'Reviewed. The next one opens on Monday.' : 'Reviewed.'}
+          </p>
         ) : (
-          <button className="btn primary block" onClick={() => markWeekReviewed(r.week.start).then(() => toast('Reviewed. See you next week.'))}>
-            Done for this week
-          </button>
+          <button className="btn primary block" onClick={done}>{r.latest ? 'Done for this week' : 'Mark reviewed'}</button>
         )}
       </div>
+
+      <Sheet open={picking} onClose={() => setPicking(false)} title="Weeks">
+        <div className="card list">
+          {weeks.map((w, i) => (
+            <button key={w.start} className="list-row" aria-current={w.start === r.week.start ? 'true' : undefined}
+              onClick={() => { setPicking(false); navigate(i === 0 ? '/review' : `/review?week=${w.start}`) }}>
+              <div className="text">
+                <div className="title" style={{ fontSize: 15 }}>Week of {dayMonth(w.start)}{i === 0 && <span className="muted"> · last week</span>}</div>
+              </div>
+              {w.reviewed
+                ? <span className="week-done"><IconCheck width={14} height={14} /> reviewed</span>
+                : <span className="small muted">not reviewed</span>}
+            </button>
+          ))}
+        </div>
+      </Sheet>
 
       {editing?.kind === 'prep' && (
         <PrepSheet commitment={editing.commitment} editing={editing.prep} onClose={() => setEditing(null)} />

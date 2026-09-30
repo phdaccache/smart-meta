@@ -117,6 +117,20 @@ describe('Review — suggestions', () => {
     expect(buildReview(input({ entries })).goals[0].suggestion?.kind).toBe('maintenance')
   })
 
+  it('marking the week reviewed settles its suggestions', () => {
+    const entries = weeklyHits(gym, '2026-08-03', [3, 3, 3, 3, 3, 3, 3, 3], addDays)
+    expect(buildReview(input({ entries }, { weekReviews: [weekReview('2026-09-21', { doneAt: T })] })).goals[0].suggestion).toBeNull()
+  })
+
+  it('older weeks show results only', () => {
+    const entries = weeklyHits(gym, '2026-08-03', [3, 3, 3, 3, 3, 3, 3, 3], addDays)
+    const r = buildReview(input({ entries }), '2026-09-09')
+    expect(r.latest).toBe(false)
+    expect(r.week).toEqual({ start: '2026-09-07', end: '2026-09-13' })
+    expect(r.goals[0].suggestion).toBeNull()
+    expect(r.goals[0].lines[0].text).toBe('gym: 3 of 3')
+  })
+
   it('a dismissed suggestion stays hidden for 4 weeks', () => {
     const entries = weeklyHits(gym, '2026-08-03', [3, 3, 3, 3, 3, 3, 3, 3], addDays)
     const key = `${g.id}:maintenance:`

@@ -1,4 +1,4 @@
-import { formatTime, monthName, weekdayName, addDays } from './dates'
+import { addDays, dayMonth, diffDays, formatTime, monthName, relativeDay, weekdayName } from './dates'
 import type { MissPrompt } from './scoring'
 import type { Commitment, DateStr, MissReason, Period, Shape } from './types'
 
@@ -42,14 +42,20 @@ export function cadenceText(c: Commitment): string {
 
 export function promptQuestion(p: MissPrompt, c: Commitment, today: DateStr): string {
   const dates = p.slots.map((s) => s.date)
+  // Weekday names only while they're unambiguous; older days get a date.
+  const recent = (d: DateStr) => diffDays(d, today) < 7
   if (p.period === 'day') {
-    const name = (d: DateStr) => (d === addDays(today, -1) ? 'yesterday' : weekdayName(d))
     if (dates.length === 1) {
-      const n = name(dates[0])
-      return `You missed ${n === 'yesterday' ? 'yesterday' : n}’s ${c.label} — what happened?`
+      const d = dates[0]
+      if (d === addDays(today, -1)) return `You missed yesterday’s ${c.label} — what happened?`
+      if (recent(d)) return `You missed ${weekdayName(d)}’s ${c.label} — what happened?`
+      return `You missed ${c.label} on ${relativeDay(d, today)} — what happened?`
     }
-    return `You missed ${c.label} on ${dates.map((d) => weekdayName(d).slice(0, 3)).join(', ')} — what happened?`
+    const names = dates.map((d) => (recent(d) ? weekdayName(d).slice(0, 3) : relativeDay(d, today)))
+    return `You missed ${c.label} on ${names.join(', ')} — what happened?`
   }
-  const when = p.period === 'week' ? 'Last week' : monthName(dates[0])
+  const last = dates[dates.length - 1]
+  const when = p.period === 'month' ? monthName(last)
+    : diffDays(last, today) <= 7 ? 'Last week' : `Week of ${dayMonth(addDays(last, -6))}`
   return `${when}: ${p.hits ?? 0} of ${p.target ?? c.cadence.times} ${c.label}. What happened?`
 }

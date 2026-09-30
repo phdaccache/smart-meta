@@ -80,6 +80,8 @@ export interface StalledProject {
 
 export interface ReviewData {
   week: Span
+  /** The most recent full week. Older weeks show results only: no suggestions, dates or slots. */
+  latest: boolean
   /** Misses since the week began that still have no reason. */
   loose: MissPrompt[]
   goals: GoalCard[]
@@ -114,17 +116,37 @@ export function reviewPending(goals: Goal[], weekReviews: WeekReview[], today: D
   return live(goals).some((g) => g.state === 'active' && g.startDate <= week.end)
 }
 
-export function buildReview(input: ReviewInput): ReviewData {
+/** Every week that can be reviewed, newest first, back to the first started goal. */
+export function reviewableWeeks(goals: Goal[], weekReviews: WeekReview[], today: DateStr, max = 26): { start: DateStr; reviewed: boolean }[] {
+  const latest = reviewWeek(today).start
+  const first = live(goals).filter((g) => g.state !== 'backlog').map((g) => g.startDate).sort()[0]
+  if (!first || first > reviewWeek(today).end) return []
+  const done = new Set(live(weekReviews).filter((w) => w.doneAt).map((w) => w.week))
+  const out: { start: DateStr; reviewed: boolean }[] = []
+  for (let start = latest; out.length < max && addDays(start, 6) >= first; start = addDays(start, -7)) {
+    out.push({ start, reviewed: done.has(start) })
+  }
+  return out
+}
+
+/** The review of the last full week, or of an older one (`weekStart`, any day in it). */
+export function buildReview(input: ReviewInput, weekStart?: DateStr): ReviewData {
   const { snap, ctx, goalCap } = input
-  const week = reviewWeek(ctx.today)
+  const newest = reviewWeek(ctx.today)
+  const week = weekStart && weekStart < newest.start ? periodOf(weekStart, 'week') : newest
+  const latest = week.start === newest.start
+  const reviewed = live(input.weekReviews).some((w) => w.week === week.start && !!w.doneAt)
   const entries = activeEntries(snap.entries)
   const goals = live(snap.goals).sort((a, b) => a.priority - b.priority)
   const liveGoals = goals.filter((g) => g.state === 'active' || g.state === 'maintenance')
   const commitmentsOf = (g: Goal) => live(snap.commitments).filter((c) => c.goalId === g.id)
 
+  // The latest review also sweeps up this week's misses so far; an older one
+  // is judged as if seen the day after it ended.
+  const promptCtx = latest ? ctx : { ...ctx, today: addDays(week.end, 1) }
   const loose = liveGoals
     .flatMap(commitmentsOf)
-    .map((c) => missPrompt(c, snap.entries, ctx, diffDays(week.start, ctx.today)))
+    .map((c) => missPrompt(c, snap.entries, promptCtx, diffDays(week.start, promptCtx.today)))
     .filter((p): p is MissPrompt => !!p)
 
   const cards: GoalCard[] = []
@@ -141,12 +163,13 @@ export function buildReview(input: ReviewInput): ReviewData {
       status: statusFor(goalPct(cs, snap.entries, snap.occurrences, ctx, undefined, week.end), g.tolerancePct),
       before: statusFor(goalPct(cs, snap.entries, snap.occurrences, ctx, undefined, addDays(week.start, -1)), g.tolerancePct),
       reasons: reasonCounts(entries.filter((e) => inSpan(e.date, week) && cs.some((c) => c.id === e.subjectId)), input.displacements),
-      suggestion: suggest(g, cs, input, week, entries),
+      // Once the week is marked reviewed, its open suggestions are settled.
+      suggestion: latest && !reviewed ? suggest(g, cs, input, week, entries) : null,
     })
   }
 
   const dates: DateNote[] = []
-  for (const g of liveGoals) {
+  for (const g of latest ? liveGoals : []) {
     const t = outcomeTime(g, ctx.today)
     if (t) {
       if (t.phase === 'overdue') dates.push({ goal: g, kind: 'review_due', date: t.graceEnd })
@@ -158,18 +181,19 @@ export function buildReview(input: ReviewInput): ReviewData {
   }
 
   const active = goals.filter((g) => g.state === 'active').length
-  const free = Math.max(0, goalCap - active)
+  const free = latest ? Math.max(0, goalCap - active) : 0
 
   return {
     week,
+    latest,
     loose,
     goals: cards,
     dates,
-    stalled: stalledProjects(snap, entries, ctx.today),
+    stalled: latest ? stalledProjects(snap, entries, ctx.today) : [],
     free,
     next: free > 0 ? goals.find((g) => g.state === 'backlog') ?? null : null,
-    reviewed: live(input.weekReviews).some((w) => w.week === week.start && !!w.doneAt),
-    ready: goals.some((g) => g.state === 'active' && g.startDate <= week.end),
+    reviewed,
+    ready: goals.some((g) => g.state !== 'backlog' && g.startDate <= week.end),
   }
 }
 

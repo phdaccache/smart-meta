@@ -63,7 +63,9 @@ From Monday, a dot on **Review** (and a line on Today) says last week is ready. 
 2. **Last week:** each goal's plain counts ("gym 2 of 3"), its status and your reasons. When a reason keeps coming back, one suggestion appears with its facts, e.g. *"3 of 4 gym misses: chose something else (phone ×3)". Add a prep?* Accept it (it opens the right editor) or **Dismiss** (hidden for 4 weeks).
 3. **Dates** and **Stalled projects** (no step in 3 weeks, or past their date): open, move the date, or put down.
 4. **Open slot:** start the top backlog goal.
-5. **Done for this week.**
+5. **Done for this week.** Any suggestion you left open is dismissed with it.
+
+Tap 📅 at the top of Review to open an older week (✓ marks the reviewed ones). Older weeks show their results and loose ends only; suggestions are always about now.
 
 | Reason that keeps coming back | Suggestion |
 |---|---|
@@ -87,5 +89,5 @@ Then choose **Renew**, **Maintenance** (habit goals only) or **Close it out**.
 ## Try it without waiting
 
 In **Settings → Developer** (temporary):
-- **Load sample data** replaces everything with this example plus other goals and three weeks of history.
+- **Load sample data** replaces everything with this example plus other goals and ten weeks of history, shaped so Review shows one of each suggestion, loose ends, a review date, stalled projects and an open slot. It erases your data first, including the synced copy if you're signed in.
 - **Pretend today is** moves the app to any date. Tap the orange pill to go back to the real date.
