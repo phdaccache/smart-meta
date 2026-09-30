@@ -61,6 +61,23 @@ export function Section(props: { title?: ReactNode; aside?: ReactNode; children:
 export function Sheet(props: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
   const titleId = useId()
+  const [view, setView] = useState<{ top: number; height: number } | null>(null)
+
+  // iOS doesn't shrink the page for the keyboard; it scrolls it, sometimes leaving the field
+  // underneath. Pinning the sheet to the visible area keeps it right above the keyboard.
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!props.open || !vv) return
+    const update = () => setView({ top: vv.offsetTop, height: vv.height })
+    update()
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    return () => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+      setView(null)
+    }
+  }, [props.open])
   useEffect(() => {
     if (!props.open) return
     const prev = document.activeElement as HTMLElement | null
@@ -79,7 +96,7 @@ export function Sheet(props: { open: boolean; onClose: () => void; title: string
   }, [props.open])
   if (!props.open) return null
   return createPortal(
-    <div className="sheet-layer">
+    <div className="sheet-layer" style={view ? { top: view.top, height: view.height, bottom: 'auto' } : undefined}>
       <div className="sheet-backdrop" onClick={props.onClose} />
       <div className="sheet" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={ref}>
         <div className="sheet-head">
