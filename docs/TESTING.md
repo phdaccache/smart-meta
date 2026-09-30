@@ -126,7 +126,7 @@ Tap 📅 on Review.
 
 **I1. Goal trends**
 Load sample data, open **Insights → Goals** (3 months).
-- **Expect:** one row per running goal with its average and a line of weekly results. *Sleep well* says "Prep added: Phone charging outside the bedroom (…): 62% → 93%"; *Be on time* the same for its prep. **Tolerance vs actual**: *Call my parents* far right of its tick, *Answer my friends* far left. **Ended goals**: *Run a 10k* with a green *Completed*, *Journal every evening* with a red *Abandoned*. Switch to **All**: the lines get longer and the averages change.
+- **Expect:** one row per running goal with its average and a line of weekly results. *Sleep well* says "Prep added: Phone charging outside the bedroom (…): 62% → 93%"; *Be on time* the same for its prep. **Tolerance vs actual**: *Call my parents* far right of its tick, *Answer my friends* far left; tapping *Answer my friends* reads "tolerance 80% · actual 57%", and tapping anywhere else clears it. **Ended goals**: *Run a 10k* with a green *Completed*, *Journal every evening* with a red *Abandoned*. Switch to **All**: the lines get longer and the averages change.
 
 **I2. One goal**
 Tap *Sleep well* (or 📊 on its goal page). Tap or drag across the chart.
@@ -138,7 +138,7 @@ Open **Patterns**.
 
 **I4. Big picture**
 Open **Big picture**.
-- **Expect:** *2026 so far* with three numbers (tap *finished* to see *Run a 10k*) and a short list (best month, most kept, weeks reviewed 26 of 30…). Value balance: tapping a month lists it by value. Timeline: *Running* then *Ended*; *Call my parents* turns green (habit) in July; the 10k ends with ✓, the journal with ✕. Projects: *CV & LinkedIn* **Behind**, *Organize my finances* **Overdue**, *System design prep* **On pace**; *Buy a bike* under Done projects.
+- **Expect:** *2026 so far* with three numbers (tap *finished* to see *Run a 10k*; tap elsewhere to hide it) and a short list (best month, most kept, weeks reviewed 26 of 30…). Value balance: tapping a month lists it by value. Timeline: one list by start date; *Call my parents* turns green (habit) in July; the 10k ends with ✓, the journal with ✕; tapping the journal reads "Started 30 March · Abandoned 14 May" with **Open**. Projects: *CV & LinkedIn* **Behind**, *Organize my finances* **Overdue**, *System design prep* **On pace**; *Buy a bike* under Done projects.
 
 **I5. Too new**
 Create and start a new goal.

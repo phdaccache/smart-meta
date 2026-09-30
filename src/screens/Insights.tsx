@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { dayMonth, formatTime, monthName } from '../lib/dates'
 import {
   burnups, goalsView, goalTrend, MIN_WEEKS, patternsView, prepare, RANGES, timeline, valueBalance, yearReview,
@@ -7,8 +7,8 @@ import {
 import { statusFor, type ScoreContext } from '../lib/scoring'
 import type { Goal } from '../lib/types'
 import {
-  Distribution, GoalChips, ProjectPace, ReasonBars, Sparkline, TimelineChart, ToleranceTrack, TrendChart, ValueMonths,
-  WeekdayGrid,
+  Distribution, GoalChips, ProjectPace, ReasonBars, Sparkline, TimelineChart, ToleranceChart, TrendChart, useTapOutside,
+  ValueMonths, WeekdayGrid,
 } from '../ui/charts'
 import { InfoTip, Screen, Section, Segmented } from '../ui/components'
 import { useAllRevisions, useDisplacements, useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
@@ -138,21 +138,7 @@ function GoalsTab({ p, range }: { p: Prepared; range: Range }) {
           The tick is each goal’s tolerance, the dot what you actually did over the period.
           A dot far to the right of its tick means the bar may be too easy; far to the left, the goal may be too big for now.
         </Tip>}>
-          <div className="card pad">
-            <div className="legend tol-legend">
-              <span><i className="key-tick" />tolerance</span>
-              <span><i className="dot st-on-track" />actual</span>
-            </div>
-            <div className="tol-rows">
-              {v.tolerance.rows.map((r) => (
-                <button key={r.goal.id} className="tol-row" onClick={() => navigate(`/insights/goals/${r.goal.id}`)}>
-                  <span className="tol-name">{r.goal.title}</span>
-                  <ToleranceTrack tolerance={r.tolerance} actual={r.actual} />
-                  <span className="tol-num">{pct(r.actual)}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+          <div className="card pad"><ToleranceChart rows={v.tolerance.rows} /></div>
         </Section>
       )}
 
@@ -315,6 +301,8 @@ type YearList = 'started' | 'finished' | 'habits'
 function BigPictureTab({ p }: { p: Prepared }) {
   const data = remember('big', [p], () => ({ year: yearReview(p), balance: valueBalance(p), timeline: timeline(p), burnups: burnups(p) }))
   const [list, setList] = useState<YearList | null>(null)
+  const tiles = useRef<HTMLDivElement>(null)
+  useTapOutside(tiles, list != null, () => setList(null))
   const y = data.year
   const lists: Record<YearList, Goal[]> = { started: y.started, finished: y.finished, habits: y.toMaintenance }
   const tile = (key: YearList, n: number, label: string) => (
@@ -330,12 +318,14 @@ function BigPictureTab({ p }: { p: Prepared }) {
     <>
       <Section title={y.final ? `${y.year} in review` : `${y.year} so far`}>
         <div className="card pad year">
-          <div className="year-tiles">
-            {tile('started', y.started.length, 'goals started')}
-            {tile('finished', y.finished.length, 'finished')}
-            {tile('habits', y.toMaintenance.length, 'became habits')}
+          <div ref={tiles}>
+            <div className="year-tiles">
+              {tile('started', y.started.length, 'goals started')}
+              {tile('finished', y.finished.length, 'finished')}
+              {tile('habits', y.toMaintenance.length, y.toMaintenance.length === 1 ? 'new habit' : 'new habits')}
+            </div>
+            {list && <GoalChips goals={lists[list]} />}
           </div>
-          {list && <GoalChips goals={lists[list]} />}
           <dl className="year-facts">
             <dt>Best month</dt>
             <dd>{y.bestMonth ? <>{monthName(y.bestMonth.month)} <span className="muted">{pct(y.bestMonth.pct)}</span></> : '—'}</dd>
@@ -366,7 +356,7 @@ function BigPictureTab({ p }: { p: Prepared }) {
       {data.timeline.rows.length > 0 && (
         <Section title={<Tip title="Goals timeline">
           Every goal of the last year as a bar from when it started. Blue while active, green once it became a habit (maintenance).
-          A mark at the end says how it ended. Tap one for its insights.
+          A bar reaching the right edge is still running; a mark at its end says how it ended. Tap one for its dates.
         </Tip>}>
           <div className="card pad"><TimelineChart t={data.timeline} /></div>
         </Section>

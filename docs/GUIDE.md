@@ -83,9 +83,9 @@ For finish-line goals, the status comes from their habits until the deadline. It
 
 Review is about next week; **Insights** is about the long run. Pick the period at the top (3 months to all time). Tap any chart to read its numbers; the (i) next to each title says how to read it.
 
-- **Goals:** each goal's weekly result as a line, with its average for the period (a goal needs 4 weeks of data first). Green ticks mark changes to the plan, and the line under it says what changed, e.g. *"Prep added: Phone outside the bedroom: 62% → 93%"*. That's how you know a change worked. **Tolerance vs actual** puts each goal's bar (tick) next to what you really did (dot). **Ended goals** say how they ended. Tap a goal (or 📊 on its page) for its full chart, its plan changes with before → after, and its own patterns.
+- **Goals:** each goal's weekly result as a line, with its average for the period (a goal needs 4 weeks of data first). Green ticks mark changes to the plan, and the line under it says what changed, e.g. *"Prep added: Phone outside the bedroom: 62% → 93%"*. That's how you know a change worked. **Tolerance vs actual** puts each goal's bar (tick) next to what you really did (dot); tap a goal for both numbers. **Ended goals** say how they ended. Tap a goal (or 📊 on its page) for its full chart, its plan changes with before → after, and its own patterns.
 - **Patterns:** what gets in the way (tap a row to see which goals it hit; under *Something else*, what you chose instead); which **preps** earn their place (how it went after doing the prep versus skipping it); which **weekdays** slip; and **how far off** the misses are (6.5 h of sleep needs a different fix than 5 h).
-- **Big picture:** the year so far (tap a number to see the goals), **value balance** (weeks on track per value), a **timeline** of every goal (active, became a habit, completed, abandoned), and **projects**: steps done against the time gone, with when you'd finish at your pace.
+- **Big picture:** the year so far (tap a number to see the goals), **value balance** (weeks on track per value), a **timeline** of every goal (active, became a habit, completed ✓, abandoned ✕; tap one for its dates), and **projects**: steps done against the time gone, with when you'd finish at your pace.
 
 ## The end
 

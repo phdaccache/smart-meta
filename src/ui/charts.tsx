@@ -1,9 +1,11 @@
 // Small hand-drawn charts for Insights. Plain SVG and CSS: no chart library.
 // Tap (or drag across) a chart to read its values in the line above it.
-import { useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject } from 'react'
 import { dayMonth, diffDays, monthName, periodOf } from '../lib/dates'
 import { reasonLabel } from '../lib/describe'
-import type { Burnup, GoalCount, Marker, NearMiss, Obstacles, Timeline, ValueBalance, WeekPoint, WeekdayPattern } from '../lib/insights'
+import type {
+  Burnup, GoalCount, Marker, NearMiss, Obstacles, Timeline, ToleranceRow, ValueBalance, WeekPoint, WeekdayPattern,
+} from '../lib/insights'
 import { statusFor } from '../lib/scoring'
 import type { DateStr, Goal, Status } from '../lib/types'
 import { navigate } from './router'
@@ -11,6 +13,20 @@ import { navigate } from './router'
 const statusClass = (s: Status | null) => (s ? `st-${s.replace(' ', '-')}` : 'st-none')
 const shortMonth = (d: DateStr) => monthName(d).slice(0, 3)
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+/** While something is selected, a tap anywhere outside `ref` clears it. */
+export function useTapOutside(ref: RefObject<HTMLElement | null>, active: boolean, clear: () => void) {
+  const latest = useRef(clear)
+  latest.current = clear
+  useEffect(() => {
+    if (!active) return
+    const onDown = (e: globalThis.PointerEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) latest.current()
+    }
+    document.addEventListener('pointerdown', onDown)
+    return () => document.removeEventListener('pointerdown', onDown)
+  }, [active, ref])
+}
 
 /** The line above a chart that says what's under your finger. Fixed height, so nothing jumps. */
 export function Readout({ children, hint }: { children?: ReactNode; hint?: string }) {
@@ -71,8 +87,10 @@ export function TrendChart({ points, tolerance, markers }: { points: WeekPoint[]
   const T = 30
   const B = 22
   const svg = useRef<SVGSVGElement>(null)
+  const wrap = useRef<HTMLDivElement>(null)
   const valued = points.map((p, i) => (p.pct == null ? -1 : i)).filter((i) => i >= 0)
   const [sel, setSel] = useState<number | null>(null)
+  useTapOutside(wrap, sel != null, () => setSel(null))
   const idx = sel ?? valued.at(-1) ?? -1
   const x = (i: number) => L + (points.length <= 1 ? (W - L - R) / 2 : (i / (points.length - 1)) * (W - L - R))
   const y = (pct: number) => T + (1 - pct / 100) * (H - T - B)
@@ -98,7 +116,7 @@ export function TrendChart({ points, tolerance, markers }: { points: WeekPoint[]
   const st = p?.pct != null ? statusFor(p.pct, tolerance) : null
 
   return (
-    <div className="trend-wrap">
+    <div className="trend-wrap" ref={wrap}>
       <Readout hint="Tap the chart to read a week">
         {p && p.pct != null && (
           <>
@@ -152,6 +170,41 @@ export function TrendChart({ points, tolerance, markers }: { points: WeekPoint[]
   )
 }
 
+/** Every goal's tolerance (tick) against what was actually done (dot). Tap a goal for its numbers. */
+export function ToleranceChart({ rows }: { rows: ToleranceRow[] }) {
+  const [sel, setSel] = useState<string | null>(null)
+  const ref = useRef<HTMLDivElement>(null)
+  useTapOutside(ref, sel != null, () => setSel(null))
+  const r = rows.find((x) => x.goal.id === sel)
+  return (
+    <div ref={ref}>
+      <Readout hint="Tap a goal to see its numbers">
+        {r && (
+          <>
+            <span className="readout-main">{r.goal.title}</span>
+            <span className="readout-value">
+              tolerance {r.tolerance}% · <StatusDot status={statusFor(r.actual, r.tolerance)} />actual {Math.round(r.actual)}%
+            </span>
+          </>
+        )}
+      </Readout>
+      <div className="tol-rows">
+        {rows.map((x) => (
+          <button key={x.goal.id} className={`tol-row ${sel === x.goal.id ? 'on' : ''}`} aria-pressed={sel === x.goal.id}
+            onClick={() => setSel(sel === x.goal.id ? null : x.goal.id)}>
+            <span className="tol-name">{x.goal.title}</span>
+            <ToleranceTrack tolerance={x.tolerance} actual={x.actual} />
+          </button>
+        ))}
+      </div>
+      <div className="legend">
+        <span><i className="key-tick" />tolerance</span>
+        <span><i className="dot st-on-track" />actual</span>
+      </div>
+    </div>
+  )
+}
+
 /** A 0–100 track with the tolerance as a tick and the actual as a dot. */
 export function ToleranceTrack({ tolerance, actual }: { tolerance: number; actual: number }) {
   return (
@@ -170,6 +223,8 @@ const SHORT_REASON: Record<string, string> = { chose_other: 'Something else' }
 /** Miss reasons as bars; under "something else", what was chosen instead. Tap a row for the goals it hit. */
 export function ReasonBars({ o }: { o: Obstacles }) {
   const [open, setOpen] = useState<string | null>(null)
+  const ref = useRef<HTMLDivElement>(null)
+  useTapOutside(ref, open != null, () => setOpen(null))
   const max = Math.max(1, ...o.reasons.map((r) => r.count))
   const row = (id: string, label: string, count: number, goals: GoalCount[], sub = false) => (
     <div key={id} className={`rb ${sub ? 'rb-sub' : ''} ${open === id ? 'open' : ''}`}>
@@ -182,7 +237,7 @@ export function ReasonBars({ o }: { o: Obstacles }) {
     </div>
   )
   return (
-    <div className="rbars">
+    <div className="rbars" ref={ref}>
       {o.reasons.map((r) => (
         <div key={r.reason} className="rb-group">
           {row(r.reason, SHORT_REASON[r.reason] ?? reasonLabel(r.reason), r.count, r.goals)}
@@ -200,9 +255,11 @@ export function ReasonBars({ o }: { o: Obstacles }) {
 /** Rows of commitments, columns of weekdays, shaded by how often it was missed. Tap a square. */
 export function WeekdayGrid({ rows }: { rows: WeekdayPattern[] }) {
   const [sel, setSel] = useState<{ r: number; d: number } | null>(null)
+  const ref = useRef<HTMLDivElement>(null)
+  useTapOutside(ref, sel != null, () => setSel(null))
   const cur = sel && rows[sel.r]?.days[sel.d]
   return (
-    <div>
+    <div ref={ref}>
       <Readout hint="Tap a square to see the numbers">
         {sel && cur && (
           <>
@@ -245,6 +302,8 @@ export function WeekdayGrid({ rows }: { rows: WeekdayPattern[] }) {
 /** How logged values fall around the target: kept to one side, missed to the other. Tap a column. */
 export function Distribution({ n, format, noun }: { n: NearMiss; format: (v: number) => string; noun: string }) {
   const [sel, setSel] = useState<number | null>(null)
+  const ref = useRef<HTMLDivElement>(null)
+  useTapOutside(ref, sel != null, () => setSel(null))
   const bins = n.bins
   const max = Math.max(1, ...bins.map((b) => b.count))
   let divider = bins.findIndex((b) => Math.abs(b.from - n.target) < 1e-9)
@@ -252,7 +311,7 @@ export function Distribution({ n, format, noun }: { n: NearMiss; format: (v: num
   const b = sel != null ? bins[sel] : null
   const label = (at: number) => `${(100 * at) / bins.length}%`
   return (
-    <div className="dist">
+    <div className="dist" ref={ref}>
       <Readout hint="Tap a column to see the numbers">
         {b && (
           <>
@@ -288,17 +347,19 @@ export function Distribution({ n, format, noun }: { n: NearMiss; format: (v: num
 
 // ——— big picture ———
 
-/** The reference categorical order; past eight values, the rest share a grey. */
-export const valueSlot = (i: number) => (i < 8 ? `vc-${i}` : 'vc-other')
+/** Six value colours in a fixed order; past six, the rest share a grey. */
+export const valueSlot = (i: number) => (i < 6 ? `vc-${i}` : 'vc-other')
 
 /** Weeks on track per month, stacked by value. Tap a month. */
 export function ValueMonths({ b }: { b: ValueBalance }) {
   const [sel, setSel] = useState<number | null>(null)
+  const ref = useRef<HTMLDivElement>(null)
+  useTapOutside(ref, sel != null, () => setSel(null))
   const sums = b.months.map((m) => m.counts.reduce((a, c) => a + c, 0))
   const max = Math.max(1, ...sums)
   const m = sel != null ? b.months[sel] : null
   return (
-    <div className="vm">
+    <div className="vm" ref={ref}>
       <Readout hint="Tap a month to see it by value">
         {m && (
           <>
@@ -334,58 +395,60 @@ export function ValueMonths({ b }: { b: ValueBalance }) {
 const END_TEXT: Record<string, string> = { completed: 'Completed', abandoned: 'Abandoned', backlog: 'Paused' }
 const END_MARK: Record<string, string> = { completed: '✓', abandoned: '✕', backlog: '‖' }
 
-/** Every goal that ran in the last year: running ones first, then how the others ended. */
+/** Every goal that ran in the last year, by start. The mark at the end says how it ended; tap a row for its dates. */
 export function TimelineChart({ t }: { t: Timeline }) {
+  const [sel, setSel] = useState<string | null>(null)
+  const ref = useRef<HTMLDivElement>(null)
+  useTapOutside(ref, sel != null, () => setSel(null))
   const total = Math.max(1, diffDays(t.from, t.to) + 1)
   const at = (d: DateStr) => (100 * Math.max(0, diffDays(t.from, d))) / total
-  const running = t.rows.filter((r) => !r.life.ended)
-  const ended = t.rows.filter((r) => r.life.ended).sort((a, b) => b.life.ended!.date.localeCompare(a.life.ended!.date))
   const every = t.months.length > 7 ? 2 : 1
 
-  const row = ({ life, ticks }: Timeline['rows'][number]) => {
-    const last = life.segments.at(-1)!
-    const end = life.ended
-    const status = end
-      ? `${END_TEXT[end.state] ?? end.state} ${dayMonth(end.date)}`
-      : last.state === 'maintenance' ? `Habit since ${dayMonth(last.start)}` : `Since ${dayMonth(life.segments[0].start)}`
-    const tone = end ? `tl-${end.state}` : last.state === 'maintenance' ? 'tl-habit' : ''
-    return (
-      <button key={life.goal.id} className="tl-row" onClick={() => navigate(`/insights/goals/${life.goal.id}`)}>
-        <span className="tl-label">
-          <span className="tl-title">{life.goal.title}</span>
-          <span className={`tl-status ${tone}`}>{status}</span>
-        </span>
-        <span className={`tl-track ${end ? 'tl-past' : ''}`}>
-          {life.segments.filter((s) => s.end >= t.from).map((s, i) => {
-            const from = s.start < t.from ? t.from : s.start
-            return <i key={i} className={`tl-seg tl-${s.state}`} style={{ left: `${at(from)}%`, width: `${Math.max(0.8, at(s.end) - at(from))}%` }} />
-          })}
-          {ticks.map((d, i) => <i key={`t${i}`} className="tl-tick" style={{ left: `${at(d)}%` }} />)}
-          {end && <b className={`tl-end tl-${end.state}`} style={{ left: `${at(last.end)}%` }}>{END_MARK[end.state]}</b>}
-        </span>
-      </button>
-    )
-  }
-
   return (
-    <div className="tl">
-      <div className="legend tl-legend">
-        <span><i className="key-box tl-active" />active</span>
-        <span><i className="key-box tl-maintenance" />habit (maintenance)</span>
-        <span><b className="tl-end tl-completed inline">✓</b>completed</span>
-        <span><b className="tl-end tl-abandoned inline">✕</b>abandoned</span>
-        <span><i className="tl-tick inline" />plan change</span>
-      </div>
+    <div className="tl" ref={ref}>
       <div className="tl-body">
         <div className="tl-grid" aria-hidden="true">
           {t.months.map((m, i) => (
             <span key={m} style={{ left: `${at(m)}%` }}>{i % every === 0 ? shortMonth(m) : ''}</span>
           ))}
         </div>
-        {running.length > 0 && <div className="tl-group">Running</div>}
-        {running.map(row)}
-        {ended.length > 0 && <div className="tl-group">Ended</div>}
-        {ended.map(row)}
+        {t.rows.map(({ life, ticks }) => {
+          const last = life.segments.at(-1)!
+          const end = life.ended
+          const on = sel === life.goal.id
+          const status = end
+            ? `${END_TEXT[end.state] ?? end.state} ${dayMonth(end.date)}`
+            : last.state === 'maintenance' ? `habit since ${dayMonth(last.start)}` : 'still running'
+          const tone = end ? `tl-${end.state}` : last.state === 'maintenance' ? 'tl-habit' : ''
+          return (
+            <div key={life.goal.id} className={`tl-row ${on ? 'on' : ''}`}>
+              <button className="tl-hit" aria-expanded={on} onClick={() => setSel(on ? null : life.goal.id)}>
+                <span className="tl-title">{life.goal.title}</span>
+                <span className={`tl-track ${end ? 'tl-past' : ''}`}>
+                  {life.segments.filter((s) => s.end >= t.from).map((s, i) => {
+                    const from = s.start < t.from ? t.from : s.start
+                    return <i key={i} className={`tl-seg tl-${s.state}`} style={{ left: `${at(from)}%`, width: `${Math.max(0.8, at(s.end) - at(from))}%` }} />
+                  })}
+                  {ticks.map((d, i) => <i key={`t${i}`} className="tl-tick" style={{ left: `${at(d)}%` }} />)}
+                  {end && <b className={`tl-end tl-${end.state}`} style={{ left: `${at(last.end)}%` }}>{END_MARK[end.state]}</b>}
+                </span>
+              </button>
+              {on && (
+                <div className="tl-detail">
+                  <span>Started {dayMonth(life.segments[0].start)} · <span className={`tl-status ${tone}`}>{status}</span></span>
+                  <button className="link-btn" onClick={() => navigate(`/insights/goals/${life.goal.id}`)}>Open</button>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      <div className="legend">
+        <span><i className="key-box tl-active" />active</span>
+        <span><i className="key-box tl-maintenance" />habit (maintenance)</span>
+        <span><b className="tl-end tl-completed inline">✓</b>completed</span>
+        <span><b className="tl-end tl-abandoned inline">✕</b>abandoned</span>
+        <span><i className="tl-tick inline" />plan change</span>
       </div>
     </div>
   )
