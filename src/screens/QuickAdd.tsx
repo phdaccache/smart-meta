@@ -14,7 +14,21 @@ const setOpen = (v: boolean) => {
   open = v
   listeners.forEach((l) => l())
 }
-export const openQuickAdd = () => setOpen(true)
+/**
+ * iOS opens the keyboard only for a focus made during the tap itself, and the sheet's field
+ * doesn't exist yet then. So a stand-in field takes focus now, and hands it (and the keyboard)
+ * to the real one as soon as it mounts.
+ */
+export const openQuickAdd = () => {
+  const standIn = document.createElement('input')
+  standIn.setAttribute('aria-hidden', 'true')
+  standIn.tabIndex = -1
+  standIn.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px;'
+  document.body.appendChild(standIn)
+  standIn.focus({ preventScroll: true })
+  setOpen(true)
+  setTimeout(() => standIn.remove(), 1000)
+}
 
 export function QuickAdd() {
   const isOpen = useSyncExternalStore((l) => {

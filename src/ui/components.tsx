@@ -67,8 +67,10 @@ export function Sheet(props: { open: boolean; onClose: () => void; title: string
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && props.onClose()
     document.addEventListener('keydown', onKey)
     document.body.classList.add('sheet-open')
-    const first = ref.current?.querySelector<HTMLElement>('[autofocus], input, textarea, select, button')
-    first?.focus({ preventScroll: true })
+    // A field that focused itself on mount (autoFocus) keeps it; otherwise the first control gets it.
+    if (!ref.current?.contains(document.activeElement)) {
+      ref.current?.querySelector<HTMLElement>('[autofocus], input, textarea, select, button')?.focus({ preventScroll: true })
+    }
     return () => {
       document.removeEventListener('keydown', onKey)
       document.body.classList.remove('sheet-open')

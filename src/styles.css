@@ -925,3 +925,5 @@ button.gs-row .gs-title { color: var(--accent); }
 .gs-title { font-size: 15px; font-weight: 550; }
 li.done .gs-title { color: var(--ink-3); }
 .gs-sub { font-size: 13px; color: var(--ink-2); }
+
+.type-confirm { display: grid; gap: 14px; }
