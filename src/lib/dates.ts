@@ -1,3 +1,4 @@
+import { getLang, t, tlist, tn } from '../i18n'
 import type { DateStr, Period } from './types'
 
 const pad = (n: number) => String(n).padStart(2, '0')
@@ -117,45 +118,62 @@ export function nowMinutes(now: Date): number {
 
 // ——— display ———
 
-const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-]
+const WEEKDAYS = ['dates.monday', 'dates.tuesday', 'dates.wednesday', 'dates.thursday', 'dates.friday', 'dates.saturday', 'dates.sunday'] as const
 
-export const weekdayName = (s: DateStr) => WEEKDAYS[isoWeekday(s) - 1]
-export const weekdayShort = (iso: number) => WEEKDAYS[iso - 1].slice(0, 3)
-export const monthName = (s: DateStr) => MONTHS[Number(s.slice(5, 7)) - 1]
+export const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
+/** "Monday" / "Segunda". */
+export const weekdayName = (s: DateStr) => t(WEEKDAYS[isoWeekday(s) - 1])
+/** A weekday inside a sentence: Portuguese writes it in lower case. */
+export const weekdayInSentence = (s: DateStr) => (getLang() === 'en' ? weekdayName(s) : weekdayName(s).toLowerCase())
+/** "Mon" / "seg", from an ISO weekday. */
+export const weekdayShort = (iso: number) => tlist('dates.weekdaysShort')[iso - 1]
+export const weekdayAbbr = (s: DateStr) => weekdayShort(isoWeekday(s))
+/** "October" / "outubro". */
+export const monthName = (s: DateStr) => tlist('dates.months')[Number(s.slice(5, 7)) - 1]
+export const monthShort = (s: DateStr) => tlist('dates.monthsShort')[Number(s.slice(5, 7)) - 1]
+
+/** "3 October" / "3 de outubro". */
 export function dayMonth(s: DateStr): string {
-  return `${Number(s.slice(8, 10))} ${monthName(s)}`
+  return t('dates.dayMonth', { day: String(Number(s.slice(8, 10))), month: monthName(s) })
+}
+
+/** "3 Oct" / "3 out". */
+export function dayMonthShort(s: DateStr): string {
+  return t('dates.dayMonthShort', { day: String(Number(s.slice(8, 10))), mon: monthShort(s) })
 }
 
 /** "today", "tomorrow", "Fri", or "3 Oct", relative to `today`. */
 export function relativeDay(s: DateStr, today: DateStr): string {
   const d = diffDays(today, s)
-  if (d === 0) return 'today'
-  if (d === 1) return 'tomorrow'
-  if (d === -1) return 'yesterday'
-  if (Math.abs(d) < 7) return weekdayName(s).slice(0, 3)
-  return `${Number(s.slice(8, 10))} ${monthName(s).slice(0, 3)}`
+  if (d === 0) return t('dates.today')
+  if (d === 1) return t('dates.tomorrow')
+  if (d === -1) return t('dates.yesterday')
+  if (Math.abs(d) < 7) return weekdayAbbr(s)
+  return dayMonthShort(s)
+}
+
+/** "5 days", "3 weeks", "11 months". */
+export function spanText(days: number): string {
+  const n = Math.abs(days)
+  if (n < 14) return tn('dates.day', n)
+  if (n < 60) return tn('dates.week', Math.round(n / 7))
+  return tn('dates.month', Math.round(n / 30.4))
 }
 
 /** "in 5 days", "in 3 weeks", "in 11 months", "today", or "5 days ago". */
 export function untilText(date: DateStr, today: DateStr): string {
   const d = diffDays(today, date)
-  if (d === 0) return 'today'
-  const n = Math.abs(d)
-  const unit = n < 14 ? [n, 'day'] as const : n < 60 ? [Math.round(n / 7), 'week'] as const : [Math.round(n / 30.4), 'month'] as const
-  const text = `${unit[0]} ${unit[1]}${unit[0] === 1 ? '' : 's'}`
-  return d > 0 ? `in ${text}` : `${text} ago`
+  if (d === 0) return t('dates.today')
+  const time = spanText(d)
+  return d > 0 ? t('dates.inTime', { time }) : t('dates.agoTime', { time })
 }
 
 /** "Mon, Wed" or "every day" / "weekdays". */
 export function weekdaysLabel(days: number[]): string {
   const sorted = [...days].sort()
-  if (sorted.length === 7) return 'every day'
-  if (sorted.join() === '1,2,3,4,5') return 'weekdays'
-  if (sorted.join() === '6,7') return 'weekends'
+  if (sorted.length === 7) return t('dates.everyDay')
+  if (sorted.join() === '1,2,3,4,5') return t('dates.weekdays')
+  if (sorted.join() === '6,7') return t('dates.weekends')
   return sorted.map(weekdayShort).join(', ')
 }

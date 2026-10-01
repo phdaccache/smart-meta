@@ -1,3 +1,6 @@
+import { t } from '../i18n'
+import { en } from '../i18n/en'
+import { ptBR } from '../i18n/pt-BR'
 import { isDateStr, parseTime } from './dates'
 import type { CheckinType, Comparator, DateStr, GoalKind, Period, Shape } from './types'
 
@@ -10,13 +13,22 @@ import type { CheckinType, Comparator, DateStr, GoalKind, Period, Shape } from '
 const MEASURABLE =
   /\b(\d+([.,]\d+)?|one|two|three|four|five|six|seven|eight|nine|ten|once|twice|at least|at most|no more than|or more|or less|or fewer|less than|more than|fewer than|under|over|before|after|by|within|until|every|each|never|always|only|zero|without|any)\b|[≥≤<>%]|\d/i
 
+/**
+ * The same check with each language's words (check.words), so a sentence
+ * passes whatever language it was written in or the app is set to.
+ */
+const NUMBER_WORDS_PT = 'um, uma, dois, duas, três, quatro, cinco, seis, sete, oito, nove, dez, zero, nenhum, nenhuma, qualquer'
+const words = (list: string) => list.split(',').map((w) => w.trim()).filter(Boolean)
+const MEASURABLE_ANY = new RegExp(
+  `(?<!\\p{L})(${[...words(en['check.words']), ...words(ptBR['check.words']), ...words(NUMBER_WORDS_PT)].join('|')})(?!\\p{L})`,
+  'iu',
+)
+
 export function measurementProblem(text: string): string | null {
-  const t = text.trim()
-  if (!t) return 'Required.'
-  if (t.split(/\s+/).length < 3) return 'Too short to judge. Write it as the sentence you’ll answer yes or no to.'
-  if (!MEASURABLE.test(t)) {
-    return 'Not checkable yet. Add how much, how long, when, or how often — so a check-in needs no judgment call.'
-  }
+  const s = text.trim()
+  if (!s) return t('err.required')
+  if (s.split(/\s+/).length < 3) return t('err.tooShort')
+  if (!MEASURABLE.test(s) && !MEASURABLE_ANY.test(s)) return t('err.notCheckable')
   return null
 }
 
@@ -25,9 +37,9 @@ export function measurementProblem(text: string): string | null {
  * no quantity; it only has to be a real sentence.
  */
 export function doneWhenProblem(text: string): string | null {
-  const t = text.trim()
-  if (!t) return 'Required.'
-  if (t.split(/\s+/).length < 3) return 'Write it as a sentence you can answer yes or no.'
+  const s = text.trim()
+  if (!s) return t('err.required')
+  if (s.split(/\s+/).length < 3) return t('err.yesNoSentence')
   return null
 }
 
@@ -96,26 +108,26 @@ export function validateCommitment(d: CommitmentDraft): Errors<CommitmentDraft> 
   const e: Errors<CommitmentDraft> = {}
   const m = measurementProblem(d.measurementDefinition)
   if (m) e.measurementDefinition = m
-  if (!d.label.trim()) e.label = 'Give it a short name, like “gym” or “sleep”.'
-  if (!CHECKIN_TYPES[d.shape].includes(d.checkinType)) e.checkinType = 'Pick how you’ll check in.'
+  if (!d.label.trim()) e.label = t('err.shortName')
+  if (!CHECKIN_TYPES[d.shape].includes(d.checkinType)) e.checkinType = t('err.checkInType')
   if (d.shape === 'rhythm' && !(Number.isInteger(d.times) && d.times >= 1 && d.times <= 31)) {
-    e.times = 'How many times per period? (1–31)'
+    e.times = t('err.timesRange')
   }
   if (d.shape === 'threshold' && d.checkinType === 'quantity') {
     const n = Number(d.targetValue.replace(',', '.'))
-    if (!d.targetValue.trim() || !Number.isFinite(n) || n < 0) e.targetValue = 'Enter the limit as a number.'
+    if (!d.targetValue.trim() || !Number.isFinite(n) || n < 0) e.targetValue = t('err.limitNumber')
   }
   if (d.shape === 'threshold' && d.checkinType === 'timestamp' && parseTime(d.targetTime) == null) {
-    e.targetTime = 'Enter a time like 23:30.'
+    e.targetTime = t('err.timeLike', { example: '23:30' })
   }
   return e
 }
 
 export function validatePrep(p: PrepDraft): Errors<PrepDraft> {
   const e: Errors<PrepDraft> = {}
-  if (!p.title.trim()) e.title = 'What will you do?'
-  if (p.fireWeekdays.length === 0) e.fireWeekdays = 'Pick at least one day.'
-  if (parseTime(p.fireTime) == null) e.fireTime = 'Enter a time like 21:00.'
+  if (!p.title.trim()) e.title = t('err.prepWhat')
+  if (p.fireWeekdays.length === 0) e.fireWeekdays = t('err.oneDay')
+  if (parseTime(p.fireTime) == null) e.fireTime = t('err.timeLike', { example: '21:00' })
   return e
 }
 
@@ -126,20 +138,20 @@ export function validateGoal(d: GoalDraft): Errors<GoalDraft> {
   if (outcome) {
     const m = doneWhenProblem(d.doneWhen)
     if (m) e.doneWhen = m
-    if (!(d.graceDays >= 0)) e.graceDays = 'Pick how much extra time is OK.'
+    if (!(d.graceDays >= 0)) e.graceDays = t('err.graceOk')
   }
   // Every goal gets a date: a deadline, or a day to look back on a habit.
-  if (!d.targetDate) e.targetDate = outcome ? 'A finish line needs a deadline.' : 'Pick a day to look back.'
-  if (!d.title.trim()) e.title = 'Name what you want.'
-  if (!(d.tolerancePct >= 1 && d.tolerancePct <= 100)) e.tolerancePct = 'Between 1 and 100%.'
-  if (!d.whyValueId) e.whyValueId = 'Pick the value this serves.'
-  if (!d.whyText.trim()) e.whyText = 'Say how this goal serves it. This is what you’ll see every day.'
-  if (!isDateStr(d.startDate)) e.startDate = 'Pick a start date.'
+  if (!d.targetDate) e.targetDate = outcome ? t('err.needsDeadline') : t('err.lookBack')
+  if (!d.title.trim()) e.title = t('err.nameWhat')
+  if (!(d.tolerancePct >= 1 && d.tolerancePct <= 100)) e.tolerancePct = t('err.pctRange')
+  if (!d.whyValueId) e.whyValueId = t('err.pickValue')
+  if (!d.whyText.trim()) e.whyText = t('err.sayHow')
+  if (!isDateStr(d.startDate)) e.startDate = t('err.startDate')
   if (d.targetDate && (!isDateStr(d.targetDate) || d.targetDate <= d.startDate)) {
-    e.targetDate = 'Must be after the start date.'
+    e.targetDate = t('err.afterStart')
   }
-  if (d.preps.length > MAX_PREPS) e.preps = `At most ${MAX_PREPS}. Needing more means the commitment is too big.`
-  else if (d.preps.some((p) => Object.keys(validatePrep(p)).length)) e.preps = 'Finish or remove the prep.'
+  if (d.preps.length > MAX_PREPS) e.preps = t('err.maxPreps', { n: MAX_PREPS })
+  else if (d.preps.some((p) => Object.keys(validatePrep(p)).length)) e.preps = t('err.finishPrep')
   return e
 }
 

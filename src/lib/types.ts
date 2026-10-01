@@ -122,11 +122,25 @@ export interface Entry extends Base {
 
 export interface Revision extends Base {
   goalId: ID
+  /**
+   * Goal edits: the goal's field name ("tolerancePct", "state"). Commitment
+   * edits: "<label> <part>" in English ("gym how often"), still written so
+   * older versions of the app can read it.
+   */
   field: string
+  /** Readable values; commitment edits store them in English. */
   oldValue: string
   newValue: string
   timestamp: string
+  /** Commitment edits: which commitment and which part, so nothing depends on wording. */
+  commitmentId?: ID | null
+  part?: CommitmentPart | null
+  /** Commitment edits: the stored values (a cadence, a number, a code), shown in the current language. */
+  oldRaw?: unknown
+  newRaw?: unknown
 }
+
+export type CommitmentPart = 'label' | 'measurementDefinition' | 'checkinType' | 'cadence' | 'targetValue' | 'comparator' | 'unit'
 
 export interface Occurrence extends Base {
   commitmentId: ID

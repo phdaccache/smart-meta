@@ -268,6 +268,10 @@ input::placeholder, textarea::placeholder { color: var(--ink-3); }
 .inline-fields input[type="date"] { min-width: 0; }
 .inline-fields .narrow { flex: 0 0 96px; }
 .inline-fields.top { align-items: flex-start; }
+/* A choice above its inputs, so longer words (Portuguese) never squeeze them. */
+.inline-fields.wrap { flex-wrap: wrap; }
+.inline-fields.wrap > .segmented { flex: 1 0 100%; }
+.inline-fields.wrap .narrow { flex: 1 1 0; }
 
 input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 
@@ -851,7 +855,13 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .quiet-link { color: var(--ink-3); font-size: 14px; font-weight: 500; min-height: 40px; }
 .intro .eyebrow { margin-bottom: 6px; }
 .intro .smart { margin: 24px 0 8px; }
-.intro .smart-word { text-align: center; }
+.intro .smart-word { text-align: center; justify-content: center; }
+.lang-flags { display: flex; gap: 4px; margin-left: -6px; }
+.lang-flags button {
+  padding: 6px; border-radius: 9px; line-height: 0; min-height: 0; opacity: 0.45; transition: opacity 0.15s, background 0.15s;
+}
+.lang-flags button.on { opacity: 1; background: var(--surface-2); }
+.lang-flags svg { display: block; border-radius: 3px; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.08); }
 .smart-line { color: var(--ink-2); font-size: 15px; line-height: 1.4; margin-bottom: 20px; text-align: center; }
 .intro-hint { color: var(--ink-2); font-size: 14px; line-height: 1.4; margin-top: 10px; }
 .intro-hint.top { margin: -6px 0 16px; }

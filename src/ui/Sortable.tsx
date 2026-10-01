@@ -1,4 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react'
+import { t } from '../i18n'
 
 /**
  * A vertical list reordered by dragging each row's grip. Pointer events cover
@@ -62,7 +63,7 @@ export function Sortable<T>(props: {
       {props.items.map((item, i) => {
         const dragging = state?.from === i
         const grip = (
-          <button type="button" className="grip" aria-label={`Reorder ${props.labelOf(item)}`}
+          <button type="button" className="grip" aria-label={t('common.reorder', { name: props.labelOf(item) })}
             onPointerDown={onDown(i)} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
             onKeyDown={(e) => {
               if (e.key === 'ArrowUp' && i > 0) { e.preventDefault(); move(i, i - 1) }

@@ -6,6 +6,8 @@ A short intro (every screen has **Skip**): what the app is for, a note from the 
 
 On an iPhone, add the app to the Home Screen *before* setting it up: Safari and the Home Screen app keep separate data.
 
+The app speaks English or Brazilian Portuguese and follows the phone's language. Switch with the flags at the top left of the intro's first screen, or in **Settings → Language**. Only the app's own words change; your goals, values and notes stay as you wrote them.
+
 ## The pieces
 
 | Piece | What it is | Example |

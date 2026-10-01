@@ -1,3 +1,5 @@
+import { t } from '../i18n'
+
 /**
  * Version of the stored record shapes. Every record that leaves the device
  * (sync, export) carries it; anything older is upgraded on the way back in.
@@ -16,7 +18,7 @@ const MIGRATIONS: Record<number, Step> = {
 
 export function migrateRecord<T>(collection: string, data: Record<string, unknown>, fromVersion: number): T {
   if (fromVersion > DATA_VERSION) {
-    throw new Error(`Data is from a newer version of the app (v${fromVersion}). Update the app first.`)
+    throw new Error(t('err.newerVersion', { n: fromVersion }))
   }
   let out = data
   for (let v = fromVersion + 1; v <= DATA_VERSION; v++) {

@@ -64,10 +64,26 @@ npm run build     # typecheck + production build with service worker
 | `src/db/` | Dexie schema, every write (`repo.ts`), settings, export/import. |
 | `src/sync/` | `SyncTarget` interface, Supabase implementation, sync engine and scheduler. |
 | `src/screens/`, `src/ui/` | React screens and shared components. |
+| `src/i18n/` | Every text the app shows, in English (`en.ts`) and Brazilian Portuguese (`pt-BR.ts`). |
 | `supabase/migrations/` | Postgres schema. |
 
 Entries are append-only: an undo is a `void` entry and a correction supersedes
 the old one, so history is never rewritten. Only commitment entries are scored.
+
+## Editing text
+
+All wording lives in `src/i18n/en.ts` and `src/i18n/pt-BR.ts`, one line per
+key, grouped by screen. Change the text there; the key stays the same.
+
+- `{name}` is a blank the app fills in. Keep the same blanks in both files
+  (a test checks).
+- Keys ending in `.one` / `.other` are the singular and plural of one text.
+- A new key goes in both files; TypeScript fails the build if one is missing.
+- Code calls `t('today.left', { n })`; nothing user-facing is typed straight
+  into a screen (a test checks that too).
+
+The language follows the phone unless picked in Settings or with the flags on
+the first intro screen. It is kept on the device only.
 
 ## Sync (optional)
 

@@ -1,5 +1,5 @@
 import { addDays, formatTime, parseTime } from '../lib/dates'
-import { cadenceText } from '../lib/describe'
+import { commitmentRevision } from '../lib/revisions'
 import type { CommitmentDraft, GoalDraft, PrepDraft } from '../lib/draft'
 import { meetsTarget, type MissPrompt } from '../lib/scoring'
 import type {
@@ -183,19 +183,13 @@ export async function updateCommitment(c: Commitment, d: CommitmentDraft) {
   const next = { ...c, ...commitmentFields(d) }
   const t = now()
   const fields = ['label', 'measurementDefinition', 'checkinType', 'cadence', 'targetValue', 'comparator', 'unit'] as const
-  const names: Record<(typeof fields)[number], string> = {
-    label: 'name', measurementDefinition: 'what counts', checkinType: 'check-in', cadence: 'how often',
-    targetValue: 'target', comparator: 'direction', unit: 'unit',
-  }
-  // Readable in history: "4× per week", not {"period":"week","times":4}.
-  const text = (x: Commitment, f: (typeof fields)[number]) => (f === 'cadence' ? cadenceText(x) : show(x[f]))
+  // Compared as stored, so the language the app is in never makes a change.
+  // Keys sorted: a cadence that went through sync may come back in another key order.
+  const same = (v: unknown) => JSON.stringify(v ?? null, v && typeof v === 'object' ? Object.keys(v).sort() : undefined)
+  const changed = (f: (typeof fields)[number]) => same(c[f]) !== same(next[f])
   const revisions = fields
-    .filter((f) => text(c, f) !== text(next, f))
-    .map((f) =>
-      make<'revisions'>({
-        goalId: c.goalId, field: `${c.label} ${names[f]}`, timestamp: t, oldValue: text(c, f), newValue: text(next, f),
-      }),
-    )
+    .filter(changed)
+    .map((f) => make<'revisions'>({ goalId: c.goalId, timestamp: t, ...commitmentRevision(c, next, f) }))
   if (!revisions.length) return
   await putAll([{ c: 'commitments', r: next }, ...revisions.map((r) => ({ c: 'revisions' as const, r }))])
 }

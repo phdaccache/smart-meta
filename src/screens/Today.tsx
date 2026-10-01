@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react'
 import { exportData, shareOrDownload } from '../db/backup'
 import { addDisplacement, check, explainMiss, logValue, snoozePrompt, uncheck } from '../db/repo'
 import { setSettings } from '../db/settings'
-import { addDays, dayMonth, diffDays, formatTime, isDateStr, parseTime, weekdayName } from '../lib/dates'
-import { formatValue, promptQuestion, REASONS } from '../lib/describe'
+import { num, t, tn } from '../i18n'
+import { addDays, dayMonth, diffDays, formatTime, isDateStr, parseTime, weekdayInSentence, weekdayName } from '../lib/dates'
+import { formatValue, promptQuestion, reasons } from '../lib/describe'
 import type { MissPrompt, ScoreContext } from '../lib/scoring'
 import { buildDay, type Snapshot, type TodayGroup, type TodayItem } from '../lib/today'
 import type { Commitment, DateStr, ID, MissReason, Task } from '../lib/types'
@@ -80,26 +81,26 @@ export function TodayScreen({ date }: { date?: DateStr }) {
 
   let count = ''
   if (view.total > 0) {
-    if (view.open === 0) count = 'all done'
-    else if (view.open === view.total) count = `${view.total} ${view.total === 1 ? 'thing' : 'things'}`
-    else count = `${view.open} left`
+    if (view.open === 0) count = t('today.allDone')
+    else if (view.open === view.total) count = tn('today.things', view.total)
+    else count = t('today.left', { n: view.open })
   }
 
   const onOpen = (item: TodayItem) => {
     if (item.kind === 'log') return setLogFor(snap.commitments.find((c) => c.id === item.subjectId) ?? null)
     if (item.target.kind === 'goal') navigate(`/goals/${item.target.id}`)
     else if (item.target.kind === 'project') navigate(`/projects/${item.target.id}`)
-    else setOpenTask(snap.tasks.find((t) => t.id === item.target.id) ?? null)
+    else setOpenTask(snap.tasks.find((x) => x.id === item.target.id) ?? null)
   }
 
   return (
     <Screen
-      eyebrow={isPast ? `${dayMonth(viewDate)} · past day` : [dayMonth(viewDate), count].filter(Boolean).join(' · ')}
-      title={isPast && diffDays(viewDate, today) === 1 ? 'Yesterday' : weekdayName(viewDate)}
+      eyebrow={isPast ? t('today.pastDay', { date: dayMonth(viewDate) }) : [dayMonth(viewDate), count].filter(Boolean).join(' · ')}
+      title={isPast && diffDays(viewDate, today) === 1 ? t('dates.Yesterday') : weekdayName(viewDate)}
       settings
       actions={<>
-        {isPast && <button className="btn" onClick={() => navigate('/')}>Today</button>}
-        <DatePickerButton className="icon-btn" value={viewDate} max={today} label="Go to a past day"
+        {isPast && <button className="btn" onClick={() => navigate('/')}>{t('dates.Today')}</button>}
+        <DatePickerButton className="icon-btn" value={viewDate} max={today} label={t('today.goToPastDay')}
           onPick={(d) => isDateStr(d) && d <= today && navigate(d === today ? '/' : `/day/${d}`)}>
           <IconCalendar />
         </DatePickerButton>
@@ -111,15 +112,15 @@ export function TodayScreen({ date }: { date?: DateStr }) {
       ) : (
         <>
           <div className="today-filter">
-            <Segmented label="Show" value={filter} onChange={setFilter} options={[
-              { value: 'all', label: 'All' }, { value: 'goals', label: 'Goals' },
-              { value: 'projects', label: 'Projects' }, { value: 'tasks', label: 'Tasks' },
+            <Segmented label={t('common.show')} value={filter} onChange={setFilter} options={[
+              { value: 'all', label: t('common.all') }, { value: 'goals', label: t('today.filterGoals') },
+              { value: 'projects', label: t('today.filterProjects') }, { value: 'tasks', label: t('today.filterTasks') },
             ]} />
           </div>
           {applyFilter(view.groups, filter).map((g) => (
             <Group key={g.key} group={g} snap={snap} date={viewDate} today={today} onOpen={onOpen} />
           ))}
-          {applyFilter(view.groups, filter).length === 0 && <p className="muted" style={{ padding: '24px 4px' }}>Nothing here today.</p>}
+          {applyFilter(view.groups, filter).length === 0 && <p className="muted" style={{ padding: '24px 4px' }}>{t('today.nothingHere')}</p>}
         </>
       )}
 
@@ -149,8 +150,8 @@ function Group(props: {
       <div className={`card group collapsed tint-${group.kind}`}>
         <button className="group-head" onClick={() => setExpanded(true)} aria-expanded={false}>
           <span className="done-mark"><IconCheck width={15} height={15} /></span>
-          <span className="title">{group.kind === 'errands' ? 'Errands' : group.title}</span>
-          <span className="count">{group.items.filter((i) => i.kind !== 'log').length} done</span>
+          <span className="title">{group.kind === 'errands' ? t('today.errands') : group.title}</span>
+          <span className="count">{t('today.nDone', { n: group.items.filter((i) => i.kind !== 'log').length })}</span>
         </button>
       </div>
     )
@@ -161,7 +162,7 @@ function Group(props: {
     <>
       <div className="text">
         {group.kind === 'errands' ? (
-          <div className="group-why">Errands</div>
+          <div className="group-why">{t('today.errands')}</div>
         ) : (
           <>
             {group.eyebrow && <div className="group-eyebrow">{group.eyebrow}</div>}
@@ -211,7 +212,7 @@ function LogRow({ item, onOpen }: { item: TodayItem; onOpen: () => void }) {
           <div className="item-title">{item.title}</div>
           {item.detail && <div className="item-detail">{item.detail}</div>}
         </button>
-        <div className="item-side"><Badge kind="goal">Log</Badge></div>
+        <div className="item-side"><Badge kind="goal">{t('common.log')}</Badge></div>
       </div>
     </li>
   )
@@ -230,8 +231,8 @@ function ItemRow({ item, date, onOpen }: { item: TodayItem; date: DateStr; onOpe
   }
 
   let badge: React.ReactNode
-  if (item.kind === 'commitment') badge = <Badge kind="goal">Goal</Badge>
-  else if (item.kind === 'prep') badge = <Badge kind="prep">Prep</Badge>
+  if (item.kind === 'commitment') badge = <Badge kind="goal">{t('common.goal')}</Badge>
+  else if (item.kind === 'prep') badge = <Badge kind="prep">{t('common.prep')}</Badge>
   else if (item.kind === 'step') {
     badge = (
       <Badge kind="step">
@@ -239,14 +240,14 @@ function ItemRow({ item, date, onOpen }: { item: TodayItem; date: DateStr; onOpe
       </Badge>
     )
   }
-  else badge = <Badge kind="task">Task</Badge>
+  else badge = <Badge kind="task">{t('common.task')}</Badge>
 
   const miss = item.valueState === 'miss'
   return (
     <li>
       <div className={`item kind-${item.kind} ${item.done ? 'done' : ''}`}>
         <CheckButton shape={shape} checked={item.done} tone={miss ? 'miss' : satisfiedElsewhere ? 'muted' : undefined}
-          label={valued ? `Log ${item.title}` : item.title} onClick={toggle} />
+          label={valued ? t('today.logItem', { name: item.title }) : item.title} onClick={toggle} />
         <button className="item-main" onClick={onOpen}>
           <div className="item-title">{item.title}</div>
           {item.detail && <div className="item-detail">{item.detail}</div>}
@@ -279,7 +280,7 @@ function ValueEditor({ item, date, onDone }: { item: TodayItem; date: DateStr; o
   const daily = c.cadence.period === 'day'
   const [text, setText] = useState(() => {
     if (!daily || item.value == null) return ''
-    return time ? formatTime(item.value) : String(item.value)
+    return time ? formatTime(item.value) : num(item.value)
   })
   const parsed = time ? parseTime(text) : text.trim() === '' ? null : Number(text.replace(',', '.'))
   const ok = parsed != null && Number.isFinite(parsed) && parsed >= 0
@@ -294,12 +295,12 @@ function ValueEditor({ item, date, onDone }: { item: TodayItem; date: DateStr; o
         <input type="time" value={text} onChange={(e) => setText(e.target.value)} aria-label={c.label} autoFocus />
       ) : (
         <input type="text" inputMode="decimal" value={text} onChange={(e) => setText(e.target.value)}
-          placeholder={daily ? '0' : 'add'} aria-label={c.label} autoFocus />
+          placeholder={daily ? '0' : t('today.addPlaceholder')} aria-label={c.label} autoFocus />
       )}
       {!time && c.unit && <span className="unit">{c.unit}</span>}
       <span className="spacer" />
-      <button type="button" className="btn ghost" onClick={onDone}>Cancel</button>
-      <button type="submit" className="btn primary" disabled={!ok}>{daily ? 'Save' : 'Add'}</button>
+      <button type="button" className="btn ghost" onClick={onDone}>{t('common.cancel')}</button>
+      <button type="submit" className="btn primary" disabled={!ok}>{daily ? t('common.save') : t('common.add')}</button>
     </form>
   )
 }
@@ -331,14 +332,14 @@ export function MissPromptCard(props: {
     let dId = displacementId
     if (reason === 'chose_other' && !dId && newLabel.trim()) dId = (await addDisplacement(newLabel)).id
     await explainMiss(props.prompt, { reason, displacementId: reason === 'chose_other' ? dId : null, note })
-    toast('Logged.')
+    toast(t('common.logged'))
   }
 
   return (
     <div className="prompt" role="group" aria-label={props.question}>
       <div className="prompt-q">{props.question}</div>
       <div className="chips">
-        {REASONS.map((r) => (
+        {reasons().map((r) => (
           <Chip key={r.value} selected={reason === r.value} wide={r.value === 'chose_other'}
             onClick={() => setReason(reason === r.value ? null : r.value)}>
             {r.label}
@@ -348,7 +349,7 @@ export function MissPromptCard(props: {
 
       {reason === 'chose_other' && (
         <>
-          <div className="prompt-sub">What took its place?</div>
+          <div className="prompt-sub">{t('miss.tookItsPlace')}</div>
           {displacements.length > 0 && (
             <div className="chips">
               {displacements.map((d) => (
@@ -361,27 +362,27 @@ export function MissPromptCard(props: {
           )}
           <form className="add-inline" onSubmit={(e) => { e.preventDefault(); addNew() }}>
             <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)}
-              placeholder={displacements.length ? 'Add another' : 'e.g. what you did instead'} aria-label="What took its place" />
-            {newLabel.trim() && <button className="btn" type="submit">Add</button>}
+              placeholder={displacements.length ? t('miss.addAnother') : t('miss.insteadPlaceholder')} aria-label={t('miss.tookItsPlaceLabel')} />
+            {newLabel.trim() && <button className="btn" type="submit">{t('common.add')}</button>}
           </form>
         </>
       )}
 
       <div style={{ marginTop: 10 }}>
-        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (optional)" aria-label="Note" />
+        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder={t('miss.noteOptional')} aria-label={t('miss.note')} />
       </div>
 
       <div className="actions">
         <div className="row">
           {props.snooze !== false && (
-            <button className="link-btn" onClick={() => snoozePrompt(props.prompt.commitmentId, props.today)}>Not now</button>
+            <button className="link-btn" onClick={() => snoozePrompt(props.prompt.commitmentId, props.today)}>{t('miss.notNow')}</button>
           )}
-          {props.onSkip && <button className="link-btn" onClick={props.onSkip}>Skip</button>}
+          {props.onSkip && <button className="link-btn" onClick={props.onSkip}>{t('common.skip')}</button>}
           {props.canLog && (
-            <button className="link-btn" onClick={() => navigate(`/day/${props.prompt.slots[0].date}`)}>Log it instead</button>
+            <button className="link-btn" onClick={() => navigate(`/day/${props.prompt.slots[0].date}`)}>{t('miss.logInstead')}</button>
           )}
         </div>
-        <button className="btn primary" disabled={!reason} onClick={save}>Save</button>
+        <button className="btn primary" disabled={!reason} onClick={save}>{t('common.save')}</button>
       </div>
     </div>
   )
@@ -405,29 +406,33 @@ function EmptyDay({ snap, ctx, isPast }: { snap: Snapshot; ctx: ScoreContext; is
   if (isPast) {
     return (
       <div className="empty">
-        <h2>Nothing scheduled that day.</h2>
+        <h2>{t('today.nothingScheduled')}</h2>
       </div>
     )
   }
+  const nextText = next && t('today.nextUp', {
+    when: diffDays(ctx.today, next.date) === 1 ? t('dates.tomorrow') : weekdayInSentence(next.date),
+    item: next.item.title.toLowerCase() + (next.why ? `, ${lowerFirst(next.why)}` : ''),
+  })
   return (
     <div className="empty">
-      <h2>Nothing due today.</h2>
+      <h2>{t('today.nothingDue')}</h2>
       <p>
-        That’s allowed.
-        {next && <> Next up is {diffDays(ctx.today, next.date) === 1 ? 'tomorrow' : weekdayName(next.date)}: {next.item.title.toLowerCase()}{next.why ? <>, {lowerFirst(next.why)}</> : null}.</>}
+        {t('today.allowed')}
+        {nextText && ` ${nextText}.`}
       </p>
       {hasGoals ? (
         <button className="btn outline" onClick={openQuickAdd}>
-          Add something for today
+          {t('today.addSomething')}
         </button>
       ) : (
-        <button className="btn primary" onClick={() => navigate('/goals/new')}>Create a goal</button>
+        <button className="btn primary" onClick={() => navigate('/goals/new')}>{t('today.createGoal')}</button>
       )}
     </div>
   )
 }
 
-const lowerFirst = (s: string) => s.replace(/[.!]+$/, '').replace(/^\w/, (c) => c.toLowerCase())
+const lowerFirst = (s: string) => s.replace(/[.!]+$/, '').replace(/^\p{L}/u, (c) => c.toLowerCase())
 
 /** Quiet, from Monday until the week is reviewed. */
 function ReviewNotice({ snap, today }: { snap: Snapshot; today: DateStr }) {
@@ -435,8 +440,8 @@ function ReviewNotice({ snap, today }: { snap: Snapshot; today: DateStr }) {
   if (!weekReviews || !reviewPending(snap.goals, weekReviews, today)) return null
   return (
     <div className="banner" style={{ marginTop: 20 }}>
-      <div className="text">Last week is ready to review.</div>
-      <button className="btn" onClick={() => navigate('/review')}>Review</button>
+      <div className="text">{t('today.reviewReady')}</div>
+      <button className="btn" onClick={() => navigate('/review')}>{t('nav.review')}</button>
     </div>
   )
 }
@@ -453,10 +458,10 @@ function SyncNotice() {
   return (
     <div className="banner" style={{ marginTop: 20 }}>
       <div className="text">
-        Not synced {s.lastSyncedAt ? `since ${dayMonth(s.lastSyncedAt.slice(0, 10))}` : 'yet'}. Supabase may have paused the project.
-        {s.pending > 0 && ` ${s.pending} changes are waiting here, safe.`}
+        {t('today.notSynced', { since: s.lastSyncedAt ? t('today.since', { date: dayMonth(s.lastSyncedAt.slice(0, 10)) }) : t('today.yet') })}
+        {s.pending > 0 && ` ${tn('today.pendingSafe', s.pending)}`}
       </div>
-      {dashboardUrl && <a className="btn" href={dashboardUrl} target="_blank" rel="noreferrer">Restore</a>}
+      {dashboardUrl && <a className="btn" href={dashboardUrl} target="_blank" rel="noreferrer">{t('today.restore')}</a>}
     </div>
   )
 }
@@ -470,13 +475,13 @@ function ExportNudge({ lastExportAt, snap }: { lastExportAt: string | null; snap
     const result = await shareOrDownload(await exportData())
     if (result !== 'cancelled') {
       await setSettings({ lastExportAt: new Date().toISOString() })
-      toast('Exported. Keep it somewhere that isn’t this phone.')
+      toast(t('common.exportedKeep'))
     }
   }
   return (
     <div className="banner" style={{ marginTop: 20 }}>
-      <div className="text">{lastExportAt ? 'Last backup over a month ago.' : 'No backup yet.'}</div>
-      <button className="btn" onClick={run}>Export</button>
+      <div className="text">{lastExportAt ? t('today.backupOld') : t('today.noBackup')}</div>
+      <button className="btn" onClick={run}>{t('today.export')}</button>
     </div>
   )
 }

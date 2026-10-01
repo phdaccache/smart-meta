@@ -199,6 +199,28 @@ Settings → **Replay intro**.
 Open the link in Safari on a fresh phone.
 - **Expect:** "Put it on your Home Screen first" before anything else. Opened from the Home Screen icon, the intro starts at the welcome.
 
+## Portuguese
+
+**L1. Follows the phone**
+Erase all data, set the phone to Portuguese (Brazil), open the app.
+- **Expect:** the intro in Portuguese. The Brazil flag at the top left is highlighted; tap the USA flag and the same screen switches to English at once.
+
+**L2. Settings**
+Settings → **Language**: *Automatic*, *English*, *Português*.
+- **Expect:** every screen switches at once, on the same page, with nothing lost. *Automatic* goes back to the phone's language. Goal names, values and reasons stay as you wrote them.
+
+**L3. Dates and numbers**
+In Portuguese, look at Today and a sleep goal.
+- **Expect:** "1 de outubro", weekdays like *Quinta*, "7,5 h", "3× por semana".
+
+**L4. Switching back and forth keeps everything**
+Edit a habit's target in Portuguese (4× → 3× a week), then switch to English and open the goal's History and Insights.
+- **Expect:** the change reads "how often: 4× per week → 3× per week" in English and "frequência: 4× por semana → 3× por semana" in Portuguese; Review still counts it as a target change. Older changes made before this version read in both languages too.
+
+**L5. Checkable in either language**
+In Portuguese, write *What counts* as "Pelo menos 30 minutos de exercício"; in English, as "At least 30 minutes of exercise".
+- **Expect:** both accepted in either language. "Ir para a academia" is refused as not checkable.
+
 ## Sync
 
 **25. It uploads**

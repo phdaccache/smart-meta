@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from 'react'
-import { addDays, isDateStr, monthName, weekdayName } from '../lib/dates'
-import { formatValue, reasonLabel } from '../lib/describe'
+import { t } from '../i18n'
+import { addDays, isDateStr, monthShort, weekdayAbbr } from '../lib/dates'
+import { formatValue, reasonLower } from '../lib/describe'
+import { revisionField, revisionValue, stateLabel } from '../lib/revisions'
 import type { Snapshot } from '../lib/today'
 import type { Commitment, DateStr, Entry, Goal } from '../lib/types'
 import { DatePickerButton, Sheet } from '../ui/components'
@@ -50,7 +52,7 @@ export function GoalHistorySheet(props: { goal: Goal; snap: Snapshot; today: Dat
     const replaced = replacedBy.get(e.id)
     const value = e.value != null && s.c ? ` ${formatValue(s.c, e.value)}` : ''
     const displacement = displacements.find((d) => d.id === e.displacementId)?.label
-    const why = e.outcome === 'miss' && e.missReason ? displacement ?? reasonLabel(e.missReason).toLowerCase() : undefined
+    const why = e.outcome === 'miss' && e.missReason ? displacement ?? reasonLower(e.missReason) : undefined
     rows.push({
       key: e.id, date: e.date, at: e.recordedAt,
       kind: replaced ? 'undone' : e.outcome === 'hit' ? 'hit' : 'miss',
@@ -60,19 +62,22 @@ export function GoalHistorySheet(props: { goal: Goal; snap: Snapshot; today: Dat
       quiet: s.prep,
     })
   }
+  // Old and new revisions alike are shown in the current language.
+  const rctx = { goal, valueName: (id: string) => snap.values.find((v) => v.id === id)?.name }
   for (const r of revisions) {
     const added = r.field === 'commitment' && r.oldValue === '—'
     const removed = r.field === 'commitment' && r.newValue === 'removed'
     rows.push({
       key: r.id, date: r.timestamp.slice(0, 10), at: r.timestamp, kind: 'change',
-      text: added ? <>Added {r.newValue}</> : removed ? <>Removed {r.oldValue}</>
-        : <>{r.field}: <s>{r.oldValue}</s> → {r.newValue}</>,
+      text: added ? <>{t('history.added', { what: r.newValue })}</> : removed ? <>{t('history.removed', { what: r.oldValue })}</>
+        : <>{revisionField(r, rctx)}: <s>{revisionValue(r, 'old', rctx)}</s> → {revisionValue(r, 'new', rctx)}</>,
     })
   }
+  const outcomeWord = (o: string) => (o === 'renewed' ? t('goalReview.renew') : stateLabel(o as 'completed')).toLowerCase()
   for (const r of reviews) {
     rows.push({
       key: r.id, date: r.timestamp.slice(0, 10), at: r.timestamp, kind: 'review',
-      text: <>Review · {r.hit ? 'hit it' : 'didn’t hit it'} · {r.outcome}</>,
+      text: <>{t('history.review', { result: t(r.hit ? 'history.hitIt' : 'history.didntHitIt'), outcome: outcomeWord(r.outcome) })}</>,
       sub: r.journalNote || r.whatHappened || undefined,
     })
   }
@@ -87,25 +92,25 @@ export function GoalHistorySheet(props: { goal: Goal; snap: Snapshot; today: Dat
   }
 
   const dayLabel = (d: DateStr) => {
-    if (d === today) return 'Today'
-    if (d === addDays(today, -1)) return 'Yesterday'
-    return `${weekdayName(d).slice(0, 3)} ${Number(d.slice(8, 10))} ${monthName(d).slice(0, 3)}`
+    if (d === today) return t('dates.Today')
+    if (d === addDays(today, -1)) return t('dates.Yesterday')
+    return t('dates.historyDay', { wd: weekdayAbbr(d), day: String(Number(d.slice(8, 10))), mon: monthShort(d) })
   }
 
   return (
-    <Sheet open onClose={props.onClose} title="History">
-      <DatePickerButton className="btn outline block backfill-btn" value={today} max={today} label="Fill in a past day"
+    <Sheet open onClose={props.onClose} title={t('goal.history')}>
+      <DatePickerButton className="btn outline block backfill-btn" value={today} max={today} label={t('history.fillPastDay')}
         onPick={(d) => {
           // Opening an iOS date picker reports today's date before anything is picked: ignore it.
           if (!isDateStr(d) || d >= today) return
           props.onClose()
           navigate(`/day/${d}`)
         }}>
-        <IconCalendar width={18} height={18} /> Fill in a past day
+        <IconCalendar width={18} height={18} /> {t('history.fillPastDay')}
       </DatePickerButton>
 
       {days.length === 0 ? (
-        <p className="muted" style={{ marginTop: 20 }}>Nothing yet.</p>
+        <p className="muted" style={{ marginTop: 20 }}>{t('common.nothingYet')}</p>
       ) : (
         <div className="timeline">
           {days.map((d) => (
@@ -124,7 +129,7 @@ export function GoalHistorySheet(props: { goal: Goal; snap: Snapshot; today: Dat
               </ul>
             </section>
           ))}
-          {rows.length > limit && <button className="link-btn" onClick={() => setLimit(limit + 60)}>Show more</button>}
+          {rows.length > limit && <button className="link-btn" onClick={() => setLimit(limit + 60)}>{t('common.showMore')}</button>}
         </div>
       )}
     </Sheet>

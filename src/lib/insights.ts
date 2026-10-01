@@ -1,5 +1,8 @@
-import { addDays, dayMonth, diffDays, inSpan, isoWeekday, maxDate, minDate, minutesIntoDay, parseTime, periodOf, periodsBetween, type Span } from './dates'
+import { joinList, t, tn } from '../i18n'
+import { addDays, dayMonth, diffDays, inSpan, spanText, isoWeekday, maxDate, minDate, minutesIntoDay, parseTime, periodOf, periodsBetween, type Span } from './dates'
+import { reasonLower } from './describe'
 import { reviewWeek } from './review'
+import { commitmentEdit, revisionValue } from './revisions'
 import { activeEntries, evaluateThreshold, meetsTarget, pct, scoreCommitment, thresholdAggregate, type Score, type ScoreContext } from './scoring'
 import type { Snapshot } from './today'
 import type {
@@ -45,7 +48,6 @@ const isLive = (s: string) => s === 'active' || s === 'maintenance'
 /** First day of a range that ends with the last full week. */
 export const rangeStart = (p: Prepared, weeks: number) =>
   Number.isFinite(weeks) ? addDays(p.lastWeek.start, -7 * (weeks - 1)) : '0000-01-01'
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 
 export function prepare(input: InsightsInput): Prepared {
   const bySubject = new Map<ID, Entry[]>()
@@ -174,9 +176,7 @@ export interface GoalTrend {
   takeaway: string
 }
 
-const STATE_TEXT: Partial<Record<GoalState, string>> = {
-  maintenance: 'Moved to maintenance', active: 'Made active again', backlog: 'Paused',
-}
+const STATE_TEXT = { maintenance: 'ins.marker.maintenance', active: 'ins.marker.active', backlog: 'ins.marker.paused' } as const
 
 /** Changes to the plan worth marking on a trend: targets, preps, tolerance, maintenance. */
 function planChanges(p: Prepared, g: Goal): Omit<Marker, 'before' | 'after'>[] {
@@ -185,14 +185,22 @@ function planChanges(p: Prepared, g: Goal): Omit<Marker, 'before' | 'after'>[] {
     if (r.goalId !== g.id) continue
     const date = dayOf(r.timestamp)
     if (r.field === 'state') {
-      const text = STATE_TEXT[r.newValue as GoalState]
-      if (text && r.oldValue !== 'backlog') out.push({ date, kind: 'state', text })
-    } else if (r.field === 'tolerancePct') {
-      out.push({ date, kind: 'tolerance', text: `Tolerance ${r.oldValue}% → ${r.newValue}%` })
-    } else if (r.field.endsWith(' target') || r.field.endsWith(' how often')) {
-      out.push({ date, kind: 'target', text: `${r.field.replace(/ how often$/, '')} ${r.oldValue} → ${r.newValue}` })
-    } else if (r.field === 'commitment' && date > g.startDate) {
-      out.push({ date, kind: 'commitment', text: r.newValue === 'removed' ? 'Commitment removed' : 'Commitment added' })
+      const key = STATE_TEXT[r.newValue as keyof typeof STATE_TEXT]
+      if (key && r.oldValue !== 'backlog') out.push({ date, kind: 'state', text: t(key) })
+      continue
+    }
+    if (r.field === 'tolerancePct') {
+      out.push({ date, kind: 'tolerance', text: t('ins.marker.tolerance', { old: r.oldValue, new: r.newValue }) })
+      continue
+    }
+    if (r.field === 'commitment') {
+      if (date > g.startDate) out.push({ date, kind: 'commitment', text: t(r.newValue === 'removed' ? 'ins.marker.removed' : 'ins.marker.added') })
+      continue
+    }
+    const edit = commitmentEdit(r)
+    if (edit && (edit.part === 'targetValue' || edit.part === 'cadence')) {
+      const text = t('ins.marker.target', { name: edit.label, old: revisionValue(r, 'old'), new: revisionValue(r, 'new') })
+      out.push({ date, kind: 'target', text })
     }
   }
   for (const c of p.commitmentsOf(g)) {
@@ -201,8 +209,8 @@ function planChanges(p: Prepared, g: Goal): Omit<Marker, 'before' | 'after'>[] {
       // Preps set up with the commitment are the original plan.
       const made = dayOf(prep.createdAt)
       const edited = dayOf(prep.updatedAt)
-      if (made > dayOf(c.createdAt)) out.push({ date: made, kind: 'prep', text: `Prep added: ${prep.title}` })
-      if (edited > made && edited > dayOf(c.createdAt)) out.push({ date: edited, kind: 'prep', text: `Prep changed: ${prep.title}` })
+      if (made > dayOf(c.createdAt)) out.push({ date: made, kind: 'prep', text: t('ins.marker.prepAdded', { name: prep.title }) })
+      if (edited > made && edited > dayOf(c.createdAt)) out.push({ date: edited, kind: 'prep', text: t('ins.marker.prepChanged', { name: prep.title }) })
     }
   }
   return out.sort((a, b) => a.date.localeCompare(b.date))
@@ -239,16 +247,18 @@ const r0 = (n: number) => Math.round(n)
 
 function trendTakeaway(points: WeekPoint[], markers: Marker[], recent: number | null): string {
   const effect = markers.filter((m) => m.before != null && m.after != null && Math.abs(m.after - m.before) >= CLEAR_DIFF).at(-1)
-  if (effect) return `${effect.text} (${dayMonth(effect.date)}): ${r0(effect.before!)}% → ${r0(effect.after!)}%`
+  if (effect) {
+    return t('ins.take.effect', { change: effect.text, date: dayMonth(effect.date), before: r0(effect.before!), after: r0(effect.after!) })
+  }
   const vals = points.filter((x) => x.pct != null).slice(-8).map((x) => x.pct!)
   if (vals.length >= 4) {
     const half = Math.floor(vals.length / 2)
     const a = mean(vals.slice(0, half))!
     const b = mean(vals.slice(half))!
-    if (b - a >= CLEAR_DIFF) return `Up from ${r0(a)}% to ${r0(b)}% over ${vals.length} weeks`
-    if (a - b >= CLEAR_DIFF) return `Down from ${r0(a)}% to ${r0(b)}% over ${vals.length} weeks`
+    if (b - a >= CLEAR_DIFF) return t('ins.take.up', { a: r0(a), b: r0(b), n: vals.length })
+    if (a - b >= CLEAR_DIFF) return t('ins.take.down', { a: r0(a), b: r0(b), n: vals.length })
   }
-  return recent == null ? 'Nothing to judge yet' : `Steady around ${r0(recent)}%`
+  return recent == null ? t('ins.take.nothing') : t('ins.take.steady', { pct: r0(recent) })
 }
 
 // ——— tolerance vs actual ———
@@ -273,15 +283,13 @@ export function toleranceCheck(trends: GoalTrend[]): { rows: ToleranceRow[]; tak
   const above = rows.filter((r) => r.band === 'above').map((r) => r.goal.title)
   const below = rows.filter((r) => r.band === 'below').map((r) => r.goal.title)
   const parts: string[] = []
-  if (above.length) parts.push(`${list(above)} ${above.length === 1 ? 'runs' : 'run'} well above ${above.length === 1 ? 'its' : 'their'} tolerance: the bar may be too low.`)
-  if (below.length) parts.push(`${list(below)} ${below.length === 1 ? 'is' : 'are'} far below: the target or the tolerance may be too ambitious.`)
-  return { rows, takeaway: parts.join(' ') || (rows.length ? 'Tolerances look realistic.' : '') }
+  if (above.length) parts.push(tn('ins.tol.above', above.length, { names: list(above) }))
+  if (below.length) parts.push(tn('ins.tol.below', below.length, { names: list(below) }))
+  return { rows, takeaway: parts.join(' ') || (rows.length ? t('ins.tol.fine') : '') }
 }
 
-function list(xs: string[]): string {
-  const q = xs.map((x) => `“${x}”`)
-  return q.length <= 1 ? q.join('') : `${q.slice(0, -1).join(', ')} and ${q.at(-1)}`
-}
+/** “a”, “b” and “c”. */
+const list = (xs: string[]) => joinList(xs.map((x) => `“${x}”`))
 
 // ——— what gets in the way ———
 
@@ -297,15 +305,9 @@ export interface Obstacles {
   takeaway: string
 }
 
-const REASON_FIX: Record<MissReason, string> = {
-  forgot: 'A prep is the usual fix: a cue before the moment.',
-  chose_other: 'The moment keeps getting lost: remove friction beforehand.',
-  no_time: 'Some targets may be too big for your real weeks.',
-  too_tired: 'Look at sleep, and at when these are scheduled.',
-}
-const REASON_SHORT: Record<MissReason, string> = {
-  forgot: 'forgot', chose_other: 'chose something else', no_time: 'no time', too_tired: 'too tired',
-}
+const REASON_FIX = {
+  forgot: 'ins.fix.forgot', chose_other: 'ins.fix.choseOther', no_time: 'ins.fix.noTime', too_tired: 'ins.fix.tooTired',
+} as const satisfies Record<MissReason, string>
 
 /** Miss reasons across every goal. `goalId` narrows it to one goal. */
 export function obstacles(p: Prepared, from: DateStr, goalId?: ID): Obstacles {
@@ -347,9 +349,9 @@ export function obstacles(p: Prepared, from: DateStr, goalId?: ID): Obstacles {
   const spread = out.displacements.find((d) => d.goals.length >= 2)
   const top = out.reasons[0]
   if (!goalId && spread) {
-    out.takeaway = `“${spread.label}” got in the way of ${list(spread.goals.map((x) => x.goal.title))}. It might deserve a goal of its own.`
+    out.takeaway = t('ins.way.spread', { label: spread.label, goals: list(spread.goals.map((x) => x.goal.title)) })
   } else if (top) {
-    out.takeaway = `Most misses: ${REASON_SHORT[top.reason]} (${top.count} of ${out.total}). ${REASON_FIX[top.reason]}`
+    out.takeaway = t('ins.way.most', { reason: reasonLower(top.reason), n: top.count, total: out.total, fix: t(REASON_FIX[top.reason]) })
   }
   return out
 }
@@ -576,7 +578,9 @@ export interface ValueBalance {
 }
 
 /** Stands in for goals with no value. Its empty id is how charts know to grey it. */
-export const NO_VALUE: Value = { id: '', name: 'No value', description: '', createdAt: '', updatedAt: '' }
+export const NO_VALUE: Value = {
+  id: '', get name() { return t('ins.noValue') }, description: '', createdAt: '', updatedAt: '',
+}
 
 /** Weeks on track, per value, per month: what the effort actually went to. */
 export function valueBalance(p: Prepared, monthsBack = 6): ValueBalance {
@@ -604,9 +608,9 @@ export function valueBalance(p: Prepared, monthsBack = 6): ValueBalance {
   const idle = values.filter((v, i) => v !== NO_VALUE && !runningLately[i]).map((v) => v.name)
   const struggling = values.filter((v, i) => v !== NO_VALUE && runningLately[i] && months.slice(-3).every((m) => m.counts[i] === 0)).map((v) => v.name)
   const parts: string[] = []
-  if (idle.length) parts.push(`No goal for ${idle.join(' or ')} in the last ${LOOKBACK_WEEKS} weeks.`)
-  if (struggling.length) parts.push(`${struggling.join(' and ')}: no week on track lately.`)
-  return { values, months, totals, takeaway: parts.join(' ') || 'Every value had kept weeks lately.' }
+  if (idle.length) parts.push(t('ins.balance.idle', { values: joinList(idle, 'or'), n: LOOKBACK_WEEKS }))
+  if (struggling.length) parts.push(t('ins.balance.struggling', { values: joinList(struggling) }))
+  return { values, months, totals, takeaway: parts.join(' ') || t('ins.balance.fine') }
 }
 
 // ——— goals timeline ———
@@ -659,10 +663,6 @@ export interface Burnup {
 
 export type ProjectPace = 'done' | 'all_done' | 'not_started' | 'on_pace' | 'behind' | 'overdue'
 
-function lateness(days: number): string {
-  const n = Math.abs(days)
-  return n < 14 ? plural(n, 'day') : n < 60 ? plural(Math.round(n / 7), 'week') : plural(Math.round(n / 30.4), 'month')
-}
 
 export function burnup(p: Prepared, project: Project): Burnup {
   const steps = live(p.snap.tasks).filter((t) => t.projectId === project.id)
@@ -679,20 +679,21 @@ export function burnup(p: Prepared, project: Project): Burnup {
     const end = done.at(-1) ?? dayOf(project.updatedAt)
     const d = diffDays(end, project.targetDate)
     status = 'done'
-    text = `Done ${dayMonth(end)} · ${d === 0 ? 'on the day' : d > 0 ? `${lateness(d)} early` : `${lateness(d)} late`}`
+    const when = d === 0 ? t('ins.pace.onTheDay') : d > 0 ? t('ins.pace.early', { time: spanText(d) }) : t('ins.pace.late', { time: spanText(d) })
+    text = t('ins.pace.done', { date: dayMonth(end), when })
   } else if (remaining === 0) {
     status = 'all_done'
-    text = 'Every step done: mark it done'
+    text = t('ins.pace.allDone')
   } else {
     if (done.length > 0) {
       const pace = done.length / Math.max(7, diffDays(start, p.ctx.today))
       projected = addDays(p.ctx.today, Math.ceil(remaining / pace))
     }
-    const due = project.targetDate < p.ctx.today ? `Was due ${dayMonth(project.targetDate)}` : `Due ${dayMonth(project.targetDate)}`
+    const due = t(project.targetDate < p.ctx.today ? 'ins.pace.wasDue' : 'ins.pace.due', { date: dayMonth(project.targetDate) })
     if (project.targetDate < p.ctx.today) status = 'overdue'
     else if (!projected) status = 'not_started'
     else status = projected > project.targetDate ? 'behind' : 'on_pace'
-    text = projected ? `${due} · at your pace, ~${dayMonth(projected)}` : due
+    text = projected ? t('ins.pace.atYourPace', { due, date: dayMonth(projected) }) : due
   }
   const timeUsed = diffDays(start, p.ctx.today) / Math.max(1, diffDays(start, project.targetDate))
   return { project, total: steps.length, done, start, projected, status, timeUsed, text }

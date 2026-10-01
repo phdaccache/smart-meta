@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { t, tlist } from '../i18n'
+import { statusLabel } from '../lib/describe'
 import type { Status } from '../lib/types'
 import { IconCheck, IconChevronLeft, IconClose, IconInfo, IconSettings } from './icons'
 import { goBack, navigate } from './router'
@@ -19,7 +21,7 @@ export function Screen(props: {
       <header className="screen-head">
         {props.back && (
           <button type="button" className="back" onClick={() => goBack(props.back!)}>
-            <IconChevronLeft width={20} height={20} /> Back
+            <IconChevronLeft width={20} height={20} /> {t('nav.back')}
           </button>
         )}
         <div className="head-row">
@@ -30,7 +32,7 @@ export function Screen(props: {
           <div className="head-actions">
             {props.actions}
             {props.settings && (
-              <button type="button" className="icon-btn" aria-label="Settings" onClick={() => navigate('/settings')}>
+              <button type="button" className="icon-btn" aria-label={t('nav.settings')} onClick={() => navigate('/settings')}>
                 <IconSettings />
               </button>
             )}
@@ -101,7 +103,7 @@ export function Sheet(props: { open: boolean; onClose: () => void; title: string
       <div className="sheet" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={ref}>
         <div className="sheet-head">
           <h2 id={titleId}>{props.title}</h2>
-          <button type="button" className="icon-btn" aria-label="Close" onClick={props.onClose}>
+          <button type="button" className="icon-btn" aria-label={t('nav.close')} onClick={props.onClose}>
             <IconClose width={20} height={20} />
           </button>
         </div>
@@ -139,26 +141,31 @@ export function Badge(props: { kind: 'goal' | 'prep' | 'step' | 'task'; children
 }
 
 export function StatusWord({ status }: { status: Status | null }) {
-  if (!status) return <span className="status status-none">no data yet</span>
-  return <span className={`status status-${status.replace(' ', '-')}`}>{status}</span>
+  if (!status) return <span className="status status-none">{t('status.noData')}</span>
+  return <span className={`status status-${status.replace(' ', '-')}`}>{statusLabel(status)}</span>
+}
+
+/** "On track: at or above it." with the term in bold. */
+function Term({ text }: { text: string }) {
+  const i = text.indexOf(':')
+  return i < 0 ? <>{text}</> : <><b>{text.slice(0, i)}</b>{text.slice(i)}</>
 }
 
 /** What on track / behind / at risk mean, behind an (i). */
 export function StatusInfo() {
   return (
-    <InfoTip label="What the status means">
-      Counted from the goal’s start, against its tolerance (say 80%):<br />
-      <b>On track</b>: at or above it.<br />
-      <b>Behind</b>: below it, by up to 15 points (65–79%).<br />
-      <b>At risk</b>: more than 15 points below.<br />
-      Finish lines turn <b>behind</b> during their extra time and <b>at risk</b> after it.
-      The four bars are the last four weeks, oldest first; grey means nothing to judge yet.
+    <InfoTip label={t('status.infoLabel')}>
+      {t('status.infoIntro')}<br />
+      <Term text={t('status.infoOnTrack')} /><br />
+      <Term text={t('status.infoBehind')} /><br />
+      <Term text={t('status.infoAtRisk')} /><br />
+      {t('status.infoFinish')} {t('status.infoBars')}
     </InfoTip>
   )
 }
 
-export function WeekBar({ weeks, label = 'Last 4 weeks' }: { weeks: (Status | null)[]; label?: string }) {
-  const text = weeks.map((w, i) => `week ${i + 1}: ${w ?? 'no data'}`).join(', ')
+export function WeekBar({ weeks, label = t('status.last4Weeks') }: { weeks: (Status | null)[]; label?: string }) {
+  const text = weeks.map((w, i) => t('status.weekN', { n: i + 1, status: w ? statusLabel(w) : t('status.noData') })).join(', ')
   return (
     <span className="weekbar" role="img" aria-label={`${label}: ${text}`} title={label}>
       {weeks.map((w, i) => (
@@ -215,7 +222,7 @@ export function Field(props: {
     <div className={`field ${props.error ? 'has-error' : ''}`}>
       <div className="field-label-row">
         <label className="field-label" htmlFor={props.htmlFor}>{props.label}</label>
-        {props.info && <InfoTip label={`About ${props.label.toLowerCase()}`}>{props.info}</InfoTip>}
+        {props.info && <InfoTip label={t('common.about', { topic: props.label.toLowerCase() })}>{props.info}</InfoTip>}
       </div>
       {props.hint && <div className="field-hint">{props.hint}</div>}
       {props.children}
@@ -253,10 +260,10 @@ export function Chip(props: { selected?: boolean; onClick: () => void; children:
 }
 
 export function WeekdayPicker(props: { value: number[]; onChange: (v: number[]) => void }) {
-  const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-  const names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+  const days = tlist('dates.weekdayInitials')
+  const names = (['dates.monday', 'dates.tuesday', 'dates.wednesday', 'dates.thursday', 'dates.friday', 'dates.saturday', 'dates.sunday'] as const).map((k) => t(k))
   return (
-    <div className="weekdays" role="group" aria-label="Days">
+    <div className="weekdays" role="group" aria-label={t('common.days')}>
       {days.map((d, i) => {
         const iso = i + 1
         const on = props.value.includes(iso)
@@ -274,9 +281,9 @@ export function WeekdayPicker(props: { value: number[]; onChange: (v: number[]) 
 export function Stepper(props: { value: number; min: number; max: number; onChange: (n: number) => void; label: string }) {
   return (
     <div className="stepper" role="group" aria-label={props.label}>
-      <button type="button" aria-label="Less" disabled={props.value <= props.min} onClick={() => props.onChange(props.value - 1)}>−</button>
+      <button type="button" aria-label={t('common.less')} disabled={props.value <= props.min} onClick={() => props.onChange(props.value - 1)}>−</button>
       <output>{props.value}</output>
-      <button type="button" aria-label="More" disabled={props.value >= props.max} onClick={() => props.onChange(props.value + 1)}>+</button>
+      <button type="button" aria-label={t('common.more')} disabled={props.value >= props.max} onClick={() => props.onChange(props.value + 1)}>+</button>
     </div>
   )
 }
@@ -287,7 +294,7 @@ export function TypeToConfirm(props: { phrase: string; action: string; onConfirm
   const ok = text.trim().toLowerCase() === props.phrase.trim().toLowerCase()
   return (
     <div className="type-confirm">
-      <Field label={`Type “${props.phrase}” to confirm`}>
+      <Field label={t('common.typeToConfirm', { phrase: props.phrase })}>
         <input value={text} onChange={(e) => setText(e.target.value)} autoCapitalize="off" autoComplete="off" />
       </Field>
       <button type="button" className="btn danger" disabled={!ok} onClick={props.onConfirm}>{props.action}</button>

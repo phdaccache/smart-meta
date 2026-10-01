@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { addDisplacement, logOccurrence } from '../db/repo'
 import { formatTime, isDateStr, nowMinutes, parseTime } from '../lib/dates'
-import { REASONS } from '../lib/describe'
+import { t } from '../i18n'
+import { reasons } from '../lib/describe'
 import type { Commitment, DateStr, ID, MissReason } from '../lib/types'
 import { Chip, Field, Sheet, toast } from '../ui/components'
 import { useDisplacements } from '../ui/hooks'
@@ -14,7 +15,7 @@ import { useDisplacements } from '../ui/hooks'
 export function OccurrenceSheet(props: { commitment: Commitment | null; date: DateStr; today: DateStr; onClose: () => void }) {
   if (!props.commitment) return null
   return (
-    <Sheet open onClose={props.onClose} title={`Log ${props.commitment.label}`}>
+    <Sheet open onClose={props.onClose} title={t('today.logItem', { name: props.commitment.label })}>
       <OccurrenceForm key={props.commitment.id} c={props.commitment} date={props.date} today={props.today} onDone={props.onClose} />
     </Sheet>
   )
@@ -45,46 +46,46 @@ function OccurrenceForm({ c, date: initialDate, today, onDone }: { c: Commitment
       date, scheduledTime: scheduled || '00:00', actualTime: actual, kept: kept ?? false,
       miss: !hit && reason ? { reason, displacementId: reason === 'chose_other' ? dId : null, note } : undefined,
     })
-    toast('Logged.')
+    toast(t('common.logged'))
     onDone()
   }
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); save() }}>
       <p className="muted small" style={{ margin: '0 0 14px' }}>{c.measurementDefinition}</p>
-      <Field label="Day" htmlFor="occ-date">
+      <Field label={t('common.day')} htmlFor="occ-date">
         <input id="occ-date" type="date" value={date} max={today} onChange={(e) => isDateStr(e.target.value) && setDate(e.target.value)} />
       </Field>
       {timed ? (
         <div className="inline-fields" style={{ marginTop: 18 }}>
-          <Field label="Agreed time" htmlFor="occ-s">
+          <Field label={t('occ.agreedTime')} htmlFor="occ-s">
             <input id="occ-s" type="time" value={scheduled} onChange={(e) => setScheduled(e.target.value)} />
           </Field>
-          <Field label="You arrived" htmlFor="occ-a">
+          <Field label={t('occ.youArrived')} htmlFor="occ-a">
             <input id="occ-a" type="time" value={actual} onChange={(e) => setActual(e.target.value)} />
           </Field>
         </div>
       ) : (
-        <Field label="Did you keep it?">
+        <Field label={t('occ.keptIt')}>
           <div className="chips">
-            <Chip selected={kept === true} onClick={() => setKept(true)}>Yes</Chip>
-            <Chip selected={kept === false} onClick={() => setKept(false)}>No</Chip>
+            <Chip selected={kept === true} onClick={() => setKept(true)}>{t('common.yes')}</Chip>
+            <Chip selected={kept === false} onClick={() => setKept(false)}>{t('common.no')}</Chip>
           </div>
         </Field>
       )}
 
       {decided && !hit && (
         <div className="prompt" style={{ margin: '18px 0 0' }}>
-          <div className="prompt-q">What happened?</div>
+          <div className="prompt-q">{t('occ.whatHappened')}</div>
           <div className="chips">
-            {REASONS.map((r) => (
+            {reasons().map((r) => (
               <Chip key={r.value} selected={reason === r.value} wide={r.value === 'chose_other'}
                 onClick={() => setReason(reason === r.value ? null : r.value)}>{r.label}</Chip>
             ))}
           </div>
           {reason === 'chose_other' && (
             <>
-              <div className="prompt-sub">What took its place?</div>
+              <div className="prompt-sub">{t('miss.tookItsPlace')}</div>
               <div className="chips">
                 {displacements.map((d) => (
                   <Chip key={d.id} selected={displacementId === d.id}
@@ -92,16 +93,16 @@ function OccurrenceForm({ c, date: initialDate, today, onDone }: { c: Commitment
                 ))}
               </div>
               <input style={{ marginTop: 8 }} value={newLabel} onChange={(e) => { setNewLabel(e.target.value); setDisplacementId(null) }}
-                placeholder="Add another" aria-label="What took its place" />
+                placeholder={t('miss.addAnother')} aria-label={t('miss.tookItsPlaceLabel')} />
             </>
           )}
-          <input style={{ marginTop: 10 }} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (optional)" aria-label="Note" />
+          <input style={{ marginTop: 10 }} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t('miss.noteOptional')} aria-label={t('miss.note')} />
         </div>
       )}
 
       <div className="sheet-actions">
         <button type="submit" className="btn primary" disabled={!decided}>
-          {decided ? (hit ? 'Log: kept' : 'Log: missed') : 'Log'}
+          {decided ? (hit ? t('occ.logKept') : t('occ.logMissed')) : t('common.log')}
         </button>
       </div>
     </form>

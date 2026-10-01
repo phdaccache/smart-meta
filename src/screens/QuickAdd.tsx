@@ -1,12 +1,12 @@
 import { useState, useSyncExternalStore } from 'react'
 import { createTask } from '../db/repo'
-import { isDateStr, relativeDay } from '../lib/dates'
+import { t } from '../i18n'
+import { capitalize, isDateStr, relativeDay } from '../lib/dates'
 import type { DateStr } from '../lib/types'
 import { DatePickerButton, Sheet, toast } from '../ui/components'
 import { IconCalendar, IconClose, IconGoals, IconSteps } from '../ui/icons'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 
-const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 let open = false
 const listeners = new Set<() => void>()
@@ -40,7 +40,7 @@ export function QuickAdd() {
   const close = () => setOpen(false)
 
   return (
-    <Sheet open={isOpen} onClose={close} title="Quick add">
+    <Sheet open={isOpen} onClose={close} title={t('qa.title')}>
       <TaskForm today={today} onDone={close} />
     </Sheet>
   )
@@ -61,12 +61,12 @@ function PickerTool(props: {
         {props.icon}
         {props.shown && <span className="tool-text">{props.shown}</span>}
         <select aria-label={props.label} value={props.value ?? ''} onChange={(e) => props.onChange(e.target.value || null)}>
-          <option value="">None</option>
+          <option value="">{t('common.none')}</option>
           {props.options.map((o) => <option key={o.id} value={o.id}>{o.title}</option>)}
         </select>
       </span>
       {props.value && (
-        <button type="button" className="tool-clear" aria-label={`Clear ${props.label.toLowerCase()}`} onClick={() => props.onChange(null)}>
+        <button type="button" className="tool-clear" aria-label={t('qa.clear', { name: props.label.toLowerCase() })} onClick={() => props.onChange(null)}>
           <IconClose width={14} height={14} />
         </button>
       )}
@@ -90,35 +90,35 @@ function TaskForm({ today, onDone }: { today: DateStr; onDone: () => void }) {
     // With a project picked, the text becomes that project's next step.
     await createTask(project ? { title, projectId: project.id } : { title, date, goalId })
     setTitle('')
-    toast(project ? `Step added to ${project.title}.` : 'Added.')
+    toast(project ? t('qa.stepAdded', { project: project.title }) : t('common.added'))
     onDone()
   }
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); save() }}>
       <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)}
-        placeholder={project ? 'Next step…' : 'What needs doing?'} aria-label={project ? 'Step' : 'Task'} enterKeyHint="done" />
+        placeholder={project ? t('qa.stepPlaceholder') : t('qa.placeholder')} aria-label={project ? t('common.step') : t('common.task')} enterKeyHint="done" />
       <div className="qa-tools">
         {!project && (
           <span className={`tool ${date ? 'on' : ''}`}>
-            <DatePickerButton className="tool-hit" value={date ?? ''} min={today} label="Due date"
+            <DatePickerButton className="tool-hit" value={date ?? ''} min={today} label={t('qa.dueDate')}
               onPick={(d) => isDateStr(d) && setDate(d)}>
               <IconCalendar width={20} height={20} />
               {date && <span className="tool-text">{capitalize(relativeDay(date, today))}</span>}
             </DatePickerButton>
-            {date && <button type="button" className="tool-clear" aria-label="Clear due date" onClick={() => setDate(null)}><IconClose width={14} height={14} /></button>}
+            {date && <button type="button" className="tool-clear" aria-label={t('qa.clearDueDate')} onClick={() => setDate(null)}><IconClose width={14} height={14} /></button>}
           </span>
         )}
         {!project && goals.length > 0 && (
-          <PickerTool icon={<IconGoals width={20} height={20} />} label="Goal" value={goalId} shown={goal?.title}
+          <PickerTool icon={<IconGoals width={20} height={20} />} label={t('common.goal')} value={goalId} shown={goal?.title}
             options={goals} onChange={setGoalId} />
         )}
         {!goalId && !date && projects.length > 0 && (
-          <PickerTool icon={<IconSteps width={20} height={20} />} label="Project" value={projectId} shown={project?.title}
+          <PickerTool icon={<IconSteps width={20} height={20} />} label={t('common.project')} value={projectId} shown={project?.title}
             options={projects} onChange={setProjectId} />
         )}
         <span className="spacer" />
-        <button type="submit" className="btn primary" disabled={!title.trim()}>Add</button>
+        <button type="submit" className="btn primary" disabled={!title.trim()}>{t('common.add')}</button>
       </div>
     </form>
   )

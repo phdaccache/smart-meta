@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { dismissInReview, markWeekReviewed, setGoalState, updateProject } from '../db/repo'
+import { t, tk, tn, type Key } from '../i18n'
 import { dayMonth, isDateStr, untilText } from '../lib/dates'
-import { promptQuestion, reasonLabel } from '../lib/describe'
+import { promptQuestion, reasonLower } from '../lib/describe'
 import {
   buildReview, projectKey, reviewableWeeks, type DateNote, type GoalCard, type HandledProject, type ReasonCount, type StalledProject,
   type Suggestion, type SuggestionKind,
@@ -15,12 +16,12 @@ import { navigate, useLocation } from '../ui/router'
 import { CommitmentSheet, PrepSheet } from './GoalDetail'
 import { MissPromptCard } from './Today'
 
-const QUESTION: Record<SuggestionKind, string> = {
-  add_prep: 'Add a prep?',
-  change_prep: 'The prep isn’t helping yet. Change it?',
-  lower_target: 'Lower the target, or change how often?',
-  pause: 'Pause it and free the slot?',
-  maintenance: 'Switch to maintenance? It stays on Today and frees a slot.',
+const QUESTION: Record<SuggestionKind, Key> = {
+  add_prep: 'review.q.addPrep',
+  change_prep: 'review.q.changePrep',
+  lower_target: 'review.q.lowerTarget',
+  pause: 'review.q.pause',
+  maintenance: 'review.q.maintenance',
 }
 
 type Editing =
@@ -54,11 +55,8 @@ export function ReviewScreen() {
   if (!snap || !r) return null
 
   const title = (
-    <span className="title-row">Review
-      <InfoTip label="About the review">
-        Once a week: answer what’s left, look at last week, and change what isn’t working.
-        Suggestions come from your miss reasons over the last four weeks.
-      </InfoTip>
+    <span className="title-row">{t('review.title')}
+      <InfoTip label={t('review.about')}>{t('review.aboutText')} {t('review.aboutSuggestions')}</InfoTip>
     </span>
   )
 
@@ -66,8 +64,8 @@ export function ReviewScreen() {
     return (
       <Screen title={title} settings>
         <div className="empty">
-          <h2>Nothing to review yet.</h2>
-          <p className="muted">The first review opens the Monday after an active goal’s first full week.</p>
+          <h2>{t('review.nothingYet')}</h2>
+          <p className="muted">{t('review.firstOpens')}</p>
         </div>
       </Screen>
     )
@@ -84,11 +82,11 @@ export function ReviewScreen() {
     if ((s.kind === 'lower_target' || (s.kind === 'pause' && alt)) && c) return setEditing({ kind: 'commitment', goal, commitment: c })
     if (s.kind === 'pause') {
       await setGoalState(goal, 'backlog')
-      return toast('Paused. It’s in the backlog.')
+      return toast(t('move.paused'))
     }
     if (s.kind === 'maintenance') {
       await setGoalState(goal, 'maintenance')
-      return toast('Now in maintenance.')
+      return toast(t('move.nowMaintenance'))
     }
   }
 
@@ -100,19 +98,19 @@ export function ReviewScreen() {
       ...r.stalled.map((s) => projectKey(s.project.id, 'dismissed')),
     ]
     await markWeekReviewed(r.week.start, open)
-    toast(open.length ? 'Reviewed. Whatever was left open is set aside.' : 'Reviewed.')
+    toast(open.length ? t('review.reviewedSetAside') : t('review.reviewed'))
   }
   const start = async (g: Goal) => {
     await setGoalState(g, 'active')
     setChoosing(false)
-    toast(`Started “${g.title}”.`)
+    toast(t('review.startedGoal', { name: g.title }))
   }
 
   const actions = (
     <>
-      {!r.latest && <button className="btn" onClick={() => navigate('/review')}>Last week</button>}
+      {!r.latest && <button className="btn" onClick={() => navigate('/review')}>{t('review.lastWeek')}</button>}
       {weeks.length > 1 && (
-        <button className="icon-btn" aria-label="Other weeks" onClick={() => setPicking(true)}><IconCalendar /></button>
+        <button className="icon-btn" aria-label={t('review.otherWeeks')} onClick={() => setPicking(true)}><IconCalendar /></button>
       )}
     </>
   )
@@ -120,9 +118,9 @@ export function ReviewScreen() {
   const nothing = !r.loose.length && !r.goals.length && !r.dates.length && !r.stalled.length && !r.next
 
   return (
-    <Screen eyebrow={`Week of ${dayMonth(r.week.start)}${r.reviewed ? ' · reviewed' : ''}`} title={title} actions={actions} settings>
+    <Screen eyebrow={`${t('review.weekOf', { date: dayMonth(r.week.start) })}${r.reviewed ? t('review.reviewedTag') : ''}`} title={title} actions={actions} settings>
       {r.loose.length > 0 && (
-        <Section title="Loose ends">
+        <Section title={t('review.looseEnds')}>
           <div className="stack">
             {r.loose.map((p) => {
               const c = snap.commitments.find((x) => x.id === p.commitmentId)!
@@ -132,7 +130,7 @@ export function ReviewScreen() {
                   <div className="pad" style={{ paddingBottom: 10 }}><div className="group-eyebrow">{g?.title}</div></div>
                   <MissPromptCard prompt={p} label={c.label} question={promptQuestion(p, c, today)} today={today}
                     canLog={false} snooze={false}
-                    onSkip={() => dismissInReview(r.week.start, missKeys(p)).then(() => toast('Skipped. It won’t ask again.'))} />
+                    onSkip={() => dismissInReview(r.week.start, missKeys(p)).then(() => toast(t('review.skippedNoAsk')))} />
                 </div>
               )
             })}
@@ -141,18 +139,18 @@ export function ReviewScreen() {
       )}
 
       {r.goals.length > 0 && (
-        <Section title={r.latest ? 'Last week' : 'That week'}>
+        <Section title={r.latest ? t('review.lastWeek') : t('review.thatWeek')}>
           <div className="stack">
             {r.goals.map((card) => (
               <GoalReviewCard key={card.goal.id} card={card} onAccept={accept}
-                onDismiss={(s) => dismissInReview(r.week.start, s.key).then(() => toast('Hidden for 4 weeks.'))} />
+                onDismiss={(s) => dismissInReview(r.week.start, s.key).then(() => toast(t('review.hidden4')))} />
             ))}
           </div>
         </Section>
       )}
 
       {r.dates.length > 0 && (
-        <Section title="Dates">
+        <Section title={t('review.dates')}>
           <div className="card list tint-goal">
             {r.dates.map((d) => <DateRow key={d.goal.id} note={d} today={today} />)}
           </div>
@@ -160,7 +158,7 @@ export function ReviewScreen() {
       )}
 
       {(r.stalled.length > 0 || r.handled.length > 0) && (
-        <Section title="Stalled projects">
+        <Section title={t('review.stalled')}>
           <div className="card list tint-project">
             {r.stalled.map((s) => <StalledRow key={s.project.id} s={s} today={today} week={r.week.start} />)}
             {r.handled.map((h) => <HandledRow key={h.project.id} h={h} />)}
@@ -169,30 +167,30 @@ export function ReviewScreen() {
       )}
 
       {r.next && (
-        <Section title="Open slot">
+        <Section title={t('review.openSlot')}>
           <div className="card pad">
-            <div className="small muted">{r.free} of {settings.goalCap} free · top of your backlog:</div>
+            <div className="small muted">{t('review.freeOf', { free: r.free, cap: settings.goalCap })}</div>
             <div className="row" style={{ marginTop: 10, justifyContent: 'space-between' }}>
               <button className="link-btn" style={{ fontWeight: 600, textAlign: 'left' }} onClick={() => navigate(`/goals/${r.next!.id}`)}>
                 {r.next.title}
               </button>
-              <button className="btn primary" onClick={() => start(r.next!)}>Start</button>
+              <button className="btn primary" onClick={() => start(r.next!)}>{t('common.start')}</button>
             </div>
             {r.backlog.length > 1 && (
-              <button className="link-btn" style={{ marginTop: 10 }} onClick={() => setChoosing(true)}>Choose another</button>
+              <button className="link-btn" style={{ marginTop: 10 }} onClick={() => setChoosing(true)}>{t('review.chooseAnother')}</button>
             )}
           </div>
         </Section>
       )}
 
-      <Sheet open={choosing} onClose={() => setChoosing(false)} title="Start which goal?">
+      <Sheet open={choosing} onClose={() => setChoosing(false)} title={t('review.startWhich')}>
         <div className="card list">
           {r.backlog.map((g) => (
             <div key={g.id} className="list-row">
               <button className="text" style={{ textAlign: 'left' }} onClick={() => navigate(`/goals/${g.id}`)}>
                 <div className="title" style={{ fontSize: 15 }}>{g.title}</div>
               </button>
-              <button className="btn" onClick={() => start(g)}>Start</button>
+              <button className="btn" onClick={() => start(g)}>{t('common.start')}</button>
             </div>
           ))}
         </div>
@@ -200,32 +198,34 @@ export function ReviewScreen() {
 
       {nothing && (
         <div className="empty">
-          <h2>Nothing to change.</h2>
-          <p className="muted">No misses to explain and nothing stalled.</p>
+          <h2>{t('review.nothingToChange')}</h2>
+          <p className="muted">{t('review.noMisses')}</p>
         </div>
       )}
 
       <div style={{ marginTop: 24 }}>
         {r.reviewed ? (
           <p className="muted small" style={{ textAlign: 'center' }}>
-            {r.latest ? 'Reviewed. The next one opens on Monday.' : 'Reviewed.'}
+            {r.latest ? t('review.nextMonday') : t('review.reviewed')}
           </p>
         ) : (
-          <button className="btn primary block" onClick={done}>{r.latest ? 'Done for this week' : 'Mark reviewed'}</button>
+          <button className="btn primary block" onClick={done}>{r.latest ? t('review.doneForWeek') : t('review.markReviewed')}</button>
         )}
       </div>
 
-      <Sheet open={picking} onClose={() => setPicking(false)} title="Weeks">
+      <Sheet open={picking} onClose={() => setPicking(false)} title={t('review.weeks')}>
         <div className="card list">
           {weeks.map((w, i) => (
             <button key={w.start} className="list-row" aria-current={w.start === r.week.start ? 'true' : undefined}
               onClick={() => { setPicking(false); navigate(i === 0 ? '/review' : `/review?week=${w.start}`) }}>
               <div className="text">
-                <div className="title" style={{ fontSize: 15 }}>Week of {dayMonth(w.start)}{i === 0 && <span className="muted"> · last week</span>}</div>
+                <div className="title" style={{ fontSize: 15 }}>
+                  {t('review.weekOf', { date: dayMonth(w.start) })}{i === 0 && <span className="muted">{t('review.lastWeekTag')}</span>}
+                </div>
               </div>
               {w.reviewed
-                ? <span className="week-done"><IconCheck width={14} height={14} /> reviewed</span>
-                : <span className="small muted">not reviewed</span>}
+                ? <span className="week-done"><IconCheck width={14} height={14} /> {t('review.reviewedLower')}</span>
+                : <span className="small muted">{t('review.notReviewed')}</span>}
             </button>
           ))}
         </div>
@@ -243,7 +243,7 @@ export function ReviewScreen() {
 
 function reasonText(r: ReasonCount): string {
   const d = r.displacements.map((x) => (x.count > 1 ? `${x.label} ×${x.count}` : x.label)).join(', ')
-  return `${reasonLabel(r.reason).toLowerCase()} ×${r.count}${d ? ` (${d})` : ''}`
+  return `${reasonLower(r.reason)} ×${r.count}${d ? ` (${d})` : ''}`
 }
 
 function GoalReviewCard(props: { card: GoalCard; onAccept: (s: Suggestion, alt?: boolean) => void; onDismiss: (s: Suggestion) => void }) {
@@ -272,13 +272,13 @@ function GoalReviewCard(props: { card: GoalCard; onAccept: (s: Suggestion, alt?:
       </div>
       {s && (
         <div className="suggestion">
-          <div className="suggestion-q">{QUESTION[s.kind]}</div>
+          <div className="suggestion-q">{tk(QUESTION[s.kind])}</div>
           <div className="small muted">{s.evidence}</div>
           <div className="actions">
-            <button className="link-btn" onClick={() => props.onDismiss(s)}>Dismiss</button>
+            <button className="link-btn" onClick={() => props.onDismiss(s)}>{t('common.dismiss')}</button>
             <div className="row" style={{ gap: 8 }}>
-              {s.kind === 'pause' && s.commitmentId && <button className="btn" onClick={() => props.onAccept(s, true)}>Edit target</button>}
-              <button className="btn primary" onClick={() => props.onAccept(s)}>{ACTION[s.kind]}</button>
+              {s.kind === 'pause' && s.commitmentId && <button className="btn" onClick={() => props.onAccept(s, true)}>{t('review.editTarget')}</button>}
+              <button className="btn primary" onClick={() => props.onAccept(s)}>{tk(ACTION[s.kind])}</button>
             </div>
           </div>
         </div>
@@ -287,23 +287,23 @@ function GoalReviewCard(props: { card: GoalCard; onAccept: (s: Suggestion, alt?:
   )
 }
 
-const ACTION: Record<SuggestionKind, string> = {
-  add_prep: 'Add prep',
-  change_prep: 'Edit prep',
-  lower_target: 'Edit',
-  pause: 'Pause',
-  maintenance: 'Maintenance',
+const ACTION: Record<SuggestionKind, Key> = {
+  add_prep: 'review.a.addPrep',
+  change_prep: 'review.a.editPrep',
+  lower_target: 'review.a.edit',
+  pause: 'review.a.pause',
+  maintenance: 'review.a.maintenance',
 }
 
 function DateRow({ note, today }: { note: DateNote; today: string }) {
-  const when = (d: string) => `${dayMonth(d)} (${untilText(d, today)})`
+  const when = (d: string) => t('review.date.when', { date: dayMonth(d), relative: untilText(d, today) })
   let sub: string
   if (note.deadline) {
-    sub = note.kind === 'deadline_soon' ? `Deadline ${when(note.deadline)}`
-      : note.kind === 'grace' ? `Deadline passed ${dayMonth(note.deadline)} · extra time until ${when(note.date)}`
-      : `Deadline was ${dayMonth(note.deadline)}; extra time ended ${when(note.date)}`
+    sub = note.kind === 'deadline_soon' ? t('review.date.deadline', { when: when(note.deadline) })
+      : note.kind === 'grace' ? t('review.date.inExtra', { date: dayMonth(note.deadline), when: when(note.date) })
+      : t('review.date.extraEnded', { date: dayMonth(note.deadline), when: when(note.date) })
   } else {
-    sub = `Review date was ${when(note.date)}`
+    sub = t('review.date.reviewWas', { when: when(note.date) })
   }
   const review = note.kind === 'review_due'
   return (
@@ -313,17 +313,17 @@ function DateRow({ note, today }: { note: DateNote; today: string }) {
         <div className="sub">{sub}</div>
       </button>
       {review
-        ? <button className="btn primary" onClick={() => navigate(`/goals/${note.goal.id}/review`)}>Review</button>
+        ? <button className="btn primary" onClick={() => navigate(`/goals/${note.goal.id}/review`)}>{t('goal.review')}</button>
         : <IconChevronRight className="chev" width={18} />}
     </div>
   )
 }
 
 function StalledRow({ s, today, week }: { s: StalledProject; today: string; week: string }) {
-  const steps = `${s.remaining} step${s.remaining === 1 ? '' : 's'} left`
+  const steps = tn('review.stepsLeft', s.remaining)
   const why = s.why === 'overdue'
-    ? `Past its date (${dayMonth(s.project.targetDate)})`
-    : s.lastDone ? `No step done since ${dayMonth(s.lastDone)}` : 'No step done yet'
+    ? t('review.pastDate', { date: dayMonth(s.project.targetDate) })
+    : s.lastDone ? t('review.noStepSince', { date: dayMonth(s.lastDone) }) : t('review.noStepYet')
   const [moving, setMoving] = useState(false)
   const [date, setDate] = useState(s.project.targetDate > today ? s.project.targetDate : today)
   const save = async () => {
@@ -339,23 +339,23 @@ function StalledRow({ s, today, week }: { s: StalledProject; today: string; week
         <div className="sub">{why} · {steps}</div>
       </button>
       <div className="row" style={{ gap: 8, marginTop: 10 }}>
-        <button className="btn" onClick={() => setMoving(true)}>Move date</button>
+        <button className="btn" onClick={() => setMoving(true)}>{t('review.moveDate')}</button>
         <button className="btn ghost" onClick={async () => {
-          if (!confirm(`Put “${s.project.title}” down? It moves to done projects; you can reopen it.`)) return
+          if (!confirm(t('review.putDownQ', { name: s.project.title }))) return
           await updateProject(s.project, { state: 'archived' })
           await dismissInReview(week, projectKey(s.project.id, 'put_down'))
-        }}>Put down</button>
+        }}>{t('review.putDown')}</button>
         <span className="spacer" />
-        <button className="link-btn" onClick={() => dismissInReview(week, projectKey(s.project.id, 'dismissed'))}>Dismiss</button>
+        <button className="link-btn" onClick={() => dismissInReview(week, projectKey(s.project.id, 'dismissed'))}>{t('common.dismiss')}</button>
       </div>
       {/* A sheet with Save, not an instant picker: iOS reports a date while you're still scrolling. */}
-      <Sheet open={moving} onClose={() => setMoving(false)} title={`New date for “${s.project.title}”`}>
-        <Field label="Target date" htmlFor={`move-${s.project.id}`}>
+      <Sheet open={moving} onClose={() => setMoving(false)} title={t('review.newDateFor', { name: s.project.title })}>
+        <Field label={t('project.targetDate')} htmlFor={`move-${s.project.id}`}>
           <input id={`move-${s.project.id}`} type="date" value={date} min={today} onChange={(e) => setDate(e.target.value)} />
         </Field>
         <div className="sheet-actions">
-          <button className="btn" onClick={() => setMoving(false)}>Cancel</button>
-          <button className="btn primary" disabled={!isDateStr(date) || date < today} onClick={save}>Save</button>
+          <button className="btn" onClick={() => setMoving(false)}>{t('common.cancel')}</button>
+          <button className="btn primary" disabled={!isDateStr(date) || date < today} onClick={save}>{t('common.save')}</button>
         </div>
       </Sheet>
     </div>
@@ -364,9 +364,9 @@ function StalledRow({ s, today, week }: { s: StalledProject; today: string; week
 
 /** A stalled project already dealt with in this review: what happened to it. */
 function HandledRow({ h }: { h: HandledProject }) {
-  const text = h.action === 'moved' ? `New date: ${dayMonth(h.project.targetDate)}`
-    : h.action === 'put_down' ? 'Put down · reopen it from its page'
-    : 'Dismissed for 4 weeks'
+  const text = h.action === 'moved' ? t('review.newDate', { date: dayMonth(h.project.targetDate) })
+    : h.action === 'put_down' ? t('review.putDownDone')
+    : t('review.dismissed4')
   return (
     <button className="list-row handled" onClick={() => navigate(`/projects/${h.project.id}`)}>
       <span className="done-mark"><IconCheck width={13} height={13} /></span>

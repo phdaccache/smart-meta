@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { DATA_VERSION, migrateRecord } from '../lib/migrations'
 import type { Base } from '../lib/types'
 import { COLLECTIONS, db, type AppDB, type Collection } from './db'
@@ -20,11 +21,11 @@ export function parseBackup(text: string): Backup {
   try {
     parsed = JSON.parse(text)
   } catch {
-    throw new Error('That file isn’t valid JSON.')
+    throw new Error(t('err.notJson'))
   }
   const b = parsed as Partial<Backup>
   if (b?.app !== 'smart-meta' || typeof b.dataVersion !== 'number' || typeof b.data !== 'object' || !b.data) {
-    throw new Error('That file isn’t a Smart Meta export.')
+    throw new Error(t('err.notExport'))
   }
   return b as Backup
 }

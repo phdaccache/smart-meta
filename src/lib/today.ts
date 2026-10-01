@@ -1,3 +1,4 @@
+import { num, t, tn } from '../i18n'
 import { diffDays, inSpan, isoWeekday, periodOf, relativeDay } from './dates'
 import {
   activeEntries, evaluateThreshold, meetsTarget, missPrompt, thresholdAggregate, withoutDismissed, type MissPrompt, type PeriodEval,
@@ -50,10 +51,10 @@ export interface TodayItem {
 
 export function dueBadge(due: DateStr, date: DateStr): NonNullable<TodayItem['due']> {
   const d = diffDays(date, due)
-  if (d < 0) return { label: `overdue · ${relativeDay(due, date)}`, tone: 'red' }
-  if (d === 0) return { label: 'due today', tone: 'red' }
-  if (d === 1) return { label: 'due tomorrow', tone: 'yellow' }
-  return { label: `due ${relativeDay(due, date)}`, tone: 'green' }
+  if (d < 0) return { label: t('today.overdue', { when: relativeDay(due, date) }), tone: 'red' }
+  if (d === 0) return { label: t('today.due', { when: t('dates.today') }), tone: 'red' }
+  if (d === 1) return { label: t('today.due', { when: t('dates.tomorrow') }), tone: 'yellow' }
+  return { label: t('today.due', { when: relativeDay(due, date) }), tone: 'green' }
 }
 
 /** Dated tasks first, soonest due first; undated after. */
@@ -135,20 +136,20 @@ export function buildDay(
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
     const out: TodayItem[] = []
     let currentShown = false
-    steps.forEach((t, i) => {
-      const done = latest(entriesOf('task', t.id).filter((e) => e.outcome === 'hit'))
+    steps.forEach((step, i) => {
+      const done = latest(entriesOf('task', step.id).filter((e) => e.outcome === 'hit'))
       const base = {
-        kind: 'step' as const, title: t.title, subjectType: 'task' as const, subjectId: t.id,
+        kind: 'step' as const, title: step.title, subjectType: 'task' as const, subjectId: step.id,
         step: { index: i + 1, total: steps.length }, target: { kind: 'project' as const, id: p.id },
       }
       if (done && done.date === date) {
-        out.push({ ...base, key: `task:${t.id}`, done: true, entryId: done.id })
+        out.push({ ...base, key: `task:${step.id}`, done: true, entryId: done.id })
       } else if (!done && !currentShown) {
         currentShown = true
         if (isToday) {
           out.push({
-            ...base, key: `task:${t.id}`, done: false,
-            detail: showDue ? `${p.title} · due ${relativeDay(p.targetDate, date)}` : undefined,
+            ...base, key: `task:${step.id}`, done: false,
+            detail: showDue ? t('today.stepOf', { project: p.title, when: relativeDay(p.targetDate, date) }) : undefined,
           })
         }
       }
@@ -175,7 +176,7 @@ export function buildDay(
       const period = periodOf(date, c.cadence.period)
       const inPeriod = mine.filter((e) => inSpan(e.date, period))
       const onDate = inPeriod.filter((e) => e.date === date)
-      const periodWord = c.cadence.period === 'week' ? 'this week' : c.cadence.period === 'month' ? 'this month' : 'today'
+      const periodWord = c.cadence.period === 'week' ? t('dates.thisWeek') : c.cadence.period === 'month' ? t('dates.thisMonth') : t('dates.today')
 
       if (c.shape === 'rhythm') {
         const times = c.cadence.times
@@ -185,9 +186,11 @@ export function buildDay(
         const doneToday = multiPerDay ? hitsToday.length >= times : hitsToday.length > 0
         const satisfied = hits.length >= times
         let detail: string | undefined
-        if (multiPerDay) detail = `${hitsToday.length} of ${times} today`
+        if (multiPerDay) detail = t('today.nOfTimesToday', { n: hitsToday.length, times })
         else if (c.cadence.period !== 'day') {
-          detail = satisfied && !doneToday ? `Done for ${periodWord}` : `${hits.length} of ${times} ${periodWord}`
+          detail = satisfied && !doneToday
+            ? t('today.doneForPeriod', { period: periodWord })
+            : t('today.nOfTimesPeriod', { n: hits.length, times, period: periodWord })
         }
         items.push({
           key: `commitment:${c.id}`, kind: 'commitment', title: c.measurementDefinition, detail,
@@ -199,8 +202,8 @@ export function buildDay(
         const week = periodOf(date, 'week')
         const logged = s.occurrences.filter((o) => o.commitmentId === c.id && !o.deletedAt && inSpan(o.date, week)).length
         items.push({
-          key: `log:${c.id}`, kind: 'log', title: `Log ${c.label}`,
-          detail: logged ? `${logged} logged this week` : undefined,
+          key: `log:${c.id}`, kind: 'log', title: t('today.logItem', { name: c.label }),
+          detail: logged ? tn('today.loggedThisWeek', logged) : undefined,
           done: false, subjectType: 'commitment', subjectId: c.id, target,
         })
       } else if (c.shape === 'threshold') {
@@ -235,7 +238,7 @@ export function buildDay(
         if (!p.fireWeekdays.includes(isoWeekday(date))) continue
         const done = doneEntryOn('prep', p.id, date)
         items.push({
-          key: `prep:${p.id}`, kind: 'prep', title: p.title, detail: `${p.fireTime} · for ${c.label}`,
+          key: `prep:${p.id}`, kind: 'prep', title: p.title, detail: t('today.prepFor', { time: p.fireTime, name: c.label }),
           done: !!done, subjectType: 'prep', subjectId: p.id, entryId: done?.id, target,
         })
       }
@@ -278,7 +281,7 @@ export function buildDay(
     const goal = p.goalId ? s.goals.find((g) => g.id === p.goalId) : undefined
     groups.push({
       key: `project:${p.id}`, kind: 'project', projectId: p.id,
-      eyebrow: `Project · due ${relativeDay(p.targetDate, date)}`, title: p.title, why: goal?.whyText || undefined,
+      eyebrow: t('today.projectDue', { when: relativeDay(p.targetDate, date) }), title: p.title, why: goal?.whyText || undefined,
       items, prompts: [], done: items.every((i) => i.done),
     })
   }
@@ -295,7 +298,7 @@ export function buildDay(
   errands.sort(byDue)
   if (errands.length) {
     groups.push({
-      key: 'errands', kind: 'errands', eyebrow: 'Errands', title: 'Errands',
+      key: 'errands', kind: 'errands', eyebrow: t('today.errands'), title: t('today.errands'),
       items: errands, prompts: [], done: errands.every((i) => i.done),
     })
   }
@@ -308,7 +311,6 @@ function periodTotal(c: Commitment, inPeriod: Entry[], periodWord: string): stri
   if (c.checkinType !== 'quantity') return undefined
   const sum = thresholdAggregate(c, inPeriod) ?? 0
   const cmp = c.comparator === 'lte' ? '≤' : '≥'
-  return `${round(sum)} ${c.unit ?? ''} ${periodWord} · target ${cmp} ${c.targetValue ?? ''}`.replace(/\s+/g, ' ')
+  const total = `${num(sum)} ${c.unit ?? ''}`.trim()
+  return t('today.periodTotal', { total, period: periodWord, cmp, target: c.targetValue == null ? '' : num(c.targetValue) }).trim()
 }
-
-const round = (n: number) => Math.round(n * 100) / 100

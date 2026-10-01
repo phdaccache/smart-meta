@@ -96,7 +96,7 @@ describe('Today — Pay a friend (task)', () => {
   const t = task({ title: 'Pay Ana back' })
 
   it('appears, gets checked off, and is gone the next day', () => {
-    expect(buildDay(snapshot({ tasks: [t] }), today, ctx).groups[0].title).toBe('Errands')
+    expect(buildDay(snapshot({ tasks: [t] }), today, ctx).groups[0].title).toBe('Other tasks')
     const entries = [hit(t, today, { subjectType: 'task' })]
     expect(buildDay(snapshot({ tasks: [t], entries }), today, ctx).groups[0].items[0].done).toBe(true)
     const tomorrow = '2026-10-01'

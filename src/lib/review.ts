@@ -1,5 +1,8 @@
+import { t } from '../i18n'
 import { addDays, dayMonth, diffDays, inSpan, maxDate, periodOf, type Span } from './dates'
+import { reasonLower } from './describe'
 import { MAX_PREPS } from './draft'
+import { isTargetChange } from './revisions'
 import {
   activeEntries, goalPct, missPrompt, outcomeTime, scoreCommitment, statusFor, withoutDismissed, type MissPrompt,
   type ScoreContext,
@@ -238,15 +241,17 @@ function weekLine(c: Commitment, entries: Entry[], snap: Snapshot, ctx: ScoreCon
   const s = scoreCommitment(c, entries, snap.occurrences, ctx, week.start, week.end)
   const expected = Math.round(s.expected)
   if (c.shape === 'standard') {
-    return expected === 0 ? `${c.label}: nothing logged` : `${c.label}: ${Math.round(s.hits)} of ${expected} kept`
+    return expected === 0
+      ? t('review.line.nothingLogged', { name: c.label })
+      : t('review.line.kept', { name: c.label, n: Math.round(s.hits), expected })
   }
   if (c.shape === 'rhythm') {
     // Show the real count, so doing more than planned is visible.
     const done = entries.filter((e) => e.subjectId === c.id && e.outcome === 'hit' && inSpan(e.date, week) && e.date >= c.startDate).length
-    return `${c.label}: ${done} of ${expected}`
+    return t('review.line.of', { name: c.label, n: done, expected })
   }
-  const unit = c.cadence.period === 'day' ? ' days' : ''
-  return `${c.label}: ${Math.round(s.hits)} of ${expected}${unit}`
+  const line = c.cadence.period === 'day' ? 'review.line.ofDays' : 'review.line.of'
+  return t(line, { name: c.label, n: Math.round(s.hits), expected })
 }
 
 function reasonCounts(misses: Entry[], displacements: Displacement[]): ReasonCount[] {
@@ -272,9 +277,7 @@ function reasonCounts(misses: Entry[], displacements: Displacement[]): ReasonCou
 
 /** Target and cadence edits on this commitment, from its revisions. */
 function targetChanges(c: Commitment, revisions: Revision[]): Revision[] {
-  return live(revisions).filter(
-    (r) => r.goalId === c.goalId && (r.field === `${c.label} target` || r.field === `${c.label} how often`),
-  )
+  return live(revisions).filter((r) => isTargetChange(r, c))
 }
 
 /**
@@ -298,7 +301,7 @@ function hiddenKeys(input: ReviewInput, week: Span): Set<string> {
   return new Set(live(input.weekReviews).filter((w) => w.week > since).flatMap((w) => w.dismissed))
 }
 
-const times = (n: number) => (n === 2 ? 'twice' : `${n} times`)
+const times = (n: number) => (n === 2 ? t('review.ev.twice') : t('review.ev.nTimes', { n }))
 
 function suggest(g: Goal, cs: Commitment[], input: ReviewInput, week: Span, entries: Entry[]): Suggestion | null {
   const windowStart = addDays(week.start, -7 * (PATTERN_WEEKS - 1))
@@ -314,11 +317,11 @@ function suggest(g: Goal, cs: Commitment[], input: ReviewInput, week: Span, entr
     const [top] = reasonCounts(misses, input.displacements)
     if (!top || top.count < MIN_SAME_REASON) continue
     const preps = live(input.snap.preps).filter((p) => p.commitmentId === c.id)
-    const share = `${top.count} of ${misses.length} ${c.label} misses since ${dayMonth(since)}`
+    const share = t('review.ev.share', { n: top.count, total: misses.length, name: c.label, date: dayMonth(since) })
     const shown = top.displacements[0]
     const because = top.reason === 'chose_other' && shown
-      ? `chose something else (${shown.label} ×${shown.count})`
-      : { forgot: 'forgot', chose_other: 'chose something else', no_time: 'no time', too_tired: 'too tired' }[top.reason]
+      ? t('review.ev.choseOther', { what: shown.label, n: shown.count })
+      : reasonLower(top.reason)
     const evidence = `${share}: ${because}.`
 
     if (top.reason === 'forgot' || (top.reason === 'chose_other' && preps.length === 0)) {
@@ -330,7 +333,7 @@ function suggest(g: Goal, cs: Commitment[], input: ReviewInput, week: Span, entr
       if (changed >= 2) {
         candidates.push({
           key: key('pause'), kind: 'pause', goalId: g.id, commitmentId: c.id,
-          evidence: `${evidence} You’ve already changed this target ${times(changed)}.`,
+          evidence: `${evidence} ${t('review.ev.changed', { times: times(changed) })}`,
         })
       } else {
         candidates.push({ key: key('lower_target', c), kind: 'lower_target', goalId: g.id, commitmentId: c.id, evidence })
@@ -353,7 +356,7 @@ function suggest(g: Goal, cs: Commitment[], input: ReviewInput, week: Span, entr
   if (below >= FAILING_WEEKS && g.state === 'active') {
     candidates.push({
       key: key('pause'), kind: 'pause', goalId: g.id,
-      evidence: `Below ${g.tolerancePct}% in ${below} of the last ${judged} weeks.`,
+      evidence: t('review.ev.below', { pct: g.tolerancePct, n: below, total: judged }),
     })
   }
 
@@ -368,7 +371,7 @@ function suggest(g: Goal, cs: Commitment[], input: ReviewInput, week: Span, entr
     if (onTrack === MAINTENANCE_WEEKS) {
       candidates.push({
         key: key('maintenance'), kind: 'maintenance', goalId: g.id,
-        evidence: `On track every week for the last ${MAINTENANCE_WEEKS} weeks.`,
+        evidence: t('review.ev.onTrackAll', { n: MAINTENANCE_WEEKS }),
       })
     }
   }

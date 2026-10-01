@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { t } from '../i18n'
 import { wipeLocal } from '../db/backup'
 import { db } from '../db/db'
 import { writeListeners } from '../db/repo'
@@ -103,10 +104,10 @@ export function startSync() {
  * which on iOS doesn't share storage with the Home Screen app.
  */
 export async function signIn(email: string, password: string): Promise<void> {
-  if (!supabase) throw new Error('Sync is not configured for this build.')
+  if (!supabase) throw new Error(t('err.syncNotConfigured'))
   const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
   if (error) {
-    if (/invalid login credentials/i.test(error.message)) throw new Error('Wrong email or password.')
+    if (/invalid login credentials/i.test(error.message)) throw new Error(t('err.wrongLogin'))
     throw new Error(error.message)
   }
 }
@@ -117,7 +118,7 @@ export async function signIn(email: string, password: string): Promise<void> {
  */
 export async function eraseAllData(): Promise<void> {
   if (engine) {
-    if (!navigator.onLine) throw new Error('You’re offline. Connect first so the synced copy is erased too.')
+    if (!navigator.onLine) throw new Error(t('err.offlineErase'))
     await engine.clearRemote()
   }
   clearTimeout(timer)

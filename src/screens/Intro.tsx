@@ -4,8 +4,9 @@ import signature from '../assets/signature.png'
 import { exportData, shareOrDownload } from '../db/backup'
 import { createGoal, ensureValue } from '../db/repo'
 import { getSettings, setSettings } from '../db/settings'
-import { dayMonth, relativeDay } from '../lib/dates'
-import { REASONS } from '../lib/describe'
+import { getLang, setLangSetting, t, tk, tlist, type Key } from '../i18n'
+import { dayMonth, diffDays } from '../lib/dates'
+import { reasons } from '../lib/describe'
 import {
   CHECKIN_TYPES, doneWhenProblem, emptyGoalDraft, validateCommitment, validatePrep, type Errors, type GoalDraft,
 } from '../lib/draft'
@@ -113,16 +114,16 @@ export function introRoute(path: string): ReactNode | null {
 
 // ——— frame ———
 
-function Frame(props: { back?: string; children: ReactNode; nav?: ReactNode; below?: ReactNode; className?: string }) {
+function Frame(props: { back?: string; lead?: ReactNode; children: ReactNode; nav?: ReactNode; below?: ReactNode; className?: string }) {
   return (
     <div className={`screen intro ${props.className ?? ''}`}>
       <div className="intro-top">
         {props.back ? (
           <button type="button" className="back" onClick={() => goBack(props.back!)}>
-            <IconChevronLeft width={20} height={20} /> Back
+            <IconChevronLeft width={20} height={20} /> {t('nav.back')}
           </button>
-        ) : <span />}
-        <button type="button" className="btn ghost" onClick={leaveIntro}>Skip</button>
+        ) : props.lead ?? <span />}
+        <button type="button" className="btn ghost" onClick={leaveIntro}>{t('common.skip')}</button>
       </div>
       <div className="intro-body">{props.children}</div>
       {props.nav && (
@@ -135,6 +136,46 @@ function Frame(props: { back?: string; children: ReactNode; nav?: ReactNode; bel
   )
 }
 
+// ——— language ———
+
+const FlagBR = () => (
+  <svg viewBox="0 0 28 20" width="28" height="20" aria-hidden="true">
+    <rect width="28" height="20" rx="3" fill="#009c3b" />
+    <path d="M14 3 25 10 14 17 3 10Z" fill="#ffdf00" />
+    <circle cx="14" cy="10" r="4.2" fill="#002776" />
+  </svg>
+)
+
+const FlagUS = () => (
+  <svg viewBox="0 0 28 20" width="28" height="20" aria-hidden="true">
+    <clipPath id="flag-us"><rect width="28" height="20" rx="3" /></clipPath>
+    <g clipPath="url(#flag-us)">
+      <rect width="28" height="20" fill="#fff" />
+      {[0, 2, 4, 6, 8, 10, 12].map((i) => <rect key={i} y={(i * 20) / 13} width="28" height={20 / 13} fill="#b22234" />)}
+      <rect width="12" height={(7 * 20) / 13} fill="#3c3b6e" />
+    </g>
+  </svg>
+)
+
+/** Brazil and USA flags on the first screen: the language can be picked before anything else. */
+function LanguageFlags() {
+  const lang = getLang()
+  return (
+    <div className="lang-flags" role="radiogroup" aria-label={t('set.language')}>
+      <button type="button" role="radio" aria-checked={lang === 'pt-BR'} aria-label={t('intro.langPortuguese')}
+        className={lang === 'pt-BR' ? 'on' : ''} onClick={() => setLangSetting('pt-BR')}><FlagBR /></button>
+      <button type="button" role="radio" aria-checked={lang === 'en'} aria-label={t('intro.langEnglish')}
+        className={lang === 'en' ? 'on' : ''} onClick={() => setLangSetting('en')}><FlagUS /></button>
+    </div>
+  )
+}
+
+/** A text with `{name}` where a goal's name goes in italics. */
+function WithName({ k, name }: { k: Key; name: string }) {
+  const [a, b] = tk(k, { name: '\u0000' }).split('\u0000')
+  return <>{a}<i>{name}</i>{b}</>
+}
+
 // ——— 0 · Home Screen ———
 
 const IconShare = () => (
@@ -145,16 +186,16 @@ const IconShare = () => (
 
 function IntroHome() {
   return (
-    <Frame className="centered">
-      <h1 className="intro-title">Put it on your Home Screen first</h1>
-      <p className="intro-sub">It opens like an app and keeps your goals saved on your phone.</p>
+    <Frame className="centered" lead={<LanguageFlags />}>
+      <h1 className="intro-title">{t('intro.homeTitle')}</h1>
+      <p className="intro-sub">{t('intro.homeSub')}</p>
       <ol className="intro-steps">
-        <li><span className="n">1</span>Tap <b className="share">Share <IconShare /></b></li>
-        <li><span className="n">2</span>Tap <b>Add to Home Screen</b></li>
-        <li><span className="n">3</span>Open Smart Meta from your Home Screen</li>
+        <li><span className="n">1</span>{t('intro.homeTap')} <b className="share">{t('intro.homeShare')} <IconShare /></b></li>
+        <li><span className="n">2</span>{t('intro.homeTap')} <b>{t('intro.homeAdd')}</b></li>
+        <li><span className="n">3</span>{t('intro.homeOpen')}</li>
       </ol>
       <p className="intro-center">
-        <button className="quiet-link" onClick={() => navigate('/welcome')}>Continue in Safari</button>
+        <button className="quiet-link" onClick={() => navigate('/welcome')}>{t('intro.continueSafari')}</button>
       </p>
     </Frame>
   )
@@ -169,8 +210,8 @@ function WelcomeDemo() {
   const [step, setStep] = useState(() => (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 4 : 0))
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const t = setInterval(() => setStep((s) => (s + 1) % 8), 900)
-    return () => clearInterval(t)
+    const timer = setInterval(() => setStep((s) => (s + 1) % 8), 900)
+    return () => clearInterval(timer)
   }, [])
   const hits = Math.min(step, 3)
   const done = step >= 4
@@ -178,8 +219,8 @@ function WelcomeDemo() {
     <div className={`card group tint-goal demo ${done ? 'demo-done' : ''}`} aria-hidden="true">
       <div className="group-head">
         <div className="text">
-          <div className="group-eyebrow">Health · Exercise 3× a week</div>
-          <div className="group-why">So I have energy to play with my kids.</div>
+          <div className="group-eyebrow">{t('intro.demoEyebrow')}</div>
+          <div className="group-why">{t('intro.demoWhy')}</div>
         </div>
       </div>
       <ul className="items">
@@ -187,19 +228,19 @@ function WelcomeDemo() {
           <div className={`item kind-commitment ${step >= 1 && step <= 3 ? 'done' : ''}`}>
             <CheckButton shape="circle" checked={step >= 1 && step <= 3} label="" onClick={() => {}} />
             <div className="item-main">
-              <div className="item-title">At least 30 minutes of exercise</div>
-              <div className="item-detail">{hits} of 3 this week</div>
+              <div className="item-title">{t('intro.demoWhat')}</div>
+              <div className="item-detail">{t('today.nOfTimesPeriod', { n: hits, times: 3, period: t('dates.thisWeek') })}</div>
             </div>
-            <div className="item-side"><Badge kind="goal">Goal</Badge></div>
+            <div className="item-side"><Badge kind="goal">{t('common.goal')}</Badge></div>
           </div>
         </li>
       </ul>
       <div className="demo-week">
-        {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((l, i) => {
+        {tlist('dates.weekdayInitials').map((l, i) => {
           const on = DEMO_HITS.indexOf(i) > -1 && DEMO_HITS.indexOf(i) < hits
           return <span key={i} className={on ? 'on' : ''}>{on ? <IconCheck width={13} height={13} /> : l}</span>
         })}
-        <span className={`demo-status ${done ? 'show' : ''}`}>3 of 3 · on track</span>
+        <span className={`demo-status ${done ? 'show' : ''}`}>{t('intro.demoOnTrack')}</span>
       </div>
     </div>
   )
@@ -207,12 +248,12 @@ function WelcomeDemo() {
 
 function IntroWelcome() {
   return (
-    <Frame className="centered welcome"
-      nav={<button className="btn primary" onClick={() => { resetIntro(); navigate('/welcome/note') }}>Get started</button>}
-      below={<button className="quiet-link" onClick={() => navigate('/settings?view=restore')}>Restore from a backup</button>}>
+    <Frame className="centered welcome" lead={<LanguageFlags />}
+      nav={<button className="btn primary" onClick={() => { resetIntro(); navigate('/welcome/note') }}>{t('intro.getStarted')}</button>}
+      below={<button className="quiet-link" onClick={() => navigate('/settings?view=restore')}>{t('intro.restore')}</button>}>
       <WelcomeDemo />
-      <h1 className="intro-title">Stop dropping goals you never really defined.</h1>
-      <p className="intro-sub">Turn them into a weekly plan and start improving now.</p>
+      <h1 className="intro-title">{t('intro.headline')}</h1>
+      <p className="intro-sub">{t('intro.sub')}</p>
     </Frame>
   )
 }
@@ -221,15 +262,15 @@ function IntroWelcome() {
 
 function IntroNote() {
   return (
-    <Frame className="centered" back="/welcome" nav={<button className="btn primary" onClick={() => navigate('/welcome/areas')}>Continue</button>}>
+    <Frame className="centered" back="/welcome" nav={<button className="btn primary" onClick={() => navigate('/welcome/areas')}>{t('common.continue')}</button>}>
       <img className="creator" src={creator} alt="Pedro" width={96} height={96} />
-      <h1 className="intro-title">A note from the creator</h1>
+      <h1 className="intro-title">{t('intro.noteTitle')}</h1>
       <div className="note">
-        <p><b>Thank you for using the app.</b></p>
-        <p>I’m always dreaming up goals, projects and new habits, but I never turn them into a real plan.</p>
-        <p>I get lost in my own ideas, and by morning I’ve forgotten what I dreamed of the night before.</p>
-        <p>I built this app to help me become the person I want to be. I hope it helps you too.</p>
-        <p>Thanks again and all the best,</p>
+        <p><b>{t('intro.noteThanks')}</b></p>
+        <p>{t('intro.note1')}</p>
+        <p>{t('intro.note2')}</p>
+        <p>{t('intro.note3')}</p>
+        <p>{t('intro.noteBye')}</p>
         <div className="signature" role="img" aria-label="Pedro" style={{ WebkitMaskImage: `url(${signature})`, maskImage: `url(${signature})` }} />
       </div>
     </Frame>
@@ -242,9 +283,9 @@ function IntroAreas() {
   const s = useIntro()
   const toggle = (a: Area) => setIntro({ areas: s.areas.includes(a) ? s.areas.filter((x) => x !== a) : [...s.areas, a] })
   return (
-    <Frame className="centered" back="/welcome/note" nav={<button className="btn primary" onClick={() => navigate('/welcome/goal/s')}>Continue</button>}>
-      <h1 className="intro-title">What do you want to work on?</h1>
-      <p className="intro-sub">Pick any. We’ll suggest goals to match.</p>
+    <Frame className="centered" back="/welcome/note" nav={<button className="btn primary" onClick={() => navigate('/welcome/goal/s')}>{t('common.continue')}</button>}>
+      <h1 className="intro-title">{t('intro.areasTitle')}</h1>
+      <p className="intro-sub">{t('intro.areasSub')}</p>
       <div className="chips intro-chips">
         {AREAS.map((a) => <Chip key={a.key} selected={s.areas.includes(a.key)} onClick={() => toggle(a.key)}>{a.label}</Chip>)}
       </div>
@@ -257,13 +298,13 @@ function IntroAreas() {
 type Step = 's' | 'm' | 'how' | 'a' | 'r' | 't' | 'prep'
 const STEPS: Step[] = ['s', 'm', 'how', 'a', 'r', 't', 'prep']
 const LETTER: Record<Step, Letter> = { s: 'S', m: 'M', how: 'M', a: 'A', r: 'R', t: 'T', prep: '+' }
-const LINE: Record<Letter, string> = {
-  S: 'One clear thing, not a wish.',
-  M: 'Decide now what counts, so you never wonder later if you really did it.',
-  A: 'Nobody hits 100%. Choose what still counts as on track.',
-  R: 'Tie it to something you care about.',
-  T: 'A date gives you urgency and focus.',
-  '+': 'Make the next try easier.',
+const LINE: Record<Letter, Key> = {
+  S: 'intro.lineS',
+  M: 'intro.lineM',
+  A: 'intro.lineA',
+  R: 'intro.lineR',
+  T: 'intro.lineT',
+  '+': 'intro.linePrep',
 }
 const FIELDS: Record<Step, (keyof GoalDraft)[]> = {
   s: ['title'],
@@ -275,25 +316,25 @@ const FIELDS: Record<Step, (keyof GoalDraft)[]> = {
   prep: ['preps'],
 }
 
-const KINDS: { kind: 'outcome' | Shape; title: string; d: string }[] = [
-  { kind: 'outcome', title: 'Finish line', d: 'Done once, by a date' },
-  { kind: 'rhythm', title: 'Rhythm', d: 'A number of times a week' },
-  { kind: 'threshold', title: 'Threshold', d: 'Over or under a line' },
-  { kind: 'standard', title: 'Standard', d: 'A rule for when it comes up' },
+const KINDS: { kind: 'outcome' | Shape; title: Key; d: Key }[] = [
+  { kind: 'outcome', title: 'plan.finishLine', d: 'intro.kindFinish' },
+  { kind: 'rhythm', title: 'shape.rhythm', d: 'intro.kindRhythm' },
+  { kind: 'threshold', title: 'shape.threshold', d: 'intro.kindThreshold' },
+  { kind: 'standard', title: 'shape.standard', d: 'intro.kindStandard' },
 ]
 
 /** The normal form's rules, minus the reason: value and why are optional here. */
 function introErrors(d: GoalDraft): Errors<GoalDraft> {
   const outcome = d.goalKind === 'outcome'
   const e: Errors<GoalDraft> = outcome ? {} : { ...validateCommitment(d) }
-  if (!d.title.trim()) e.title = 'Name what you want.'
+  if (!d.title.trim()) e.title = t('err.nameWhat')
   if (outcome) {
     const m = doneWhenProblem(d.doneWhen)
     if (m) e.doneWhen = m
   }
-  if (!d.targetDate) e.targetDate = outcome ? 'A finish line needs a deadline.' : 'Pick a day to look back.'
-  if (d.targetDate && d.targetDate <= d.startDate) e.targetDate = 'Must be after the start date.'
-  if (d.preps.some((p) => Object.keys(validatePrep(p)).length)) e.preps = 'Finish or remove the prep.'
+  if (!d.targetDate) e.targetDate = outcome ? t('err.needsDeadline') : t('err.lookBack')
+  if (d.targetDate && d.targetDate <= d.startDate) e.targetDate = t('err.afterStart')
+  if (d.preps.some((p) => Object.keys(validatePrep(p)).length)) e.preps = t('err.finishPrep')
   return e
 }
 
@@ -364,17 +405,17 @@ function IntroGoal({ step }: { step: Step }) {
   let q: string
   let body: ReactNode
   let hint: ReactNode = null
-  let label = last ? 'Create goal' : 'Next'
+  let label = last ? t('intro.createGoal') : t('common.next')
 
   if (here === 's') {
-    q = 'What do you want to achieve?'
+    q = t('intro.qAchieve')
     body = (
       <>
-        <Field label="Goal" htmlFor="title" error={err('title')}>
-          <input id="title" value={d.title} placeholder={firstArea?.title ?? 'Exercise regularly'} onChange={(e) => set('title', e.target.value)} />
+        <Field label={t('form.goal')} htmlFor="title" error={err('title')}>
+          <input id="title" value={d.title} placeholder={firstArea?.title ?? t('area.health.title')} onChange={(e) => set('title', e.target.value)} />
         </Field>
         <div className="intro-examples">
-          <div className="intro-label">Or start from an example</div>
+          <div className="intro-label">{t('intro.orExample')}</div>
           <div className="chips">
             {examplesFor(s.areas).map((e) => <Chip key={e.key} selected={s.example === e.key} onClick={() => pick(e)}>{e.title}</Chip>)}
           </div>
@@ -382,10 +423,10 @@ function IntroGoal({ step }: { step: Step }) {
       </>
     )
   } else if (here === 'm') {
-    q = 'How will you know?'
+    q = t('form.qHowKnow')
     body = (
       <>
-        <div className="kind-grid intro-kinds" role="radiogroup" aria-label="Kind">
+        <div className="kind-grid intro-kinds" role="radiogroup" aria-label={t('goal.kind')}>
           {KINDS.map((k) => {
             const on = k.kind === 'outcome' ? outcome : !outcome && d.shape === k.kind
             return (
@@ -393,27 +434,27 @@ function IntroGoal({ step }: { step: Step }) {
                 onClick={() => patch(k.kind === 'outcome' ? { goalKind: 'outcome' } : {
                   goalKind: 'habit', shape: k.kind, checkinType: CHECKIN_TYPES[k.kind][0], period: k.kind === 'threshold' ? 'day' : 'week',
                 })}>
-                <div className="t">{k.title}</div>
-                <div className="d">{k.d}</div>
+                <div className="t">{tk(k.title)}</div>
+                <div className="d">{tk(k.d)}</div>
               </button>
             )
           })}
         </div>
-        <p className="intro-hint">Not sure? Pick one, you can change it later.</p>
+        <p className="intro-hint">{t('intro.notSure')}</p>
         <div style={{ marginTop: 18 }}>
           {outcome
-            ? <DoneWhenField d={d} set={set} error={err('doneWhen')} placeholder={fit?.draft.doneWhen ?? 'Signed an offer for a role I want'} />
+            ? <DoneWhenField d={d} set={set} error={err('doneWhen')} placeholder={fit?.draft.doneWhen ?? t('intro.phDoneWhen')} />
             : <MeasurementFields d={d} set={patch} e={all} showErrors={tried}
               placeholders={fit ? { definition: fit.draft.measurementDefinition!, label: fit.draft.label! } : undefined} />}
         </div>
       </>
     )
   } else if (here === 'how') {
-    q = d.shape === 'rhythm' ? 'How often?' : d.shape === 'threshold' ? 'Where’s the line?' : 'How will you check in?'
-    if (d.shape !== 'standard') hint = <p className="intro-hint top">Pick a number you can really hit, not the ideal one.</p>
+    q = t(d.shape === 'rhythm' ? 'form.qHowOften' : d.shape === 'threshold' ? 'form.qLine' : 'form.qCheckIn')
+    if (d.shape !== 'standard') hint = <p className="intro-hint top">{t('intro.realNumber')}</p>
     body = <CadenceFields d={d} set={patch} e={all} showErrors={tried} />
   } else if (here === 'a') {
-    q = 'How much slack?'
+    q = t('form.qSlack')
     body = outcome
       ? <GraceField value={d.graceDays} onChange={(n) => set('graceDays', n)} />
       : <>
@@ -421,7 +462,7 @@ function IntroGoal({ step }: { step: Step }) {
         <p className="intro-hint">{toleranceLine(d.tolerancePct)}</p>
       </>
   } else if (here === 'r') {
-    q = 'Why does it matter?'
+    q = t('form.qWhy')
     const existing = snap?.values.map((v) => v.name) ?? []
     const suggested = [...s.areas.map((a) => areaInfo(a).value), ...(example ? [areaInfo(example.area).value] : [])]
     const names: string[] = []
@@ -431,27 +472,27 @@ function IntroGoal({ step }: { step: Step }) {
     const chosen = (n: string) => s.valueName.trim().toLowerCase() === n.toLowerCase()
     body = (
       <>
-        <Field label="Value">
+        <Field label={t('form.value')}>
           <div className="chips">
             {names.map((n) => (
               <Chip key={n} selected={chosen(n) && !other} onClick={() => { setOther(false); setIntro({ valueName: chosen(n) ? '' : n }) }}>{n}</Chip>
             ))}
-            <Chip selected={other} onClick={() => { setOther(!other); setIntro({ valueName: '' }) }}>Other…</Chip>
+            <Chip selected={other} onClick={() => { setOther(!other); setIntro({ valueName: '' }) }}>{t('intro.other')}</Chip>
           </div>
           {other && (
-            <input style={{ marginTop: 10 }} autoFocus aria-label="Your value" placeholder="Freedom" value={s.valueName}
+            <input style={{ marginTop: 10 }} autoFocus aria-label={t('intro.yourValue')} placeholder={t('intro.phValue')} value={s.valueName}
               onChange={(e) => setIntro({ valueName: e.target.value })} />
           )}
         </Field>
-        <Field label="Why" htmlFor="why">
+        <Field label={t('form.why')} htmlFor="why">
           <textarea id="why" rows={2} value={d.whyText} placeholder={whyArea?.why ?? AREAS[0].why} onChange={(e) => set('whyText', e.target.value)} />
         </Field>
-        <p className="intro-hint">You’ll see this on Today, right when it’s hard.</p>
+        <p className="intro-hint">{t('intro.seeOnToday')}</p>
       </>
     )
-    if (!s.valueName.trim() && !d.whyText.trim()) label = 'Skip'
+    if (!s.valueName.trim() && !d.whyText.trim()) label = t('common.skip')
   } else if (here === 't') {
-    q = 'When?'
+    q = t('form.qWhen')
     const from = d.startDate
     body = (
       <>
@@ -461,7 +502,7 @@ function IntroGoal({ step }: { step: Step }) {
             const date = addMonths(from, n)
             return (
               <Chip key={n} selected={d.targetDate === date} onClick={() => set('targetDate', d.targetDate === date ? '' : date)}>
-                {n === 1 ? 'In 1 month' : `${n} months`}
+                {n === 1 ? t('intro.in1Month') : t('intro.nMonths', { n })}
               </Chip>
             )
           })}
@@ -469,7 +510,7 @@ function IntroGoal({ step }: { step: Step }) {
       </>
     )
   } else {
-    q = 'What usually gets in the way?'
+    q = t('intro.qInTheWay')
     const has = (title: string) => d.preps.some((p) => p.title === title)
     body = (
       <>
@@ -481,7 +522,7 @@ function IntroGoal({ step }: { step: Step }) {
             </Chip>
           ))}
         </div>
-        <p className="intro-hint">A prep is a small step beforehand. It’s never scored, and Insights will show whether it helps.</p>
+        <p className="intro-hint">{t('intro.prepHint')}</p>
         <div style={{ marginTop: 14 }}>
           <PrepEditor preps={d.preps} onChange={(p) => set('preps', p)} showErrors={tried} />
         </div>
@@ -495,11 +536,11 @@ function IntroGoal({ step }: { step: Step }) {
     <Frame back={prev}
       nav={<button className="btn primary" disabled={busy} onClick={next}>{label}</button>}>
       <div className="intro-head">
-        <div className="eyebrow">Your first goal</div>
-        <h1 className="intro-title">Let’s make it SMART.</h1>
+        <div className="eyebrow">{t('intro.goalEyebrow')}</div>
+        <h1 className="intro-title">{t('intro.goalTitle')}</h1>
       </div>
       <SmartBar current={letter} />
-      <p className="smart-line">{LINE[letter]}</p>
+      <p className="smart-line">{tk(LINE[letter])}</p>
       <div className="card pad smart-card">
         <h2 className="wizard-q">{q}</h2>
         {hint}
@@ -548,7 +589,9 @@ function GoalPreview({ goal, snap, demo }: { goal: Goal; snap: Snapshot; demo?: 
                 <div className="item-title">{i.title}</div>
                 {i.detail && <div className="item-detail">{i.detail}</div>}
               </div>
-              <div className="item-side"><Badge kind={i.kind === 'prep' ? 'prep' : 'goal'}>{i.kind === 'prep' ? 'Prep' : i.kind === 'log' ? 'Log' : 'Goal'}</Badge></div>
+              <div className="item-side">
+                <Badge kind={i.kind === 'prep' ? 'prep' : 'goal'}>{t(i.kind === 'prep' ? 'common.prep' : i.kind === 'log' ? 'common.log' : 'common.goal')}</Badge>
+              </div>
             </div>
           </li>
         )) : (
@@ -556,9 +599,9 @@ function GoalPreview({ goal, snap, demo }: { goal: Goal; snap: Snapshot; demo?: 
             <div className="item">
               <div className="item-main">
                 <div className="item-title">{goal.doneWhen ?? goal.title}</div>
-                {goal.targetDate && <div className="item-detail">Deadline {dayMonth(goal.targetDate)}</div>}
+                {goal.targetDate && <div className="item-detail">{t('goal.deadline')} {dayMonth(goal.targetDate)}</div>}
               </div>
-              <div className="item-side"><Badge kind="goal">Finish line</Badge></div>
+              <div className="item-side"><Badge kind="goal">{t('plan.finishLine')}</Badge></div>
             </div>
           </li>
         )}
@@ -587,16 +630,19 @@ function IntroPlan() {
   if (!snap) return null
   if (!goal) return <Lost />
   const waiting = goal.state === 'backlog'
-  const when = goal.startDate <= today ? 'today' : relativeDay(goal.startDate, today) === 'tomorrow' ? 'tomorrow' : `on ${dayMonth(goal.startDate)}`
+  const name = goal.title
+  const starts = goal.startDate <= today ? t('intro.startsToday', { name })
+    : diffDays(today, goal.startDate) === 1 ? t('intro.startsTomorrow', { name })
+    : t('intro.startsOn', { name, date: dayMonth(goal.startDate) })
   const line = s.draft ? projection(s.draft, today) : ''
   return (
     <Frame nav={<button className="btn primary" onClick={() => (s.short ? leaveIntro() : navigate('/welcome/week/1'))}>
-      {s.short ? 'Go to Today' : 'Continue'}
+      {s.short ? t('intro.goToday') : t('common.continue')}
     </button>}>
       <div className="intro-head">
-        <div className="eyebrow">Your plan</div>
-        <h1 className="intro-title">{waiting ? `${goal.title} is in your backlog` : `${goal.title} starts ${when}`}</h1>
-        {waiting && <p className="intro-sub">You already have {settings.goalCap} active goals. Start it from Plan when there’s room.</p>}
+        <div className="eyebrow">{t('intro.planEyebrow')}</div>
+        <h1 className="intro-title">{waiting ? t('intro.inBacklog', { name }) : starts}</h1>
+        {waiting && <p className="intro-sub">{t('intro.inBacklogSub', { n: settings.goalCap })}</p>}
       </div>
       <GoalPreview goal={goal} snap={snap} />
       {line && <p className="intro-projection">{line}</p>}
@@ -621,33 +667,31 @@ function IntroWeek({ n }: { n: number }) {
   let text: ReactNode
   let demo: ReactNode
   if (n === 1) {
-    title = 'Every day, one tap'
-    text = outcome
-      ? <>Break <i>{goal.title}</i> into steps and tasks. They show up on Today, one tap to tick.</>
-      : <>Open Today and tick <i>{goal.title}</i> when you do it.</>
+    title = t('intro.weekOneTitle')
+    text = <WithName k={outcome ? 'intro.weekOneFinish' : 'intro.weekOneText'} name={goal.title} />
     demo = <GoalPreview goal={goal} snap={snap} demo />
   } else if (n === 2) {
-    title = 'Missed? Say why'
-    text = 'No guilt in missing. Just log it, and later you’ll discover why.'
+    title = t('intro.weekTwoTitle')
+    text = t('intro.weekTwoText')
     demo = (
       <div className="card prompt demo-prompt">
-        <div className="prompt-q">What got in the way of {outcome ? 'it' : label}?</div>
+        <div className="prompt-q">{t('intro.weekTwoQ', { name: outcome ? t('intro.weekTwoIt') : label })}</div>
         <div className="chips">
-          {REASONS.map((r) => <Chip key={r.value} selected={reason === r.value} onClick={() => setReason(reason === r.value ? null : r.value)}>{r.label}</Chip>)}
+          {reasons().map((r) => <Chip key={r.value} selected={reason === r.value} onClick={() => setReason(reason === r.value ? null : r.value)}>{r.label}</Chip>)}
         </div>
-        {reason && <p className="small muted" style={{ marginTop: 12 }}>Later, Insights shows what gets in your way most.</p>}
+        {reason && <p className="small muted" style={{ marginTop: 12 }}>{t('intro.weekTwoAfter')}</p>}
       </div>
     )
   } else {
-    title = 'Review your goals'
-    text = 'Once a week, Review looks back at last week and suggests a fix, like a prep when you keep forgetting.'
+    title = t('intro.weekThreeTitle')
+    text = t('intro.weekThreeText')
     demo = (
       <div className="card pad demo-review">
-        <div className="group-eyebrow">Last week</div>
+        <div className="group-eyebrow">{t('review.lastWeek')}</div>
         <div className="group-why">{goal.title}</div>
         <div className="demo-review-row">
-          <span>Forgot 2 times</span>
-          <span className="btn outline small-btn" aria-hidden="true">Add a prep</span>
+          <span>{t('intro.forgot2')}</span>
+          <span className="btn outline small-btn" aria-hidden="true">{t('intro.addAPrep')}</span>
         </div>
       </div>
     )
@@ -663,9 +707,9 @@ function IntroWeek({ n }: { n: number }) {
         if (dx < -60) forward()
         else if (dx > 60) goBack(backTo)
       }}>
-      <Frame back={backTo} nav={<button className="btn primary" onClick={forward}>{n >= 3 ? 'Go to Today' : 'Next'}</button>}>
+      <Frame back={backTo} nav={<button className="btn primary" onClick={forward}>{n >= 3 ? t('intro.goToday') : t('common.next')}</button>}>
         <div className="intro-head">
-          <div className="intro-dots" aria-label={`${n} of 3`}>{[1, 2, 3].map((i) => <i key={i} className={i === n ? 'on' : ''} />)}</div>
+          <div className="intro-dots" aria-label={t('intro.nOf3', { n })}>{[1, 2, 3].map((i) => <i key={i} className={i === n ? 'on' : ''} />)}</div>
           <h1 className="intro-title">{title}</h1>
           <p className="intro-sub">{text}</p>
         </div>
@@ -682,16 +726,16 @@ export function GettingStarted({ snap }: { snap: Snapshot }) {
   const weekReviews = useWeekReviews()
   if (!settings.gettingStarted) return null
   const items = [
-    { key: 'goal', done: snap.goals.length > 0, title: 'Create your first goal', action: () => { resetIntro({ short: true }); navigate('/welcome/goal/s') } },
-    { key: 'check', done: snap.entries.some((e) => !e.deletedAt) || snap.occurrences.length > 0, title: 'Check in for the first time' },
-    { key: 'review', done: (weekReviews ?? []).some((w) => !!w.doneAt), title: 'Do your first weekly review', sub: 'From Monday', action: () => navigate('/review') },
+    { key: 'goal', done: snap.goals.length > 0, title: t('gs.firstGoal'), action: () => { resetIntro({ short: true }); navigate('/welcome/goal/s') } },
+    { key: 'check', done: snap.entries.some((e) => !e.deletedAt) || snap.occurrences.length > 0, title: t('gs.firstCheckIn') },
+    { key: 'review', done: (weekReviews ?? []).some((w) => !!w.doneAt), title: t('gs.firstReview'), sub: t('gs.fromMonday'), action: () => navigate('/review') },
     {
-      key: 'backup', done: !!settings.lastExportAt, title: 'Back up your data', sub: 'Your goals live only on this phone',
+      key: 'backup', done: !!settings.lastExportAt, title: t('gs.backup'), sub: t('gs.backupSub'),
       action: async () => {
         const r = await shareOrDownload(await exportData())
         if (r !== 'cancelled') {
           await setSettings({ lastExportAt: new Date().toISOString() })
-          toast('Exported. Keep it somewhere that isn’t this phone.')
+          toast(t('common.exportedKeep'))
         }
       },
     },
@@ -700,8 +744,8 @@ export function GettingStarted({ snap }: { snap: Snapshot }) {
   return (
     <div className="card getting-started">
       <div className="gs-head">
-        <h2>Getting started</h2>
-        <button className="icon-btn" aria-label="Hide Getting started" onClick={() => setSettings({ gettingStarted: false })}><IconClose width={18} height={18} /></button>
+        <h2>{t('gs.title')}</h2>
+        <button className="icon-btn" aria-label={t('gs.hide')} onClick={() => setSettings({ gettingStarted: false })}><IconClose width={18} height={18} /></button>
       </div>
       <ul>
         {items.map((i) => {

@@ -1,4 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
+import { Fragment } from 'react'
+import { t, tk, useLang, type Key } from './i18n'
 import { db } from './db/db'
 import { setSettings } from './db/settings'
 import { dayMonth } from './lib/dates'
@@ -19,11 +21,11 @@ import { TodayScreen } from './screens/Today'
 import { introRoute, IntroStart } from './screens/Intro'
 import { Screen } from './ui/components'
 
-const TABS = [
-  { path: '/', label: 'Today', Icon: IconToday },
-  { path: '/goals', label: 'Plan', Icon: IconGoals },
-  { path: '/review', label: 'Review', Icon: IconReview },
-  { path: '/insights', label: 'Insights', Icon: IconInsights },
+const TABS: { path: string; label: Key; Icon: typeof IconToday }[] = [
+  { path: '/', label: 'nav.today', Icon: IconToday },
+  { path: '/goals', label: 'nav.plan', Icon: IconGoals },
+  { path: '/review', label: 'nav.review', Icon: IconReview },
+  { path: '/insights', label: 'nav.insights', Icon: IconInsights },
 ]
 
 function route(path: string, query: URLSearchParams) {
@@ -47,13 +49,14 @@ function route(path: string, query: URLSearchParams) {
 
 function NotFound() {
   return (
-    <Screen title="Not found" settings>
-      <p className="muted">Nothing here.</p>
+    <Screen title={t('nav.notFound')} settings>
+      <p className="muted">{t('nav.nothingHere')}</p>
     </Screen>
   )
 }
 
 export function App() {
+  const lang = useLang()
   const settings = useSettingsLoaded()
   const goalCount = useLiveQuery(() => db.goals.filter((g) => !g.deletedAt).count(), [])
   const { path, query } = useLocation()
@@ -67,10 +70,11 @@ export function App() {
   // Settings live on the device; goals arrive with sync, so a restored phone skips first run.
   const onboarding = !settings.onboarded && goalCount === 0
   const content = onboarding && !path.startsWith('/welcome') && path !== '/settings' ? <IntroStart /> : route(path, query)
-  const tabbed = !onboarding && (TABS.some((t) => t.path === path) || path.startsWith('/day/'))
+  const tabbed = !onboarding && (TABS.some((tab) => tab.path === path) || path.startsWith('/day/'))
 
+  // Keyed by language: switching remounts the screens, so every text (and anything computed from it) is redone.
   return (
-    <>
+    <Fragment key={lang}>
       {settings.devToday && (
         <button className="dev-pill" onClick={() => setSettings({ devToday: null })}>
           Pretending it’s {dayMonth(settings.devToday)} · tap to reset
@@ -79,9 +83,9 @@ export function App() {
       <main className={`app ${tabbed ? '' : 'no-tabs'}`}>{content}</main>
       {tabbed && (
         <>
-          <button className="fab" aria-label="Quick add" onClick={openQuickAdd}><IconPlus width={26} height={26} /></button>
+          <button className="fab" aria-label={t('nav.quickAdd')} onClick={openQuickAdd}><IconPlus width={26} height={26} /></button>
           <div className="tabbar">
-            <nav aria-label="Main">
+            <nav aria-label={t('nav.main')}>
               {TABS.map(({ path: p, label, Icon }) => {
                 const current = p === '/' ? path === '/' || path.startsWith('/day/') : path.startsWith(p)
                 return (
@@ -89,9 +93,9 @@ export function App() {
                     onClick={(e) => { e.preventDefault(); navigate(p) }}>
                     <span className="tab-icon">
                       <Icon />
-                      {p === '/review' && reviewDot && <i className="tab-dot" aria-label="Review ready" />}
+                      {p === '/review' && reviewDot && <i className="tab-dot" aria-label={t('nav.reviewReady')} />}
                     </span>
-                    {label}
+                    {tk(label)}
                   </a>
                 )
               })}
@@ -101,6 +105,6 @@ export function App() {
       )}
       <QuickAdd />
       <Toaster />
-    </>
+    </Fragment>
   )
 }

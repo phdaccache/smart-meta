@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { reorderGoals, setGoalState } from '../db/repo'
+import { t } from '../i18n'
 import { dayMonth, relativeDay } from '../lib/dates'
 import { cadenceText } from '../lib/describe'
 import { activeEntries, summarizeGoal, type ScoreContext } from '../lib/scoring'
@@ -50,20 +51,20 @@ export function GoalsScreen() {
   const slotOpen = active.length < settings.goalCap
 
   return (
-    <Screen title="Plan" settings actions={
-      <button className="icon-btn" aria-label={view === 'goals' ? 'New goal' : 'New project'}
+    <Screen title={t('plan.title')} settings actions={
+      <button className="icon-btn" aria-label={view === 'goals' ? t('plan.newGoal') : t('plan.newProject')}
         onClick={() => navigate(view === 'goals' ? '/goals/new' : '/projects/new')}><IconPlus /></button>
     }>
       <div className="today-filter">
-        <Segmented label="Show" value={view} onChange={setView}
-          options={[{ value: 'goals', label: 'Goals' }, { value: 'projects', label: 'Projects' }]} />
+        <Segmented label={t('common.show')} value={view} onChange={setView}
+          options={[{ value: 'goals', label: t('plan.goals') }, { value: 'projects', label: t('plan.projects') }]} />
       </div>
 
       {view === 'projects' ? (
         <>
-          <Section title="Active" aside={<span>{projects.length}</span>}>
+          <Section title={t('plan.activeProjects')} aside={<span>{projects.length}</span>}>
             {projects.length === 0 ? (
-              <div className="card list-empty">No projects. <button className="link-btn" onClick={() => navigate('/projects/new')}>Create one</button></div>
+              <div className="card list-empty">{t('plan.noProjects')} <button className="link-btn" onClick={() => navigate('/projects/new')}>{t('plan.createProject')}</button></div>
             ) : (
               <div className="card list tint-project">
                 {projects.map((p) => <ProjectRow key={p.id} project={p} snap={snap} today={today} />)}
@@ -71,7 +72,7 @@ export function GoalsScreen() {
             )}
           </Section>
           {doneProjects.length > 0 && (
-            <Section title="Done">
+            <Section title={t('plan.doneProjects')}>
               <div className="card list">
                 {doneProjects.map((p) => <ProjectRow key={p.id} project={p} snap={snap} today={today} />)}
               </div>
@@ -79,10 +80,10 @@ export function GoalsScreen() {
           )}
         </>
       ) : (<>
-      <Section title={<span className="title-row">Active <StatusInfo /></span>} aside={<span>{active.length} of {settings.goalCap}</span>}>
+      <Section title={<span className="title-row">{t('plan.active')} <StatusInfo /></span>} aside={<span>{t('chart.nOf', { n: active.length, total: settings.goalCap })}</span>}>
         {active.length === 0 ? (
           <div className="card list-empty">
-            No active goals. {backlog.length > 0 ? 'Start one from the backlog.' : <button className="link-btn" onClick={() => navigate('/goals/new')}>Create one</button>}
+            {t('plan.noActive')} {backlog.length > 0 ? t('plan.startFromBacklog') : <button className="link-btn" onClick={() => navigate('/goals/new')}>{t('plan.createGoal')}</button>}
           </div>
         ) : (
           <Sortable items={active} keyOf={(g) => g.id} labelOf={(g) => g.title} className="card-stack"
@@ -92,7 +93,7 @@ export function GoalsScreen() {
       </Section>
 
       {maintenance.length > 0 && (
-        <Section title={<span className="title-row">Maintenance <InfoTip label="About maintenance">Goals you keep doing without a finish line. Still scored; they don’t count toward the active limit.</InfoTip></span>}>
+        <Section title={<span className="title-row">{t('plan.maintenance')} <InfoTip label={t('common.about', { topic: t('plan.maintenance').toLowerCase() })}>{t('plan.maintenanceInfo')}</InfoTip></span>}>
           <div className="card-stack">
             {maintenance.map((g) => <GoalCard key={g.id} goal={g} snap={snap} ctx={ctx} onMore={() => setActing(g)} />)}
           </div>
@@ -100,7 +101,7 @@ export function GoalsScreen() {
       )}
 
       {backlog.length > 0 && (
-        <Section title="Backlog">
+        <Section title={t('plan.backlog')}>
           <div className="card tint-goal">
             <Sortable items={backlog} keyOf={(g) => g.id} labelOf={(g) => g.title} className="list"
               onReorder={(next) => reorderGoals([...active, ...maintenance, ...next])}
@@ -108,13 +109,13 @@ export function GoalsScreen() {
                 <div className="list-row">
                   <button className="text" style={{ textAlign: 'left' }} onClick={() => navigate(`/goals/${g.id}`)}>
                     <div className="title">{g.title}</div>
-                    <div className="sub">{g.kind === 'outcome' ? 'Finish line' : habitSummary(g, snap)}</div>
+                    <div className="sub">{g.kind === 'outcome' ? t('plan.finishLine') : habitSummary(g, snap)}</div>
                   </button>
                   {slotOpen && (
                     <button className="btn" onClick={async () => {
                       await setGoalState(g, 'active')
-                      toast('Started.')
-                    }}>Start</button>
+                      toast(t('common.started'))
+                    }}>{t('common.start')}</button>
                   )}
                   {backlog.length > 1 && grip}
                 </div>
@@ -124,17 +125,20 @@ export function GoalsScreen() {
       )}
 
       {archived.length > 0 && (
-        <Section title="Archive">
+        <Section title={t('plan.archive')}>
           <details className="card">
             <summary className="list-row" style={{ cursor: 'pointer' }}>
-              <span className="text title">{archived.length} finished or set aside</span>
+              <span className="text title">{t('plan.archivedCount', { n: archived.length })}</span>
             </summary>
             <div className="list">
               {archived.map((g) => (
                 <button key={g.id} className="list-row" onClick={() => navigate(`/goals/${g.id}`)}>
                   <div className="text">
                     <div className="title">{g.title}</div>
-                    <div className="sub">{g.state === 'completed' ? 'Completed' : `Abandoned${g.abandonReason ? ` — ${g.abandonReason}` : ''}`}</div>
+                    <div className="sub">
+                      {g.state === 'completed' ? t('state.completed')
+                        : g.abandonReason ? t('plan.abandonedBecause', { reason: g.abandonReason }) : t('state.abandoned')}
+                    </div>
                   </div>
                   <IconChevronRight className="chev" width={18} />
                 </button>
@@ -161,25 +165,25 @@ export function GoalStateSheet({ goal, slotOpen, onClose }: { goal: Goal | null;
     <Sheet open onClose={onClose} title={goal.title}>
       <div className="card list">
         {goal.state === 'active' && goal.kind !== 'outcome' && (
-          <button className="list-row" onClick={() => move('maintenance', 'Now in maintenance.')}>
+          <button className="list-row" onClick={() => move('maintenance', t('move.nowMaintenance'))}>
             <div className="text">
-              <div className="title">Move to maintenance</div>
-              <div className="sub">Stays on Today and scored; frees its slot{goal.targetDate ? ' and clears the review date' : ''}.</div>
+              <div className="title">{t('move.toMaintenance')}</div>
+              <div className="sub">{goal.targetDate ? t('move.toMaintenanceSubDate') : t('move.toMaintenanceSub')}</div>
             </div>
           </button>
         )}
         {goal.state === 'maintenance' && (
-          <button className="list-row" disabled={!slotOpen} onClick={() => move('active', 'Active again.')}>
+          <button className="list-row" disabled={!slotOpen} onClick={() => move('active', t('move.activeAgain'))}>
             <div className="text">
-              <div className="title">Make active</div>
-              <div className="sub">{slotOpen ? 'Takes one of your active slots.' : 'No free slot: pause an active goal first.'}</div>
+              <div className="title">{t('move.makeActive')}</div>
+              <div className="sub">{slotOpen ? t('move.takesSlot') : t('move.noSlot')}</div>
             </div>
           </button>
         )}
-        <button className="list-row" onClick={() => move('backlog', 'Paused. It’s in the backlog.')}>
+        <button className="list-row" onClick={() => move('backlog', t('move.paused'))}>
           <div className="text">
-            <div className="title">Pause</div>
-            <div className="sub">Back to the backlog: off Today, history kept. Start it again any time.</div>
+            <div className="title">{t('move.pause')}</div>
+            <div className="sub">{t('move.pauseSub')}</div>
           </div>
         </button>
       </div>
@@ -190,7 +194,7 @@ export function GoalStateSheet({ goal, slotOpen, onClose }: { goal: Goal | null;
 function habitSummary(goal: Goal, snap: Snapshot, today?: string): string {
   return snap.commitments
     .filter((c) => c.goalId === goal.id)
-    .map((c) => `${c.label} · ${cadenceText(c)}${today && c.startDate > today ? ` (from ${relativeDay(c.startDate, today)})` : ''}`)
+    .map((c) => `${c.label} · ${cadenceText(c)}${today && c.startDate > today ? ` ${t('plan.fromDate', { when: relativeDay(c.startDate, today) })}` : ''}`)
     .join('  ·  ')
 }
 
@@ -206,21 +210,21 @@ function GoalCard({ goal, snap, ctx, grip, onMore }: { goal: Goal; snap: Snapsho
     <div className="card goal-card tint-goal">
       <div className="goal-card-head">
         <button className="text" onClick={open}>
-          <div className="group-eyebrow">{value?.name ?? 'Goal'}{outcome ? ' · Finish line' : ''}</div>
+          <div className="group-eyebrow">{value?.name ?? t('common.goal')}{outcome ? t('plan.finishLineTag') : ''}</div>
           <div className="goal-card-title">{goal.title}</div>
         </button>
-        {onMore && <button className="icon-btn" aria-label={`Change ${goal.title}`} onClick={onMore}><IconMore /></button>}
+        {onMore && <button className="icon-btn" aria-label={t('common.change', { name: goal.title })} onClick={onMore}><IconMore /></button>}
         {grip}
       </div>
       <button className="goal-card-body" onClick={open}>
         <div className="row" style={{ justifyContent: 'space-between' }}>
           <StatusWord status={s.status} />
           {outcome && goal.targetDate
-            ? <span className="small muted">due {dayMonth(goal.targetDate)} {goal.targetDate.slice(0, 4)}</span>
+            ? <span className="small muted">{t('today.due', { when: `${dayMonth(goal.targetDate)} ${goal.targetDate.slice(0, 4)}` })}</span>
             : hasHabits && <WeekBar weeks={s.weeks} />}
         </div>
         {hasHabits && <div className="small muted" style={{ marginTop: 6 }}>{habitSummary(goal, snap, ctx.today)}</div>}
-        {reviewOn && reviewOn <= ctx.today && <div className="small" style={{ marginTop: 8, color: 'var(--accent)', fontWeight: 600 }}>Review due</div>}
+        {reviewOn && reviewOn <= ctx.today && <div className="small" style={{ marginTop: 8, color: 'var(--accent)', fontWeight: 600 }}>{t('plan.reviewDue')}</div>}
       </button>
       {projects.length > 0 && (
         <div className="goal-card-projects">
@@ -240,9 +244,9 @@ function GoalCard({ goal, snap, ctx, grip, onMore }: { goal: Goal; snap: Snapsho
 }
 
 export function projectProgress(p: Project, snap: Snapshot) {
-  const steps = snap.tasks.filter((t) => t.projectId === p.id)
+  const steps = snap.tasks.filter((x) => x.projectId === p.id)
   const doneIds = new Set(activeEntries(snap.entries).filter((e) => e.subjectType === 'task' && e.outcome === 'hit').map((e) => e.subjectId))
-  const done = steps.filter((t) => doneIds.has(t.id)).length
+  const done = steps.filter((x) => doneIds.has(x.id)).length
   return { done, total: steps.length, doneIds }
 }
 
@@ -255,8 +259,10 @@ function ProjectRow({ project, snap, today }: { project: Project; snap: Snapshot
       <div className="text">
         <div className="title">{project.title}</div>
         <div className="sub">
-          {total ? `${done} of ${total} steps` : 'No steps yet'}
-          {project.state === 'active' ? <> · <span style={overdue ? { color: 'var(--at-risk)' } : undefined}>due {relativeDay(project.targetDate, today)}</span></> : project.state === 'archived' ? ' · set aside' : ' · done'}
+          {total ? t('plan.stepsOf', { done, total }) : t('plan.noSteps')}
+          {project.state === 'active'
+            ? <> · <span style={overdue ? { color: 'var(--at-risk)' } : undefined}>{t('today.due', { when: relativeDay(project.targetDate, today) })}</span></>
+            : project.state === 'archived' ? t('plan.setAside') : t('plan.done')}
           {goal && ` · ${goal.title}`}
         </div>
         {total > 0 && <div className="progress"><i style={{ width: `${(100 * done) / total}%` }} /></div>}
