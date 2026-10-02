@@ -461,12 +461,13 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 }
 .toast {
   background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 500;
-  max-width: calc(100vw - 32px); animation: rise 0.2s ease;
+  max-width: calc(100vw - 32px); animation: rise 0.2s ease; text-align: center;
 }
 
 .steps-editor { list-style: none; margin: 0; padding: 0; }
 .steps-editor li { display: flex; gap: 6px; align-items: center; }
 .steps-editor li + li { margin-top: 8px; }
+.steps-editor .step-remove { flex: none; width: 36px; height: 36px; color: var(--ink-3); }
 .steps-editor .num { width: 22px; color: var(--ink-3); font-size: 14px; text-align: right; flex: none; }
 
 .hidden-date { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }

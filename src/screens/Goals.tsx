@@ -52,7 +52,8 @@ export function GoalsScreen() {
     const r = reviews.filter((x) => x.goalId === id).sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0]
     return r?.journalNote || r?.whatHappened || ''
   }
-  const projects = snap.projects.filter((p) => p.state === 'active')
+  const projects = snap.projects.filter((p) => p.state === 'active' && !waitsForGoal(p, snap.goals, today))
+  const waiting = snap.projects.filter((p) => p.state === 'active' && waitsForGoal(p, snap.goals, today))
   const doneProjects = snap.projects.filter((p) => p.state !== 'active')
   const slotOpen = active.length < settings.goalCap
 
@@ -77,6 +78,14 @@ export function GoalsScreen() {
               </div>
             )}
           </Section>
+          {waiting.length > 0 && (
+            <Section title={<span className="title-row">{t('plan.waitingProjects')}<InfoTip label={t('plan.waitingProjects')}>{t('plan.waitingInfo')}</InfoTip></span>}
+              aside={<span>{waiting.length}</span>}>
+              <div className="card list">
+                {waiting.map((p) => <ProjectRow key={p.id} project={p} snap={snap} today={today} />)}
+              </div>
+            </Section>
+          )}
           {doneProjects.length > 0 && (
             <Section title={t('plan.doneProjects')}>
               <div className="card list">
@@ -268,7 +277,7 @@ function ProjectRow({ project, snap, today }: { project: Project; snap: Snapshot
         <div className="sub">
           {total ? t('plan.stepsOf', { done, total }) : t('plan.noSteps')}
           {project.state === 'active' && waitsForGoal(project, snap.goals, today)
-            ? <> · {t('plan.waitsForGoal')}</>
+            ? null
             : project.state === 'active'
             ? <> · <span style={overdue ? { color: 'var(--at-risk)' } : undefined}>{t('today.due', { when: relativeDay(project.targetDate, today) })}</span></>
             : project.state === 'archived' ? t('plan.setAside') : t('plan.done')}

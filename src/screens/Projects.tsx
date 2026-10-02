@@ -6,7 +6,7 @@ import { activeEntries } from '../lib/scoring'
 import type { Task } from '../lib/types'
 import { CheckButton, Field, Screen, Section, toast, TypeToConfirm } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
-import { IconChevronRight } from '../ui/icons'
+import { IconChevronRight, IconClose } from '../ui/icons'
 import { Sortable } from '../ui/Sortable'
 import { navigate } from '../ui/router'
 import { GoalSelect } from './TaskSheet'
@@ -17,7 +17,7 @@ export function NewProjectScreen({ goalId: presetGoal }: { goalId?: string | nul
   const [title, setTitle] = useState('')
   const [targetDate, setTargetDate] = useState(() => addDays(today, 30))
   const [goalId, setGoalId] = useState<string | null>(presetGoal ?? null)
-  const [steps, setSteps] = useState<string[]>(['', ''])
+  const [steps, setSteps] = useState<string[]>([''])
   const [tried, setTried] = useState(false)
 
   const errors = {
@@ -55,6 +55,12 @@ export function NewProjectScreen({ goalId: presetGoal }: { goalId?: string | nul
                     if (i === steps.length - 1) setSteps([...steps, ''])
                   }
                 }} />
+              {steps.length > 1 && (
+                <button type="button" className="icon-btn step-remove" aria-label={t('project.removeStepN', { n: i + 1 })}
+                  onClick={() => setSteps(steps.filter((_, j) => j !== i))}>
+                  <IconClose width={16} height={16} />
+                </button>
+              )}
             </li>
           ))}
         </ol>

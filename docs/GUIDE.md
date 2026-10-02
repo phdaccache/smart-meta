@@ -36,9 +36,9 @@ The app speaks English or Brazilian Portuguese and follows the phone's language.
 
 New goals wait in the **backlog**. Open the goal and tap **Start**.
 
-**Or start from a template.** The New goal screen begins with **Start from a template**: ready-to-use goals, the areas you picked in the intro first. Tap one to see all of it on one screen: the goal with its value and a reason, its habit and preps, and for the bigger ones the supporting habits (some starting a few weeks later) and projects with steps. **Save goal** saves it all as is (the value is created if you don't have it); **Choose another** goes back to the list. Change anything later on the goal's page.
+**Or start from a template.** The New goal screen begins with **Start from a template**: ready-to-use goals, the areas you picked in the intro first. Tap one to see all of it on one screen: the goal with its value and a reason, its habit and preps, and for the bigger ones the supporting habits (some starting a few weeks later) and projects with steps. **Save goal** saves it all as is (the value is created if you don't have it); **Edit goal** opens it in the usual form, filled in, and saving there still adds its habits and projects. Back walks back through each step: the goal, the template, the list, New goal.
 
-A goal's projects wait with it: while the goal is in the backlog they stay off Today and Review (Plan → Projects says "Starts with its goal"). When you start the goal, projects with nothing done yet move their date by the days they waited.
+A goal's projects wait with it: while the goal is in the backlog they stay off Today and Review (Plan → Projects lists them under *Waiting for their goal*). When you start the goal, projects with nothing done yet move their date by the days they waited.
 
 If you have no values yet, add one right there in the R step (or tap **+ New value** next to the ones you have); the goal you're writing stays as it is. The intro works the same way.
 
