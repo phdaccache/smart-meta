@@ -905,6 +905,13 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .intro .eyebrow { margin-bottom: 6px; }
 .intro .smart { margin: 0 0 8px; }
 .intro .smart-lead { text-align: center; margin-bottom: 18px; }
+/* Before the first letter: "Let's make it", then each word of SMART in turn */
+.smart-reveal { display: grid; gap: 14px; width: max-content; max-width: 100%; margin: 36px auto 0; text-align: left; }
+.smart-row { display: flex; align-items: center; gap: 14px; animation: smart-row-in 0.5s ease both; }
+.smart-row .smart-l { flex: none; width: 46px; height: 46px; font-size: 20px; border-radius: 12px; }
+.smart-row-word { font: 700 22px/1.2 var(--font-display); letter-spacing: -0.01em; }
+@keyframes smart-row-in { from { opacity: 0; transform: translateY(14px); } }
+@media (prefers-reduced-motion: reduce) { .smart-row { animation: none; } }
 .intro .smart-word { text-align: center; justify-content: center; }
 .news { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
 .news li { display: flex; gap: 14px; align-items: flex-start; }
@@ -1008,25 +1015,31 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .intro-dots i { width: 7px; height: 7px; border-radius: 4px; background: var(--line-strong); transition: width 0.2s; }
 .intro-dots i.on { width: 18px; background: var(--accent); }
 
-/* The welcome's example week */
-.demo { margin: 0 0 40px; transition: border-color 0.3s; }
-.demo.demo-done { border-color: var(--on-track); }
-.demo .check { pointer-events: none; }
-.demo-week { display: flex; align-items: center; gap: 6px; padding: 0 16px 14px; }
-.demo-week > span:not(.demo-status) {
-  width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center;
-  background: color-mix(in srgb, var(--ink) 9%, transparent); color: var(--ink-3); font-size: 12px; font-weight: 600; transition: background 0.25s, color 0.25s;
+/* The welcome: loose goals floating around, then snapping into a list */
+.mess {
+  position: relative; height: 222px; margin: 0 0 36px; border-radius: var(--radius); border: 1px solid transparent;
+  transition: border-color 0.5s ease, background 0.5s ease;
 }
-.demo-week > span.on { background: var(--on-track); color: var(--bg); }
-.demo-status {
-  margin-left: auto; display: grid; place-items: center; width: 40px; height: 28px; border-radius: 14px;
-  background: color-mix(in srgb, var(--on-track) 18%, transparent); color: var(--on-track); opacity: 0; transition: opacity 0.3s;
+.mess.plan { border-color: var(--line); background: var(--surface); }
+.mess-item {
+  position: absolute; white-space: nowrap;
+  transition: left 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.skel { border-radius: 6px; background: color-mix(in srgb, var(--ink) 12%, transparent); transition: opacity 0.25s; }
-.skel.strong { background: color-mix(in srgb, var(--ink) 22%, transparent); }
-.item.done .skel { opacity: 0.5; }
-.skel-badge { display: inline-block; width: 46px; height: 22px; }
-.demo-status.show { opacity: 1; }
+.mess-float {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; font-size: 15px; font-weight: 550;
+  border: 1px solid var(--line-strong); background: var(--surface-2);
+  animation: mess-float 3.2s ease-in-out infinite alternate; transition: border-color 0.4s ease, background 0.4s ease;
+}
+@keyframes mess-float { from { transform: translate(0, -3px); } to { transform: translate(3px, 4px); } }
+.plan .mess-float { animation: none; border-color: transparent; background: transparent; }
+.mess-check {
+  flex: none; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--line-strong);
+  display: grid; place-items: center; color: var(--bg); transition: background 0.25s, border-color 0.25s;
+}
+.mess-check.on { background: var(--on-track); border-color: var(--on-track); }
+@media (prefers-reduced-motion: reduce) {
+  .mess, .mess-item, .mess-float { transition: none; animation: none; }
+}
 
 
 /* The note */

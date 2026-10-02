@@ -21,7 +21,7 @@ import { useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
 import { FlagBR, FlagUS, IconCheck, IconChevronLeft, IconClose } from '../ui/icons'
 import { goBack, match, navigate } from '../ui/router'
 import {
-  AchieveFields, KindField, MeasureFields, measureFields, PrepFields, PrepHead, SMART_LINE, SMART_Q, SmartBar, TimeFields, TitleFields, WhyText,
+  AchieveFields, KindField, MeasureFields, measureFields, PrepFields, PrepHead, SMART, SMART_LINE, SMART_Q, SmartBar, TimeFields, TitleFields, WhyText,
   type SetField, type SmartLetter,
 } from './GoalForm'
 
@@ -191,46 +191,49 @@ function IntroHome() {
 
 // ——— 1 · Welcome ———
 
-const DEMO_HITS = [0, 2, 4]
+/** Loose goals, scattered: where each one floats (left as a share of the width, top in px) and its tilt. */
+const MESS: { x: number; y: number; r: number }[] = [
+  { x: 6, y: 18, r: -7 },
+  { x: 48, y: 4, r: 5 },
+  { x: 26, y: 78, r: -3 },
+  { x: 54, y: 122, r: 8 },
+  { x: 2, y: 160, r: 4 },
+]
+const MESS_WORDS: Key[] = ['intro.mess.1', 'intro.mess.2', 'intro.mess.3', 'intro.mess.4', 'intro.mess.5']
+/** Steps of 600 ms: floating, then a list, then ticks, then back to floating. */
+const SNAP_AT = 4
+const TICKS_AT = [6, 7]
+const LOOP = 12
 
-/** A goal filling up over a week, drawn without words: the app in use, before anything to read. */
+/**
+ * Goals floating around loose, tilted and overlapping, then snapping into a
+ * plan: a list, with the first ones ticked. The app's promise, before any
+ * words to read.
+ */
 function WelcomeDemo() {
-  const [step, setStep] = useState(() => (reducedMotion() ? 4 : 0))
+  const [step, setStep] = useState(() => (reducedMotion() ? TICKS_AT[1] : 0))
   useEffect(() => {
     if (reducedMotion()) return
-    const timer = setInterval(() => setStep((s) => (s + 1) % 8), 900)
+    const timer = setInterval(() => setStep((s) => (s + 1) % LOOP), 600)
     return () => clearInterval(timer)
   }, [])
-  const hits = Math.min(step, 3)
-  const done = step >= 4
-  const ticked = step >= 1 && step <= 3
+  const plan = step >= SNAP_AT
   return (
-    <div className={`card group tint-goal demo ${done ? 'demo-done' : ''}`} aria-hidden="true">
-      <div className="group-head">
-        <div className="text">
-          <div className="skel" style={{ width: '34%', height: 8 }} />
-          <div className="skel strong" style={{ width: '74%', height: 12, marginTop: 9 }} />
-        </div>
-      </div>
-      <ul className="items">
-        <li>
-          <div className={`item kind-commitment ${ticked ? 'done' : ''}`}>
-            <CheckButton shape="circle" checked={ticked} label="" onClick={() => {}} />
-            <div className="item-main">
-              <div className="skel strong" style={{ width: '68%', height: 10 }} />
-              <div className="skel" style={{ width: '32%', height: 8, marginTop: 8 }} />
-            </div>
-            <div className="item-side"><span className="badge badge-goal skel-badge" /></div>
+    <div className={`mess ${plan ? 'plan' : ''}`} aria-hidden="true">
+      {MESS_WORDS.map((k, i) => {
+        const m = MESS[i]
+        const ticked = TICKS_AT.some((at, j) => j === i && step >= at)
+        return (
+          <div key={k} className="mess-item" style={plan
+            ? { left: '16px', top: `${16 + i * 40}px`, transform: 'rotate(0deg)', transitionDelay: `${i * 70}ms` }
+            : { left: `${m.x}%`, top: `${m.y}px`, transform: `rotate(${m.r}deg)`, transitionDelay: `${(4 - i) * 50}ms` }}>
+            <span className="mess-float" style={{ animationDelay: `${-i * 0.7}s` }}>
+              <span className={`mess-check ${ticked ? 'on' : ''}`}>{ticked && <IconCheck width={12} height={12} />}</span>
+              {tk(k)}
+            </span>
           </div>
-        </li>
-      </ul>
-      <div className="demo-week">
-        {[0, 1, 2, 3, 4, 5, 6].map((i) => {
-          const on = DEMO_HITS.indexOf(i) > -1 && DEMO_HITS.indexOf(i) < hits
-          return <span key={i} className={on ? 'on' : ''}>{on && <IconCheck width={13} height={13} />}</span>
-        })}
-        <span className={`demo-status ${done ? 'show' : ''}`}><IconCheck width={14} height={14} /></span>
-      </div>
+        )
+      })}
     </div>
   )
 }
@@ -277,7 +280,7 @@ function IntroAreas() {
     setSettings({ areas })
   }
   return (
-    <Frame className="centered" back="/welcome/note" nav={<button className="btn primary" onClick={() => navigate('/welcome/goal/s')}>{t('intro.createFirst')}</button>}>
+    <Frame className="centered" back="/welcome/note" nav={<button className="btn primary" onClick={() => navigate('/welcome/goal/smart')}>{t('intro.createFirst')}</button>}>
       <h1 className="intro-title">{t('intro.areasTitle')}</h1>
       <p className="intro-sub">{t('intro.areasSub')}</p>
       <div className="chips intro-chips">
@@ -289,9 +292,10 @@ function IntroAreas() {
 
 // ——— 4–9 · the first goal: S M A R T, then a prep ———
 
-type Step = 's' | 'm' | 'a' | 'r' | 't' | 'prep'
-const STEPS: Step[] = ['s', 'm', 'a', 'r', 't', 'prep']
-const LETTER: Record<Exclude<Step, 'prep'>, SmartLetter> = { s: 'S', m: 'M', a: 'A', r: 'R', t: 'T' }
+/** 'smart' first says what the letters stand for, then one step per letter, then a prep. */
+type Step = 'smart' | 's' | 'm' | 'a' | 'r' | 't' | 'prep'
+const STEPS: Step[] = ['smart', 's', 'm', 'a', 'r', 't', 'prep']
+const LETTER: Record<Exclude<Step, 'smart' | 'prep'>, SmartLetter> = { s: 'S', m: 'M', a: 'A', r: 'R', t: 'T' }
 
 function fieldsFor(step: Step, d: GoalDraft): (keyof GoalDraft)[] {
   if (step === 's') return ['title', 'label']
@@ -457,16 +461,32 @@ function IntroGoal({ step }: { step: Step }) {
   }
 
   const prev = at === 0 ? (s.short ? '/' : '/welcome/areas') : `/welcome/goal/${steps[at - 1]}`
+  if (here === 'smart') {
+    return (
+      <Frame className="centered" back={prev} nav={<button className="btn primary" onClick={next}>{t('common.next')}</button>}>
+        <h1 className="intro-title">{t('intro.goalTitle')}</h1>
+        <div className="smart-reveal">
+          {SMART.map((x, i) => (
+            <div key={x.k} className="smart-row" style={{ animationDelay: `${500 + i * 450}ms` }}>
+              <span className="smart-l on">{x.k}</span>
+              <span className="smart-row-word">{tk(x.word)}</span>
+            </div>
+          ))}
+        </div>
+      </Frame>
+    )
+  }
+  const letter = LETTER[here as Exclude<Step, 'smart' | 'prep'>]
   return (
     <Frame back={prev} nav={<button className="btn primary" disabled={busy} onClick={next}>{label}</button>}>
       {here === 'prep' ? <PrepHead big /> : (
         <>
-          <SmartBar current={LETTER[here]} big />
-          <p className="smart-line">{tk(SMART_LINE[LETTER[here]])}</p>
+          <SmartBar current={letter} big />
+          <p className="smart-line">{tk(SMART_LINE[letter])}</p>
         </>
       )}
       <div className="card pad smart-card">
-        <h2 className="wizard-q">{here === 'prep' ? t('intro.qInTheWay') : tk(SMART_Q[LETTER[here]])}</h2>
+        <h2 className="wizard-q">{here === 'prep' ? t('intro.qInTheWay') : tk(SMART_Q[letter])}</h2>
         {body}
       </div>
       {extra && <div className="card pad smart-card second">{extra}</div>}
@@ -792,7 +812,7 @@ export function GettingStarted({ snap }: { snap: Snapshot }) {
   const weekReviews = useWeekReviews()
   if (!settings.gettingStarted) return null
   const items = [
-    { key: 'goal', done: snap.goals.length > 0, title: t('gs.firstGoal'), action: () => { resetIntro({ short: true }); navigate('/welcome/goal/s') } },
+    { key: 'goal', done: snap.goals.length > 0, title: t('gs.firstGoal'), action: () => { resetIntro({ short: true }); navigate('/welcome/goal/smart') } },
     { key: 'check', done: snap.entries.some((e) => !e.deletedAt) || snap.occurrences.length > 0, title: t('gs.firstCheckIn') },
     { key: 'review', done: (weekReviews ?? []).some((w) => !!w.doneAt), title: t('gs.firstReview'), sub: t('gs.fromMonday'), action: () => navigate('/review') },
     {

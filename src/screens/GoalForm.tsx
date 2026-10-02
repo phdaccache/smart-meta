@@ -435,7 +435,7 @@ function TemplateSheet({ open, areas, onPick, onClose }: { open: boolean; areas:
 }
 
 /** The letters stay S M A R T in every language; the words are translated. */
-const SMART = [
+export const SMART = [
   { k: 'S', word: 'smart.specific' },
   { k: 'M', word: 'smart.measurable' },
   { k: 'A', word: 'smart.achievable' },
