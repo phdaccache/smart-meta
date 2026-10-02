@@ -13,9 +13,9 @@ import {
 import { activeEntries, summarizeGoal, type ScoreContext } from '../lib/scoring'
 import { dueBadge, type Snapshot } from '../lib/today'
 import { stateLabel } from '../lib/revisions'
-import type { Commitment, Goal, Prep } from '../lib/types'
+import type { Commitment, Goal, GoalReview, Prep } from '../lib/types'
 import { Field, InfoTip, Screen, Section, Sheet, StatusInfo, StatusWord, toast, TypeToConfirm, WeekBar } from '../ui/components'
-import { useSettings, useSnapshot, useToday } from '../ui/hooks'
+import { useGoalReviews, useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconHistory, IconInsights } from '../ui/icons'
 import { navigate } from '../ui/router'
 import { CadenceFields, GraceField, graceLabel, MeasurementFields, PrepEditor, ShapeField, ShapeInfo, SmartHead, ToleranceField, WhyFields } from './GoalForm'
@@ -62,6 +62,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
   const tasks = snap.tasks.filter((x) => x.goalId === goal.id && !x.projectId)
   const doneTasks = new Set(activeEntries(snap.entries).filter((e) => e.subjectType === 'task' && e.outcome === 'hit').map((e) => e.subjectId))
   const openTasks = tasks.filter((x) => !doneTasks.has(x.id))
+  const ended = goal.state === 'completed' || goal.state === 'abandoned'
 
   return (
     <Screen back="/goals" eyebrow={[value?.name, stateLabel(goal.state)].filter(Boolean).join(' · ')} title={goal.title}
@@ -84,12 +85,15 @@ export function GoalDetailScreen({ id }: { id: string }) {
         </div>
       )}
 
+      {ended && <LookingBack goal={goal} />}
+
       <Section title={t('common.details')}>
         <div className="card tint-goal">
           {goal.whyText && <div className="pad card-head"><div className="group-why">{goal.whyText}</div></div>}
           <div className="pad">
             <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}>
-              <span className="row" style={{ gap: 0 }}><StatusWord status={summary.status} /><StatusInfo /></span>
+              {/* An ended goal has no live status: how it ended is in Looking back. */}
+              {ended ? <span /> : <span className="row" style={{ gap: 0 }}><StatusWord status={summary.status} /><StatusInfo /></span>}
               {commitments.length > 0 && <WeekBar weeks={summary.weeks} />}
             </div>
             {summary.time && (
@@ -113,6 +117,8 @@ export function GoalDetailScreen({ id }: { id: string }) {
           </div>
         </div>
       </Section>
+
+      {!ended && <LookingBack goal={goal} />}
 
       <Section title={<span className="title-row">{outcome ? t('goal.supportingHabits') : t('goal.commitments')}
         {outcome && <InfoTip label={t('goal.aboutSupporting')}>{t('goal.supportingInfo')}</InfoTip>}
@@ -425,6 +431,42 @@ export function GoalEditScreen({ id }: { id: string }) {
       {!outcome && <p className="small muted" style={{ margin: '12px 4px 0' }}>{t('goal.commitmentsEditedElsewhere')}</p>}
       <div className="wizard-nav"><button className="btn primary" onClick={save}>{t('common.saveChanges')}</button></div>
     </Screen>
+  )
+}
+
+// ——— looking back ———
+
+/**
+ * What was written when the goal was reviewed (newest first), and why it was
+ * dropped if it was. Ended goals show it first: it's what's left of them.
+ */
+function LookingBack({ goal }: { goal: Goal }) {
+  const reviews = [...useGoalReviews(goal.id)].sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+  const stopped = goal.state === 'abandoned' && goal.abandonReason
+  if (!reviews.length && !stopped) return null
+  const outcomeWord = (o: GoalReview['outcome']) => (o === 'renewed' ? t('goal.renewed') : stateLabel(o))
+  return (
+    <Section title={t('goal.lookingBack')}>
+      <div className="stack">
+        {stopped && (
+          <div className="card pad looking-back">
+            <div className="lb-label">{t('goal.whyStopped')}</div>
+            <p className="lb-text">{goal.abandonReason}</p>
+          </div>
+        )}
+        {reviews.map((r) => (
+          <div key={r.id} className="card pad looking-back">
+            <div className="lb-head">
+              <span className={`lb-result ${r.hit ? 'hit' : 'miss'}`}>{r.hit ? '✓' : '✕'} {t(r.hit ? 'goal.hitIt' : 'goal.didntHitIt')}</span>
+              <span className="lb-meta">{outcomeWord(r.outcome)} · {dayMonth(r.timestamp.slice(0, 10))} {r.timestamp.slice(0, 4)}</span>
+            </div>
+            {r.whatHappened && <><div className="lb-label">{t('goal.whatHappened')}</div><p className="lb-text">{r.whatHappened}</p></>}
+            {r.journalNote && <><div className="lb-label">{t('goalReview.journal')}</div><p className="lb-text">{r.journalNote}</p></>}
+            {!r.whatHappened && !r.journalNote && <p className="lb-text muted">{t('goal.nothingWritten')}</p>}
+          </div>
+        ))}
+      </div>
+    </Section>
   )
 }
 

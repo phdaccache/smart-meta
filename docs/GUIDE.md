@@ -36,6 +36,10 @@ The app speaks English or Brazilian Portuguese and follows the phone's language.
 
 New goals wait in the **backlog**. Open the goal and tap **Start**.
 
+**Or start from a template.** The New goal screen begins with **Start from a template**: ready goals to adjust, the areas you picked in the intro first. The bigger ones come with their supporting habits (with preps, some starting a few weeks later) and projects with steps; the form lists what saving adds. Only the value and the why are left to you. The value is one tap away, and the why shows an example, but it has to be yours: it's what Today shows you.
+
+If you have no values yet, add one right there in the R step (or tap **+ New value** next to the ones you have); the goal you're writing stays as it is.
+
 **2. Add supporting habits** on the goal page (Supporting habits → **Add**). Each one has its own start date:
 - LeetCode: "Solved at least 2 LeetCode problems", 4× a week, starting now.
 - Mock interview: "Did a mock interview with a friend", once a week, with the prep "Book a friend", Monday 21:00.
@@ -101,6 +105,12 @@ Review is about next week; **Insights** is about the long run. Pick the period a
 - **Habit goal:** every one has a review date. On that date the goal asks: *Did you hit it? What happened?* It also asks for a journal note.
 
 Then choose **Renew**, **Maintenance** (habit goals only) or **Close it out**.
+
+What you wrote stays with the goal. Its page shows **Looking back** with each review: whether you hit it, what happened, and the journal. For a finished or abandoned goal it's the first thing on the page, and Plan → Archive shows a line of the journal under the goal's name.
+
+## On Android
+
+Open the app in Chrome and tap **Install** when Chrome offers it (or ⋮ → **Add to Home screen**, or Settings → **Install the app**). Unlike iPhone, the browser and the installed app share the same data, so it doesn't matter which you set up first. The phone's back button goes back a screen; with a sheet open, close it with ✕ or by tapping outside it.
 
 ## Try it without waiting
 

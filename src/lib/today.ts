@@ -1,5 +1,5 @@
 import { num, t, tn } from '../i18n'
-import { diffDays, inSpan, isoWeekday, periodOf, relativeDay } from './dates'
+import { addDays, diffDays, inSpan, isoWeekday, minDate, periodOf, relativeDay } from './dates'
 import {
   activeEntries, evaluateThreshold, meetsTarget, missPrompt, thresholdAggregate, withoutDismissed, type MissPrompt, type PeriodEval,
   type ScoreContext,
@@ -46,7 +46,32 @@ export interface TodayItem {
   step?: { index: number; total: number }
   /** Open tasks with a date: red when due today or late, yellow tomorrow, green later. */
   due?: { label: string; tone: 'red' | 'yellow' | 'green' }
+  /** A project's open step: whether the project is on pace, behind or overdue (as in Insights). */
+  pace?: 'on_pace' | 'behind' | 'overdue'
   target: ItemTarget
+}
+
+export type ProjectPace = 'done' | 'all_done' | 'not_started' | 'on_pace' | 'behind' | 'overdue'
+
+/**
+ * Whether a project will make its date: overdue past it; otherwise behind when
+ * the steps done so far, kept at the same speed, would finish after it.
+ * `doneDates` is the day each finished step was done.
+ */
+export function projectPace(project: Project, total: number, doneDates: DateStr[], today: DateStr): { status: ProjectPace; start: DateStr; projected: DateStr | null } {
+  const done = [...doneDates].sort()
+  const created = project.createdAt.slice(0, 10)
+  const start = minDate(created, done[0] ?? created)
+  const remaining = total - done.length
+  let projected: DateStr | null = null
+  if (project.state === 'done') return { status: 'done', start, projected }
+  if (remaining <= 0) return { status: 'all_done', start, projected }
+  if (done.length > 0) {
+    const pace = done.length / Math.max(7, diffDays(start, today))
+    projected = addDays(today, Math.ceil(remaining / pace))
+  }
+  const status: ProjectPace = project.targetDate < today ? 'overdue' : !projected ? 'not_started' : projected > project.targetDate ? 'behind' : 'on_pace'
+  return { status, start, projected }
 }
 
 export function dueBadge(due: DateStr, date: DateStr): NonNullable<TodayItem['due']> {
@@ -136,6 +161,11 @@ export function buildDay(
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
     const out: TodayItem[] = []
     let currentShown = false
+    const doneDates = steps
+      .map((step) => entriesOf('task', step.id).filter((e) => e.outcome === 'hit').map((e) => e.date).sort()[0])
+      .filter((d): d is DateStr => !!d)
+    const { status } = projectPace(p, steps.length, doneDates, date)
+    const pace = status === 'on_pace' || status === 'behind' || status === 'overdue' ? status : undefined
     steps.forEach((step, i) => {
       const done = latest(entriesOf('task', step.id).filter((e) => e.outcome === 'hit'))
       const base = {
@@ -148,7 +178,7 @@ export function buildDay(
         currentShown = true
         if (isToday) {
           out.push({
-            ...base, key: `task:${step.id}`, done: false,
+            ...base, key: `task:${step.id}`, done: false, pace,
             detail: showDue ? t('today.stepOf', { project: p.title, when: relativeDay(p.targetDate, date) }) : undefined,
           })
         }

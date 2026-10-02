@@ -65,6 +65,10 @@ export function useWeekReviews(): WeekReview[] | undefined {
   return useLiveQuery(async () => (lastWeekReviews = live(await db.weekReviews.toArray())), [], lastWeekReviews)
 }
 
+export function useAllGoalReviews(): GoalReview[] {
+  return useLiveQuery(async () => live(await db.goalReviews.toArray()), []) ?? []
+}
+
 export function useGoalReviews(goalId: ID): GoalReview[] {
   return useLiveQuery(async () => live(await db.goalReviews.where('goalId').equals(goalId).toArray()), [goalId]) ?? []
 }

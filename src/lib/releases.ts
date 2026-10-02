@@ -7,7 +7,7 @@ import type { Key } from '../i18n'
  * tweaks don't need one.
  */
 
-export type ReleaseIcon = 'flag-br'
+export type ReleaseIcon = 'flag-br' | 'template' | 'journal' | 'pace'
 
 export interface ReleaseItem {
   icon?: ReleaseIcon
@@ -24,6 +24,14 @@ export interface Release {
 
 /** Newest first. */
 export const RELEASES: Release[] = [
+  {
+    id: '2026-10-templates',
+    items: [
+      { icon: 'template', title: 'news.tplTitle', text: 'news.tplText', action: { label: 'news.tplAction', to: '/goals/new' } },
+      { icon: 'journal', title: 'news.backTitle', text: 'news.backText' },
+      { icon: 'pace', title: 'news.paceTitle', text: 'news.paceText' },
+    ],
+  },
   {
     id: '2026-10-portuguese',
     items: [{ icon: 'flag-br', title: 'news.ptTitle', text: 'news.ptText', action: { label: 'news.ptAction', to: '/settings' } }],

@@ -7,7 +7,7 @@ import { activeEntries, summarizeGoal, type ScoreContext } from '../lib/scoring'
 import type { Snapshot } from '../lib/today'
 import type { Goal, Project } from '../lib/types'
 import { InfoTip, Screen, Section, Segmented, Sheet, StatusInfo, StatusWord, toast, WeekBar } from '../ui/components'
-import { useSettings, useSnapshot, useToday } from '../ui/hooks'
+import { useAllGoalReviews, useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconMore, IconPlus } from '../ui/icons'
 import { navigate } from '../ui/router'
 import { Sortable } from '../ui/Sortable'
@@ -38,6 +38,7 @@ export function GoalsScreen() {
   const settings = useSettings()
   const today = useToday(settings.rolloverHour)
   const snap = useSnapshot()
+  const reviews = useAllGoalReviews()
   const ctx: ScoreContext = useMemo(() => ({ today, rolloverHour: settings.rolloverHour }), [today, settings.rolloverHour])
   if (!snap) return null
 
@@ -46,6 +47,11 @@ export function GoalsScreen() {
   const maintenance = snap.goals.filter((g) => g.state === 'maintenance').sort(byPriority)
   const backlog = snap.goals.filter((g) => g.state === 'backlog').sort(byPriority)
   const archived = snap.goals.filter((g) => g.state === 'completed' || g.state === 'abandoned')
+  // The journal (or what happened) from an ended goal's last review, so it's seen without opening it.
+  const lastWords = (id: string) => {
+    const r = reviews.filter((x) => x.goalId === id).sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0]
+    return r?.journalNote || r?.whatHappened || ''
+  }
   const projects = snap.projects.filter((p) => p.state === 'active')
   const doneProjects = snap.projects.filter((p) => p.state !== 'active')
   const slotOpen = active.length < settings.goalCap
@@ -139,6 +145,7 @@ export function GoalsScreen() {
                       {g.state === 'completed' ? t('state.completed')
                         : g.abandonReason ? t('plan.abandonedBecause', { reason: g.abandonReason }) : t('state.abandoned')}
                     </div>
+                    {lastWords(g.id) && <div className="sub last-words">“{lastWords(g.id)}”</div>}
                   </div>
                   <IconChevronRight className="chev" width={18} />
                 </button>

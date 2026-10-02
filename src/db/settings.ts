@@ -13,6 +13,8 @@ export interface Settings {
   lastExportAt: string | null
   /** Testing only: the app behaves as if this is today. */
   devToday: string | null
+  /** Areas picked in the intro (health, work…): which templates come first. */
+  areas: string[]
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -23,6 +25,7 @@ export const DEFAULT_SETTINGS: Settings = {
   gettingStarted: false,
   lastExportAt: null,
   devToday: null,
+  areas: [],
 }
 
 export async function getSettings(): Promise<Settings> {

@@ -457,7 +457,7 @@ export function TimelineChart({ t: line }: { t: Timeline }) {
   )
 }
 
-const PACE: Record<Burnup['status'], Key> = {
+export const PACE_LABEL: Record<Burnup['status'], Key> = {
   done: 'chart.pace.done', all_done: 'chart.pace.allDone', not_started: 'chart.pace.notStarted', on_pace: 'chart.pace.onPace',
   behind: 'chart.pace.behind', overdue: 'chart.pace.overdue',
 }
@@ -471,7 +471,7 @@ export function ProjectPace({ b }: { b: Burnup }) {
       <div className="text">
         <div className="pace-head">
           <span className="title">{b.project.title}</span>
-          <span className={`pill pace-${b.status}`}>{tk(PACE[b.status])}</span>
+          <span className={`pill pace-${b.status}`}>{tk(PACE_LABEL[b.status])}</span>
         </div>
         {b.status !== 'done' && (
           <div className="pace-bars">

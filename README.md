@@ -97,6 +97,20 @@ The app looks for a new version when it opens and whenever it comes back to
 the front, so nobody needs to close it: the update installs, the app reloads
 once, and the note shows.
 
+## Version
+
+Settings → About shows `package.json`'s version and the commit it was built
+from (`VERCEL_GIT_COMMIT_SHA` on Vercel, `git rev-parse` locally). Bump the
+version when shipping something with a release note.
+
+## Analytics
+
+Vercel Web Analytics (`@vercel/analytics`, injected in `src/main.tsx`) counts
+page views and visitors without cookies. Goal and project ids are replaced with
+`:id` before anything is sent, so it only records which screen was opened. It
+needs **Analytics → Enable** in the Vercel project; the free plan covers 50,000
+events a month. In development it only logs to the console.
+
 ## Sync (optional)
 
 Without Supabase keys the app runs local-only and Settings says so. To enable:
@@ -141,6 +155,13 @@ npx vercel --prod
 Open the deployed URL in Safari → Share → **Add to Home Screen**. Open it from
 the Home Screen icon from then on: that copy keeps its data, works offline, and
 is the one iOS lets keep storage long-term.
+
+## Install on Android
+
+Open the URL in Chrome: it offers **Install** (also in ⋮ → **Add to Home
+screen**, or Settings → **Install the app**, which appears only where the
+browser supports it). The browser and the installed app share storage, so
+there's no "install first" step as on iPhone.
 
 ## Schema changes
 

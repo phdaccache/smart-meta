@@ -43,6 +43,10 @@ On Today, switch between **Goals / Projects / Tasks**.
   - Tasks: only tasks.
   - Your choice is remembered.
 
+**Pace. Project pace on Today**
+Load sample data and look at Today's project steps.
+- **Expect:** a badge next to each project's next step: green *on pace*, yellow *behind* or red *overdue*, the same as Insights → Projects. Projects with nothing done yet show none.
+
 ## Forgot something
 
 **9. Fill in a past day**
@@ -84,6 +88,14 @@ Create it with M = *Finish line*, done when `I get a job offer`, A = 2 months, T
 **17. A habit that starts later**
 On a finish-line goal, go to Supporting habits → **Add**, with **Starts** 2 weeks out.
 - **Expect:** it's not on Today. The goal card says "(from …)". Pretend it's that date and it appears.
+
+**15a. From a template**
+Go to Plan → Goals → **+** → **Start from a template** → *Get a new job*.
+- **Expect:** the areas picked in the intro are under **For you**. The form is filled; the card lists 2 habits (applications starting in 3 weeks) and 2 projects. At R, the value is one tap away and the why shows an example but stays empty. After saving, the goal page has both habits with their preps and both projects. **Start blank instead** empties the form.
+
+**15b. First value, mid-goal**
+With no values yet (fresh install, skip the intro), create a goal and reach R.
+- **Expect:** a field to name a value right there. Adding it selects it, and the goal keeps everything typed so far. With values, **+ New value** does the same.
 
 **18. Task → project**
 Tap a task on Today → **Turn into project**, then add steps.
@@ -150,6 +162,10 @@ Create and start a new goal.
 On its goal page, tap **I did it** → **Close it out**.
 - **Expect:** it moves to Plan → Archive.
 
+**19a. Looking back**
+Load sample data and open Plan → Archive → *Run a 10k*.
+- **Expect:** **Looking back** first: ✓ Hit it, the date, what happened and the journal. No live status in Details. The archive row shows a line of the journal; *Journal every evening* shows why it was dropped.
+
 **20. Deadline passes**
 Pretend it's after a finish line's deadline.
 - **Expect:** status is **behind**. After the extra time it's **at risk** and asks for a review.
@@ -171,6 +187,14 @@ Turn on airplane mode, open the installed app, and tick things.
 **24. Installed on iPhone**
 In Safari, go to Share → **Add to Home Screen**, then open the app from the icon.
 - **Expect:** full screen, the check icon, and your data kept between opens.
+
+**24a. Installed on Android**
+In Chrome, open the app and accept **Install** (or Settings → **Install the app**).
+- **Expect:** it opens full screen from the launcher with the round check icon, and shows the same data as in Chrome.
+
+**24b. Settings**
+Open Settings.
+- **Expect:** grouped rows (Goals, App, Sync, Backup, About). Language, New day and New goals open the phone's own picker. About shows the version and commit.
 
 ## First run
 

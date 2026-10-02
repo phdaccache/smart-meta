@@ -243,8 +243,8 @@ function IntroWelcome() {
 
 function IntroNote() {
   return (
-    <Frame className="centered" back="/welcome" nav={<button className="btn primary" onClick={() => navigate('/welcome/areas')}>{t('common.continue')}</button>}>
-      <img className="creator" src={creator} alt="Pedro" width={96} height={96} />
+    <Frame className="centered note-page" back="/welcome" nav={<button className="btn primary" onClick={() => navigate('/welcome/areas')}>{t('common.continue')}</button>}>
+      <img className="creator" src={creator} alt="Pedro Daccache" width={76} height={76} />
       <h1 className="intro-title">{t('intro.noteTitle')}</h1>
       <div className="note">
         <p><b>{t('intro.noteThanks')}</b></p>
@@ -252,7 +252,7 @@ function IntroNote() {
         <p>{t('intro.note2')}</p>
         <p>{t('intro.note3')}</p>
         <p>{t('intro.noteBye')}</p>
-        <div className="signature" role="img" aria-label="Pedro" style={{ WebkitMaskImage: `url(${signature})`, maskImage: `url(${signature})` }} />
+        <div className="signature" role="img" aria-label="Pedro Daccache" style={{ WebkitMaskImage: `url(${signature})`, maskImage: `url(${signature})` }} />
       </div>
     </Frame>
   )
@@ -262,7 +262,12 @@ function IntroNote() {
 
 function IntroAreas() {
   const s = useIntro()
-  const toggle = (a: Area) => setIntro({ areas: s.areas.includes(a) ? s.areas.filter((x) => x !== a) : [...s.areas, a] })
+  const toggle = (a: Area) => {
+    const areas = s.areas.includes(a) ? s.areas.filter((x) => x !== a) : [...s.areas, a]
+    setIntro({ areas })
+    // Kept beyond the intro: New goal offers templates from these areas first.
+    setSettings({ areas })
+  }
   return (
     <Frame className="centered" back="/welcome/note" nav={<button className="btn primary" onClick={() => navigate('/welcome/goal/s')}>{t('common.continue')}</button>}>
       <h1 className="intro-title">{t('intro.areasTitle')}</h1>

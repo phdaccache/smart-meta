@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import { exportData, shareOrDownload } from '../db/backup'
 import { addDisplacement, check, explainMiss, logValue, snoozePrompt, uncheck } from '../db/repo'
 import { setSettings } from '../db/settings'
-import { num, t, tn } from '../i18n'
+import { num, t, tk, tn } from '../i18n'
+import { PACE_LABEL } from '../ui/charts'
 import { addDays, dayMonth, diffDays, formatTime, isDateStr, parseTime, weekdayInSentence, weekdayName } from '../lib/dates'
 import { formatValue, promptQuestion, reasons } from '../lib/describe'
 import type { MissPrompt, ScoreContext } from '../lib/scoring'
@@ -21,6 +22,9 @@ import { TaskSheet } from './TaskSheet'
 import { GettingStarted } from './Intro'
 
 type Filter = 'all' | 'goals' | 'projects' | 'tasks'
+
+/** A project's pace in the colors of a due badge. */
+const PACE_TONE = { on_pace: 'green', behind: 'yellow', overdue: 'red' } as const
 
 /**
  * Goals: each goal with its habits, preps and the steps of its own projects.
@@ -252,6 +256,7 @@ function ItemRow({ item, date, onOpen }: { item: TodayItem; date: DateStr; onOpe
           <div className="item-title">{item.title}</div>
           {item.detail && <div className="item-detail">{item.detail}</div>}
           {item.due && <span className={`due due-${item.due.tone}`}>{item.due.label}</span>}
+          {item.pace && <span className={`due item-pace due-${PACE_TONE[item.pace]}`}>{tk(PACE_LABEL[item.pace])}</span>}
           {item.step && (
             <div className="stepdots" aria-hidden="true">
               {Array.from({ length: item.step.total }, (_, i) => <i key={i} className={i < item.step!.index - (item.done ? 0 : 1) ? 'on' : ''} />)}

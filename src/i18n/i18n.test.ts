@@ -127,7 +127,7 @@ describe('screens', () => {
         const jsxText = text.match(/>\s*[A-Z][a-z]+(?: [a-z’']+)+[.…]?\s*</g) ?? []
         const props = text.match(/\b(?:label|placeholder|aria-label|title)="[^"]*[a-z]{3,}[^"]*"/g) ?? []
         // A name is the same in every language.
-        found.push(...[...jsxText, ...props].filter((m) => !m.includes('"Pedro"')).map((m) => `${f}: ${m}`))
+        found.push(...[...jsxText, ...props].filter((m) => !m.includes('"Pedro')).map((m) => `${f}: ${m}`))
       }
     }
     expect(found).toEqual([])

@@ -1,13 +1,16 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { createGoal } from '../db/repo'
+import { addCommitment, addPrep, createGoal, createProject, ensureValue } from '../db/repo'
 import { setSettings } from '../db/settings'
-import { t, tk, tn, type Key } from '../i18n'
+import { t, tk, tlist, tn, type Key } from '../i18n'
 import {
   CHECKIN_TYPES, emptyGoalDraft, isValid, MAX_PREPS, validateCommitment, validateGoal, validatePrep,
   type CommitmentDraft, type Errors, type GoalDraft, type PrepDraft,
 } from '../lib/draft'
-import type { Period, Shape } from '../lib/types'
-import { Chip, Field, InfoTip, Screen, Segmented, Stepper, toast, WeekdayPicker } from '../ui/components'
+import type { DateStr, Goal, Period, Shape } from '../lib/types'
+import { addDays, dayMonth } from '../lib/dates'
+import { cadenceOf, templatesFor, type Template } from '../lib/templates'
+import { Badge, Chip, Field, InfoTip, Screen, Segmented, Sheet, Stepper, toast, WeekdayPicker } from '../ui/components'
+import { IconChevronRight } from '../ui/icons'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { navigate } from '../ui/router'
 
@@ -240,26 +243,52 @@ export function ToleranceField({ value, onChange, error }: { value: number; onCh
   )
 }
 
-export function WhyFields({ valueId, text, onValue, onText, errors, showErrors }: {
+export function WhyFields({ valueId, text, onValue, onText, errors, showErrors, suggest, whyExample }: {
   valueId: string; text: string; onValue: (id: string) => void; onText: (t: string) => void
   errors: { whyValueId?: string; whyText?: string }; showErrors: boolean
+  /** From a template: the value it's usually for, one tap away if it doesn't exist yet. */
+  suggest?: string
+  /** From a template: an example reason, only as a placeholder. */
+  whyExample?: string
 }) {
   const snap = useSnapshot()
-  const values = snap?.values ?? []
+  const values = (snap?.values ?? []).filter((v) => !v.deletedAt)
+  // Values are added right here: leaving for Settings would lose the goal being written.
+  const [adding, setAdding] = useState(false)
+  const [name, setName] = useState(suggest ?? '')
+  const add = async () => {
+    if (!name.trim()) return
+    onValue(await ensureValue(name))
+    setName('')
+    setAdding(false)
+  }
+  const open = adding || (snap != null && !values.length)
+  const offer = suggest && values.length > 0 && !values.some((v) => v.name.trim().toLowerCase() === suggest.trim().toLowerCase())
   return (
     <>
       <Field label={t('form.value')} error={showErrors ? errors.whyValueId : undefined}>
-        {values.length ? (
+        {values.length > 0 && (
           <div className="chips">
             {values.map((v) => <Chip key={v.id} selected={valueId === v.id} onClick={() => onValue(v.id)}>{v.name}</Chip>)}
+            {offer && <Chip selected={false} onClick={async () => onValue(await ensureValue(suggest))}>+ {suggest}</Chip>}
+            {!open && values.length < 12 && <Chip selected={false} onClick={() => setAdding(true)}>{t('form.newValue')}</Chip>}
           </div>
-        ) : (
-          <button className="btn outline" onClick={() => navigate('/settings/values')}>{t('form.addValues')}</button>
+        )}
+        {open && (
+          <>
+            {!values.length && <p className="field-hint" style={{ marginTop: 0, marginBottom: 8 }}>{t('form.firstValueHint')}</p>}
+            <form className="inline-add" onSubmit={(e) => { e.preventDefault(); add() }} style={values.length ? { marginTop: 10 } : undefined}>
+              <input value={name} aria-label={t('form.valueName')} placeholder={tlist('set.valuePlaceholders')[0]} autoFocus={adding}
+                onChange={(e) => setName(e.target.value)} />
+              <button type="submit" className="btn outline" disabled={!name.trim()}>{t('common.add')}</button>
+            </form>
+          </>
         )}
       </Field>
       <Field label={t('form.why')} htmlFor="why" error={showErrors ? errors.whyText : undefined} info={t('form.whyInfo')}>
-        <textarea id="why" rows={2} value={text} placeholder={t('form.phWhy')}
+        <textarea id="why" rows={2} value={text} placeholder={whyExample ?? t('form.phWhy')}
           onChange={(ev) => onText(ev.target.value)} />
+        {whyExample && !text && <p className="field-hint" style={{ marginTop: 6 }}>{t('tpl.whyHint')}</p>}
       </Field>
     </>
   )
@@ -270,18 +299,47 @@ export function WhyFields({ valueId, text, onValue, onText, errors, showErrors }
 export function NewGoalScreen() {
   const settings = useSettings()
   const today = useToday(settings.rolloverHour)
+  const snap = useSnapshot()
   const [d, setD] = useState<GoalDraft>(() => emptyGoalDraft(today))
+  const [tpl, setTpl] = useState<Template | null>(null)
+  const [picking, setPicking] = useState(false)
   const set: SetField = (k, v) => setD((x) => ({ ...x, [k]: v }))
   const patch = (p: Partial<GoalDraft>) => setD((x) => ({ ...x, ...p }))
   const errors = useMemo(() => validateGoal(d), [d])
   const mode = settings.creationMode
 
+  const use = (x: Template | null) => {
+    if (!x) {
+      setD(emptyGoalDraft(today))
+    } else {
+      const value = snap?.values.find((v) => v.name.trim().toLowerCase() === x.value.trim().toLowerCase())
+      setD({ ...x.draft(today), whyValueId: value?.id ?? '' })
+    }
+    setTpl(x)
+    setPicking(false)
+    window.scrollTo(0, 0)
+  }
+
   const save = async () => {
     // Every new goal waits in the backlog; starting it is its own decision, on the goal's page.
     const goal = await createGoal(d)
-    toast(t('form.savedBacklog'))
+    const extras = tpl ? tpl.habits.length + tpl.projects.length : 0
+    if (tpl) await addTemplateExtras(goal, tpl, d.startDate)
+    toast(extras ? t('tpl.saved') : t('form.savedBacklog'))
     navigate(`/goals/${goal.id}`, { replace: true })
   }
+
+  const top = tpl
+    ? <TemplateCard tpl={tpl} start={d.startDate} onChange={() => setPicking(true)} onClear={() => use(null)} />
+    : (
+      <button className="card list-row template-btn" onClick={() => setPicking(true)}>
+        <div className="text">
+          <div className="title">{t('tpl.button')}</div>
+          <div className="sub">{t('tpl.buttonSub')}</div>
+        </div>
+        <IconChevronRight className="chev" width={18} />
+      </button>
+    )
 
   return (
     <Screen back="/goals" title={t('form.newGoal')}
@@ -289,8 +347,9 @@ export function NewGoalScreen() {
         {mode === 'wizard' ? t('form.compact') : t('form.guided')}
       </button>}>
       {mode === 'wizard'
-        ? <Wizard d={d} set={set} patch={patch} errors={errors} onSave={save} />
-        : <Compact d={d} set={set} patch={patch} errors={errors} onSave={save} />}
+        ? <Wizard key={tpl?.key ?? ''} d={d} set={set} patch={patch} errors={errors} onSave={save} tpl={tpl} top={top} />
+        : <Compact key={tpl?.key ?? ''} d={d} set={set} patch={patch} errors={errors} onSave={save} tpl={tpl} top={top} />}
+      <TemplateSheet open={picking} areas={settings.areas} onPick={use} onClose={() => setPicking(false)} />
     </Screen>
   )
 }
@@ -301,6 +360,85 @@ interface FormProps {
   patch: (p: Partial<GoalDraft>) => void
   errors: Errors<GoalDraft>
   onSave: () => void
+  /** The template the draft came from, if any. */
+  tpl?: Template | null
+  /** Shown above the form (the wizard: on its first step only). */
+  top?: ReactNode
+}
+
+// ——— templates ———
+
+/** Saves what a template brings beyond the goal itself: supporting habits (with their preps) and projects. */
+async function addTemplateExtras(goal: Goal, tpl: Template, start: DateStr) {
+  for (const h of tpl.habits) {
+    const c = await addCommitment(goal, h.draft, addDays(start, h.startIn))
+    for (const p of h.preps) await addPrep(c.id, p)
+  }
+  for (const p of tpl.projects) {
+    await createProject({ title: p.title, targetDate: addDays(start, p.days), goalId: goal.id, steps: p.steps })
+  }
+}
+
+function TemplateSheet({ open, areas, onPick, onClose }: { open: boolean; areas: string[]; onPick: (x: Template) => void; onClose: () => void }) {
+  const { forYou, more } = templatesFor(areas)
+  const row = (x: Template) => (
+    <button key={x.key} className="list-row" onClick={() => onPick(x)}>
+      <div className="text">
+        <div className="title">{x.title}</div>
+        <div className="sub">{x.summary}</div>
+      </div>
+      <IconChevronRight className="chev" width={18} />
+    </button>
+  )
+  return (
+    <Sheet open={open} onClose={onClose} title={t('tpl.title')}>
+      {forYou.length > 0 && (
+        <>
+          <div className="tpl-group">{t('tpl.forYou')}</div>
+          <div className="card list">{forYou.map(row)}</div>
+        </>
+      )}
+      {more.map((g) => (
+        <div key={g.area}>
+          <div className="tpl-group">{g.label}</div>
+          <div className="card list">{g.templates.map(row)}</div>
+        </div>
+      ))}
+    </Sheet>
+  )
+}
+
+/** Which template the form was filled from, and what saving adds besides the goal. */
+function TemplateCard({ tpl, start, onChange, onClear }: { tpl: Template; start: DateStr; onChange: () => void; onClear: () => void }) {
+  const habit = (h: Template['habits'][number]) => {
+    const cadence = cadenceOf(h.draft)
+    return h.startIn > 0
+      ? t('tpl.habitStarts', { name: h.draft.label, cadence, when: dayMonth(addDays(start, h.startIn)) })
+      : t('tpl.habitLine', { name: h.draft.label, cadence })
+  }
+  return (
+    <div className="card pad template-card">
+      <div className="template-head">
+        <div>
+          <div className="eyebrow">{t('tpl.from')}</div>
+          <div className="title">{tpl.title}</div>
+        </div>
+        <button className="link-btn" onClick={onChange}>{t('tpl.change')}</button>
+      </div>
+      {(tpl.habits.length > 0 || tpl.projects.length > 0) && (
+        <>
+          <div className="small muted" style={{ marginTop: 10 }}>{t('tpl.alsoAdds')}</div>
+          <ul className="template-extras">
+            {tpl.habits.map((h, i) => <li key={`h${i}`}><Badge kind="goal">{t('tpl.habit')}</Badge>{habit(h)}</li>)}
+            {tpl.projects.map((p, i) => (
+              <li key={`p${i}`}><Badge kind="step">{t('common.project')}</Badge>{t('tpl.projectLine', { name: p.title, steps: tn('tpl.steps', p.steps.length) })}</li>
+            ))}
+          </ul>
+        </>
+      )}
+      <button className="link-btn" style={{ marginTop: 4 }} onClick={onClear}>{t('tpl.clear')}</button>
+    </div>
+  )
 }
 
 /** The letters stay S M A R T in every language; the words are translated. */
@@ -348,7 +486,7 @@ interface Step {
   body: ReactNode
 }
 
-function Wizard({ d, set, patch, errors, onSave }: FormProps) {
+function Wizard({ d, set, patch, errors, onSave, tpl, top }: FormProps) {
   const [i, setI] = useState(0)
   const [tried, setTried] = useState(false)
   const outcome = d.goalKind === 'outcome'
@@ -400,7 +538,8 @@ function Wizard({ d, set, patch, errors, onSave }: FormProps) {
       letter: 'R',
       q: t('form.qWhy'),
       fields: ['whyValueId', 'whyText'],
-      body: <WhyFields valueId={d.whyValueId} text={d.whyText} onValue={(v) => set('whyValueId', v)} onText={(x) => set('whyText', x)} errors={errors} showErrors={tried} />,
+      body: <WhyFields valueId={d.whyValueId} text={d.whyText} onValue={(v) => set('whyValueId', v)} onText={(x) => set('whyText', x)} errors={errors} showErrors={tried}
+        suggest={tpl?.value} whyExample={tpl?.why} />,
     },
     {
       letter: 'T',
@@ -435,6 +574,7 @@ function Wizard({ d, set, patch, errors, onSave }: FormProps) {
 
   return (
     <div>
+      {at === 0 && top}
       <SmartBar current={step.letter} />
       <div className="card pad smart-card">
         <h2 className="wizard-q title-row">
@@ -466,7 +606,7 @@ export function DateFields({ d, set, err }: { d: GoalDraft; set: SetField; err: 
   )
 }
 
-function Compact({ d, set, patch, errors, onSave }: FormProps) {
+function Compact({ d, set, patch, errors, onSave, tpl, top }: FormProps) {
   const [tried, setTried] = useState(false)
   const outcome = d.goalKind === 'outcome'
   const submit = () => (isValid(errors) ? onSave() : setTried(true))
@@ -474,6 +614,7 @@ function Compact({ d, set, patch, errors, onSave }: FormProps) {
   const cErr = validateCommitment(d)
   return (
     <div>
+      {top}
       <section className="card pad smart-section">
         <SmartHead k="S" />
         <Field label={t('form.goal')} htmlFor="title" error={err('title')}>
@@ -502,7 +643,8 @@ function Compact({ d, set, patch, errors, onSave }: FormProps) {
       </section>
       <section className="card pad smart-section">
         <SmartHead k="R" />
-        <WhyFields valueId={d.whyValueId} text={d.whyText} onValue={(v) => set('whyValueId', v)} onText={(x) => set('whyText', x)} errors={errors} showErrors={tried} />
+        <WhyFields valueId={d.whyValueId} text={d.whyText} onValue={(v) => set('whyValueId', v)} onText={(x) => set('whyText', x)} errors={errors} showErrors={tried}
+          suggest={tpl?.value} whyExample={tpl?.why} />
       </section>
       <section className="card pad smart-section">
         <SmartHead k="T" />

@@ -4,7 +4,7 @@ import { reasonLower } from './describe'
 import { reviewWeek } from './review'
 import { commitmentEdit, revisionValue } from './revisions'
 import { activeEntries, evaluateThreshold, meetsTarget, pct, scoreCommitment, thresholdAggregate, type Score, type ScoreContext } from './scoring'
-import type { Snapshot } from './today'
+import { projectPace, type ProjectPace, type Snapshot } from './today'
 import type {
   Commitment, DateStr, Displacement, Entry, Goal, GoalState, ID, MissReason, Prep, Project, Revision, Value, WeekReview,
 } from './types'
@@ -661,8 +661,7 @@ export interface Burnup {
   text: string
 }
 
-export type ProjectPace = 'done' | 'all_done' | 'not_started' | 'on_pace' | 'behind' | 'overdue'
-
+export type { ProjectPace }
 
 export function burnup(p: Prepared, project: Project): Burnup {
   const steps = live(p.snap.tasks).filter((t) => t.projectId === project.id)
@@ -670,29 +669,17 @@ export function burnup(p: Prepared, project: Project): Burnup {
     .map((s) => p.entriesOf(s.id).filter((e) => e.outcome === 'hit').map((e) => e.date).sort()[0])
     .filter((d): d is DateStr => !!d)
     .sort()
-  const start = minDate(dayOf(project.createdAt), done[0] ?? dayOf(project.createdAt))
-  const remaining = steps.length - done.length
-  let projected: DateStr | null = null
-  let status: ProjectPace
+  const { status, start, projected } = projectPace(project, steps.length, done, p.ctx.today)
   let text: string
-  if (project.state === 'done') {
+  if (status === 'done') {
     const end = done.at(-1) ?? dayOf(project.updatedAt)
     const d = diffDays(end, project.targetDate)
-    status = 'done'
     const when = d === 0 ? t('ins.pace.onTheDay') : d > 0 ? t('ins.pace.early', { time: spanText(d) }) : t('ins.pace.late', { time: spanText(d) })
     text = t('ins.pace.done', { date: dayMonth(end), when })
-  } else if (remaining === 0) {
-    status = 'all_done'
+  } else if (status === 'all_done') {
     text = t('ins.pace.allDone')
   } else {
-    if (done.length > 0) {
-      const pace = done.length / Math.max(7, diffDays(start, p.ctx.today))
-      projected = addDays(p.ctx.today, Math.ceil(remaining / pace))
-    }
     const due = t(project.targetDate < p.ctx.today ? 'ins.pace.wasDue' : 'ins.pace.due', { date: dayMonth(project.targetDate) })
-    if (project.targetDate < p.ctx.today) status = 'overdue'
-    else if (!projected) status = 'not_started'
-    else status = projected > project.targetDate ? 'behind' : 'on_pace'
     text = projected ? t('ins.pace.atYourPace', { due, date: dayMonth(projected) }) : due
   }
   const timeUsed = diffDays(start, p.ctx.today) / Math.max(1, diffDays(start, project.targetDate))

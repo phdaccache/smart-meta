@@ -33,6 +33,9 @@ export const IconPlus = (p: P) => (
 export const IconChevronRight = (p: P) => (
   <Svg {...p}><path d="m9 6 6 6-6 6" /></Svg>
 )
+export const IconChevronUpDown = (p: P) => (
+  <Svg {...p}><path d="m8 9.5 4-4 4 4M8 14.5l4 4 4-4" /></Svg>
+)
 export const IconChevronLeft = (p: P) => (
   <Svg {...p}><path d="m15 6-6 6 6 6" /></Svg>
 )
@@ -53,6 +56,9 @@ export const IconInfo = (p: P) => (
 )
 export const IconSteps = (p: P) => (
   <Svg {...p}><path d="M9 6h11M9 12h11M9 18h11" /><path d="m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11" /><circle cx="5" cy="18" r="1.2" /></Svg>
+)
+export const IconTemplate = (p: P) => (
+  <Svg {...p}><rect x="4" y="3.5" width="16" height="17" rx="2.5" /><path d="M8 8.5h8M8 12.5h8M8 16.5h4.5" /></Svg>
 )
 export const IconHistory = (p: P) => (
   <Svg {...p}><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6" /><path d="M3 4v4h4" /><path d="M12 8v4.5l3 2" /></Svg>
