@@ -904,7 +904,7 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .quiet-link { color: var(--ink-3); font-size: 14px; font-weight: 500; min-height: 40px; }
 .intro .eyebrow { margin-bottom: 6px; }
 .intro .smart { margin: 0 0 8px; }
-.intro .smart-lead { text-align: center; margin-bottom: 18px; }
+.intro .smart-lead { text-align: center; justify-content: center; margin-bottom: 18px; }
 /* Before the first letter: "Let's make it", then each word of SMART in turn */
 .intro.smart-intro .intro-body { justify-content: center; padding-bottom: 8vh; }
 .smart-reveal { display: grid; gap: 14px; width: max-content; max-width: 100%; margin: 36px auto 0; text-align: left; }
@@ -990,7 +990,8 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .piece-card .badge { font-size: 15px; padding: 5px 12px; border-radius: 9px; }
 .piece-what { font: 700 22px/1.2 var(--font-display); margin-top: 16px; }
 .piece-eg { color: var(--ink-2); margin-top: 6px; }
-.intro .pieces-end { margin: 28px auto; text-align: center; animation: fade 0.4s ease both; }
+.intro .pieces-end { margin: 28px auto; font-size: 20px; text-align: center; animation: fade 0.4s ease both; }
+.pieces-end b { color: var(--ink); font-weight: 700; }
 .piece-goal { overflow: visible; }
 .piece-goal .group-head { animation: fade 0.4s ease both; }
 .piece-inside { display: grid; gap: 10px; padding: 4px 16px 18px; }

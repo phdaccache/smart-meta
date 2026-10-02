@@ -447,24 +447,25 @@ export type Letter = SmartLetter | '+'
 
 /**
  * "Let's make it S M A R T": the current letter lit and its word under the
- * letters, so the method is visible without explaining it. In Portuguese the
- * S gets a note that the letters come from English.
+ * letters, so the method is visible without explaining it. In the intro
+ * (`big`), "Let's make it" was its own screen, so the word is the title, above
+ * the letters. In Portuguese the S gets a note that the letters come from English.
  */
 export function SmartBar({ current, big = false }: { current: SmartLetter; big?: boolean }) {
   const idx = SMART.findIndex((x) => x.k === current)
   const word = t(SMART[idx].word)
+  const info = current === 'S' && getLang() === 'pt-BR' && <InfoTip label="SMART">{t('smart.info')}</InfoTip>
   return (
     <div className="smart">
-      {big ? <h1 className="intro-title smart-lead">{t('intro.goalTitle')}</h1> : <div className="smart-lead">{t('intro.goalTitle')}</div>}
+      {big
+        ? <h1 className="intro-title smart-lead title-row">{word}{info}</h1>
+        : <div className="smart-lead">{t('intro.goalTitle')}</div>}
       <div className="smart-letters" aria-label={t('smart.label', { word })}>
         {SMART.map((x, j) => (
           <span key={x.k} aria-hidden="true" className={`smart-l ${j < idx ? 'done' : j === idx ? 'on' : ''}`}>{x.k}</span>
         ))}
       </div>
-      <div className="smart-word title-row">
-        {word}
-        {current === 'S' && getLang() === 'pt-BR' && <InfoTip label="SMART">{t('smart.info')}</InfoTip>}
-      </div>
+      {!big && <div className="smart-word title-row">{word}{info}</div>}
     </div>
   )
 }

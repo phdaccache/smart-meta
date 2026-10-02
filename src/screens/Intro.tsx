@@ -649,11 +649,11 @@ function IntroPlan() {
 
 // ——— 11 · the weekly review ———
 
-/** The goal the demos talk about: theirs if it's a habit, an example otherwise. */
+/** The goal the demos talk about: the one just made (an example only if the session was lost). */
 function useDemoGoal(): { title: string; label: string } {
   const s = useIntro()
   const d = s.draft
-  if (d && d.goalKind !== 'outcome' && d.title.trim()) return { title: d.title.trim(), label: d.label.trim() || d.title.trim() }
+  if (d && d.title.trim()) return { title: d.title.trim(), label: (d.goalKind !== 'outcome' && d.label.trim()) || d.title.trim() }
   const e = exampleByKey('exercise')!
   return { title: e.title, label: e.draft.label ?? e.title }
 }
@@ -787,7 +787,7 @@ function IntroPieces() {
             <div className="piece-eg">{pieces[piece.key]}</div>
           </div>
         )}
-        {stage >= 4 && <p className="intro-sub pieces-end">{t('intro.pieces.end')}</p>}
+        {stage >= 4 && <p className="intro-sub pieces-end">{t('intro.pieces.endAlone')} <b>{t('intro.pieces.endJoin')}</b></p>}
         {stage === 5 && (
           <div className="card group tint-goal piece-goal">
             <div className="group-head">
