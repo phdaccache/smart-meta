@@ -286,7 +286,7 @@ export function PrepSheet({ commitment, editing, onClose }: { commitment: Commit
   }
   return (
     <Sheet open onClose={onClose} title={editing === 'new' ? t('goal.prepFor', { name: commitment.label }) : t('goal.editPrep')}>
-      <PrepEditor preps={drafts} onChange={(p) => p.length ? setDrafts(p) : onClose()} showErrors={tried} />
+      <PrepEditor preps={drafts} onChange={(p) => p.length ? setDrafts(p) : onClose()} showErrors={tried} removable={false} />
       <div className="sheet-actions">
         {editing !== 'new' && <button className="btn danger" onClick={async () => { await removePrep(editing); onClose() }}>{t('common.delete')}</button>}
         <button className="btn primary" onClick={save}>{t('common.save')}</button>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { doneWhenProblem, validateCommitment } from './draft'
-import { addMonths, draftFromExample, EXAMPLES, examplesFor, projection, toleranceLine } from './intro'
+import { addMonths, draftFromExample, EXAMPLES, examplesFor, projection, spanText, toleranceLine } from './intro'
 
 describe('intro examples', () => {
   it('every example is a goal the form would accept', () => {
@@ -34,13 +34,19 @@ describe('intro arithmetic', () => {
   })
 
   it('projects what keeping the plan adds up to', () => {
-    const practise = { ...draftFromExample(EXAMPLES.find((e) => e.key === 'practise')!, '2026-09-30'), targetDate: '2026-12-30' }
-    expect(projection(practise, '2026-09-30')).toBe('4× a week, 80% of the time: about 42 times by 30 December.')
-    const sleep = draftFromExample(EXAMPLES.find((e) => e.key === 'sleep')!, '2026-09-30')
-    expect(projection(sleep, '2026-09-30')).toBe('About 74 days on track by 30 December.')
-    const ontime = draftFromExample(EXAMPLES.find((e) => e.key === 'ontime')!, '2026-09-30')
-    expect(projection(ontime, '2026-09-30')).toBe('Each time it comes up, you’ll log yes or no.')
-    const job = draftFromExample(EXAMPLES.find((e) => e.key === 'job')!, '2026-09-30')
-    expect(projection(job, '2026-09-30')).toBe('26 weeks to your deadline, 30 March.')
+    const at = (key: string) => draftFromExample(EXAMPLES.find((e) => e.key === key)!, '2026-09-30')
+    expect(projection({ ...at('practise'), targetDate: '2026-12-30' }, '2026-09-30')).toEqual({
+      line: 'In 3 months, at 80%, you’ll have done at least…', big: '42×', caption: 'practice',
+    })
+    expect(projection(at('sleep'), '2026-09-30')).toEqual({
+      line: 'In 3 months, at 80%, you’ll have at least…', big: '74 days', caption: 'sleep on track',
+    })
+    expect(projection(at('ontime'), '2026-09-30')?.big).toBe('13 weeks')
+    expect(projection(at('job'), '2026-09-30')).toEqual({
+      line: 'Your deadline is 30 March. That gives you…', big: '181 days', caption: 'to make it happen',
+    })
+    expect(spanText(10)).toBe('10 days')
+    expect(spanText(42)).toBe('6 weeks')
+    expect(spanText(800)).toBe('2 years')
   })
 })

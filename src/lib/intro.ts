@@ -1,6 +1,5 @@
 import { num, t, tk, tn, type Key } from '../i18n'
 import { addDays, dayMonth, diffDays } from './dates'
-import { periodWord } from './describe'
 import { emptyGoalDraft, type GoalDraft, type PrepDraft } from './draft'
 import type { DateStr, MissReason } from './types'
 
@@ -149,27 +148,48 @@ export function toleranceLine(pct: number): string {
   return t('intro.toleranceLine', { pct, miss: miss / g, of: 100 / g })
 }
 
-/** Plain arithmetic on the plan: what keeping it adds up to by the review date (or 3 months). */
-export function projection(d: GoalDraft, today: DateStr): string {
+/** "3 months", "6 weeks": the plan's length in the unit that reads best. */
+export function spanText(days: number): string {
+  if (days < 14) return tn('dates.day', days)
+  if (days < 63) return tn('dates.week', Math.round(days / 7))
+  if (days < 730) return tn('dates.month', Math.round(days / 30.44))
+  return tn('dates.year', Math.round(days / 365.25))
+}
+
+export interface Projection {
+  /** Said first, ending in "…". */
+  line: string
+  /** Revealed after: the number in large type, and what it counts. */
+  big: string
+  caption: string
+}
+
+/**
+ * Plain arithmetic on the plan: what keeping it adds up to by the review date
+ * (or 3 months), at the tolerance, so it's a floor rather than a promise.
+ */
+export function projection(d: GoalDraft, today: DateStr): Projection | null {
   if (d.goalKind === 'outcome') {
-    if (!d.targetDate) return ''
-    const days = Math.max(0, diffDays(today, d.targetDate))
-    const time = days < 14 ? tn('dates.day', days) : tn('dates.week', Math.round(days / 7))
-    return t('intro.proj.deadline', { time, date: dayMonth(d.targetDate) })
+    if (!d.targetDate) return null
+    const days = Math.max(1, diffDays(today, d.targetDate))
+    return { line: t('intro.proj.deadline', { date: dayMonth(d.targetDate) }), big: tn('dates.day', days), caption: t('intro.proj.toDoIt') }
   }
-  if (d.shape === 'standard') return t('intro.proj.standard')
+  const name = d.label.trim() || d.title.trim()
   const start = d.startDate > today ? d.startDate : today
   const end = d.targetDate || addMonths(start, 3)
   const days = Math.max(1, diffDays(start, addDays(end, 1)))
   const share = d.tolerancePct / 100
-  const date = dayMonth(end)
+  const time = spanText(days)
+  if (d.shape === 'standard') {
+    return { line: t('intro.proj.standard', { date: dayMonth(end) }), big: tn('dates.week', Math.max(1, Math.round(days / 7))), caption: name }
+  }
   if (d.shape === 'rhythm') {
     const periods = d.period === 'month' ? days / 30.44 : d.period === 'day' ? days : days / 7
     const total = Math.max(1, Math.round(d.times * periods * share))
-    return t('intro.proj.rhythm', { n: d.times, period: periodWord(d.period), pct: d.tolerancePct, total, date })
+    return { line: t('intro.proj.rhythm', { time, pct: d.tolerancePct }), big: `${total}×`, caption: name }
   }
   const periods = d.period === 'month' ? days / 30.44 : d.period === 'week' ? days / 7 : days
   const n = Math.max(1, Math.round(periods * share))
-  const plural = ({ month: 'chart.unit.months', week: 'chart.unit.weeks', day: 'chart.unit.days' } as const)[d.period]
-  return t('intro.proj.threshold', { n, unit: n === 1 ? periodWord(d.period) : t(plural), date })
+  const unit = ({ month: 'dates.month', week: 'dates.week', day: 'dates.day' } as const)[d.period]
+  return { line: t('intro.proj.threshold', { time, pct: d.tolerancePct }), big: tn(unit, n), caption: t('intro.proj.onTrack', { name }) }
 }

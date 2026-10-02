@@ -1,16 +1,17 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { createGoal, ensureValue } from '../db/repo'
 import { setSettings } from '../db/settings'
-import { t, tk, tlist, tn, type Key } from '../i18n'
+import { getLang, t, tk, tlist, tn, type Key } from '../i18n'
 import {
-  CHECKIN_TYPES, emptyGoalDraft, isValid, MAX_PREPS, validateCommitment, validateGoal, validatePrep,
+  CHECKIN_TYPES, emptyGoalDraft, isValid, MAX_PREPS, validateGoal, validatePrep,
   type CommitmentDraft, type Errors, type GoalDraft, type PrepDraft,
 } from '../lib/draft'
+import { addMonths, OBSTACLE_PREPS, toleranceLine } from '../lib/intro'
 import type { Period, Shape } from '../lib/types'
 import { templateByKey, templatesFor, type Template } from '../lib/templates'
 import { startTemplate, TemplateGoalScreen } from './TemplateGoal'
 import { Chip, Field, InfoTip, Screen, Segmented, Sheet, Stepper, toast, WeekdayPicker } from '../ui/components'
-import { IconChevronRight } from '../ui/icons'
+import { IconChevronRight, IconClose } from '../ui/icons'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { goBack, navigate, useLocation } from '../ui/router'
 
@@ -36,9 +37,6 @@ export function ShapeInfo() {
   )
 }
 
-function KindInfo() {
-  return <><Term text={t('form.kindInfoFinish')} />{' '}<ShapeInfo /></>
-}
 
 const periods = (): { value: Period; label: string }[] => [
   { value: 'day', label: t('common.day') },
@@ -65,21 +63,27 @@ export function ShapeField({ d, set }: { d: CommitmentDraft; set: (p: Partial<Co
   )
 }
 
-/** For a goal: a finish line, or one of the three habit shapes. */
-function KindField({ d, patch }: { d: GoalDraft; patch: (p: Partial<GoalDraft>) => void }) {
+const KINDS: { kind: 'outcome' | Shape; title: Key; d: Key }[] = [
+  { kind: 'outcome', title: 'plan.finishLine', d: 'intro.kindFinish' },
+  { kind: 'rhythm', title: 'shape.rhythm', d: 'intro.kindRhythm' },
+  { kind: 'threshold', title: 'shape.threshold', d: 'intro.kindThreshold' },
+  { kind: 'standard', title: 'shape.standard', d: 'intro.kindStandard' },
+]
+
+/** For a goal: a finish line, or one of the three habit shapes, each with a few words on what it is. */
+export function KindField({ d, patch }: { d: GoalDraft; patch: (p: Partial<GoalDraft>) => void }) {
   const outcome = d.goalKind === 'outcome'
   return (
-    <div className="kind-grid" role="radiogroup" aria-label={t('goal.kind')}>
-      <button type="button" role="radio" aria-checked={outcome} className={`choice ${outcome ? 'on' : ''}`}
-        onClick={() => patch({ goalKind: 'outcome' })}>
-        <div className="t">{t('plan.finishLine')}</div>
-      </button>
-      {SHAPES.map((s) => {
-        const on = !outcome && d.shape === s.value
+    <div className="kind-grid described" role="radiogroup" aria-label={t('goal.kind')}>
+      {KINDS.map((k) => {
+        const on = k.kind === 'outcome' ? outcome : !outcome && d.shape === k.kind
         return (
-          <button type="button" key={s.value} role="radio" aria-checked={on} className={`choice ${on ? 'on' : ''}`}
-            onClick={() => patch({ goalKind: 'habit', shape: s.value, checkinType: CHECKIN_TYPES[s.value][0], period: s.value === 'threshold' ? 'day' : 'week' })}>
-            <div className="t">{tk(s.title)}</div>
+          <button type="button" key={k.kind} role="radio" aria-checked={on} className={`choice ${on ? 'on' : ''}`}
+            onClick={() => patch(k.kind === 'outcome' ? { goalKind: 'outcome' } : {
+              goalKind: 'habit', shape: k.kind, checkinType: CHECKIN_TYPES[k.kind][0], period: k.kind === 'threshold' ? 'day' : 'week',
+            })}>
+            <div className="t">{tk(k.title)}</div>
+            <div className="d">{tk(k.d)}</div>
           </button>
         )
       })}
@@ -120,9 +124,11 @@ export function GraceField({ value, onChange }: { value: number; onChange: (n: n
   )
 }
 
-export function MeasurementFields({ d, set, e, showErrors, placeholders }: {
+export function MeasurementFields({ d, set, e, showErrors, placeholders, withLabel = true }: {
   d: CommitmentDraft; set: (p: Partial<CommitmentDraft>) => void; e: Errors<CommitmentDraft>; showErrors: boolean
-  placeholders?: { definition: string; label: string }
+  placeholders?: { definition: string; label?: string }
+  /** A goal's own habit asks for its short name next to the goal's name instead (TitleFields). */
+  withLabel?: boolean
 }) {
   return (
     <>
@@ -132,10 +138,12 @@ export function MeasurementFields({ d, set, e, showErrors, placeholders }: {
           placeholder={placeholders?.definition ?? t(d.shape === 'standard' ? 'form.phStandard' : d.shape === 'threshold' ? 'form.phThreshold' : 'form.phRhythm')}
           onChange={(ev) => set({ measurementDefinition: ev.target.value })} />
       </Field>
-      <Field label={t('form.shortName')} htmlFor="m-label" error={showErrors ? e.label : undefined}>
-        <input id="m-label" value={d.label} placeholder={placeholders?.label ?? t(d.shape === 'threshold' ? 'form.phShortThreshold' : d.shape === 'standard' ? 'form.phShortStandard' : 'form.phShortRhythm')}
-          onChange={(ev) => set({ label: ev.target.value })} autoCapitalize="off" />
-      </Field>
+      {withLabel && (
+        <Field label={t('form.shortName')} htmlFor="m-label" error={showErrors ? e.label : undefined}>
+          <input id="m-label" value={d.label} placeholder={placeholders?.label ?? t(d.shape === 'threshold' ? 'form.phShortThreshold' : d.shape === 'standard' ? 'form.phShortStandard' : 'form.phShortRhythm')}
+            onChange={(ev) => set({ label: ev.target.value })} autoCapitalize="off" />
+        </Field>
+      )}
     </>
   )
 }
@@ -200,14 +208,22 @@ export function CadenceFields({ d, set, e, showErrors }: {
   )
 }
 
-export function PrepEditor({ preps, onChange, showErrors }: { preps: PrepDraft[]; onChange: (p: PrepDraft[]) => void; showErrors: boolean }) {
+export function PrepEditor({ preps, onChange, showErrors, removable = true }: {
+  preps: PrepDraft[]; onChange: (p: PrepDraft[]) => void; showErrors: boolean
+  /** Editing one saved prep in a sheet: that sheet has its own Delete. */
+  removable?: boolean
+}) {
   const update = (i: number, p: Partial<PrepDraft>) => onChange(preps.map((x, j) => (j === i ? { ...x, ...p } : x)))
   return (
     <div className="stack">
       {preps.map((p, i) => {
         const e = validatePrep(p)
         return (
-          <div key={i} className="card pad">
+          <div key={i} className="card pad prep-card">
+            {removable && (
+              <button type="button" className="icon-btn prep-remove" aria-label={t('common.remove')}
+                onClick={() => onChange(preps.filter((_, j) => j !== i))}><IconClose width={18} height={18} /></button>
+            )}
             <Field label={t('form.prepN', { n: i + 1 })} htmlFor={`prep-${i}`} error={showErrors ? e.title : undefined}>
               <input id={`prep-${i}`} value={p.title} placeholder={t('form.phPrep')}
                 onChange={(ev) => update(i, { title: ev.target.value })} />
@@ -216,16 +232,13 @@ export function PrepEditor({ preps, onChange, showErrors }: { preps: PrepDraft[]
               <WeekdayPicker value={p.fireWeekdays} onChange={(fireWeekdays) => update(i, { fireWeekdays })} />
             </Field>
             <Field label={t('common.time')} htmlFor={`prep-t-${i}`} error={showErrors ? e.fireTime : undefined}>
-              <div className="inline-fields">
-                <input id={`prep-t-${i}`} type="time" value={p.fireTime} onChange={(ev) => update(i, { fireTime: ev.target.value })} />
-                <button className="btn ghost" style={{ flex: 'none' }} onClick={() => onChange(preps.filter((_, j) => j !== i))}>{t('common.remove')}</button>
-              </div>
+              <input id={`prep-t-${i}`} type="time" value={p.fireTime} onChange={(ev) => update(i, { fireTime: ev.target.value })} />
             </Field>
           </div>
         )
       })}
       {preps.length < MAX_PREPS && (
-        <button className="btn outline" onClick={() => onChange([...preps, { title: '', fireWeekdays: [], fireTime: '21:00' }])}>
+        <button type="button" className="btn outline" onClick={() => onChange([...preps, { title: '', fireWeekdays: [], fireTime: '21:00' }])}>
           {t('form.addPrep')}
         </button>
       )}
@@ -239,15 +252,35 @@ export function ToleranceField({ value, onChange, error }: { value: number; onCh
       <div className="tol-readout" aria-hidden="true">{value}%</div>
       <input type="range" min={50} max={100} step={5} value={value} aria-label={t('form.tolerancePercent')}
         onChange={(ev) => onChange(Number(ev.target.value))} />
+      <p className="field-hint after">{toleranceLine(value)}</p>
     </Field>
   )
 }
 
-export function WhyFields({ valueId, text, onValue, onText, errors, showErrors, suggest }: {
+/**
+ * The reason, in their words. `labelled` false when the card's question
+ * ("What is the reason for this goal?") already says what it's for.
+ */
+export function WhyText({ text, onText, error, placeholder, labelled = true }: {
+  text: string; onText: (t: string) => void; error?: string; placeholder?: string; labelled?: boolean
+}) {
+  return (
+    <div className={`field ${error ? 'has-error' : ''}`}>
+      {labelled && <div className="field-label-row"><label className="field-label" htmlFor="why">{t('form.qWhy')}</label></div>}
+      <textarea id="why" rows={2} value={text} placeholder={placeholder ?? t('form.phWhy')} aria-label={labelled ? undefined : t('form.qWhy')}
+        onChange={(ev) => onText(ev.target.value)} />
+      <div className="field-hint after">{t('intro.seeOnToday')}</div>
+      {error && <div className="field-error" role="alert">{error}</div>}
+    </div>
+  )
+}
+
+export function WhyFields({ valueId, text, onValue, onText, errors, showErrors, suggest, labelled = true }: {
   valueId: string; text: string; onValue: (id: string) => void; onText: (t: string) => void
   errors: { whyValueId?: string; whyText?: string }; showErrors: boolean
   /** A template's value that doesn't exist yet: picked while no other is ('' id), created on save. */
   suggest?: string
+  labelled?: boolean
 }) {
   const snap = useSnapshot()
   const values = (snap?.values ?? []).filter((v) => !v.deletedAt)
@@ -264,6 +297,7 @@ export function WhyFields({ valueId, text, onValue, onText, errors, showErrors, 
   const open = adding || (snap != null && !values.length && !pending)
   return (
     <>
+      <WhyText text={text} onText={onText} error={showErrors ? errors.whyText : undefined} labelled={labelled} />
       <Field label={t('form.value')} error={showErrors ? errors.whyValueId : undefined}>
         {(values.length > 0 || pending) && (
           <div className="chips">
@@ -282,10 +316,6 @@ export function WhyFields({ valueId, text, onValue, onText, errors, showErrors, 
             </form>
           </>
         )}
-      </Field>
-      <Field label={t('form.why')} htmlFor="why" error={showErrors ? errors.whyText : undefined} info={t('form.whyInfo')}>
-        <textarea id="why" rows={2} value={text} placeholder={t('form.phWhy')}
-          onChange={(ev) => onText(ev.target.value)} />
       </Field>
     </>
   )
@@ -398,20 +428,29 @@ const SMART = [
   { k: 'R', word: 'smart.relevant' },
   { k: 'T', word: 'smart.timeBound' },
 ] as const
-export type Letter = (typeof SMART)[number]['k'] | '+'
+export type SmartLetter = (typeof SMART)[number]['k']
+export type Letter = SmartLetter | '+'
 
-/** S M A R T, with the current letter lit, so the method is visible without explaining it. */
-export function SmartBar({ current }: { current: Letter }) {
-  const idx = current === '+' ? SMART.length : SMART.findIndex((x) => x.k === current)
-  const word = current === '+' ? t('smart.extraPrep') : t(SMART[idx].word)
+/**
+ * "Let's make it S M A R T": the current letter lit and its word under the
+ * letters, so the method is visible without explaining it. In Portuguese the
+ * S gets a note that the letters come from English.
+ */
+export function SmartBar({ current, big = false }: { current: SmartLetter; big?: boolean }) {
+  const idx = SMART.findIndex((x) => x.k === current)
+  const word = t(SMART[idx].word)
   return (
     <div className="smart">
+      {big ? <h1 className="intro-title smart-lead">{t('intro.goalTitle')}</h1> : <div className="smart-lead">{t('intro.goalTitle')}</div>}
       <div className="smart-letters" aria-label={t('smart.label', { word })}>
         {SMART.map((x, j) => (
           <span key={x.k} aria-hidden="true" className={`smart-l ${j < idx ? 'done' : j === idx ? 'on' : ''}`}>{x.k}</span>
         ))}
       </div>
-      <div className="smart-word title-row">{word}<InfoTip label="SMART">{t('smart.info')}</InfoTip></div>
+      <div className="smart-word title-row">
+        {word}
+        {current === 'S' && getLang() === 'pt-BR' && <InfoTip label="SMART">{t('smart.info')}</InfoTip>}
+      </div>
     </div>
   )
 }
@@ -427,12 +466,139 @@ export function SmartHead({ k, children }: { k: Letter; children?: ReactNode }) 
   )
 }
 
+// ——— the steps, shared by the wizard, the compact form and the first-run intro ———
+
+/** A line under the letters: what the step asks for. */
+export const SMART_LINE: Record<SmartLetter, Key> = {
+  S: 'intro.lineS',
+  M: 'intro.lineM',
+  A: 'intro.lineA',
+  R: 'intro.lineR',
+  T: 'intro.lineT',
+}
+
+/** Each step's question, on its card. */
+export const SMART_Q: Record<SmartLetter, Key> = {
+  S: 'intro.qAchieve',
+  M: 'form.qHowKnow',
+  A: 'form.qSlack',
+  R: 'form.qWhy',
+  T: 'form.qWhen',
+}
+
+type Err = (k: keyof GoalDraft) => string | undefined
+
+/** S: the goal's name, then (for a habit) the short name Today and check-ins call it by. `children` go in between. */
+export function TitleFields({ d, set, err, placeholder, children }: {
+  d: GoalDraft; set: SetField; err: Err; placeholder?: string; children?: ReactNode
+}) {
+  return (
+    <>
+      <Field label={t('form.goal')} htmlFor="title" error={err('title')}>
+        <input id="title" value={d.title} placeholder={placeholder} onChange={(e) => set('title', e.target.value)} />
+      </Field>
+      {children}
+      {d.goalKind !== 'outcome' && (
+        <Field label={t('form.shortName')} htmlFor="m-label" hint={t('form.shortNameHint')} error={err('label')}>
+          <input id="m-label" value={d.label} onChange={(e) => set('label', e.target.value)} autoCapitalize="off" />
+        </Field>
+      )}
+    </>
+  )
+}
+
+/** The fields M checks once the kind is picked: a finish line, or what counts and how often. */
+export const measureFields = (d: GoalDraft): (keyof GoalDraft)[] =>
+  d.goalKind === 'outcome' ? ['doneWhen'] : ['measurementDefinition', 'times', 'checkinType', 'targetValue', 'targetTime']
+
+/** M, below the kinds: that kind's own fields. */
+export function MeasureFields({ d, set, patch, errors, showErrors, placeholders }: {
+  d: GoalDraft; set: SetField; patch: (p: Partial<GoalDraft>) => void; errors: Errors<GoalDraft>; showErrors: boolean
+  placeholders?: { doneWhen?: string; definition?: string }
+}) {
+  if (d.goalKind === 'outcome') {
+    return <DoneWhenField d={d} set={set} error={showErrors ? errors.doneWhen : undefined} placeholder={placeholders?.doneWhen} />
+  }
+  return (
+    <>
+      <MeasurementFields d={d} set={patch} e={errors} showErrors={showErrors} withLabel={false}
+        placeholders={placeholders?.definition ? { definition: placeholders.definition } : undefined} />
+      <div style={{ marginTop: 18 }}><CadenceFields d={d} set={patch} e={errors} showErrors={showErrors} /></div>
+    </>
+  )
+}
+
+/** A: room for a finish line to run late, or the share of check-ins a habit needs. */
+export function AchieveFields({ d, set, err }: { d: GoalDraft; set: SetField; err: Err }) {
+  return d.goalKind === 'outcome'
+    ? <GraceField value={d.graceDays} onChange={(n) => set('graceDays', n)} />
+    : <ToleranceField value={d.tolerancePct} onChange={(n) => set('tolerancePct', n)} error={err('tolerancePct')} />
+}
+
+/** T: the dates, with a few lengths one tap away. */
+export function TimeFields({ d, set, err }: { d: GoalDraft; set: SetField; err: Err }) {
+  return (
+    <>
+      <DateFields d={d} set={set} err={err} />
+      <div className="chips" style={{ marginTop: 4 }}>
+        {[1, 3, 6].map((n) => {
+          const date = addMonths(d.startDate, n)
+          return (
+            <Chip key={n} selected={d.targetDate === date} onClick={() => set('targetDate', d.targetDate === date ? '' : date)}>
+              {n === 1 ? t('intro.in1Month') : t('intro.nMonths', { n })}
+            </Chip>
+          )
+        })}
+      </div>
+    </>
+  )
+}
+
+/** Above the prep step: it's no longer the SMART goal, but what makes it easier. */
+export function PrepHead({ big = false }: { big?: boolean }) {
+  return big ? (
+    <div className="intro-head">
+      <h1 className="intro-title">{t('intro.prepTitle')}</h1>
+      <p className="intro-sub">{t('intro.prepSub')}</p>
+    </div>
+  ) : (
+    <div className="prep-head">
+      <h2 className="wizard-q">{t('intro.prepTitle')}</h2>
+      <p className="wizard-lead">{t('intro.prepSub')}</p>
+    </div>
+  )
+}
+
+/**
+ * A goal's preps. Picking what usually gets in the way fills in one prep that
+ * helps (another pick swaps it); more are added by hand.
+ */
+export function PrepFields({ preps, onChange, showErrors }: { preps: PrepDraft[]; onChange: (p: PrepDraft[]) => void; showErrors: boolean }) {
+  const suggested = OBSTACLE_PREPS.map((o) => o.prep.title)
+  const has = (title: string) => preps.some((p) => p.title === title)
+  const pick = (o: (typeof OBSTACLE_PREPS)[number]) => {
+    const own = preps.filter((p) => !suggested.includes(p.title))
+    onChange(has(o.prep.title) ? own : [{ ...o.prep }, ...own].slice(0, MAX_PREPS))
+  }
+  return (
+    <>
+      <div className="chips">
+        {OBSTACLE_PREPS.map((o) => <Chip key={o.reason} selected={has(o.prep.title)} onClick={() => pick(o)}>{o.label}</Chip>)}
+      </div>
+      <p className="field-hint after">{t('intro.prepHint')}</p>
+      <div style={{ marginTop: 14 }}>
+        <PrepEditor preps={preps} onChange={onChange} showErrors={showErrors} />
+      </div>
+    </>
+  )
+}
+
 interface Step {
   letter: Letter
-  q: string
-  info?: ReactNode
   fields: (keyof GoalDraft)[]
   body: ReactNode
+  /** A second card under the first (M: the kind's own fields). */
+  extra?: ReactNode
 }
 
 export function Wizard({ d, set, patch, errors, onSave, top, suggest }: FormProps) {
@@ -444,63 +610,35 @@ export function Wizard({ d, set, patch, errors, onSave, top, suggest }: FormProp
   const all: (Step | false)[] = [
     {
       letter: 'S',
-      q: t('form.qWhat'),
-      fields: ['title'],
-      body: (
-        <Field label={t('form.goal')} htmlFor="title" error={err('title')}>
-          <input id="title" value={d.title} placeholder={t('form.goalPlaceholder')} onChange={(e) => set('title', e.target.value)} />
-        </Field>
-      ),
+      fields: ['title', 'label'],
+      body: <TitleFields d={d} set={set} err={err} placeholder={t('form.goalPlaceholder')} />,
     },
     {
       letter: 'M',
-      q: t('form.qHowKnow'),
-      info: <KindInfo />,
-      fields: outcome ? ['doneWhen'] : ['measurementDefinition', 'label'],
-      body: (
-        <>
-          <KindField d={d} patch={patch} />
-          <div style={{ marginTop: 18 }}>
-            {outcome
-              ? <DoneWhenField d={d} set={set} error={err('doneWhen')} />
-              : <MeasurementFields d={d} set={patch} e={errors} showErrors={tried} />}
-          </div>
-        </>
-      ),
-    },
-    !outcome && {
-      letter: 'M',
-      q: t(d.shape === 'rhythm' ? 'form.qHowOften' : d.shape === 'threshold' ? 'form.qLine' : 'form.qCheckIn'),
-      info: d.shape === 'rhythm' ? t('form.badWeek') : undefined,
-      fields: ['times', 'checkinType', 'targetValue', 'targetTime'],
-      body: <CadenceFields d={d} set={patch} e={errors} showErrors={tried} />,
+      fields: measureFields(d),
+      body: <KindField d={d} patch={patch} />,
+      extra: <MeasureFields d={d} set={set} patch={patch} errors={errors} showErrors={tried} />,
     },
     {
       letter: 'A',
-      q: t('form.qSlack'),
       fields: outcome ? ['graceDays'] : ['tolerancePct'],
-      body: outcome
-        ? <GraceField value={d.graceDays} onChange={(n) => set('graceDays', n)} />
-        : <ToleranceField value={d.tolerancePct} onChange={(n) => set('tolerancePct', n)} error={err('tolerancePct')} />,
+      body: <AchieveFields d={d} set={set} err={err} />,
     },
     {
       letter: 'R',
-      q: t('form.qWhy'),
       fields: ['whyValueId', 'whyText'],
-      body: <WhyFields valueId={d.whyValueId} text={d.whyText} onValue={(v) => set('whyValueId', v)} onText={(x) => set('whyText', x)} errors={errors} showErrors={tried} suggest={suggest} />,
+      body: <WhyFields valueId={d.whyValueId} text={d.whyText} onValue={(v) => set('whyValueId', v)} onText={(x) => set('whyText', x)}
+        errors={errors} showErrors={tried} suggest={suggest} labelled={false} />,
     },
     {
       letter: 'T',
-      q: t('form.qWhen'),
       fields: ['startDate', 'targetDate'],
-      body: <DateFields d={d} set={set} err={err} />,
+      body: <TimeFields d={d} set={set} err={err} />,
     },
     !outcome && {
       letter: '+',
-      q: t('form.qStops'),
-      info: t('form.prepInfo'),
       fields: ['preps'],
-      body: <PrepEditor preps={d.preps} onChange={(p) => set('preps', p)} showErrors={tried} />,
+      body: <PrepFields preps={d.preps} onChange={(p) => set('preps', p)} showErrors={tried} />,
     },
   ]
   const steps = all.filter((x): x is Step => !!x)
@@ -520,17 +658,21 @@ export function Wizard({ d, set, patch, errors, onSave, top, suggest }: FormProp
     window.scrollTo(0, 0)
   }
 
+  const letter = step.letter
   return (
     <div>
       {at === 0 && top}
-      <SmartBar current={step.letter} />
+      {letter === '+' ? <PrepHead /> : (
+        <>
+          <SmartBar current={letter} />
+          <p className="smart-line">{tk(SMART_LINE[letter])}</p>
+        </>
+      )}
       <div className="card pad smart-card">
-        <h2 className="wizard-q title-row">
-          {step.q}
-          {step.info && <InfoTip label={t('common.moreAboutStep')}>{step.info}</InfoTip>}
-        </h2>
+        <h2 className="wizard-q">{letter === '+' ? t('intro.qInTheWay') : tk(SMART_Q[letter])}</h2>
         {step.body}
       </div>
+      {step.extra && <div className="card pad smart-card second">{step.extra}</div>}
       <div className="wizard-nav">
         {at > 0 ? <button className="btn" onClick={() => { setTried(false); setI(at - 1) }}>{t('nav.back')}</button> : null}
         <button className="btn primary" onClick={next}>{last ? t('common.save') : t('common.next')}</button>
@@ -539,15 +681,14 @@ export function Wizard({ d, set, patch, errors, onSave, top, suggest }: FormProp
   )
 }
 
-export function DateFields({ d, set, err }: { d: GoalDraft; set: SetField; err: (k: keyof GoalDraft) => string | undefined }) {
+export function DateFields({ d, set, err }: { d: GoalDraft; set: SetField; err: Err }) {
   const outcome = d.goalKind === 'outcome'
   return (
     <div className="inline-fields top">
       <Field label={t('form.start')} htmlFor="start" error={err('startDate')}>
         <input id="start" type="date" value={d.startDate} onChange={(e) => set('startDate', e.target.value)} />
       </Field>
-      <Field label={outcome ? t('form.deadline') : t('form.reviewOn')} htmlFor="target" error={err('targetDate')}
-        info={outcome ? undefined : t('form.reviewOnInfo')}>
+      <Field label={outcome ? t('form.deadline') : t('form.reviewOn')} htmlFor="target" error={err('targetDate')}>
         <input id="target" type="date" value={d.targetDate} min={d.startDate} onChange={(e) => set('targetDate', e.target.value)} />
       </Field>
     </div>
@@ -559,35 +700,23 @@ export function Compact({ d, set, patch, errors, onSave, top, suggest }: FormPro
   const outcome = d.goalKind === 'outcome'
   const submit = () => (isValid(errors) ? onSave() : setTried(true))
   const err = (k: keyof GoalDraft) => (tried ? errors[k] : undefined)
-  const cErr = validateCommitment(d)
   return (
     <div>
       {top}
       <section className="card pad smart-section">
         <SmartHead k="S" />
-        <Field label={t('form.goal')} htmlFor="title" error={err('title')}>
-          <input id="title" value={d.title} placeholder={t('form.goalPlaceholder')} onChange={(e) => set('title', e.target.value)} />
-        </Field>
+        <TitleFields d={d} set={set} err={err} placeholder={t('form.goalPlaceholder')} />
       </section>
       <section className="card pad smart-section">
-        <SmartHead k="M"><InfoTip label={t('form.aboutKinds')}><KindInfo /></InfoTip></SmartHead>
+        <SmartHead k="M" />
         <KindField d={d} patch={patch} />
         <div style={{ marginTop: 18 }}>
-          {outcome ? (
-            <DoneWhenField d={d} set={set} error={err('doneWhen')} />
-          ) : (
-            <>
-              <MeasurementFields d={d} set={patch} e={cErr} showErrors={tried} />
-              <div style={{ marginTop: 18 }}><CadenceFields d={d} set={patch} e={cErr} showErrors={tried} /></div>
-            </>
-          )}
+          <MeasureFields d={d} set={set} patch={patch} errors={errors} showErrors={tried} />
         </div>
       </section>
       <section className="card pad smart-section">
         <SmartHead k="A" />
-        {outcome
-          ? <GraceField value={d.graceDays} onChange={(n) => set('graceDays', n)} />
-          : <ToleranceField value={d.tolerancePct} onChange={(n) => set('tolerancePct', n)} error={err('tolerancePct')} />}
+        <AchieveFields d={d} set={set} err={err} />
       </section>
       <section className="card pad smart-section">
         <SmartHead k="R" />
@@ -595,14 +724,12 @@ export function Compact({ d, set, patch, errors, onSave, top, suggest }: FormPro
       </section>
       <section className="card pad smart-section">
         <SmartHead k="T" />
-        <DateFields d={d} set={set} err={err} />
+        <TimeFields d={d} set={set} err={err} />
       </section>
       {!outcome && (
         <section className="card pad smart-section">
-          <SmartHead k="+">
-            <InfoTip label={t('form.aboutPreps')}>{t('form.prepInfoShort')}</InfoTip>
-          </SmartHead>
-          <PrepEditor preps={d.preps} onChange={(p) => set('preps', p)} showErrors={tried} />
+          <SmartHead k="+" />
+          <PrepFields preps={d.preps} onChange={(p) => set('preps', p)} showErrors={tried} />
         </section>
       )}
       {tried && !isValid(errors) && <p className="field-error" style={{ marginTop: 16 }}>{t('form.checkFields')}</p>}

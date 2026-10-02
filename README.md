@@ -22,8 +22,10 @@ offline, and an optional Supabase sync copies everything off the phone.
   full check-in history (corrections visible), revisions, edit, abandon,
   deliberately awkward delete, and the end-of-goal review.
 - **First run**: a skippable intro that builds the first goal one SMART letter
-  at a time, with examples picked from what the person wants to work on (plain
-  lookup tables in `src/lib/intro.ts`), then a Getting started card on Today.
+  at a time (the same steps as New goal, from `GoalForm.tsx`), with examples
+  picked from what the person wants to work on (plain lookup tables in
+  `src/lib/intro.ts`), a prep, what the plan adds up to, the weekly review and
+  the other pieces, then a Getting started card on Today.
   Replayable from Settings. Spec: `docs/2026-09-30-onboarding-spec.md`.
 - **Goal creation**: guided wizard or compact form. A goal cannot be saved
   without a checkable measurement sentence, a value and a why (except the

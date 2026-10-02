@@ -200,8 +200,9 @@ Open Settings.
 
 **O1. The whole intro**
 Erase all data (or open a private window), then open the app.
-- **Expect:** the welcome with an example week filling up, then the note from the creator (photo, three short paragraphs, a small signature), then the areas. Pick *Creativity* and *Health & fitness*: the first goal offers *Exercise 3× a week*, *Practise 4× a week* and *Sleep 7.5 hours*. Tap *Practise*: every step comes filled in, each with one line on its SMART letter. The value step offers *Creativity* (picked) and *Health*. Tap *3 months* on the date step, *Forgot* on the prep step (a prep appears), then **Create goal**.
-- **Expect:** "Practise 4× a week starts today", its card as on Today, and "about 42 times by …". Then three short screens (one tap, say why, review). **Go to Today** shows the goal and a Getting started card with the goal ticked.
+- **Expect:** the welcome with a wordless card filling up its week (grey lines, ticks, a green check), then the note from the creator (photo, three short paragraphs, a small signature), then the areas, whose button reads **Create first goal**. Pick *Creativity* and *Health & fitness*: the goal step says "Let's make it" over the S M A R T letters (no SMART info icon; in Portuguese only *Específica* has one) and offers *Exercise 3× a week*, *Practise 4× a week* and *Sleep 7.5 hours*. Tap *Practise*: the short name fills in (*practice*). Next to Measurable: one screen, the kinds in one card and that kind's fields in another; switching kind switches the fields. On Relevant, the reason comes first, then the values (*Creativity* picked). Tap *3 months* on Time-bound.
+- **Expect:** "Make your goal easier", no letters. Tap *Forgot* (a prep appears), then *Too tired*: still one prep, now the tired one. Each prep has an × at the top right; **Add new prep** adds a blank one. **Create goal**.
+- **Expect:** "Practise 4× a week starts today" and its card; tick it (the screen stays), and "Open Today and tick it when you do it". **Continue** reveals "at least 42×" counting up, **Continue** again: *Review your goals*, a line opening into a blurred panel; each **Continue** (or a tap anywhere) shows a week: add a prep, lower the target, maintenance. Then *Not only goals*: Task, Project, Prep, Habit, one at a time, each shrinking into a row; **Join everything** puts them inside the goal. **Go to Today** shows the goal and a Getting started card with the goal ticked.
 
 **O2. Skip everything**
 Erase all data, open the app, tap **Skip** on the welcome.
@@ -217,7 +218,7 @@ With the Getting started card showing, tick something on Today, then export a ba
 
 **O5. Replay**
 Settings → **Replay intro**.
-- **Expect:** the same intro; finishing it adds a goal and changes nothing else. No Getting started card appears.
+- **Expect:** the same intro; finishing it adds a goal and changes nothing else. No Getting started card appears. With many goals (or when the cap is full and the goal waits in the backlog), **Create goal** still lands on the plan, never straight on Today; a backlog goal's card shows its habit and prep.
 
 **O6. iPhone, from Safari**
 Open the link in Safari on a fresh phone.

@@ -1,34 +1,35 @@
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { useEffect, useState, useSyncExternalStore, type MouseEvent, type ReactNode } from 'react'
 import creator from '../assets/creator.jpg'
 import signature from '../assets/signature.png'
 import { exportData, shareOrDownload } from '../db/backup'
+import { db } from '../db/db'
 import { createGoal, ensureValue } from '../db/repo'
 import { getSettings, setSettings } from '../db/settings'
-import { getLang, setLangSetting, t, tk, tlist, type Key } from '../i18n'
+import { getLang, setLangSetting, t, tk, type Key } from '../i18n'
 import { dayMonth, diffDays } from '../lib/dates'
-import { reasons } from '../lib/describe'
+import { doneWhenProblem, emptyGoalDraft, validateCommitment, validatePrep, type Errors, type GoalDraft } from '../lib/draft'
 import {
-  CHECKIN_TYPES, doneWhenProblem, emptyGoalDraft, validateCommitment, validatePrep, type Errors, type GoalDraft,
-} from '../lib/draft'
-import {
-  addMonths, AREAS, areaInfo, draftFromExample, EXAMPLES, exampleByKey, examplesFor, OBSTACLE_PREPS, projection, toleranceLine,
-  type Area, type Example,
+  AREAS, areaInfo, draftFromExample, EXAMPLES, exampleByKey, examplesFor, projection, type Area, type Example,
 } from '../lib/intro'
+import { MAINTENANCE_WEEKS } from '../lib/review'
 import { buildDay, type Snapshot } from '../lib/today'
-import type { Goal, Shape } from '../lib/types'
+import type { Goal } from '../lib/types'
 import { Badge, CheckButton, Chip, Field, toast } from '../ui/components'
 import { useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
 import { FlagBR, FlagUS, IconCheck, IconChevronLeft, IconClose } from '../ui/icons'
 import { goBack, match, navigate } from '../ui/router'
 import {
-  CadenceFields, DateFields, DoneWhenField, GraceField, MeasurementFields, PrepEditor, SmartBar, ToleranceField,
-  type Letter, type SetField,
+  AchieveFields, KindField, MeasureFields, measureFields, PrepFields, PrepHead, SMART_LINE, SMART_Q, SmartBar, TimeFields, TitleFields, WhyText,
+  type SetField, type SmartLetter,
 } from './GoalForm'
 
 /**
  * First run: what the app is for, a note from Pedro, a guided first goal that
- * teaches SMART as it's filled in, and how a week works. Every screen can be
- * skipped, and each is its own address so the back gesture walks back.
+ * teaches SMART as it's filled in (the same steps as New goal), a prep to make
+ * it easier, then the plan, the weekly review and the other pieces. Every
+ * screen can be skipped, and each is its own address so the back gesture
+ * walks back.
  */
 
 // ——— state shared by the intro's screens ———
@@ -108,15 +109,26 @@ export function introRoute(path: string): ReactNode | null {
   if (path === '/welcome/areas') return <IntroAreas />
   if ((m = match('/welcome/goal/:step', path))) return <IntroGoal key={m.step} step={m.step as Step} />
   if (path === '/welcome/plan') return <IntroPlan />
-  if ((m = match('/welcome/week/:n', path))) return <IntroWeek key={m.n} n={Number(m.n) || 1} />
+  if (path === '/welcome/review') return <IntroReview />
+  if (path === '/welcome/pieces') return <IntroPieces />
   return null
 }
 
 // ——— frame ———
 
-function Frame(props: { back?: string; lead?: ReactNode; children: ReactNode; nav?: ReactNode; below?: ReactNode; className?: string }) {
+const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+function Frame(props: {
+  back?: string; lead?: ReactNode; children: ReactNode; nav?: ReactNode; below?: ReactNode; className?: string
+  /** A tap anywhere that isn't a control does what the main button does (the screens that play out step by step). */
+  onTap?: () => void
+}) {
+  const tap = props.onTap && ((e: MouseEvent) => {
+    // Controls, and the goal's preview (it can be ticked), keep their own taps.
+    if (!(e.target as HTMLElement).closest('button, a, input, textarea, select, label, [role="radio"], .preview')) props.onTap!()
+  })
   return (
-    <div className={`screen intro ${props.className ?? ''}`}>
+    <div className={`screen intro ${props.className ?? ''}`} onClick={tap}>
       <div className="intro-top">
         {props.back ? (
           <button type="button" className="back" onClick={() => goBack(props.back!)}>
@@ -151,12 +163,6 @@ function LanguageFlags() {
   )
 }
 
-/** A text with `{name}` where a goal's name goes in italics. */
-function WithName({ k, name }: { k: Key; name: string }) {
-  const [a, b] = tk(k, { name: '\u0000' }).split('\u0000')
-  return <>{a}<i>{name}</i>{b}</>
-}
-
 // ——— 0 · Home Screen ———
 
 const IconShare = () => (
@@ -186,42 +192,43 @@ function IntroHome() {
 
 const DEMO_HITS = [0, 2, 4]
 
-/** An example goal filling up over a week: the app in use, before any words. */
+/** A goal filling up over a week, drawn without words: the app in use, before anything to read. */
 function WelcomeDemo() {
-  const [step, setStep] = useState(() => (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 4 : 0))
+  const [step, setStep] = useState(() => (reducedMotion() ? 4 : 0))
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    if (reducedMotion()) return
     const timer = setInterval(() => setStep((s) => (s + 1) % 8), 900)
     return () => clearInterval(timer)
   }, [])
   const hits = Math.min(step, 3)
   const done = step >= 4
+  const ticked = step >= 1 && step <= 3
   return (
     <div className={`card group tint-goal demo ${done ? 'demo-done' : ''}`} aria-hidden="true">
       <div className="group-head">
         <div className="text">
-          <div className="group-eyebrow">{t('intro.demoEyebrow')}</div>
-          <div className="group-why">{t('intro.demoWhy')}</div>
+          <div className="skel" style={{ width: '34%', height: 8 }} />
+          <div className="skel strong" style={{ width: '74%', height: 12, marginTop: 9 }} />
         </div>
       </div>
       <ul className="items">
         <li>
-          <div className={`item kind-commitment ${step >= 1 && step <= 3 ? 'done' : ''}`}>
-            <CheckButton shape="circle" checked={step >= 1 && step <= 3} label="" onClick={() => {}} />
+          <div className={`item kind-commitment ${ticked ? 'done' : ''}`}>
+            <CheckButton shape="circle" checked={ticked} label="" onClick={() => {}} />
             <div className="item-main">
-              <div className="item-title">{t('intro.demoWhat')}</div>
-              <div className="item-detail">{t('today.nOfTimesPeriod', { n: hits, times: 3, period: t('dates.thisWeek') })}</div>
+              <div className="skel strong" style={{ width: '68%', height: 10 }} />
+              <div className="skel" style={{ width: '32%', height: 8, marginTop: 8 }} />
             </div>
-            <div className="item-side"><Badge kind="goal">{t('common.goal')}</Badge></div>
+            <div className="item-side"><span className="badge badge-goal skel-badge" /></div>
           </div>
         </li>
       </ul>
       <div className="demo-week">
-        {tlist('dates.weekdayInitials').map((l, i) => {
+        {[0, 1, 2, 3, 4, 5, 6].map((i) => {
           const on = DEMO_HITS.indexOf(i) > -1 && DEMO_HITS.indexOf(i) < hits
-          return <span key={i} className={on ? 'on' : ''}>{on ? <IconCheck width={13} height={13} /> : l}</span>
+          return <span key={i} className={on ? 'on' : ''}>{on && <IconCheck width={13} height={13} />}</span>
         })}
-        <span className={`demo-status ${done ? 'show' : ''}`}>{t('intro.demoOnTrack')}</span>
+        <span className={`demo-status ${done ? 'show' : ''}`}><IconCheck width={14} height={14} /></span>
       </div>
     </div>
   )
@@ -269,7 +276,7 @@ function IntroAreas() {
     setSettings({ areas })
   }
   return (
-    <Frame className="centered" back="/welcome/note" nav={<button className="btn primary" onClick={() => navigate('/welcome/goal/s')}>{t('common.continue')}</button>}>
+    <Frame className="centered" back="/welcome/note" nav={<button className="btn primary" onClick={() => navigate('/welcome/goal/s')}>{t('intro.createFirst')}</button>}>
       <h1 className="intro-title">{t('intro.areasTitle')}</h1>
       <p className="intro-sub">{t('intro.areasSub')}</p>
       <div className="chips intro-chips">
@@ -279,35 +286,20 @@ function IntroAreas() {
   )
 }
 
-// ——— 4–10 · the first goal ———
+// ——— 4–9 · the first goal: S M A R T, then a prep ———
 
-type Step = 's' | 'm' | 'how' | 'a' | 'r' | 't' | 'prep'
-const STEPS: Step[] = ['s', 'm', 'how', 'a', 'r', 't', 'prep']
-const LETTER: Record<Step, Letter> = { s: 'S', m: 'M', how: 'M', a: 'A', r: 'R', t: 'T', prep: '+' }
-const LINE: Record<Letter, Key> = {
-  S: 'intro.lineS',
-  M: 'intro.lineM',
-  A: 'intro.lineA',
-  R: 'intro.lineR',
-  T: 'intro.lineT',
-  '+': 'intro.linePrep',
-}
-const FIELDS: Record<Step, (keyof GoalDraft)[]> = {
-  s: ['title'],
-  m: ['doneWhen', 'measurementDefinition', 'label'],
-  how: ['times', 'checkinType', 'targetValue', 'targetTime'],
-  a: ['graceDays', 'tolerancePct'],
-  r: [],
-  t: ['startDate', 'targetDate'],
-  prep: ['preps'],
-}
+type Step = 's' | 'm' | 'a' | 'r' | 't' | 'prep'
+const STEPS: Step[] = ['s', 'm', 'a', 'r', 't', 'prep']
+const LETTER: Record<Exclude<Step, 'prep'>, SmartLetter> = { s: 'S', m: 'M', a: 'A', r: 'R', t: 'T' }
 
-const KINDS: { kind: 'outcome' | Shape; title: Key; d: Key }[] = [
-  { kind: 'outcome', title: 'plan.finishLine', d: 'intro.kindFinish' },
-  { kind: 'rhythm', title: 'shape.rhythm', d: 'intro.kindRhythm' },
-  { kind: 'threshold', title: 'shape.threshold', d: 'intro.kindThreshold' },
-  { kind: 'standard', title: 'shape.standard', d: 'intro.kindStandard' },
-]
+function fieldsFor(step: Step, d: GoalDraft): (keyof GoalDraft)[] {
+  if (step === 's') return ['title', 'label']
+  if (step === 'm') return measureFields(d)
+  if (step === 'a') return ['graceDays', 'tolerancePct']
+  if (step === 't') return ['startDate', 'targetDate']
+  if (step === 'prep') return ['preps']
+  return []
+}
 
 /** The normal form's rules, minus the reason: value and why are optional here. */
 function introErrors(d: GoalDraft): Errors<GoalDraft> {
@@ -348,14 +340,13 @@ function IntroGoal({ step }: { step: Step }) {
   const set: SetField = (k, v) => setIntro({ draft: { ...current(), [k]: v } })
   const patch = (p: Partial<GoalDraft>) => setIntro({ draft: { ...current(), ...p } })
   const outcome = d.goalKind === 'outcome'
-  const steps = STEPS.filter((x) => !(outcome && (x === 'how' || x === 'prep')))
+  const steps = STEPS.filter((x) => !(outcome && x === 'prep'))
   const at = Math.max(0, steps.indexOf(step))
   const here = steps[at]
   const last = at === steps.length - 1
-  const letter = LETTER[here]
 
   const all = introErrors(d)
-  const stepErrors = FIELDS[here].filter((f) => all[f])
+  const stepErrors = fieldsFor(here, d).filter((f) => all[f])
   const err = (k: keyof GoalDraft) => (tried ? all[k] : undefined)
 
   const firstArea = s.areas.length ? areaInfo(AREAS.find((a) => s.areas.includes(a.key))!.key) : null
@@ -381,6 +372,7 @@ function IntroGoal({ step }: { step: Step }) {
   const next = () => {
     if (stepErrors.length || (last && Object.keys(all).length)) return setTried(true)
     if (last) return create()
+    setTried(false)
     navigate(`/welcome/goal/${steps[at + 1]}`)
   }
 
@@ -390,68 +382,29 @@ function IntroGoal({ step }: { step: Step }) {
   }
 
   const fit = placeholderFor(s.areas, d)
-  let q: string
   let body: ReactNode
-  let hint: ReactNode = null
+  let extra: ReactNode = null
   let label = last ? t('intro.createGoal') : t('common.next')
 
   if (here === 's') {
-    q = t('intro.qAchieve')
     body = (
-      <>
-        <Field label={t('form.goal')} htmlFor="title" error={err('title')}>
-          <input id="title" value={d.title} placeholder={firstArea?.title ?? t('area.health.title')} onChange={(e) => set('title', e.target.value)} />
-        </Field>
+      <TitleFields d={d} set={set} err={err}>
         <div className="intro-examples">
           <div className="intro-label">{t('intro.orExample')}</div>
           <div className="chips">
             {examplesFor(s.areas).map((e) => <Chip key={e.key} selected={s.example === e.key} onClick={() => pick(e)}>{e.title}</Chip>)}
           </div>
         </div>
-      </>
+      </TitleFields>
     )
   } else if (here === 'm') {
-    q = t('form.qHowKnow')
-    body = (
-      <>
-        <div className="kind-grid intro-kinds" role="radiogroup" aria-label={t('goal.kind')}>
-          {KINDS.map((k) => {
-            const on = k.kind === 'outcome' ? outcome : !outcome && d.shape === k.kind
-            return (
-              <button type="button" key={k.kind} role="radio" aria-checked={on} className={`choice ${on ? 'on' : ''}`}
-                onClick={() => patch(k.kind === 'outcome' ? { goalKind: 'outcome' } : {
-                  goalKind: 'habit', shape: k.kind, checkinType: CHECKIN_TYPES[k.kind][0], period: k.kind === 'threshold' ? 'day' : 'week',
-                })}>
-                <div className="t">{tk(k.title)}</div>
-                <div className="d">{tk(k.d)}</div>
-              </button>
-            )
-          })}
-        </div>
-        <p className="intro-hint">{t('intro.notSure')}</p>
-        <div style={{ marginTop: 18 }}>
-          {outcome
-            ? <DoneWhenField d={d} set={set} error={err('doneWhen')} placeholder={fit?.draft.doneWhen ?? t('intro.phDoneWhen')} />
-            : <MeasurementFields d={d} set={patch} e={all} showErrors={tried}
-              placeholders={fit ? { definition: fit.draft.measurementDefinition!, label: fit.draft.label! } : undefined} />}
-        </div>
-      </>
-    )
-  } else if (here === 'how') {
-    q = t(d.shape === 'rhythm' ? 'form.qHowOften' : d.shape === 'threshold' ? 'form.qLine' : 'form.qCheckIn')
-    if (d.shape !== 'standard') hint = <p className="intro-hint top">{t('intro.realNumber')}</p>
-    body = <CadenceFields d={d} set={patch} e={all} showErrors={tried} />
+    body = <KindField d={d} patch={patch} />
+    extra = <MeasureFields d={d} set={set} patch={patch} errors={all} showErrors={tried}
+      placeholders={{ doneWhen: fit?.draft.doneWhen ?? t('intro.phDoneWhen'), definition: fit?.draft.measurementDefinition }} />
   } else if (here === 'a') {
-    q = t('form.qSlack')
-    body = outcome
-      ? <GraceField value={d.graceDays} onChange={(n) => set('graceDays', n)} />
-      : <>
-        <ToleranceField value={d.tolerancePct} onChange={(n) => set('tolerancePct', n)} />
-        <p className="intro-hint">{toleranceLine(d.tolerancePct)}</p>
-      </>
+    body = <AchieveFields d={d} set={set} err={err} />
   } else if (here === 'r') {
-    q = t('form.qWhy')
-    const existing = snap?.values.map((v) => v.name) ?? []
+    const existing = snap?.values.filter((v) => !v.deletedAt).map((v) => v.name) ?? []
     const suggested = [...s.areas.map((a) => areaInfo(a).value), ...(example ? [areaInfo(example.area).value] : [])]
     const names: string[] = []
     for (const n of [...existing, ...suggested, s.valueName]) {
@@ -467,6 +420,7 @@ function IntroGoal({ step }: { step: Step }) {
     }
     body = (
       <>
+        <WhyText text={d.whyText} onText={(x) => set('whyText', x)} placeholder={whyArea?.why ?? AREAS[0].why} labelled={false} />
         <Field label={t('form.value')}>
           {names.length > 0 && (
             <div className="chips">
@@ -487,48 +441,15 @@ function IntroGoal({ step }: { step: Step }) {
             </>
           )}
         </Field>
-        <Field label={t('form.why')} htmlFor="why">
-          <textarea id="why" rows={2} value={d.whyText} placeholder={whyArea?.why ?? AREAS[0].why} onChange={(e) => set('whyText', e.target.value)} />
-        </Field>
-        <p className="intro-hint">{t('intro.seeOnToday')}</p>
       </>
     )
     if (!s.valueName.trim() && !d.whyText.trim()) label = t('common.skip')
   } else if (here === 't') {
-    q = t('form.qWhen')
-    const from = d.startDate
-    body = (
-      <>
-        <DateFields d={d} set={set} err={err} />
-        <div className="chips" style={{ marginTop: 4 }}>
-          {[1, 3, 6].map((n) => {
-            const date = addMonths(from, n)
-            return (
-              <Chip key={n} selected={d.targetDate === date} onClick={() => set('targetDate', d.targetDate === date ? '' : date)}>
-                {n === 1 ? t('intro.in1Month') : t('intro.nMonths', { n })}
-              </Chip>
-            )
-          })}
-        </div>
-      </>
-    )
+    body = <TimeFields d={d} set={set} err={err} />
   } else {
-    q = t('intro.qInTheWay')
-    const has = (title: string) => d.preps.some((p) => p.title === title)
     body = (
       <>
-        <div className="chips">
-          {OBSTACLE_PREPS.map((o) => (
-            <Chip key={o.reason} selected={has(o.prep.title)}
-              onClick={() => set('preps', has(o.prep.title) ? d.preps.filter((p) => p.title !== o.prep.title) : [...d.preps, { ...o.prep }].slice(0, 3))}>
-              {o.label}
-            </Chip>
-          ))}
-        </div>
-        <p className="intro-hint">{t('intro.prepHint')}</p>
-        <div style={{ marginTop: 14 }}>
-          <PrepEditor preps={d.preps} onChange={(p) => set('preps', p)} showErrors={tried} />
-        </div>
+        <PrepFields preps={d.preps} onChange={(p) => set('preps', p)} showErrors={tried} />
         {tried && all.preps && <p className="field-error" style={{ marginTop: 10 }}>{all.preps}</p>}
       </>
     )
@@ -536,37 +457,37 @@ function IntroGoal({ step }: { step: Step }) {
 
   const prev = at === 0 ? (s.short ? '/' : '/welcome/areas') : `/welcome/goal/${steps[at - 1]}`
   return (
-    <Frame back={prev}
-      nav={<button className="btn primary" disabled={busy} onClick={next}>{label}</button>}>
-      <div className="intro-head">
-        <div className="eyebrow">{t('intro.goalEyebrow')}</div>
-        <h1 className="intro-title">{t('intro.goalTitle')}</h1>
-      </div>
-      <SmartBar current={letter} />
-      <p className="smart-line">{tk(LINE[letter])}</p>
+    <Frame back={prev} nav={<button className="btn primary" disabled={busy} onClick={next}>{label}</button>}>
+      {here === 'prep' ? <PrepHead big /> : (
+        <>
+          <SmartBar current={LETTER[here]} big />
+          <p className="smart-line">{tk(SMART_LINE[LETTER[here]])}</p>
+        </>
+      )}
       <div className="card pad smart-card">
-        <h2 className="wizard-q">{q}</h2>
-        {hint}
+        <h2 className="wizard-q">{here === 'prep' ? t('intro.qInTheWay') : tk(SMART_Q[LETTER[here]])}</h2>
         {body}
       </div>
+      {extra && <div className="card pad smart-card second">{extra}</div>}
     </Frame>
   )
 }
 
-// ——— 11 · plan ———
+// ——— 10 · plan ———
 
 /** The goal's card as Today will draw it. Ticks here are a demo; nothing is saved. */
-function GoalPreview({ goal, snap, demo }: { goal: Goal; snap: Snapshot; demo?: boolean }) {
+function GoalPreview({ goal, snap }: { goal: Goal; snap: Snapshot }) {
   const settings = useSettings()
   const today = useToday(settings.rolloverHour)
   const [ticked, setTicked] = useState<Set<string>>(new Set())
   const date = goal.startDate > today ? goal.startDate : today
-  const view = buildDay(snap, date, { today: date, rolloverHour: settings.rolloverHour })
+  // Drawn as it will be once it runs, even while it waits in the backlog.
+  const running = { ...snap, goals: snap.goals.map((g) => (g.id === goal.id ? { ...g, state: 'active' as const } : g)) }
+  const view = buildDay(running, date, { today: date, rolloverHour: settings.rolloverHour })
   const group = view.groups.find((g) => g.goalId === goal.id)
   const value = snap.values.find((v) => v.id === goal.whyValueId)
   const eyebrow = goal.whyText ? (value ? `${value.name} · ${goal.title}` : goal.title) : value?.name
   const toggle = (k: string) => {
-    if (!demo) return
     const next = new Set(ticked)
     if (next.has(k)) next.delete(k)
     else next.add(k)
@@ -613,10 +534,17 @@ function GoalPreview({ goal, snap, demo }: { goal: Goal; snap: Snapshot; demo?: 
   )
 }
 
-function useIntroGoal(): { goal: Goal | undefined; snap: Snapshot | undefined } {
+/**
+ * The goal the intro just saved. Right after saving, the snapshot can still be
+ * the one from before (it's kept while the new one loads): only a goal that
+ * isn't in the database at all means the session was lost.
+ */
+function useIntroGoal(): { goal: Goal | undefined; snap: Snapshot | undefined; lost: boolean } {
   const s = useIntro()
   const snap = useSnapshot()
-  return { goal: snap?.goals.find((g) => g.id === s.goalId), snap }
+  const saved = useLiveQuery(async () => (s.goalId ? !!(await db.goals.get(s.goalId)) : false), [s.goalId])
+  const goal = snap?.goals.find((g) => g.id === s.goalId)
+  return { goal, snap, lost: !goal && saved === false }
 }
 
 function Lost() {
@@ -625,22 +553,50 @@ function Lost() {
   return null
 }
 
+/** Counts up to the number at the start of `text` ("42×", "74 days"), the rest as it is. */
+function CountUp({ text, run }: { text: string; run: boolean }) {
+  const m = /^(\d+)(.*)$/s.exec(text)
+  const target = m ? Number(m[1]) : 0
+  const [n, setN] = useState(0)
+  useEffect(() => {
+    if (!run || !m) return
+    if (reducedMotion()) return setN(target)
+    const start = performance.now()
+    let frame = 0
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / 700)
+      setN(Math.round(target * (1 - (1 - p) ** 3)))
+      if (p < 1) frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [run, target])
+  return <>{m ? `${run ? n : target}${m[2]}` : text}</>
+}
+
 function IntroPlan() {
   const s = useIntro()
   const settings = useSettings()
   const today = useToday(settings.rolloverHour)
-  const { goal, snap } = useIntroGoal()
-  if (!snap) return null
-  if (!goal) return <Lost />
+  const { goal, snap, lost } = useIntroGoal()
+  // Continue first shows what the plan adds up to, then moves on.
+  const [shown, setShown] = useState(false)
+  if (lost) return <Lost />
+  if (!snap || !goal) return null
   const waiting = goal.state === 'backlog'
   const name = goal.title
   const starts = goal.startDate <= today ? t('intro.startsToday', { name })
     : diffDays(today, goal.startDate) === 1 ? t('intro.startsTomorrow', { name })
     : t('intro.startsOn', { name, date: dayMonth(goal.startDate) })
-  const line = s.draft ? projection(s.draft, today) : ''
+  const p = s.draft ? projection(s.draft, today) : null
+  const forward = () => {
+    if (p && !shown) return setShown(true)
+    if (s.short) return leaveIntro()
+    navigate('/welcome/review')
+  }
   return (
-    <Frame nav={<button className="btn primary" onClick={() => (s.short ? leaveIntro() : navigate('/welcome/week/1'))}>
-      {s.short ? t('intro.goToday') : t('common.continue')}
+    <Frame onTap={forward} nav={<button className="btn primary" onClick={forward}>
+      {s.short && (shown || !p) ? t('intro.goToday') : t('common.continue')}
     </button>}>
       <div className="intro-head">
         <div className="eyebrow">{t('intro.planEyebrow')}</div>
@@ -648,81 +604,140 @@ function IntroPlan() {
         {waiting && <p className="intro-sub">{t('intro.inBacklogSub', { n: settings.goalCap })}</p>}
       </div>
       <GoalPreview goal={goal} snap={snap} />
-      {line && <p className="intro-projection">{line}</p>}
+      {!waiting && <p className="intro-hint center">{t(goal.kind === 'outcome' ? 'intro.tickHintFinish' : 'intro.tickHint')}</p>}
+      {p && (
+        <div className={`intro-projection ${shown ? 'shown' : ''}`}>
+          <p className="proj-line">{p.line}</p>
+          <div className="proj-reveal" aria-hidden={!shown}>
+            <div>
+              <div className="proj-big"><CountUp text={p.big} run={shown} /></div>
+              <div className="proj-caption">{p.caption}</div>
+            </div>
+          </div>
+        </div>
+      )}
     </Frame>
   )
 }
 
-// ——— 12 · how a week works ———
+// ——— 11 · the weekly review ———
 
-function IntroWeek({ n }: { n: number }) {
-  const { goal, snap } = useIntroGoal()
-  const [reason, setReason] = useState<string | null>(null)
-  const touch = useRef<number | null>(null)
-  if (!snap) return null
-  if (!goal) return <Lost />
-  const label = snap.commitments.find((c) => c.goalId === goal.id)?.label ?? goal.title.toLowerCase()
-  const outcome = goal.kind === 'outcome'
-  const forward = () => (n >= 3 ? leaveIntro() : navigate(`/welcome/week/${n + 1}`))
-  const backTo = n === 1 ? '/welcome/plan' : `/welcome/week/${n - 1}`
+/** The goal the demos talk about: theirs if it's a habit, an example otherwise. */
+function useDemoGoal(): { title: string; label: string } {
+  const s = useIntro()
+  const d = s.draft
+  if (d && d.goalKind !== 'outcome' && d.title.trim()) return { title: d.title.trim(), label: d.label.trim() || d.title.trim() }
+  const e = exampleByKey('exercise')!
+  return { title: e.title, label: e.draft.label ?? e.title }
+}
 
-  let title: string
-  let text: ReactNode
-  let demo: ReactNode
-  if (n === 1) {
-    title = t('intro.weekOneTitle')
-    text = <WithName k={outcome ? 'intro.weekOneFinish' : 'intro.weekOneText'} name={goal.title} />
-    demo = <GoalPreview goal={goal} snap={snap} demo />
-  } else if (n === 2) {
-    title = t('intro.weekTwoTitle')
-    text = t('intro.weekTwoText')
-    demo = (
-      <div className="card prompt demo-prompt">
-        <div className="prompt-q">{t('intro.weekTwoQ', { name: outcome ? t('intro.weekTwoIt') : label })}</div>
-        <div className="chips">
-          {reasons().map((r) => <Chip key={r.value} selected={reason === r.value} onClick={() => setReason(reason === r.value ? null : r.value)}>{r.label}</Chip>)}
-        </div>
-        {reason && <p className="small muted" style={{ marginTop: 12 }}>{t('intro.weekTwoAfter')}</p>}
-      </div>
-    )
-  } else {
-    title = t('intro.weekThreeTitle')
-    text = t('intro.weekThreeText')
-    demo = (
-      <div className="card pad demo-review">
-        <div className="group-eyebrow">{t('review.lastWeek')}</div>
-        <div className="group-why">{goal.title}</div>
-        <div className="demo-review-row">
-          <span>{t('intro.forgot2')}</span>
-          <span className="btn outline small-btn" aria-hidden="true">{t('intro.addAPrep')}</span>
-        </div>
-      </div>
-    )
-  }
-
+function IntroReview() {
+  const { title, label } = useDemoGoal()
+  // 0: the panel opens, blurred. 1–3: a week's suggestion each.
+  const [stage, setStage] = useState(0)
+  const forward = () => (stage < 3 ? setStage(stage + 1) : navigate('/welcome/pieces'))
+  const cards: { week: number; evidence: string; q: Key; a: Key }[] = [
+    { week: 2, evidence: t('intro.rev.forgot', { name: label }), q: 'review.q.addPrep', a: 'review.a.addPrep' },
+    { week: 5, evidence: t('intro.rev.tired', { name: label }), q: 'review.q.lowerTarget', a: 'review.a.edit' },
+    { week: 13, evidence: t('review.ev.onTrackAll', { n: MAINTENANCE_WEEKS }), q: 'review.q.maintenance', a: 'review.a.maintenance' },
+  ]
+  const shown = Math.max(stage, 1) - 1
   return (
-    <div onTouchStart={(e) => { touch.current = e.touches[0].clientX }}
-      onTouchEnd={(e) => {
-        const start = touch.current
-        touch.current = null
-        if (start == null) return
-        const dx = e.changedTouches[0].clientX - start
-        if (dx < -60) forward()
-        else if (dx > 60) goBack(backTo)
-      }}>
-      <Frame back={backTo} nav={<button className="btn primary" onClick={forward}>{n >= 3 ? t('intro.goToday') : t('common.next')}</button>}>
-        <div className="intro-head">
-          <div className="intro-dots" aria-label={t('intro.nOf3', { n })}>{[1, 2, 3].map((i) => <i key={i} className={i === n ? 'on' : ''} />)}</div>
-          <h1 className="intro-title">{title}</h1>
-          <p className="intro-sub">{text}</p>
+    <Frame back="/welcome/plan" onTap={forward} nav={<button className="btn primary" onClick={forward}>{t('common.continue')}</button>}>
+      <div className="intro-head">
+        <h1 className="intro-title">{t('intro.weekThreeTitle')}</h1>
+        <p className="intro-sub">{t('intro.reviewSub')}</p>
+      </div>
+      <div className={`rev-panel ${stage === 0 ? 'blurred' : ''}`}>
+        <div className="rev-track" style={{ transform: `translateX(${-shown * 100}%)` }}>
+          {cards.map((c, i) => (
+            <div key={c.week} className="rev-slide" aria-hidden={i !== shown || stage === 0}>
+              <div className="card tint-goal rev-card">
+                <div className="group-head">
+                  <div className="text">
+                    <div className="group-eyebrow">{t('intro.rev.week', { n: c.week })}</div>
+                    <div className="goal-card-title">{title}</div>
+                  </div>
+                </div>
+                <div className="suggestion">
+                  <div className="suggestion-q">{tk(c.q)}</div>
+                  <div className="small muted">{c.evidence}</div>
+                  <div className="actions">
+                    <span />
+                    <span className="btn primary small-btn" aria-hidden="true">{tk(c.a)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-        {demo}
-      </Frame>
-    </div>
+      </div>
+      <div className="intro-dots rev-dots" aria-hidden="true">{[1, 2, 3].map((i) => <i key={i} className={i === stage ? 'on' : ''} />)}</div>
+    </Frame>
   )
 }
 
-// ——— 13 · Getting started, on Today ———
+// ——— 12 · not only goals ———
+
+const PIECES: { badge: 'task' | 'step' | 'prep' | 'goal'; name: Key; what: Key; eg: Key }[] = [
+  { badge: 'task', name: 'common.task', what: 'intro.pieces.taskWhat', eg: 'intro.pieces.taskEg' },
+  { badge: 'step', name: 'common.project', what: 'intro.pieces.projectWhat', eg: 'intro.pieces.projectEg' },
+  { badge: 'prep', name: 'common.prep', what: 'intro.pieces.prepWhat', eg: 'intro.pieces.prepEg' },
+  { badge: 'goal', name: 'intro.pieces.habit', what: 'intro.pieces.habitWhat', eg: 'intro.pieces.habitEg' },
+]
+
+/**
+ * The other pieces, one at a time: each shows up large, then shrinks into a
+ * row as the next arrives. Join everything puts them all inside a goal.
+ */
+function IntroPieces() {
+  const { title } = useDemoGoal()
+  const [stage, setStage] = useState(() => (reducedMotion() ? PIECES.length : 0))
+  const joined = stage >= PIECES.length
+  const forward = () => (joined ? leaveIntro() : setStage(stage + 1))
+  const label = joined ? t('intro.goToday') : stage === PIECES.length - 1 ? t('intro.pieces.join') : t('common.continue')
+  const piece = PIECES[stage]
+  return (
+    <Frame back="/welcome/review" onTap={forward} nav={<button className="btn primary" onClick={forward}>{label}</button>}>
+      <div className="intro-head">
+        <h1 className="intro-title">{t('intro.pieces.title')}</h1>
+        <p className={`intro-sub pieces-end ${joined ? 'show' : ''}`}>{t('intro.pieces.end')}</p>
+      </div>
+      <div className="pieces">
+        {joined ? (
+          <div className="card group tint-goal piece-goal">
+            <div className="group-head">
+              <div className="text">
+                <div className="group-eyebrow">{t('common.goal')}</div>
+                <div className="group-why">{title}</div>
+              </div>
+            </div>
+            <div className="piece-inside">
+              {PIECES.map((p, i) => (
+                <span key={p.name} className="piece-row" style={{ animationDelay: `${120 + i * 90}ms` }}>
+                  <Badge kind={p.badge}>{tk(p.name)}</Badge>
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="piece-tray" aria-hidden="true">
+              {PIECES.slice(0, stage).map((p) => <span key={p.name} className="piece-chip"><Badge kind={p.badge}>{tk(p.name)}</Badge></span>)}
+            </div>
+            <div key={stage} className="card pad piece-card">
+              <Badge kind={piece.badge}>{tk(piece.name)}</Badge>
+              <div className="piece-what">{tk(piece.what)}</div>
+              <div className="piece-eg">{tk(piece.eg)}</div>
+            </div>
+          </>
+        )}
+      </div>
+    </Frame>
+  )
+}
+
+// ——— Getting started, on Today ———
 
 export function GettingStarted({ snap }: { snap: Snapshot }) {
   const settings = useSettings()

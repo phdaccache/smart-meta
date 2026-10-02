@@ -2,7 +2,7 @@
 
 ## First run
 
-A short intro (every screen has **Skip**): what the app is for, a note from the creator, what you want to work on, then your first goal, built one SMART letter at a time with examples matched to your answers. Value and why are optional there. The goal starts right away, and a **Getting started** card on Today lists what's left (first check-in, first review, a backup). **Settings → Replay intro** runs it again; it only adds a goal.
+A short intro (every screen has **Skip**): what the app is for, a note from the creator, what you want to work on, then your first goal, built one SMART letter at a time with examples matched to your answers (the same steps as New goal; value and why are optional here). A prep comes next, to make it easier. The goal starts right away, and you see its card (tick it to try), then, one tap at a time, what keeping it adds up to, three weeks of review suggestions, and the other pieces (tasks, projects, preps, habits) joining a goal. A **Getting started** card on Today lists what's left (first check-in, first review, a backup). **Settings → Replay intro** runs it again; it only adds a goal.
 
 On an iPhone, add the app to the Home Screen *before* setting it up: Safari and the Home Screen app keep separate data.
 
@@ -24,7 +24,7 @@ The app speaks English or Brazilian Portuguese and follows the phone's language.
 
 ## Worked example: "Work at a big tech, earning 10k+"
 
-**1. Create it** (Plan → Goals → **+**). The wizard lights up S M A R T as you go:
+**1. Create it** (Plan → Goals → **+**). The wizard lights up S M A R T as you go. A habit goal also gets a short name on S ("gym"): what Today and check-ins call it. M is one screen: pick the kind, and its own fields appear below. The last step, for habit goals, is a prep: pick what usually gets in the way and a prep that helps is filled in (picking another swaps it), or add your own.
 
 | | You enter |
 |---|---|
