@@ -15,14 +15,14 @@ import { goBack, navigate } from '../ui/router'
 import { CadenceFields, Compact, graceLabel, MeasurementFields, PrepEditor, ShapeField, ShapeInfo, Wizard, type SetField } from './GoalForm'
 
 /**
- * A goal from a template, before it exists. Nothing is written until Save
- * goal: the template's screen shows a draft, Edit goal changes a working copy
- * of it (Save keeps the changes, Back drops them), and the SMART form edits the
- * goal's own fields in that copy. Kept per tab, so a reload doesn't lose it.
+ * A goal from a template, before it exists. Picking a template opens it laid
+ * out like a goal's page, ready to change: habits and projects right there,
+ * the goal's own SMART fields through Edit. Nothing is written until Save
+ * goal. Kept per tab, so a reload doesn't lose it; picking a template again
+ * (or Back to the list) starts it over.
  *
- *   /goals/new?template=key                 the draft     Edit goal · Save goal
- *   /goals/new?template=key&edit=1          working copy  Edit · Save
- *   /goals/new?template=key&edit=1&smart=1  SMART form on the copy
+ *   /goals/new?template=key          the draft    Edit · Save goal
+ *   /goals/new?template=key&smart=1  SMART form on it (finishing keeps the changes, Back drops them)
  */
 export interface TemplateDraft {
   key: string
@@ -33,26 +33,24 @@ export interface TemplateDraft {
   projects: TemplateProject[]
 }
 
-interface Store {
-  draft: TemplateDraft | null
-  working: TemplateDraft | null
-}
-
 const STORE_KEY = 'template-draft'
 const subs = new Set<() => void>()
-let store: Store = (() => {
+let store: TemplateDraft | null = (() => {
   try {
     const raw = sessionStorage.getItem(STORE_KEY)
-    return raw ? (JSON.parse(raw) as Store) : { draft: null, working: null }
+    const parsed = raw ? JSON.parse(raw) : null
+    // An older shape ({ draft, working }) is dropped: the template just starts over.
+    return parsed && 'key' in parsed ? (parsed as TemplateDraft) : null
   } catch {
-    return { draft: null, working: null }
+    return null
   }
 })()
 
-function setStore(p: Partial<Store>) {
-  store = { ...store, ...p }
+function setStore(d: TemplateDraft | null) {
+  store = d
   try {
-    sessionStorage.setItem(STORE_KEY, JSON.stringify(store))
+    if (d) sessionStorage.setItem(STORE_KEY, JSON.stringify(d))
+    else sessionStorage.removeItem(STORE_KEY)
   } catch {
     // private mode: a reload starts the template over
   }
@@ -60,7 +58,6 @@ function setStore(p: Partial<Store>) {
 }
 
 const useStore = () => useSyncExternalStore((l) => (subs.add(l), () => subs.delete(l)), () => store)
-const clone = (d: TemplateDraft): TemplateDraft => JSON.parse(JSON.stringify(d))
 
 function fromTemplate(tpl: Template, start: DateStr, values: Value[]): TemplateDraft {
   const value = values.find((v) => !v.deletedAt && v.name.trim().toLowerCase() === tpl.value.trim().toLowerCase())
@@ -69,7 +66,7 @@ function fromTemplate(tpl: Template, start: DateStr, values: Value[]): TemplateD
 
 /** Picking a template from the list starts it fresh. */
 export function startTemplate(tpl: Template) {
-  setStore({ draft: null, working: null })
+  setStore(null)
   navigate(`/goals/new?template=${tpl.key}`)
 }
 
@@ -87,50 +84,33 @@ async function saveDraft(d: TemplateDraft) {
 
 // ——— screens ———
 
-export function TemplateGoalScreen({ tpl, edit, smart }: { tpl: Template; edit: boolean; smart: boolean }) {
+export function TemplateGoalScreen({ tpl, smart }: { tpl: Template; smart: boolean }) {
   const settings = useSettings()
   const today = useToday(settings.rolloverHour)
   const snap = useSnapshot()
   const s = useStore()
   if (!snap) return null
-  const draft = s.draft?.key === tpl.key ? s.draft : fromTemplate(tpl, today, snap.values)
-  const working = s.working?.key === tpl.key ? s.working : null
+  const draft = s?.key === tpl.key ? s : fromTemplate(tpl, today, snap.values)
   const base = `/goals/new?template=${tpl.key}`
-
-  if (edit && smart) return <TemplateSmartForm key={tpl.key} draft={working ?? draft} back={`${base}&edit=1`} />
-  if (edit) return <TemplateEdit draft={working ?? draft} values={snap.values} back={base} />
-  return <TemplateDetails draft={draft} values={snap.values} back={base} />
+  if (smart) return <TemplateSmartForm key={tpl.key} draft={draft} back={base} />
+  return <TemplateEdit draft={draft} values={snap.values} back={base} />
 }
 
-/** The template as it will be saved: Edit goal opens a working copy, Save goal writes it all and goes to Today. */
-function TemplateDetails({ draft, values, back }: { draft: TemplateDraft; values: Value[]; back: string }) {
+/** The draft, laid out like a goal's page: habits and projects changed here, the rest through Edit. Save goal writes it all. */
+function TemplateEdit({ draft, values, back }: { draft: TemplateDraft; values: Value[]; back: string }) {
+  const [habit, setHabit] = useState<number | 'new' | null>(null)
+  const [project, setProject] = useState<number | 'new' | null>(null)
   const [busy, setBusy] = useState(false)
+  const update = (p: Partial<TemplateDraft>) => setStore({ ...draft, ...p })
   const save = async () => {
     setBusy(true)
     await saveDraft(draft)
-    setStore({ draft: null, working: null })
+    setStore(null)
     toast(draft.habits.length || draft.projects.length ? t('tpl.saved') : t('form.savedBacklog'))
     navigate('/')
   }
   return (
     <Screen back="/goals/new" title={t('form.newGoal')}>
-      <DraftView draft={draft} values={values} />
-      <p className="small muted" style={{ margin: '16px 4px 0' }}>{t('tpl.editLater')}</p>
-      <div className="wizard-nav">
-        <button className="btn" disabled={busy} onClick={() => { setStore({ draft, working: clone(draft) }); navigate(`${back}&edit=1`) }}>{t('tpl.edit')}</button>
-        <button className="btn primary" disabled={busy} onClick={save}>{t('form.saveGoal')}</button>
-      </div>
-    </Screen>
-  )
-}
-
-/** The working copy, laid out like a goal's page: habits and projects changed here, the rest through Edit. */
-function TemplateEdit({ draft, values, back }: { draft: TemplateDraft; values: Value[]; back: string }) {
-  const [habit, setHabit] = useState<number | 'new' | null>(null)
-  const [project, setProject] = useState<number | 'new' | null>(null)
-  const update = (p: Partial<TemplateDraft>) => setStore({ working: { ...draft, ...p } })
-  return (
-    <Screen back={back} title={t('form.newGoal')}>
       <DraftView draft={draft} values={values} edit={{
         addHabit: () => setHabit('new'),
         editHabit: setHabit,
@@ -140,8 +120,8 @@ function TemplateEdit({ draft, values, back }: { draft: TemplateDraft; values: V
         removeProject: (i) => update({ projects: draft.projects.filter((_, j) => j !== i) }),
       }} />
       <div className="wizard-nav">
-        <button className="btn" onClick={() => navigate(`${back}&edit=1&smart=1`)}>{t('common.edit')}</button>
-        <button className="btn primary" onClick={() => { setStore({ draft, working: null }); goBack(back) }}>{t('common.save')}</button>
+        <button className="btn" disabled={busy} onClick={() => navigate(`${back}&smart=1`)}>{t('common.edit')}</button>
+        <button className="btn primary" disabled={busy} onClick={save}>{t('form.saveGoal')}</button>
       </div>
       <HabitSheet editing={habit} draft={draft} onClose={() => setHabit(null)}
         onSave={(h) => update({ habits: habit === 'new' ? [...draft.habits, h] : draft.habits.map((x, j) => (j === habit ? h : x)) })} />
@@ -151,7 +131,7 @@ function TemplateEdit({ draft, values, back }: { draft: TemplateDraft; values: V
   )
 }
 
-/** The goal's own SMART fields, in the working copy. Save keeps them, Back drops them. */
+/** The goal's own SMART fields, in the draft. Finishing keeps them, Back drops them. */
 function TemplateSmartForm({ draft, back }: { draft: TemplateDraft; back: string }) {
   const settings = useSettings()
   const [d, setD] = useState<GoalDraft>(draft.goal)
@@ -164,7 +144,7 @@ function TemplateSmartForm({ draft, back }: { draft: TemplateDraft; back: string
     return e
   }, [d, draft.valueName])
   const save = () => {
-    setStore({ working: { ...draft, goal: d } })
+    setStore({ ...draft, goal: d })
     goBack(back)
   }
   const Form = settings.creationMode === 'wizard' ? Wizard : Compact

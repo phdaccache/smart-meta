@@ -306,7 +306,7 @@ export function NewGoalScreen() {
   const tpl = templateByKey(query.get('template') ?? '') ?? null
   if (!snap) return null
 
-  if (tpl) return <TemplateGoalScreen tpl={tpl} edit={query.get('edit') === '1'} smart={query.get('smart') === '1'} />
+  if (tpl) return <TemplateGoalScreen tpl={tpl} smart={query.get('smart') === '1'} />
   return <GoalFormScreen initial={emptyGoalDraft(today)} picking={query.get('pick') === '1'} />
 }
 
