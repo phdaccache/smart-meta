@@ -1060,8 +1060,8 @@ export const ptBR: Messages = {
   // What's new
   'news.title': 'Novidades',
   'news.ok': 'Entendi',
-  'news.tutorialTitle': 'Um novo tutorial',
-  'news.tutorialText': 'Um passo a passo mais rápido para criar uma meta SMART, e como preparos, revisões e projetos se encaixam.',
+  'news.tutorialTitle': 'Novo tutorial',
+  'news.tutorialText': 'Confira o novo design e aprenda como preparos, revisões e projetos se encaixam.',
   'news.tutorialAction': 'Ver tutorial',
   'news.ptTitle': 'Agora em português',
   'news.ptText': 'O app segue o idioma do celular. Dá para mudar quando quiser nos Ajustes.',

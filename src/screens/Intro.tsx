@@ -203,12 +203,12 @@ const MESS: { x: number; y: number; r: number }[] = [
 const MESS_WORDS: Key[] = ['intro.mess.1', 'intro.mess.2', 'intro.mess.3', 'intro.mess.4', 'intro.mess.5']
 /**
  * Steps of 600 ms: floating; moving into line (still pills); turning into a
- * list once they're there; each one ticked; a long look; back to floating.
+ * list once they're there, ticking each one as it does; a long look; back to floating.
  */
 const SNAP_AT = 4
 const LISTED_AT = 8
-const TICKS_AT = [10, 11, 12, 13, 14]
-const LOOP = 23
+const TICKS_AT = [8, 9, 10, 11, 12]
+const LOOP = 21
 
 /**
  * Goals floating around loose, tilted and overlapping, then snapping into a
