@@ -106,10 +106,11 @@ version when shipping something with a release note.
 ## Analytics
 
 Vercel Web Analytics (`@vercel/analytics`, injected in `src/main.tsx`) counts
-page views and visitors without cookies. Goal and project ids are replaced with
-`:id` before anything is sent, so it only records which screen was opened. It
-needs **Analytics → Enable** in the Vercel project; the free plan covers 50,000
-events a month. In development it only logs to the console.
+visitors and app opens without cookies: one page view when the app opens and
+one when it comes back after 30+ minutes away, never per screen, so the free
+plan's 50,000 events a month cover hundreds of people. Goal and project ids are
+replaced with `:id` before anything is sent. It needs **Analytics → Enable** in
+the Vercel project. In development it sends nothing.
 
 ## Sync (optional)
 

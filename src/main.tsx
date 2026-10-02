@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { registerSW } from 'virtual:pwa-register'
-import { inject } from '@vercel/analytics'
+import { inject, pageview } from '@vercel/analytics'
 import { App } from './App'
 import { initLang } from './i18n'
 import { startSync } from './sync/controller'
@@ -13,12 +13,20 @@ navigator.storage?.persist?.().catch(() => {})
 
 initLang()
 
-// Vercel Web Analytics: page views and visitors, no cookies. Goal and project ids are left out
-// of the addresses it records, so only which screen was opened gets counted.
+// Vercel Web Analytics: visitors and app opens, no cookies. One page view per open (and per return
+// after half an hour away), not per screen: the free plan's 50,000 events a month then cover hundreds
+// of people instead of dozens. Goal and project ids are left out of the address it records.
 inject({
   mode: import.meta.env.PROD ? 'production' : 'development',
   debug: false,
+  disableAutoTrack: true,
   beforeSend: (e) => ({ ...e, url: e.url.replace(/\/(goals|projects|insights\/goals)\/[0-9a-f-]{8,}/gi, '/$1/:id') }),
+})
+pageview({ path: location.pathname })
+let hiddenAt = 0
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') hiddenAt = Date.now()
+  else if (hiddenAt && Date.now() - hiddenAt > 30 * 60_000) pageview({ path: location.pathname })
 })
 registerSW({
   immediate: true,
