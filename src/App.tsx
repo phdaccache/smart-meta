@@ -18,6 +18,7 @@ import { SettingsScreen, ValuesScreen } from './screens/Settings'
 import { ReviewScreen } from './screens/Review'
 import { GoalInsightsScreen, InsightsScreen } from './screens/Insights'
 import { TodayScreen } from './screens/Today'
+import { WhatsNew } from './screens/WhatsNew'
 import { introRoute, IntroStart } from './screens/Intro'
 import { Screen } from './ui/components'
 
@@ -104,6 +105,7 @@ export function App() {
         </>
       )}
       <QuickAdd />
+      <WhatsNew firstRun={onboarding} />
       <Toaster />
     </Fragment>
   )

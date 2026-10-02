@@ -856,6 +856,13 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .intro .eyebrow { margin-bottom: 6px; }
 .intro .smart { margin: 24px 0 8px; }
 .intro .smart-word { text-align: center; justify-content: center; }
+.news { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
+.news li { display: flex; gap: 14px; align-items: flex-start; }
+.news-icon { flex: none; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--surface-2); }
+.news-icon svg { border-radius: 3px; }
+.news-title { font-weight: 650; font-size: 16px; }
+.news-text p { margin: 4px 0 10px; color: var(--ink-2); line-height: 1.45; }
+.news-text p:last-child { margin-bottom: 0; }
 .lang-flags { display: flex; gap: 4px; margin-left: -6px; }
 .lang-flags button {
   padding: 6px; border-radius: 9px; line-height: 0; min-height: 0; opacity: 0.45; transition: opacity 0.15s, background 0.15s;

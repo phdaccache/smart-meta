@@ -60,3 +60,24 @@ export const IconHistory = (p: P) => (
 export const IconMore = (p: P) => (
   <Svg {...p}><circle cx="6" cy="12" r="1.3" fill="currentColor" /><circle cx="12" cy="12" r="1.3" fill="currentColor" /><circle cx="18" cy="12" r="1.3" fill="currentColor" /></Svg>
 )
+
+// ——— flags (language) ———
+
+export const FlagBR = () => (
+  <svg viewBox="0 0 28 20" width="28" height="20" aria-hidden="true">
+    <rect width="28" height="20" rx="3" fill="#009c3b" />
+    <path d="M14 3 25 10 14 17 3 10Z" fill="#ffdf00" />
+    <circle cx="14" cy="10" r="4.2" fill="#002776" />
+  </svg>
+)
+
+export const FlagUS = () => (
+  <svg viewBox="0 0 28 20" width="28" height="20" aria-hidden="true">
+    <clipPath id="flag-us"><rect width="28" height="20" rx="3" /></clipPath>
+    <g clipPath="url(#flag-us)">
+      <rect width="28" height="20" fill="#fff" />
+      {[0, 2, 4, 6, 8, 10, 12].map((i) => <rect key={i} y={(i * 20) / 13} width="28" height={20 / 13} fill="#b22234" />)}
+      <rect width="12" height={(7 * 20) / 13} fill="#3c3b6e" />
+    </g>
+  </svg>
+)

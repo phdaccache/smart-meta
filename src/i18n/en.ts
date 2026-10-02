@@ -996,4 +996,11 @@ export const en = {
   'err.wrongLogin': 'Wrong email or password.',
   'err.offlineErase': 'You’re offline. Connect first so the synced copy is erased too.',
   'check.words': 'at least, at most, no more than, or more, or less, less than, more than, every, each, never, always, only, without, before, after, by, within, until, once, twice',
+
+  // What's new
+  'news.title': 'What\'s new',
+  'news.ok': 'Got it',
+  'news.ptTitle': 'Now in Portuguese',
+  'news.ptText': 'The app follows your phone’s language. You can change it any time in Settings.',
+  'news.ptAction': 'Change language',
 } as const

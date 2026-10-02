@@ -18,7 +18,7 @@ import { buildDay, type Snapshot } from '../lib/today'
 import type { Goal, Shape } from '../lib/types'
 import { Badge, CheckButton, Chip, Field, toast } from '../ui/components'
 import { useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
-import { IconCheck, IconChevronLeft, IconClose } from '../ui/icons'
+import { FlagBR, FlagUS, IconCheck, IconChevronLeft, IconClose } from '../ui/icons'
 import { goBack, match, navigate } from '../ui/router'
 import {
   CadenceFields, DateFields, DoneWhenField, GraceField, MeasurementFields, PrepEditor, SmartBar, ToleranceField,
@@ -137,25 +137,6 @@ function Frame(props: { back?: string; lead?: ReactNode; children: ReactNode; na
 }
 
 // ——— language ———
-
-const FlagBR = () => (
-  <svg viewBox="0 0 28 20" width="28" height="20" aria-hidden="true">
-    <rect width="28" height="20" rx="3" fill="#009c3b" />
-    <path d="M14 3 25 10 14 17 3 10Z" fill="#ffdf00" />
-    <circle cx="14" cy="10" r="4.2" fill="#002776" />
-  </svg>
-)
-
-const FlagUS = () => (
-  <svg viewBox="0 0 28 20" width="28" height="20" aria-hidden="true">
-    <clipPath id="flag-us"><rect width="28" height="20" rx="3" /></clipPath>
-    <g clipPath="url(#flag-us)">
-      <rect width="28" height="20" fill="#fff" />
-      {[0, 2, 4, 6, 8, 10, 12].map((i) => <rect key={i} y={(i * 20) / 13} width="28" height={20 / 13} fill="#b22234" />)}
-      <rect width="12" height={(7 * 20) / 13} fill="#3c3b6e" />
-    </g>
-  </svg>
-)
 
 /** Brazil and USA flags on the first screen: the language can be picked before anything else. */
 function LanguageFlags() {

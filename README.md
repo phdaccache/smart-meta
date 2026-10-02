@@ -85,6 +85,18 @@ key, grouped by screen. Change the text there; the key stays the same.
 The language follows the phone unless picked in Settings or with the flags on
 the first intro screen. It is kept on the device only.
 
+## Release notes
+
+When something new ships that people should know about, add a release at the
+top of `RELEASES` in `src/lib/releases.ts` (a new id, an optional icon, and
+`news.` texts in both language files). After the update, the app shows it
+once, the first time it opens, then never again on that phone. First-time users
+don't see older notes. Fixes don't need one.
+
+The app looks for a new version when it opens and whenever it comes back to
+the front, so nobody needs to close it: the update installs, the app reloads
+once, and the note shows.
+
 ## Sync (optional)
 
 Without Supabase keys the app runs local-only and Settings says so. To enable:

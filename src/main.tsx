@@ -10,7 +10,17 @@ import './styles.css'
 navigator.storage?.persist?.().catch(() => {})
 
 initLang()
-registerSW({ immediate: true })
+registerSW({
+  immediate: true,
+  // A Home Screen app coming back from the background doesn't reload, so it never looks for a new
+  // version. Look each time it comes to the front: a new one installs and reloads the app at once.
+  onRegisteredSW(_url, registration) {
+    if (!registration) return
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') registration.update().catch(() => {})
+    })
+  },
+})
 startSync()
 
 createRoot(document.getElementById('root')!).render(

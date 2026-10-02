@@ -221,6 +221,10 @@ Edit a habit's target in Portuguese (4× → 3× a week), then switch to English
 In Portuguese, write *What counts* as "Pelo menos 30 minutos de exercício"; in English, as "At least 30 minutes of exercise".
 - **Expect:** both accepted in either language. "Ir para a academia" is refused as not checkable.
 
+**L6. Release note**
+After this version reaches a phone that already used the app, open it (or bring it back to the front).
+- **Expect:** the app reloads once and shows *What's new* with the Brazil flag and **Change language**, which opens Settings. Closed once, it doesn't come back. A brand-new user doesn't see it.
+
 ## Sync
 
 **25. It uploads**

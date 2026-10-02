@@ -993,4 +993,11 @@ export const ptBR: Messages = {
   'err.wrongLogin': 'E-mail ou senha incorretos.',
   'err.offlineErase': 'Você está sem conexão. Conecte-se antes para apagar também a cópia sincronizada.',
   'check.words': 'pelo menos, no mínimo, no máximo, não mais que, ou mais, ou menos, menos de, mais de, todo, toda, todos, todas, cada, nunca, sempre, só, somente, apenas, sem, antes, depois, até, dentro de, uma vez, duas vezes, vezes',
+
+  // What's new
+  'news.title': 'Novidades',
+  'news.ok': 'Entendi',
+  'news.ptTitle': 'Agora em português',
+  'news.ptText': 'O app segue o idioma do celular. Dá para mudar quando quiser nos Ajustes.',
+  'news.ptAction': 'Mudar idioma',
 }
