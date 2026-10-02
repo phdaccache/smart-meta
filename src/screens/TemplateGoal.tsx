@@ -1,5 +1,6 @@
 import { useMemo, useState, useSyncExternalStore } from 'react'
 import { addCommitment, addPrep, createGoal, createProject, ensureValue } from '../db/repo'
+import { setSettings } from '../db/settings'
 import { t } from '../i18n'
 import { addDays, dayMonth, diffDays, isDateStr, weekdaysLabel } from '../lib/dates'
 import {
@@ -147,9 +148,14 @@ function TemplateSmartForm({ draft, back }: { draft: TemplateDraft; back: string
     setStore({ ...draft, goal: d })
     goBack(back)
   }
-  const Form = settings.creationMode === 'wizard' ? Wizard : Compact
+  const mode = settings.creationMode
+  const Form = mode === 'wizard' ? Wizard : Compact
+  // Guided or compact, as in New goal: the choice is the same setting.
   return (
-    <Screen back={back} title={t('goal.editGoal')}>
+    <Screen back={back} title={t('goal.editGoal')}
+      actions={<button className="btn ghost" onClick={() => setSettings({ creationMode: mode === 'wizard' ? 'compact' : 'wizard' })}>
+        {mode === 'wizard' ? t('form.compact') : t('form.guided')}
+      </button>}>
       <Form d={d} set={set} patch={patch} errors={errors} onSave={save} suggest={draft.valueName} />
     </Screen>
   )
