@@ -906,6 +906,7 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .intro .smart { margin: 0 0 8px; }
 .intro .smart-lead { text-align: center; margin-bottom: 18px; }
 /* Before the first letter: "Let's make it", then each word of SMART in turn */
+.intro.smart-intro .intro-body { justify-content: center; padding-bottom: 8vh; }
 .smart-reveal { display: grid; gap: 14px; width: max-content; max-width: 100%; margin: 36px auto 0; text-align: left; }
 .smart-row { display: flex; align-items: center; gap: 14px; animation: smart-row-in 0.5s ease both; }
 .smart-row .smart-l { flex: none; width: 46px; height: 46px; font-size: 20px; border-radius: 12px; }
@@ -1023,7 +1024,7 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .mess.plan { border-color: var(--line); background: var(--surface); }
 .mess-item {
   position: absolute; white-space: nowrap;
-  transition: left 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: left 1.4s cubic-bezier(0.45, 0, 0.2, 1), top 1.4s cubic-bezier(0.45, 0, 0.2, 1), transform 1.4s cubic-bezier(0.45, 0, 0.2, 1);
 }
 .mess-float {
   display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; font-size: 15px; font-weight: 550;
@@ -1036,7 +1037,8 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
   flex: none; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--line-strong);
   display: grid; place-items: center; color: var(--bg); transition: background 0.25s, border-color 0.25s;
 }
-.mess-check.on { background: var(--on-track); border-color: var(--on-track); }
+.mess-check.on { background: var(--on-track); border-color: var(--on-track); animation: mess-tick 0.35s ease; }
+@keyframes mess-tick { 50% { transform: scale(1.25); } }
 @media (prefers-reduced-motion: reduce) {
   .mess, .mess-item, .mess-float { transition: none; animation: none; }
 }

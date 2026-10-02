@@ -411,7 +411,7 @@ export const ptBR: Messages = {
   'form.phThreshold': 'Dormi pelo menos 8 horas',
   'form.phRhythm': 'Fiz pelo menos 45 minutos de exercício',
   'form.shortName': 'Nome curto',
-  'form.shortNameHint': 'Como Hoje e os registros chamam a meta, como “academia”.',
+  'form.shortNameHint': 'Como a meta é reconhecida em Hoje e pelos registros, tipo “academia”.',
   'form.phShortThreshold': 'sono',
   'form.phShortStandard': 'pontualidade',
   'form.phShortRhythm': 'academia',
@@ -887,7 +887,7 @@ export const ptBR: Messages = {
   'obstacle.choseOther': 'Decidir o dia e o horário com antecedência',
 
   // Intro: first goal
-  'intro.goalTitle': 'Vamos torná-la',
+  'intro.goalTitle': 'Vamos deixá-la',
   'intro.lineS': 'Escolha algo claro e detalhado, sem ambiguidades.',
   'intro.lineM': 'Escolha algum critério, você precisa saber se está dando certo.',
   'intro.lineA': 'Seu objetivo deve ser realista.',

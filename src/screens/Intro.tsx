@@ -200,10 +200,10 @@ const MESS: { x: number; y: number; r: number }[] = [
   { x: 2, y: 160, r: 4 },
 ]
 const MESS_WORDS: Key[] = ['intro.mess.1', 'intro.mess.2', 'intro.mess.3', 'intro.mess.4', 'intro.mess.5']
-/** Steps of 600 ms: floating, then a list, then ticks, then back to floating. */
+/** Steps of 600 ms: floating, then a list, then each one ticked, a long look, then back to floating. */
 const SNAP_AT = 4
-const TICKS_AT = [6, 7]
-const LOOP = 12
+const TICKS_AT = [8, 9, 10, 11, 12]
+const LOOP = 21
 
 /**
  * Goals floating around loose, tilted and overlapping, then snapping into a
@@ -211,7 +211,7 @@ const LOOP = 12
  * words to read.
  */
 function WelcomeDemo() {
-  const [step, setStep] = useState(() => (reducedMotion() ? TICKS_AT[1] : 0))
+  const [step, setStep] = useState(() => (reducedMotion() ? TICKS_AT[TICKS_AT.length - 1] : 0))
   useEffect(() => {
     if (reducedMotion()) return
     const timer = setInterval(() => setStep((s) => (s + 1) % LOOP), 600)
@@ -222,11 +222,11 @@ function WelcomeDemo() {
     <div className={`mess ${plan ? 'plan' : ''}`} aria-hidden="true">
       {MESS_WORDS.map((k, i) => {
         const m = MESS[i]
-        const ticked = TICKS_AT.some((at, j) => j === i && step >= at)
+        const ticked = plan && step >= TICKS_AT[i]
         return (
           <div key={k} className="mess-item" style={plan
-            ? { left: '16px', top: `${16 + i * 40}px`, transform: 'rotate(0deg)', transitionDelay: `${i * 70}ms` }
-            : { left: `${m.x}%`, top: `${m.y}px`, transform: `rotate(${m.r}deg)`, transitionDelay: `${(4 - i) * 50}ms` }}>
+            ? { left: '16px', top: `${16 + i * 40}px`, transform: 'rotate(0deg)', transitionDelay: `${i * 150}ms` }
+            : { left: `${m.x}%`, top: `${m.y}px`, transform: `rotate(${m.r}deg)`, transitionDelay: `${(4 - i) * 120}ms` }}>
             <span className="mess-float" style={{ animationDelay: `${-i * 0.7}s` }}>
               <span className={`mess-check ${ticked ? 'on' : ''}`}>{ticked && <IconCheck width={12} height={12} />}</span>
               {tk(k)}
@@ -463,7 +463,7 @@ function IntroGoal({ step }: { step: Step }) {
   const prev = at === 0 ? (s.short ? '/' : '/welcome/areas') : `/welcome/goal/${steps[at - 1]}`
   if (here === 'smart') {
     return (
-      <Frame className="centered" back={prev} nav={<button className="btn primary" onClick={next}>{t('common.next')}</button>}>
+      <Frame className="centered smart-intro" back={prev} nav={<button className="btn primary" onClick={next}>{t('common.next')}</button>}>
         <h1 className="intro-title">{t('intro.goalTitle')}</h1>
         <div className="smart-reveal">
           {SMART.map((x, i) => (
@@ -711,8 +711,8 @@ const PIECES: { key: PieceKey; badge: 'task' | 'step' | 'prep' | 'goal'; name: K
 ]
 /** The order they leave the row and join the goal. */
 const JOIN: PieceKey[] = ['habit', 'prep', 'project', 'task']
-const JOIN_START = 250
-const JOIN_STEP = 450
+const JOIN_START = 300
+const JOIN_STEP = 750
 
 /** The goal's own habit, as Today would describe it ("gym · 3× a week"). */
 function habitText(d: GoalDraft | null): string | null {
@@ -751,7 +751,7 @@ function IntroPieces() {
         el.style.transition = 'none'
         el.style.transform = `translate(${from.left - to.left}px, ${from.top - to.top}px)`
         void el.offsetWidth
-        el.style.transition = `transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) ${JOIN_START + i * JOIN_STEP}ms`
+        el.style.transition = `transform 1.1s cubic-bezier(0.45, 0, 0.2, 1) ${JOIN_START + i * JOIN_STEP}ms`
         el.style.transform = ''
       })
     }
@@ -794,7 +794,7 @@ function IntroPieces() {
               {JOIN.map((k, i) => (
                 <div key={k} className="piece-row">
                   {chip(PIECES.find((p) => p.key === k)!)}
-                  <span className="piece-text" style={{ animationDelay: `${JOIN_START + i * JOIN_STEP + 450}ms` }}>{pieces[k]}</span>
+                  <span className="piece-text" style={{ animationDelay: `${JOIN_START + i * JOIN_STEP + 900}ms` }}>{pieces[k]}</span>
                 </div>
               ))}
             </div>
