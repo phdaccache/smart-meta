@@ -1,18 +1,47 @@
 // Every frame is a pure function of time: window.renderAt(t) sets the whole stage for second t.
-const DUR = 22
+// ?lang=pt: the Brazilian Portuguese cut. Its headline is longer, so the hook holds 1 s more (D).
+const PT = new URLSearchParams(location.search).get('lang') === 'pt'
+const D = PT ? 1.1 : 0  // two beats of the music
+const DUR = 22 + D
+const T = PT ? {
+  words: ['Ler mais', 'Ir à academia', 'Guardar dinheiro', 'Aprender inglês', 'Dormir melhor'],
+  letters: ['Específica', 'Mensurável', 'Atingível', 'Relevante', 'Temporal'],
+  reason: 'Para minhas costas pararem de doer e ter energia depois do trabalho.',
+  read: 'Ler 10 livros', forgot: 'Esqueci', addPrep: 'Adicionar um preparo?', accent: 'definiu',
+  headLand: [['Pare', 'de', 'abandonar', 'metas'], ['que', 'você', 'nunca', 'definiu'], ['de', 'verdade.']],
+  headVert: [['Pare', 'de', 'abandonar'], ['metas', 'que', 'você'], ['nunca', 'definiu'], ['de', 'verdade.']],
+  headY: { land: 590, vert: 1030 },
+} : {
+  words: ['Read more', 'Go to the gym', 'Save money', 'Learn English', 'Sleep better'],
+  letters: ['Specific', 'Measurable', 'Achievable', 'Relevant', 'Time-bound'],
+  reason: 'So my back stops hurting and I have energy after work.',
+  read: 'Read 10 books', forgot: 'Forgot', addPrep: 'Add a prep?', accent: 'defined.',
+}
 // Landscape 1920×1080 by default; ?format=vertical lays the same timeline out at 1080×1920 for Reels.
 const V = new URLSearchParams(location.search).get('format') === 'vertical'
 if (V) document.documentElement.classList.add('v')
+if (PT) {
+  document.documentElement.lang = 'pt-BR'
+  const lines = (sel, ls) => { document.querySelector(sel).innerHTML = ls.map((l) => `<span class="line"${l[1] ? ' style="color:var(--accent)"' : ''}>${l[0]}</span>`).join('') }
+  lines('#cap2 .cap', [['Transforme-as em'], ['um plano semanal.']])
+  lines('#cap3 .cap', [['Cada meta,'], ['uma letra por vez.']])
+  lines('#cap4 .cap', [['O propósito que você'], ['escreveu aparece'], ['todo dia.']])
+  lines('#cap5 .cap', [['Perdeu um dia?'], ['Diga por quê.'], ['A revisão sugere o ajuste.', 1]])
+  document.querySelector('#cap4 .eyebrow2').textContent = 'O R do SMART'
+  document.querySelector('#cap5 .eyebrow2').textContent = 'Uma vez por semana'
+  document.querySelector('#outro .tag').textContent = 'Metas que sobrevivem ao momento da decisão.'
+  document.querySelector('#outro .small2').innerHTML = '<span>Funciona offline</span><i></i><span>Fica no seu celular</span><i></i><span>Em português e inglês</span>'
+}
 const L = V ? {
-  headY: 1110, bigC: { x: 540, y: 840 }, capCY: 520, exit: 1150, taDy: 210,
+  headY: PT ? T.headY.vert : 1110, bigC: { x: 540, y: 840 }, capCY: 520, exit: 1150, taDy: 210,
   rest: { cx: 540, cy: 1215, s: 1.05 }, fx: 540, fy: 1170,
   scatter: [{ x: 90, y: 390, r: -7 }, { x: 590, y: 310, r: 5 }, { x: 330, y: 600, r: -3 }, { x: 610, y: 780, r: 8 }, { x: 70, y: 900, r: 4 }],
-  head: [['Stop', 'dropping'], ['goals', 'you', 'never'], ['really', 'defined.']],
+  head: PT ? T.headVert : [['Stop', 'dropping'], ['goals', 'you', 'never'], ['really', 'defined.']],
 } : {
-  headY: 640, bigC: { x: 960, y: 520 }, capCY: 540, exit: 760, taDy: 0,
+  headY: PT ? T.headY.land : 640, bigC: { x: 960, y: 520 }, capCY: 540, exit: 760, taDy: 0,
   rest: { cx: 1350, cy: 540, s: 1.12 }, fx: 1340, fy: 530,
   scatter: [{ x: 210, y: 150, r: -7 }, { x: 1260, y: 110, r: 5 }, { x: 700, y: 330, r: -3 }, { x: 1370, y: 400, r: 8 }, { x: 160, y: 440, r: 4 }],
-  head: [['Stop', 'dropping', 'goals'], ['you', 'never', 'really', 'defined.']],
+  head: PT ? T.headLand : [['Stop', 'dropping', 'goals'], ['you', 'never', 'really', 'defined.']],
 }
 const $ = (s, r = document) => r.querySelector(s)
 const $$ = (s, r = document) => [...r.querySelectorAll(s)]
@@ -51,7 +80,7 @@ const S = {}
 for (const name of ['welcome', 's', 'm', 'a', 'r', 't', 'today', 'review']) {
   const el = document.createElement('div')
   el.className = 'pscreen'
-  el.innerHTML = `<div class="scroller">${SCREENS[name]}</div>${STATUS}`
+  el.innerHTML = `<div class="scroller">${(PT ? SCREENS_PT : SCREENS)[name]}</div>${STATUS}`
   const sc = $('.scroller', el)
   // Fixed bars belong to the screen, not the scrolling content.
   for (const f of $$('.tabbar, .fab', sc)) el.appendChild(f)
@@ -71,24 +100,25 @@ const byText = (root, sel, text) => $$(sel, root).find((e) => e.textContent.trim
 // Welcome: its list is drawn by the overlay until the hand-off.
 const phoneMess = $('.mess', S.welcome.el)
 // Relevant: the reason types itself in.
-const reason = 'So my back stops hurting and I have energy after work.'
+const reason = T.reason
 const textarea = $('textarea', S.r.el)
 textarea.textContent = ''
 // Today: highlight the same reason on the exercise group; find reading's prompt.
-const why = byText(S.today.sc, '.group-why', 'So my back')
+const why = byText(S.today.sc, '.group-why', reason.slice(0, 12))
 why.innerHTML = `<span class="hl">${why.textContent}</span>`
 const hl = $('.hl', why)
-const readGroup = byText(S.today.sc, '.group', 'Growth')
-  || $$('.group', S.today.sc).find((g) => g.textContent.includes('Read 10 books'))
-const forgot = $$('.chip', readGroup).find((c) => c.textContent.trim() === 'Forgot')
+const readGroup = $$('.group', S.today.sc).find((g) => g.textContent.includes(T.read))
+const forgot = $$('.chip', readGroup).find((c) => c.textContent.trim() === T.forgot)
 const readSave = $$('.btn.primary', readGroup)[0]
+// Portuguese chips are wider: 2px less padding keeps “✓ Esqueci” on the first line, as in English.
+if (PT) for (const c of $$('.prompt .chip', readGroup)) c.style.padding = '0 12px'
 // Review: the reading card with its suggestion.
-const sugQ = byText(S.review.sc, '.suggestion-q', 'Add a prep?')
+const sugQ = byText(S.review.sc, '.suggestion-q', T.addPrep)
 const sugCard = sugQ.closest('.card')
 const addPrep = $$('.btn.primary', sugQ.closest('.suggestion'))[0]
 
 // ——— hook pills ———
-const WORDS = ['Read more', 'Go to the gym', 'Save money', 'Learn English', 'Sleep better']
+const WORDS = T.words
 const SCATTER = L.scatter
 const BIG = 2.4
 const pillWrap = $('#pills')
@@ -104,11 +134,11 @@ const messCard = $('#messCard')
 // Headline, word by word.
 const HEAD = L.head
 const headline = $('#headline')
-headline.innerHTML = HEAD.map((l) => `<div>${l.map((w) => `<span class="w${w === 'defined.' ? ' accent' : ''}">${w} </span>`).join('')}</div>`).join('')
+headline.innerHTML = HEAD.map((l) => `<div>${l.map((w) => `<span class="w${w === T.accent ? ' accent' : ''}">${w} </span>`).join('')}</div>`).join('')
 const headWords = $$('.w', headline)
 
 // SMART letters on the left, in the app's own letter style.
-const LET = [['S', 'Specific'], ['M', 'Measurable'], ['A', 'Achievable'], ['R', 'Relevant'], ['T', 'Time-bound']]
+const LET = ['S', 'M', 'A', 'R', 'T'].map((l, i) => [l, T.letters[i]])
 const lettersEl = $('#letters'), lwordEl = $('#lword')
 lettersEl.innerHTML = LET.map(([l]) => `<span class="smart-l">${l}</span>`).join('')
 lwordEl.innerHTML = LET.map(([, w]) => `<span>${w}</span>`).join('')
@@ -183,7 +213,11 @@ function capAt(el, t, tin, tout) {
   })
 }
 
-window.renderAt = function renderAt(t) {
+// The hook's hold stretches by D seconds; everything after it runs D seconds later.
+const KNEE = 1.6
+const warp = (t) => (t < KNEE ? t : t < 3 + D ? KNEE + (t - KNEE) * (3 - KNEE) / (3 - KNEE + D) : t - D)
+window.renderAt = (t) => renderFrame(warp(t))
+function renderFrame(t) {
   // ——— hook headline ———
   const hOut = outCubic(seg(t, 2.95, 3.3))
   headline.style.opacity = 1 - hOut
@@ -276,7 +310,7 @@ window.renderAt = function renderAt(t) {
   const fOn = t >= 15.75
   if (fOn !== forgot.classList.contains('on')) {
     forgot.classList.toggle('on', fOn)
-    forgot.innerHTML = fOn ? CHECK14 + 'Forgot' : 'Forgot'
+    forgot.innerHTML = fOn ? CHECK14 + T.forgot : T.forgot
     if (fOn) readSave.removeAttribute('disabled'); else readSave.setAttribute('disabled', '')
   }
   S.review.sc.style.transform = `translateY(${-CAM.reviewScroll}px)`

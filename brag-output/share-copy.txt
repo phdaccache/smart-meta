@@ -4,3 +4,11 @@ Works offline, keeps your data on your phone, in English and Português.
 
 Reels:
 Stop dropping goals you never really defined. Smart Meta builds each goal one SMART letter at a time, shows your reason every day, and the weekly review turns misses into a fix.
+
+Português:
+Pare de abandonar metas que você nunca definiu de verdade. Fiz o Smart Meta, um app de metas SMART para o celular: cada meta é montada uma letra por vez, o seu propósito aparece em Hoje e a revisão semanal transforma as falhas em ajustes.
+
+Funciona offline, guarda seus dados no seu celular e está em português e inglês.
+
+Reels (português):
+Pare de abandonar metas que você nunca definiu de verdade. O Smart Meta monta cada meta uma letra SMART por vez, mostra seu propósito todo dia, e a revisão semanal transforma falhas em ajustes.

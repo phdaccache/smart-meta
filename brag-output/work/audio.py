@@ -1,10 +1,16 @@
 """Soundtrack for the Smart Meta brag: D major, one beat = 0.55 s (the SMART step rhythm)."""
 import numpy as np
+import os
 import wave
 
 SR = 44100
 DUR = 22.0
-N = int(SR * DUR)
+# HOOK_EXTRA (s): the Portuguese cut holds its longer headline this much more; everything after the hook moves with it.
+D = float(os.environ.get('HOOK_EXTRA', '0'))
+OUT = os.environ.get('OUT', 'audio.wav')
+KNEE = 1.6
+TOTAL = DUR + D
+N = int(SR * TOTAL)
 rng = np.random.default_rng(7)
 BEAT = 0.55
 B0 = 8.15 - 14 * BEAT  # beat grid lands on every SMART step (0.45 s, 1.0 s, …)
@@ -19,7 +25,9 @@ def hz(midi):
     return 440.0 * 2 ** ((midi - 69) / 12)
 
 
-def add(buf, t, sig, gain=1.0, pan=0.0):
+def add(buf, t, sig, gain=1.0, pan=0.0, raw=False):
+    if not raw and t >= KNEE:
+        t += D
     i = int(t * SR)
     if i >= N:
         return
@@ -102,7 +110,7 @@ PROG = [(50, [62, 66, 69, 73]), (47, [62, 66, 69, 71]), (43, [62, 67, 71, 74]), 
 BAR = 4 * BEAT
 
 # ——— intro (0–3): a soft Dmaj9 pad swelling under the loose goals ———
-intro_pad = pad([50, 57, 62, 66, 69, 76], 3.4, attack=1.2, release=0.6)
+intro_pad = pad([50, 57, 62, 66, 69, 76], 3.4 + D, attack=1.2, release=0.6)
 add(music, 0.0, intro_pad, 0.22)
 add(send, 0.0, intro_pad, 0.12)
 
@@ -113,15 +121,15 @@ for i, m in enumerate([74, 76, 78, 81, 83]):
     add(send, 0.12 + i * 0.09, p, 0.06)
 
 # Headline: a low warm bass note as the words land.
-add(music, 0.45, bass(38, 2.5) * 0.9, 0.35)
+add(music, 0.45, bass(38, 2.5 + D) * 0.9, 0.35)
 
 # A quiet pulse under the headline so the hook isn't empty.
-for b in beats:
-    if 0.9 < b < 3.1:
+for b in [B0 + i * BEAT for i in range(80)]:
+    if 0.9 < b < 3.1 + D:
         p = pluck(62 if int(round(b / BEAT)) % 2 else 69, 0.5, 0.2)
-        add(music, b, p, 0.05, pan=0.2)
-        add(send, b, p, 0.04)
-        add(music, b, kick(), 0.12)
+        add(music, b, p, 0.05, pan=0.2, raw=True)
+        add(send, b, p, 0.04, raw=True)
+        add(music, b, kick(), 0.12, raw=True)
 
 # ——— the snap (3.05) and the ticks ———
 w = whoosh(1.0, 250, 2600)
@@ -211,14 +219,14 @@ mix = music + sfx * 0.9 + wet * 0.55
 # gentle glue: soft-knee saturation, fade in/out, normalise
 mix = np.tanh(mix * 1.6) / 1.6
 fade_in = np.minimum(1, np.arange(N) / (0.02 * SR))
-fade_out = np.clip((DUR - np.arange(N) / SR) / 1.6, 0, 1) ** 1.5
+fade_out = np.clip((TOTAL - np.arange(N) / SR) / 1.6, 0, 1) ** 1.5
 mix *= (fade_in * fade_out)[:, None]
 mix /= np.abs(mix).max() / 0.89
 
 pcm = (mix * 32767).astype(np.int16)
-with wave.open('audio.wav', 'wb') as wf:
+with wave.open(OUT, 'wb') as wf:
     wf.setnchannels(2)
     wf.setsampwidth(2)
     wf.setframerate(SR)
     wf.writeframes(pcm.tobytes())
-print('wrote audio.wav', DUR, 's', 'groove from', round(GROOVE_START, 2), 'full from', round(FULL, 2))
+print('wrote', OUT, TOTAL, 's', 'groove from', round(GROOVE_START, 2), 'full from', round(FULL, 2))

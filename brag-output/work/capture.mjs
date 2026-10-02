@@ -3,17 +3,22 @@ import puppeteer from 'puppeteer-core'
 import { mkdirSync, writeFileSync } from 'node:fs'
 
 const BASE = 'http://localhost:5173'
-const OUT = new URL('./shots/', import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1')
+// LANG=pt captures the app in Brazilian Portuguese (it follows the browser's language).
+const PT = process.env.LANG_APP === 'pt'
+const TXT = PT
+  ? { reason: 'Para minhas costas pararem de doer e ter energia depois do trabalho.', months: '3 meses', tired: 'Cansaço' }
+  : { reason: 'So my back stops hurting and I have energy after work.', months: '3 months', tired: 'Too tired' }
+const OUT = new URL(PT ? './shots-pt/' : './shots/', import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1')
 mkdirSync(OUT, { recursive: true })
 
 const browser = await puppeteer.launch({
   executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe',
   headless: 'new',
-  args: ['--lang=en-US', '--force-color-profile=srgb', '--hide-scrollbars'],
+  args: [PT ? '--lang=pt-BR' : '--lang=en-US', '--force-color-profile=srgb', '--hide-scrollbars'],
 })
 const page = await browser.newPage()
-await page.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en' })
-await page.evaluateOnNewDocument(() => { Object.defineProperty(navigator, 'language', { get: () => 'en-US' }); Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] }) })
+await page.setExtraHTTPHeaders({ 'Accept-Language': PT ? 'pt-BR,pt' : 'en-US,en' })
+await page.evaluateOnNewDocument((pt) => { Object.defineProperty(navigator, 'language', { get: () => (pt ? 'pt-BR' : 'en-US') }); Object.defineProperty(navigator, 'languages', { get: () => (pt ? ['pt-BR', 'pt'] : ['en-US', 'en']) }) }, PT)
 page.on('dialog', (d) => d.accept())
 page.on('pageerror', (e) => console.log('pageerror', e.message))
 await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }, { name: 'prefers-color-scheme', value: 'light' }])
@@ -61,9 +66,9 @@ if (chips.length) await clickText(chips[0])
 await snap('s')
 for (const st of ['m', 'a', 'r', 't', 'prep']) {
   await go(`/welcome/goal/${st}`)
-  if (st === 'r') { await page.type('textarea', 'So my back stops hurting and I have energy after work.'); await wait(300) }
-  if (st === 't') await clickText('3 months')
-  if (st === 'prep') { await clickText('Too tired'); await wait(400) }
+  if (st === 'r') { await page.type('textarea', TXT.reason); await wait(300) }
+  if (st === 't') await clickText(TXT.months)
+  if (st === 'prep') { await clickText(TXT.tired); await wait(400) }
   await snap(st)
 }
 

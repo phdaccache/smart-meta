@@ -2,6 +2,8 @@
 
 - `brag.mp4` / `brag.jpg`: landscape 1920×1080, 22 s, with its poster
 - `brag-vertical.mp4` / `brag-vertical.jpg`: 9:16 cut for Reels, 1080×1920, same timeline and soundtrack
+- `brag-pt.mp4` / `brag-vertical-pt.mp4` (and their `.jpg` posters): Brazilian Portuguese, 23.1 s; the longer
+  headline holds 1.1 s (two beats) more, everything after it is the same
 - `share-copy.txt`: captions to post
 - `brag-plan.md`: angle and storyboard
 
@@ -10,7 +12,10 @@
 Everything in the phone is the real app: `work/capture.mjs` drives the Vite dev server in headless Chrome at an
 iPhone viewport (English, sample data loaded) and saves each screen's DOM. Those screens, styled by the app's own
 `styles.css` (copied to `work/comp/app.css`), are laid out by `work/comp/index.html` + `comp.js`, where every frame is
-a pure function of time (`renderAt(t)`). `?format=vertical` switches to the 9:16 layout.
+a pure function of time (`renderAt(t)`). `?format=vertical` switches to the 9:16 layout, `?lang=pt` to Portuguese.
+
+The Portuguese screens (`comp/screens-pt.js`) are captured with `LANG_APP=pt node capture.mjs`. The app's own text is
+already pt-BR; the sample goals are English-only in the app, so their visible text was translated for the video.
 
 ## Re-render
 
@@ -23,6 +28,8 @@ npm run dev --prefix ../..          # only to recapture screens: node capture.mj
 node render.mjs video               # landscape frames → frames/
 FORMAT=vertical node render.mjs video   # vertical frames → frames-v/
 python audio.py                     # audio.wav
+LANG_APP=pt node render.mjs video   # Portuguese frames → frames-pt/ (and FORMAT=vertical → frames-v-pt/)
+HOOK_EXTRA=1.1 OUT=audio-pt.wav python audio.py
 ```
 
 Then encode with ffmpeg (from `python -c "import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())"`), after

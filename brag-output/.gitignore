@@ -7,3 +7,10 @@ work/stills-v/
 work/shots/
 work/audio.wav
 work/frames-f0-original.jpg
+work/frames-pt/
+work/frames-v-pt/
+work/stills-pt/
+work/stills-v-pt/
+work/shots-pt/
+work/audio-pt.wav
+work/log*.txt

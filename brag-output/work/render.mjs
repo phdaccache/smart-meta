@@ -8,8 +8,9 @@ const here = fileURLToPath(new URL('.', import.meta.url))
 const [mode, ...rest] = process.argv.slice(2)
 const FPS = 30
 const VERT = process.env.FORMAT === 'vertical'
-const FR = VERT ? 'frames-v' : 'frames'
-const ST = VERT ? 'stills-v' : 'stills'
+const PT = process.env.LANG_APP === 'pt'
+const FR = (VERT ? 'frames-v' : 'frames') + (PT ? '-pt' : '')
+const ST = (VERT ? 'stills-v' : 'stills') + (PT ? '-pt' : '')
 const browser = await puppeteer.launch({
   executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe',
   headless: 'new',
@@ -20,7 +21,7 @@ page.on('pageerror', (e) => console.log('pageerror', e.message))
 page.on('console', (m) => m.type() === 'error' && console.log('console', m.text()))
 await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }])
 await page.setViewport(VERT ? { width: 1080, height: 1920, deviceScaleFactor: 1 } : { width: 1920, height: 1080, deviceScaleFactor: 1 })
-await page.goto(pathToFileURL(here + 'comp/index.html').href + (VERT ? '?format=vertical' : ''), { waitUntil: 'networkidle0' })
+await page.goto(pathToFileURL(here + 'comp/index.html').href + '?' + [VERT && 'format=vertical', PT && 'lang=pt'].filter(Boolean).join('&'), { waitUntil: 'networkidle0' })
 const { duration } = await page.evaluate(() => window.ready)
 
 if (mode === 'stills') {
