@@ -1,0 +1,6 @@
+Stop dropping goals you never really defined. I built Smart Meta, a SMART-goals app for your phone: every goal gets built one letter at a time, your reason shows up on Today, and the weekly review turns your misses into a fix.
+
+Works offline, keeps your data on your phone, in English and Português.
+
+Reels:
+Stop dropping goals you never really defined. Smart Meta builds each goal one SMART letter at a time, shows your reason every day, and the weekly review turns misses into a fix.
