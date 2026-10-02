@@ -116,6 +116,6 @@ Open the app in Chrome and tap **Install** when Chrome offers it (or ⋮ → **A
 
 ## Try it without waiting
 
-In **Settings → Developer** (temporary):
+In **Settings → Developer** (temporary; only for the app's author, signed in to sync with their account, or when running it locally):
 - **Load sample data** replaces everything with this example plus other goals and seven months of history, shaped so Review shows one of each suggestion, loose ends, a review date, stalled projects and an open slot, and Insights has something in every chart (a finished and an abandoned goal, preps that work and one that doesn't). It erases your data first, including the synced copy if you're signed in. It takes a few seconds.
 - **Pretend today is** moves the app to any date. Tap the orange pill to go back to the real date.

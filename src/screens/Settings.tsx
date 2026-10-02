@@ -10,6 +10,7 @@ import { Field, InfoTip, Screen, Section, Sheet, Stepper, toast, TypeToConfirm }
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconChevronUpDown, IconClose } from '../ui/icons'
 import { useInstall } from '../ui/install'
+import { useIsDeveloper } from '../ui/developer'
 import { RELEASES } from '../lib/releases'
 import { ReleaseNotes } from './WhatsNew'
 import { navigate, useLocation } from '../ui/router'
@@ -20,6 +21,7 @@ export function SettingsScreen() {
   const snap = useSnapshot()
   const { query } = useLocation()
   const install = useInstall()
+  const developer = useIsDeveloper()
   const [news, setNews] = useState(false)
   const values = snap?.values ?? []
 
@@ -28,7 +30,7 @@ export function SettingsScreen() {
     return (
       <Screen back="/" title={t('set.restoreTitle')}>
         <DataSection lastExportAt={settings.lastExportAt} />
-        <DevSection devToday={settings.devToday} />
+        {developer && <DevSection devToday={settings.devToday} />}
       </Screen>
     )
   }
@@ -78,7 +80,7 @@ export function SettingsScreen() {
       </Section>
 
       <EraseSection />
-      <DevSection devToday={settings.devToday} />
+      {developer && <DevSection devToday={settings.devToday} />}
       <ReleaseNotes open={news} releases={RELEASES} onClose={() => setNews(false)} />
     </Screen>
   )

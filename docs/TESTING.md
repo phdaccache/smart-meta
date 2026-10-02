@@ -2,7 +2,7 @@
 
 Try each workflow and compare what you see with **Expect**.
 
-**Setup:** go to Settings → Developer → **Load sample data** (this replaces everything).
+**Setup:** go to Settings → Developer → **Load sample data** (this replaces everything). Developer only shows when running locally or signed in to sync with the author's account (`src/ui/developer.ts`).
 **Moving through time:** Settings → Developer → **Pretend today is**. Tap the orange pill to go back to the real date.
 
 ## Daily
