@@ -1,4 +1,4 @@
-import { num, t, tk, tn, type Key } from '../i18n'
+import { hasKey, num, t, tk, tn, type Key } from '../i18n'
 import { addDays, dayMonth, diffDays } from './dates'
 import { emptyGoalDraft, type GoalDraft, type PrepDraft } from './draft'
 import type { DateStr, MissReason } from './types'
@@ -192,4 +192,27 @@ export function projection(d: GoalDraft, today: DateStr): Projection | null {
   const n = Math.max(1, Math.round(periods * share))
   const unit = ({ month: 'dates.month', week: 'dates.week', day: 'dates.day' } as const)[d.period]
   return { line: t('intro.proj.threshold', { time, pct: d.tolerancePct }), big: tn(unit, n), caption: t('intro.proj.onTrack', { name }) }
+}
+
+export interface Pieces {
+  task: string
+  project: string
+  prep: string
+  habit: string
+}
+
+/**
+ * The other pieces for "Not only goals", about the goal just made: its own
+ * habit and prep when it has them, an example's task and project (and, for a
+ * finish line, a habit and prep) when it came from one, plain ones otherwise.
+ */
+export function piecesFor(d: GoalDraft | null, exampleKey: string | null, habitText: string | null): Pieces {
+  const e = exampleKey && exampleByKey(exampleKey) ? exampleKey : null
+  const own = (part: string) => (e && hasKey(`example.${e}.${part}`) ? text(e, `.${part}`) : null)
+  return {
+    task: own('task') ?? t('intro.pieces.genTask'),
+    project: own('proj') ?? t('intro.pieces.genProj'),
+    prep: d?.preps.find((p) => p.title.trim())?.title.trim() ?? own('prep') ?? tk('obstacle.choseOther'),
+    habit: habitText ?? own('habit') ?? t('intro.pieces.genHabit'),
+  }
 }

@@ -1,20 +1,21 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useEffect, useState, useSyncExternalStore, type MouseEvent, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type MouseEvent, type ReactNode } from 'react'
 import creator from '../assets/creator.jpg'
 import signature from '../assets/signature.png'
 import { exportData, shareOrDownload } from '../db/backup'
 import { db } from '../db/db'
-import { createGoal, ensureValue } from '../db/repo'
+import { commitmentFields, createGoal, ensureValue } from '../db/repo'
 import { getSettings, setSettings } from '../db/settings'
 import { getLang, setLangSetting, t, tk, type Key } from '../i18n'
 import { dayMonth, diffDays } from '../lib/dates'
+import { cadenceText } from '../lib/describe'
 import { doneWhenProblem, emptyGoalDraft, validateCommitment, validatePrep, type Errors, type GoalDraft } from '../lib/draft'
 import {
-  AREAS, areaInfo, draftFromExample, EXAMPLES, exampleByKey, examplesFor, projection, type Area, type Example,
+  AREAS, areaInfo, draftFromExample, EXAMPLES, exampleByKey, examplesFor, piecesFor, projection, type Area, type Example, type Pieces,
 } from '../lib/intro'
 import { MAINTENANCE_WEEKS } from '../lib/review'
 import { buildDay, type Snapshot } from '../lib/today'
-import type { Goal } from '../lib/types'
+import type { Commitment, Goal } from '../lib/types'
 import { Badge, CheckButton, Chip, Field, toast } from '../ui/components'
 import { useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
 import { FlagBR, FlagUS, IconCheck, IconChevronLeft, IconClose } from '../ui/icons'
@@ -649,17 +650,19 @@ function IntroReview() {
         <p className="intro-sub">{t('intro.reviewSub')}</p>
       </div>
       <div className={`rev-panel ${stage === 0 ? 'blurred' : ''}`}>
-        <div className="rev-track" style={{ transform: `translateX(${-shown * 100}%)` }}>
-          {cards.map((c, i) => (
-            <div key={c.week} className="rev-slide" aria-hidden={i !== shown || stage === 0}>
-              <div className="card tint-goal rev-card">
-                <div className="group-head">
-                  <div className="text">
-                    <div className="group-eyebrow">{t('intro.rev.week', { n: c.week })}</div>
-                    <div className="goal-card-title">{title}</div>
-                  </div>
-                </div>
-                <div className="suggestion">
+        <div className="rev-inner">
+          {/* The goal stays; only its suggestion changes: each one hops, then drops away to show the next. */}
+          <div className="card tint-goal rev-card">
+            <div className="group-head">
+              <div className="text">
+                <div key={shown} className="group-eyebrow rev-week">{t('intro.rev.week', { n: cards[shown].week })}</div>
+                <div className="goal-card-title">{title}</div>
+              </div>
+            </div>
+            <div className="rev-stack">
+              {cards.map((c, i) => (
+                <div key={c.week} className={`suggestion rev-sugg ${i < shown ? 'gone' : ''}`} style={{ zIndex: cards.length - i }}
+                  aria-hidden={i !== shown || stage === 0}>
                   <div className="suggestion-q">{tk(c.q)}</div>
                   <div className="small muted">{c.evidence}</div>
                   <div className="actions">
@@ -667,9 +670,9 @@ function IntroReview() {
                     <span className="btn primary small-btn" aria-hidden="true">{tk(c.a)}</span>
                   </div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </div>
       <div className="intro-dots rev-dots" aria-hidden="true">{[1, 2, 3].map((i) => <i key={i} className={i === stage ? 'on' : ''} />)}</div>
@@ -679,58 +682,103 @@ function IntroReview() {
 
 // ——— 12 · not only goals ———
 
-const PIECES: { badge: 'task' | 'step' | 'prep' | 'goal'; name: Key; what: Key; eg: Key }[] = [
-  { badge: 'task', name: 'common.task', what: 'intro.pieces.taskWhat', eg: 'intro.pieces.taskEg' },
-  { badge: 'step', name: 'common.project', what: 'intro.pieces.projectWhat', eg: 'intro.pieces.projectEg' },
-  { badge: 'prep', name: 'common.prep', what: 'intro.pieces.prepWhat', eg: 'intro.pieces.prepEg' },
-  { badge: 'goal', name: 'intro.pieces.habit', what: 'intro.pieces.habitWhat', eg: 'intro.pieces.habitEg' },
+type PieceKey = keyof Pieces
+const PIECES: { key: PieceKey; badge: 'task' | 'step' | 'prep' | 'goal'; name: Key; what: Key }[] = [
+  { key: 'task', badge: 'task', name: 'common.task', what: 'intro.pieces.taskWhat' },
+  { key: 'project', badge: 'step', name: 'common.project', what: 'intro.pieces.projectWhat' },
+  { key: 'prep', badge: 'prep', name: 'common.prep', what: 'intro.pieces.prepWhat' },
+  { key: 'habit', badge: 'goal', name: 'intro.pieces.habit', what: 'intro.pieces.habitWhat' },
 ]
+/** The order they leave the row and join the goal. */
+const JOIN: PieceKey[] = ['habit', 'prep', 'project', 'task']
+const JOIN_START = 250
+const JOIN_STEP = 450
+
+/** The goal's own habit, as Today would describe it ("gym · 3× a week"). */
+function habitText(d: GoalDraft | null): string | null {
+  if (!d || d.goalKind === 'outcome' || !d.label.trim()) return null
+  return `${d.label.trim()} · ${cadenceText(commitmentFields(d) as Commitment)}`
+}
 
 /**
- * The other pieces, one at a time: each shows up large, then shrinks into a
- * row as the next arrives. Join everything puts them all inside a goal.
+ * The other pieces, about their goal, one at a time: each shows up large, then
+ * shrinks into a row. With all four in the row, Join everything sends them into
+ * the goal, one after another (habit, prep, project, task).
  */
 function IntroPieces() {
+  const s = useIntro()
   const { title } = useDemoGoal()
-  const [stage, setStage] = useState(() => (reducedMotion() ? PIECES.length : 0))
-  const joined = stage >= PIECES.length
-  const forward = () => (joined ? leaveIntro() : setStage(stage + 1))
-  const label = joined ? t('intro.goToday') : stage === PIECES.length - 1 ? t('intro.pieces.join') : t('common.continue')
+  const goalTitle = s.draft?.title.trim() || title
+  const pieces = piecesFor(s.draft, s.example, habitText(s.draft))
+  // 0–3: one piece large. 4: all four in the row. 5: inside the goal.
+  const [stage, setStage] = useState(() => (reducedMotion() ? 5 : 0))
+  const label = stage >= 5 ? t('intro.goToday') : stage === 4 ? t('intro.pieces.join') : t('common.continue')
+
+  // Joining: each chip starts where it sat in the row and moves into the goal (FLIP).
+  const chips = useRef(new Map<PieceKey, HTMLElement>())
+  const rects = useRef(new Map<PieceKey, DOMRect>())
+  const chipRef = (k: PieceKey) => (el: HTMLElement | null) => {
+    if (el) chips.current.set(k, el)
+    else chips.current.delete(k)
+  }
+  useLayoutEffect(() => {
+    if (stage === 5 && !reducedMotion()) {
+      JOIN.forEach((k, i) => {
+        const el = chips.current.get(k)
+        const from = rects.current.get(k)
+        if (!el || !from) return
+        const to = el.getBoundingClientRect()
+        el.style.transition = 'none'
+        el.style.transform = `translate(${from.left - to.left}px, ${from.top - to.top}px)`
+        void el.offsetWidth
+        el.style.transition = `transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) ${JOIN_START + i * JOIN_STEP}ms`
+        el.style.transform = ''
+      })
+    }
+  }, [stage])
+  const forward = () => {
+    if (stage >= 5) return leaveIntro()
+    // Where each chip is as Join everything is pressed: that's where it leaves from.
+    if (stage === 4) rects.current = new Map([...chips.current].map(([k, el]) => [k, el.getBoundingClientRect()]))
+    setStage(stage + 1)
+  }
+
+  const chip = (p: (typeof PIECES)[number]) => (
+    <span key={p.key} ref={chipRef(p.key)} className="piece-chip"><Badge kind={p.badge}>{tk(p.name)}</Badge></span>
+  )
   const piece = PIECES[stage]
   return (
     <Frame back="/welcome/review" onTap={forward} nav={<button className="btn primary" onClick={forward}>{label}</button>}>
       <div className="intro-head">
         <h1 className="intro-title">{t('intro.pieces.title')}</h1>
-        <p className={`intro-sub pieces-end ${joined ? 'show' : ''}`}>{t('intro.pieces.end')}</p>
       </div>
       <div className="pieces">
-        {joined ? (
+        <div className="piece-tray" aria-hidden="true">{stage < 5 && PIECES.slice(0, stage).map(chip)}</div>
+        {stage < 4 && (
+          <div key={stage} className="card pad piece-card">
+            <Badge kind={piece.badge}>{tk(piece.name)}</Badge>
+            <div className="piece-what">{tk(piece.what)}</div>
+            <div className="piece-eg">{pieces[piece.key]}</div>
+          </div>
+        )}
+        {stage >= 4 && <p className="intro-sub pieces-end">{t('intro.pieces.end')}</p>}
+        {stage === 5 && (
           <div className="card group tint-goal piece-goal">
             <div className="group-head">
               <div className="text">
                 <div className="group-eyebrow">{t('common.goal')}</div>
-                <div className="group-why">{title}</div>
+                <div className="group-why">{goalTitle}</div>
               </div>
             </div>
             <div className="piece-inside">
-              {PIECES.map((p, i) => (
-                <span key={p.name} className="piece-row" style={{ animationDelay: `${120 + i * 90}ms` }}>
-                  <Badge kind={p.badge}>{tk(p.name)}</Badge>
-                </span>
+              {JOIN.map((k, i) => (
+                <div key={k} className="piece-row">
+                  {chip(PIECES.find((p) => p.key === k)!)}
+                  <span className="piece-text" style={{ animationDelay: `${JOIN_START + i * JOIN_STEP + 450}ms` }}>{pieces[k]}</span>
+                </div>
               ))}
             </div>
           </div>
-        ) : (
-          <>
-            <div className="piece-tray" aria-hidden="true">
-              {PIECES.slice(0, stage).map((p) => <span key={p.name} className="piece-chip"><Badge kind={p.badge}>{tk(p.name)}</Badge></span>)}
-            </div>
-            <div key={stage} className="card pad piece-card">
-              <Badge kind={piece.badge}>{tk(piece.name)}</Badge>
-              <div className="piece-what">{tk(piece.what)}</div>
-              <div className="piece-eg">{tk(piece.eg)}</div>
-            </div>
-          </>
         )}
       </div>
     </Frame>

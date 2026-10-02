@@ -57,6 +57,9 @@ export function joinList(items: string[], word: 'and' | 'or' = 'and'): string {
   return word === 'and' ? t('ins.list.and', { a, b }) : t('ins.list.or', { a, b })
 }
 
+/** Whether `key` is one of the texts (for keys built at run time that may not exist). */
+export const hasKey = (key: string): key is Key => key in en
+
 export const getLang = () => lang
 
 /** Runs `fn` with another language, for text that is stored rather than shown. */

@@ -237,6 +237,7 @@ input:not([type]), textarea, select {
 select { background-image: linear-gradient(45deg, transparent 50%, var(--ink-2) 50%), linear-gradient(135deg, var(--ink-2) 50%, transparent 50%);
   background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 32px; }
 textarea { min-height: 88px; resize: vertical; line-height: 1.4; }
+textarea.growing { min-height: 46px; resize: none; overflow: hidden; }
 input:focus, textarea:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 input::placeholder, textarea::placeholder { color: var(--ink-3); }
 
@@ -953,34 +954,45 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
   40% { -webkit-clip-path: inset(0 0 calc(100% - 2px) 0); clip-path: inset(0 0 calc(100% - 2px) 0); }
   100% { -webkit-clip-path: inset(0 0 0 0 round var(--radius)); clip-path: inset(0 0 0 0 round var(--radius)); }
 }
-.rev-track { display: flex; transition: transform 0.45s ease, filter 0.45s ease; }
-.rev-panel.blurred .rev-track { filter: blur(7px); }
-.rev-slide { flex: 0 0 100%; min-width: 0; padding: 12px; }
+.rev-inner { padding: 12px; transition: filter 0.45s ease; }
+.rev-panel.blurred .rev-inner { filter: blur(7px); }
 .rev-card { margin: 0; }
 .rev-card .group-head { padding-bottom: 4px; }
 .rev-card .suggestion .actions { margin-top: 10px; }
+.rev-week { animation: fade 0.4s ease both; }
+/* The suggestions sit on top of each other; the top one hops, then drops out of the card. */
+.rev-stack { display: grid; overflow: hidden; padding-top: 12px; margin-top: -12px; }
+.rev-sugg { grid-area: 1 / 1; }
+.rev-sugg.gone { animation: rev-drop 0.65s forwards; }
+@keyframes rev-drop {
+  0% { transform: none; animation-timing-function: ease-out; }
+  22% { transform: translateY(-10px); animation-timing-function: ease-in; }
+  100% { transform: translateY(140%); visibility: hidden; }
+}
 .rev-dots { margin: 16px 0 0; }
 
-/* Not only goals: one piece at a time, then all of them inside a goal */
+/* Not only goals: one piece at a time into a row, then the row joins the goal one by one */
 .pieces { margin-top: 24px; display: flex; flex-direction: column; align-items: stretch; }
-.piece-tray { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; min-height: 26px; margin-bottom: 20px; }
-.piece-chip { display: inline-flex; animation: piece-shrink 0.45s ease both; }
+.piece-tray { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; min-height: 30px; margin-bottom: 20px; }
+.piece-chip { display: inline-flex; position: relative; z-index: 1; animation: piece-shrink 0.45s ease both; }
 @keyframes piece-shrink { from { transform: translateY(80px) scale(1.8); opacity: 0; } }
+.piece-chip .badge { font-size: 14px; padding: 5px 10px; }
 .intro .piece-card { text-align: center; padding: 30px 20px; animation: piece-in 0.45s ease both; }
 @keyframes piece-in { from { transform: scale(0.9); opacity: 0; } }
 .piece-card .badge { font-size: 15px; padding: 5px 12px; border-radius: 9px; }
 .piece-what { font: 700 22px/1.2 var(--font-display); margin-top: 16px; }
 .piece-eg { color: var(--ink-2); margin-top: 6px; }
-.piece-goal { animation: piece-in 0.5s ease both; }
-.piece-inside { display: flex; flex-wrap: wrap; gap: 8px; padding: 6px 16px 18px; }
-.piece-row { display: inline-flex; animation: piece-row 0.4s ease both; }
-.piece-row .badge { font-size: 14px; padding: 5px 10px; }
-@keyframes piece-row { from { transform: translateY(-14px) scale(0.92); opacity: 0; } }
-.pieces-end { opacity: 0; transition: opacity 0.4s ease 0.3s; }
-.pieces-end.show { opacity: 1; }
+.intro .pieces-end { margin: 28px auto; text-align: center; animation: fade 0.4s ease both; }
+.piece-goal { overflow: visible; }
+.piece-goal .group-head { animation: fade 0.4s ease both; }
+.piece-inside { display: grid; gap: 10px; padding: 4px 16px 18px; }
+.piece-row { display: flex; align-items: center; gap: 10px; font-size: 15px; min-height: 30px; }
+.piece-row .piece-chip { animation: none; }
+.piece-text { animation: fade 0.35s ease both; }
 @media (prefers-reduced-motion: reduce) {
-  .rev-panel, .piece-chip, .intro .piece-card, .piece-goal, .piece-row { animation: none; }
-  .rev-track, .proj-reveal, .pieces-end { transition: none; }
+  .rev-panel, .rev-sugg.gone, .rev-week, .piece-chip, .intro .piece-card, .piece-goal .group-head, .piece-text, .intro .pieces-end { animation: none; }
+  .rev-sugg.gone { visibility: hidden; }
+  .rev-inner, .proj-reveal { transition: none; }
 }
 
 .intro-steps { list-style: none; margin: 32px 0 0; padding: 0; text-align: left; }

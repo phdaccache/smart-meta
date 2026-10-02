@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createGoal, ensureValue } from '../db/repo'
 import { setSettings } from '../db/settings'
 import { getLang, t, tk, tlist, tn, type Key } from '../i18n'
@@ -208,6 +208,21 @@ export function CadenceFields({ d, set, e, showErrors }: {
   )
 }
 
+/** One line of text that wraps onto more lines instead of cutting off (a suggested prep can be long). */
+function GrowingText({ id, value, placeholder, onChange }: { id: string; value: string; placeholder?: string; onChange: (v: string) => void }) {
+  const ref = useRef<HTMLTextAreaElement>(null)
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight + el.offsetHeight - el.clientHeight}px`
+  }, [value])
+  return (
+    <textarea ref={ref} id={id} rows={1} className="growing" value={value} placeholder={placeholder}
+      onKeyDown={(ev) => ev.key === 'Enter' && ev.preventDefault()} onChange={(ev) => onChange(ev.target.value.replace(/\n/g, ' '))} />
+  )
+}
+
 export function PrepEditor({ preps, onChange, showErrors, removable = true }: {
   preps: PrepDraft[]; onChange: (p: PrepDraft[]) => void; showErrors: boolean
   /** Editing one saved prep in a sheet: that sheet has its own Delete. */
@@ -225,8 +240,7 @@ export function PrepEditor({ preps, onChange, showErrors, removable = true }: {
                 onClick={() => onChange(preps.filter((_, j) => j !== i))}><IconClose width={18} height={18} /></button>
             )}
             <Field label={t('form.prepN', { n: i + 1 })} htmlFor={`prep-${i}`} error={showErrors ? e.title : undefined}>
-              <input id={`prep-${i}`} value={p.title} placeholder={t('form.phPrep')}
-                onChange={(ev) => update(i, { title: ev.target.value })} />
+              <GrowingText id={`prep-${i}`} value={p.title} placeholder={t('form.phPrep')} onChange={(title) => update(i, { title })} />
             </Field>
             <Field label={t('common.days')} error={showErrors ? e.fireWeekdays : undefined}>
               <WeekdayPicker value={p.fireWeekdays} onChange={(fireWeekdays) => update(i, { fireWeekdays })} />
