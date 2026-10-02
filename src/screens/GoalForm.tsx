@@ -1,18 +1,18 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { addCommitment, addPrep, createGoal, createProject, ensureValue } from '../db/repo'
+import { createGoal, ensureValue } from '../db/repo'
 import { setSettings } from '../db/settings'
 import { t, tk, tlist, tn, type Key } from '../i18n'
 import {
   CHECKIN_TYPES, emptyGoalDraft, isValid, MAX_PREPS, validateCommitment, validateGoal, validatePrep,
   type CommitmentDraft, type Errors, type GoalDraft, type PrepDraft,
 } from '../lib/draft'
-import type { DateStr, Goal, Period, Shape } from '../lib/types'
-import { addDays, dayMonth, weekdaysLabel } from '../lib/dates'
-import { cadenceOf, templateByKey, templatesFor, type Template } from '../lib/templates'
-import { Chip, Field, InfoTip, Screen, Section, Segmented, Sheet, Stepper, toast, WeekdayPicker } from '../ui/components'
+import type { Period, Shape } from '../lib/types'
+import { templateByKey, templatesFor, type Template } from '../lib/templates'
+import { startTemplate, TemplateGoalScreen } from './TemplateGoal'
+import { Chip, Field, InfoTip, Screen, Segmented, Sheet, Stepper, toast, WeekdayPicker } from '../ui/components'
 import { IconChevronRight } from '../ui/icons'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
-import { goBack, navigate, navigateFrom, useLocation } from '../ui/router'
+import { goBack, navigate, useLocation } from '../ui/router'
 
 const SHAPES: { value: Shape; title: Key }[] = [
   { value: 'rhythm', title: 'shape.rhythm' },
@@ -243,9 +243,11 @@ export function ToleranceField({ value, onChange, error }: { value: number; onCh
   )
 }
 
-export function WhyFields({ valueId, text, onValue, onText, errors, showErrors }: {
+export function WhyFields({ valueId, text, onValue, onText, errors, showErrors, suggest }: {
   valueId: string; text: string; onValue: (id: string) => void; onText: (t: string) => void
   errors: { whyValueId?: string; whyText?: string }; showErrors: boolean
+  /** A template's value that doesn't exist yet: picked while no other is ('' id), created on save. */
+  suggest?: string
 }) {
   const snap = useSnapshot()
   const values = (snap?.values ?? []).filter((v) => !v.deletedAt)
@@ -258,12 +260,14 @@ export function WhyFields({ valueId, text, onValue, onText, errors, showErrors }
     setName('')
     setAdding(false)
   }
-  const open = adding || (snap != null && !values.length)
+  const pending = suggest && !values.some((v) => v.name.trim().toLowerCase() === suggest.trim().toLowerCase()) ? suggest : null
+  const open = adding || (snap != null && !values.length && !pending)
   return (
     <>
       <Field label={t('form.value')} error={showErrors ? errors.whyValueId : undefined}>
-        {values.length > 0 && (
+        {(values.length > 0 || pending) && (
           <div className="chips">
+            {pending && <Chip selected={!valueId} onClick={() => onValue('')}>{pending}</Chip>}
             {values.map((v) => <Chip key={v.id} selected={valueId === v.id} onClick={() => onValue(v.id)}>{v.name}</Chip>)}
             {!open && values.length < 12 && <Chip selected={false} onClick={() => setAdding(true)}>{t('form.newValue')}</Chip>}
           </div>
@@ -291,8 +295,8 @@ export function WhyFields({ valueId, text, onValue, onText, errors, showErrors }
 
 /**
  * New goal, blank or from a template. Each step is its own address, so Back
- * walks back through them: the form, the template list (?pick=1) and a
- * template's details (?template=key).
+ * walks back through them: the form, the template list (?pick=1), then the
+ * template's screens (TemplateGoal.tsx), where nothing is saved until Save goal.
  */
 export function NewGoalScreen() {
   const settings = useSettings()
@@ -302,13 +306,7 @@ export function NewGoalScreen() {
   const tpl = templateByKey(query.get('template') ?? '') ?? null
   if (!snap) return null
 
-  if (tpl) {
-    return (
-      <Screen back="/goals/new" title={t('form.newGoal')}>
-        <TemplateDetails tpl={tpl} start={today} />
-      </Screen>
-    )
-  }
+  if (tpl) return <TemplateGoalScreen tpl={tpl} edit={query.get('edit') === '1'} smart={query.get('smart') === '1'} />
   return <GoalFormScreen initial={emptyGoalDraft(today)} picking={query.get('pick') === '1'} />
 }
 
@@ -331,7 +329,6 @@ function GoalFormScreen({ initial, picking = false }: { initial: GoalDraft; pick
     <button className="card list-row template-btn" onClick={() => navigate('/goals/new?pick=1')}>
       <div className="text">
         <div className="title">{t('tpl.button')}</div>
-        <div className="sub">{t('tpl.buttonSub')}</div>
       </div>
       <IconChevronRight className="chev" width={18} />
     </button>
@@ -345,12 +342,12 @@ function GoalFormScreen({ initial, picking = false }: { initial: GoalDraft; pick
         ? <Wizard d={d} set={set} patch={patch} errors={errors} onSave={save} top={top} />
         : <Compact d={d} set={set} patch={patch} errors={errors} onSave={save} top={top} />}
       <TemplateSheet open={picking} areas={settings.areas}
-        onPick={(x) => navigate(`/goals/new?template=${x.key}`)} onClose={() => goBack('/goals/new')} />
+        onPick={startTemplate} onClose={() => goBack('/goals/new')} />
     </Screen>
   )
 }
 
-interface FormProps {
+export interface FormProps {
   d: GoalDraft
   set: SetField
   patch: (p: Partial<GoalDraft>) => void
@@ -358,22 +355,11 @@ interface FormProps {
   onSave: () => void
   /** Shown above the form (the wizard: on its first step only). */
   top?: ReactNode
+  /** From a template: its value, picked until another is chosen, and created when the goal is saved. */
+  suggest?: string
 }
 
 // ——— templates ———
-
-/** Saves a template as it is: the goal, its value (made if it doesn't exist yet), supporting habits with their preps, and projects. */
-async function saveTemplate(tpl: Template, start: DateStr): Promise<Goal> {
-  const goal = await createGoal({ ...tpl.draft(start), whyValueId: await ensureValue(tpl.value) })
-  for (const h of tpl.habits) {
-    const c = await addCommitment(goal, h.draft, addDays(start, h.startIn))
-    for (const p of h.preps) await addPrep(c.id, p)
-  }
-  for (const p of tpl.projects) {
-    await createProject({ title: p.title, targetDate: addDays(start, p.days), goalId: goal.id, steps: p.steps })
-  }
-  return goal
-}
 
 function TemplateSheet({ open, areas, onPick, onClose }: { open: boolean; areas: string[]; onPick: (x: Template) => void; onClose: () => void }) {
   const { forYou, more } = templatesFor(areas)
@@ -401,113 +387,6 @@ function TemplateSheet({ open, areas, onPick, onClose }: { open: boolean; areas:
         </div>
       ))}
     </Sheet>
-  )
-}
-
-/** Preps under a habit, the way the goal page lists them. */
-function PrepList({ preps }: { preps: PrepDraft[] }) {
-  if (!preps.length) return null
-  return (
-    <div className="prep-block">
-      <div className="prep-block-head">{t('ins.preps')}</div>
-      <div className="list">
-        {preps.map((p, i) => (
-          <div key={i} className="list-row">
-            <div className="text">
-              <div className="title" style={{ fontSize: 15 }}>{p.title}</div>
-              <div className="sub">{t('goal.prepWhen', { days: weekdaysLabel(p.fireWeekdays), time: p.fireTime })}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/** A template as it will be saved, laid out like a goal's page. Edit goal saves it and opens its page to change; Save goal saves it. */
-function TemplateDetails({ tpl, start }: { tpl: Template; start: DateStr }) {
-  const [busy, setBusy] = useState(false)
-  const d = tpl.draft(start)
-  const outcome = d.goalKind === 'outcome'
-  const save = async (edit: boolean) => {
-    setBusy(true)
-    const goal = await saveTemplate(tpl, start)
-    toast(tpl.habits.length || tpl.projects.length ? t('tpl.saved') : t('form.savedBacklog'))
-    // Either way the template steps leave the history: Back goes to Today.
-    if (edit) navigateFrom('/', `/goals/${goal.id}`)
-    else navigate('/')
-  }
-  const date = (s: DateStr) => `${dayMonth(s)} ${s.slice(0, 4)}`
-
-  return (
-    <div>
-      <div className="eyebrow">{t('tpl.from')} · {tpl.value}</div>
-      <h2 className="template-title">{d.title}</h2>
-
-      <div className="card tint-goal">
-        <div className="pad card-head"><div className="group-why">{d.whyText}</div></div>
-        <div className="pad">
-          <dl className="kv">
-            {outcome && <><dt>{t('goal.doneWhen')}</dt><dd>{d.doneWhen}</dd></>}
-            {outcome && <><dt>{t('goal.deadline')}</dt><dd>{date(d.targetDate)}</dd></>}
-            {outcome && <><dt>{t('goal.extraTime')}</dt><dd>{graceLabel(d.graceDays)}</dd></>}
-            {!outcome && <><dt>{t('goal.tolerance')}</dt><dd>{d.tolerancePct}%</dd></>}
-            {!outcome && <><dt>{t('goal.reviewOn')}</dt><dd>{date(d.targetDate)}</dd></>}
-          </dl>
-        </div>
-      </div>
-
-      {!outcome && (
-        <Section title={t('goal.commitments')}>
-          <div className="card commitment-card">
-            <div className="pad">
-              <div className="group-eyebrow">{d.label} · {cadenceOf(d)}</div>
-              <div style={{ fontWeight: 600 }}>{d.measurementDefinition}</div>
-            </div>
-            <PrepList preps={d.preps} />
-          </div>
-        </Section>
-      )}
-
-      {tpl.habits.length > 0 && (
-        <Section title={t('goal.supportingHabits')}>
-          <div className="stack">
-            {tpl.habits.map((h, i) => (
-              <div key={i} className="card commitment-card">
-                <div className="pad">
-                  <div className="group-eyebrow">
-                    {h.draft.label} · {cadenceOf(h.draft)}
-                    {h.startIn > 0 && <> · <b>{t('goal.startsOn', { when: dayMonth(addDays(start, h.startIn)) })}</b></>}
-                  </div>
-                  <div style={{ fontWeight: 600 }}>{h.draft.measurementDefinition}</div>
-                </div>
-                <PrepList preps={h.preps} />
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {tpl.projects.length > 0 && (
-        <Section title={t('goal.projects')}>
-          <div className="stack">
-            {tpl.projects.map((p, i) => (
-              <div key={i} className="card pad tint-project">
-                <div style={{ fontWeight: 650 }}>{p.title}</div>
-                <div className="small muted">{t('today.due', { when: dayMonth(addDays(start, p.days)) })}</div>
-                <ol className="template-steps">{p.steps.map((s, j) => <li key={j}>{s}</li>)}</ol>
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      <p className="small muted" style={{ margin: '16px 4px 0' }}>{t('tpl.editLater')}</p>
-      <div className="wizard-nav">
-        <button className="btn" disabled={busy} onClick={() => save(true)}>{t('tpl.edit')}</button>
-        <button className="btn primary" disabled={busy} onClick={() => save(false)}>{t('form.saveGoal')}</button>
-      </div>
-    </div>
   )
 }
 
@@ -556,7 +435,7 @@ interface Step {
   body: ReactNode
 }
 
-function Wizard({ d, set, patch, errors, onSave, top }: FormProps) {
+export function Wizard({ d, set, patch, errors, onSave, top, suggest }: FormProps) {
   const [i, setI] = useState(0)
   const [tried, setTried] = useState(false)
   const outcome = d.goalKind === 'outcome'
@@ -608,7 +487,7 @@ function Wizard({ d, set, patch, errors, onSave, top }: FormProps) {
       letter: 'R',
       q: t('form.qWhy'),
       fields: ['whyValueId', 'whyText'],
-      body: <WhyFields valueId={d.whyValueId} text={d.whyText} onValue={(v) => set('whyValueId', v)} onText={(x) => set('whyText', x)} errors={errors} showErrors={tried} />,
+      body: <WhyFields valueId={d.whyValueId} text={d.whyText} onValue={(v) => set('whyValueId', v)} onText={(x) => set('whyText', x)} errors={errors} showErrors={tried} suggest={suggest} />,
     },
     {
       letter: 'T',
@@ -675,7 +554,7 @@ export function DateFields({ d, set, err }: { d: GoalDraft; set: SetField; err: 
   )
 }
 
-function Compact({ d, set, patch, errors, onSave, top }: FormProps) {
+export function Compact({ d, set, patch, errors, onSave, top, suggest }: FormProps) {
   const [tried, setTried] = useState(false)
   const outcome = d.goalKind === 'outcome'
   const submit = () => (isValid(errors) ? onSave() : setTried(true))
@@ -712,7 +591,7 @@ function Compact({ d, set, patch, errors, onSave, top }: FormProps) {
       </section>
       <section className="card pad smart-section">
         <SmartHead k="R" />
-        <WhyFields valueId={d.whyValueId} text={d.whyText} onValue={(v) => set('whyValueId', v)} onText={(x) => set('whyText', x)} errors={errors} showErrors={tried} />
+        <WhyFields valueId={d.whyValueId} text={d.whyText} onValue={(v) => set('whyValueId', v)} onText={(x) => set('whyText', x)} errors={errors} showErrors={tried} suggest={suggest} />
       </section>
       <section className="card pad smart-section">
         <SmartHead k="T" />

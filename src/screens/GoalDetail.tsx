@@ -17,7 +17,7 @@ import type { Commitment, Goal, GoalReview, Prep } from '../lib/types'
 import { Field, InfoTip, Screen, Section, Sheet, StatusInfo, StatusWord, toast, TypeToConfirm, WeekBar } from '../ui/components'
 import { useGoalReviews, useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconHistory, IconInsights } from '../ui/icons'
-import { navigate } from '../ui/router'
+import { goBack, navigate } from '../ui/router'
 import { CadenceFields, GraceField, graceLabel, MeasurementFields, PrepEditor, ShapeField, ShapeInfo, SmartHead, ToleranceField, WhyFields } from './GoalForm'
 import { projectProgress } from './Goals'
 import { GoalHistorySheet } from './GoalHistory'
@@ -386,7 +386,7 @@ export function GoalEditScreen({ id }: { id: string }) {
       ...(outcome ? { doneWhen: (d.doneWhen ?? '').trim(), graceDays: d.graceDays ?? 0 } : {}),
     })
     toast(t('common.saved'))
-    navigate(`/goals/${goal.id}`, { replace: true })
+    goBack(`/goals/${goal.id}`)
   }
 
   return (
@@ -488,7 +488,7 @@ export function GoalReviewScreen({ id, presetHit }: { id: string; presetHit?: bo
     if (!ready) return
     await saveGoalReview(goal, { hit: hit!, whatHappened: whatHappened.trim(), journalNote: journal.trim() }, outcome!, renewDate || null)
     toast(t('common.saved'))
-    navigate(`/goals/${goal.id}`, { replace: true })
+    goBack(`/goals/${goal.id}`)
   }
   const choice = (v: typeof outcome, title: string, d: string) => (
     <button role="radio" aria-checked={outcome === v} className={`choice ${outcome === v ? 'on' : ''}`} onClick={() => setOutcome(v)}>
