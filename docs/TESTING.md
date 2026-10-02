@@ -91,7 +91,7 @@ On a finish-line goal, go to Supporting habits → **Add**, with **Starts** 2 we
 
 **15a. From a template**
 Go to Plan → Goals → **+** → **Start from a template** → *Get a new job*.
-- **Expect:** the areas picked in the intro are under **For you**. Tapping it shows one screen: value, reason, deadline, 2 supporting habits (applications starting in 3 weeks) with preps, and 2 projects with their steps. **Edit goal** opens the form filled in; saving there keeps the habits and projects. **Save goal** opens the new goal (in the backlog) with all of it; Back from it returns to the template, then the list, then New goal. Its projects aren't on Today, and Plan → Projects lists them under *Waiting for their goal*. **Start** the goal a few days later (pretend today): the projects appear, their dates moved by the days they waited.
+- **Expect:** the areas picked in the intro are under **For you**. Tapping it shows one screen: value, reason, deadline, 2 supporting habits (applications starting in 3 weeks) with preps, and 2 projects with their steps. Back from it returns to the list, then New goal. **Edit goal** saves and opens the new goal's page (in the backlog) with all of it; Back from there goes to Today. **Save goal** saves and goes to Today. New goal doesn't open the keyboard by itself. Its projects aren't on Today, and Plan → Projects lists them under *Waiting for their goal*. **Start** the goal a few days later (pretend today): the projects appear, their dates moved by the days they waited.
 
 **15b. First value, mid-goal**
 With no values yet (fresh install, skip the intro), create a goal and reach R.

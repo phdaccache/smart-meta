@@ -12,7 +12,7 @@ import { cadenceOf, templateByKey, templatesFor, type Template } from '../lib/te
 import { Chip, Field, InfoTip, Screen, Section, Segmented, Sheet, Stepper, toast, WeekdayPicker } from '../ui/components'
 import { IconChevronRight } from '../ui/icons'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
-import { goBack, navigate, useLocation } from '../ui/router'
+import { goBack, navigate, navigateFrom, useLocation } from '../ui/router'
 
 const SHAPES: { value: Shape; title: Key }[] = [
   { value: 'rhythm', title: 'shape.rhythm' },
@@ -243,17 +243,15 @@ export function ToleranceField({ value, onChange, error }: { value: number; onCh
   )
 }
 
-export function WhyFields({ valueId, text, onValue, onText, errors, showErrors, suggest }: {
+export function WhyFields({ valueId, text, onValue, onText, errors, showErrors }: {
   valueId: string; text: string; onValue: (id: string) => void; onText: (t: string) => void
   errors: { whyValueId?: string; whyText?: string }; showErrors: boolean
-  /** From a template: the value it's for, one tap away if it doesn't exist yet. */
-  suggest?: string
 }) {
   const snap = useSnapshot()
   const values = (snap?.values ?? []).filter((v) => !v.deletedAt)
   // Values are added right here: leaving for Settings would lose the goal being written.
   const [adding, setAdding] = useState(false)
-  const [name, setName] = useState(suggest ?? '')
+  const [name, setName] = useState('')
   const add = async () => {
     if (!name.trim()) return
     onValue(await ensureValue(name))
@@ -261,14 +259,12 @@ export function WhyFields({ valueId, text, onValue, onText, errors, showErrors, 
     setAdding(false)
   }
   const open = adding || (snap != null && !values.length)
-  const offer = suggest && values.length > 0 && !values.some((v) => v.name.trim().toLowerCase() === suggest.trim().toLowerCase())
   return (
     <>
       <Field label={t('form.value')} error={showErrors ? errors.whyValueId : undefined}>
         {values.length > 0 && (
           <div className="chips">
             {values.map((v) => <Chip key={v.id} selected={valueId === v.id} onClick={() => onValue(v.id)}>{v.name}</Chip>)}
-            {offer && <Chip selected={false} onClick={async () => onValue(await ensureValue(suggest))}>+ {suggest}</Chip>}
             {!open && values.length < 12 && <Chip selected={false} onClick={() => setAdding(true)}>{t('form.newValue')}</Chip>}
           </div>
         )}
@@ -295,8 +291,8 @@ export function WhyFields({ valueId, text, onValue, onText, errors, showErrors, 
 
 /**
  * New goal, blank or from a template. Each step is its own address, so Back
- * walks back through them: the form, the template list (?pick=1), a
- * template's details (?template=key), and the template in the form (&edit=1).
+ * walks back through them: the form, the template list (?pick=1) and a
+ * template's details (?template=key).
  */
 export function NewGoalScreen() {
   const settings = useSettings()
@@ -306,21 +302,17 @@ export function NewGoalScreen() {
   const tpl = templateByKey(query.get('template') ?? '') ?? null
   if (!snap) return null
 
-  if (tpl && query.get('edit') !== '1') {
+  if (tpl) {
     return (
       <Screen back="/goals/new" title={t('form.newGoal')}>
         <TemplateDetails tpl={tpl} start={today} />
       </Screen>
     )
   }
-  if (tpl) {
-    const value = snap.values.find((v) => !v.deletedAt && v.name.trim().toLowerCase() === tpl.value.trim().toLowerCase())
-    return <GoalFormScreen key={`tpl-${tpl.key}`} initial={{ ...tpl.draft(today), whyValueId: value?.id ?? '' }} tpl={tpl} />
-  }
-  return <GoalFormScreen key="blank" initial={emptyGoalDraft(today)} picking={query.get('pick') === '1'} />
+  return <GoalFormScreen initial={emptyGoalDraft(today)} picking={query.get('pick') === '1'} />
 }
 
-function GoalFormScreen({ initial, tpl, picking = false }: { initial: GoalDraft; tpl?: Template; picking?: boolean }) {
+function GoalFormScreen({ initial, picking = false }: { initial: GoalDraft; picking?: boolean }) {
   const settings = useSettings()
   const [d, setD] = useState<GoalDraft>(initial)
   const set: SetField = (k, v) => setD((x) => ({ ...x, [k]: v }))
@@ -331,18 +323,11 @@ function GoalFormScreen({ initial, tpl, picking = false }: { initial: GoalDraft;
   const save = async () => {
     // Every new goal waits in the backlog; starting it is its own decision, on the goal's page.
     const goal = await createGoal(d)
-    if (tpl) {
-      await addTemplateExtras(goal, tpl, d.startDate)
-      toast(tpl.habits.length || tpl.projects.length ? t('tpl.saved') : t('form.savedBacklog'))
-      // From a template, Back from the goal returns to it.
-      navigate(`/goals/${goal.id}`)
-    } else {
-      toast(t('form.savedBacklog'))
-      navigate(`/goals/${goal.id}`, { replace: true })
-    }
+    toast(t('form.savedBacklog'))
+    navigate(`/goals/${goal.id}`, { replace: true })
   }
 
-  const top = tpl ? undefined : (
+  const top = (
     <button className="card list-row template-btn" onClick={() => navigate('/goals/new?pick=1')}>
       <div className="text">
         <div className="title">{t('tpl.button')}</div>
@@ -352,13 +337,13 @@ function GoalFormScreen({ initial, tpl, picking = false }: { initial: GoalDraft;
     </button>
   )
   return (
-    <Screen back={tpl ? `/goals/new?template=${tpl.key}` : '/goals'} title={t('form.newGoal')}
+    <Screen back="/goals" title={t('form.newGoal')}
       actions={<button className="btn ghost" onClick={() => setSettings({ creationMode: mode === 'wizard' ? 'compact' : 'wizard' })}>
         {mode === 'wizard' ? t('form.compact') : t('form.guided')}
       </button>}>
       {mode === 'wizard'
-        ? <Wizard d={d} set={set} patch={patch} errors={errors} onSave={save} top={top} suggest={tpl?.value} />
-        : <Compact d={d} set={set} patch={patch} errors={errors} onSave={save} top={top} suggest={tpl?.value} />}
+        ? <Wizard d={d} set={set} patch={patch} errors={errors} onSave={save} top={top} />
+        : <Compact d={d} set={set} patch={patch} errors={errors} onSave={save} top={top} />}
       <TemplateSheet open={picking} areas={settings.areas}
         onPick={(x) => navigate(`/goals/new?template=${x.key}`)} onClose={() => goBack('/goals/new')} />
     </Screen>
@@ -373,14 +358,13 @@ interface FormProps {
   onSave: () => void
   /** Shown above the form (the wizard: on its first step only). */
   top?: ReactNode
-  /** From a template: the value it's for, offered if it doesn't exist yet. */
-  suggest?: string
 }
 
 // ——— templates ———
 
-/** What a template brings beyond the goal: supporting habits (with their preps) and projects. */
-async function addTemplateExtras(goal: Goal, tpl: Template, start: DateStr) {
+/** Saves a template as it is: the goal, its value (made if it doesn't exist yet), supporting habits with their preps, and projects. */
+async function saveTemplate(tpl: Template, start: DateStr): Promise<Goal> {
+  const goal = await createGoal({ ...tpl.draft(start), whyValueId: await ensureValue(tpl.value) })
   for (const h of tpl.habits) {
     const c = await addCommitment(goal, h.draft, addDays(start, h.startIn))
     for (const p of h.preps) await addPrep(c.id, p)
@@ -388,12 +372,6 @@ async function addTemplateExtras(goal: Goal, tpl: Template, start: DateStr) {
   for (const p of tpl.projects) {
     await createProject({ title: p.title, targetDate: addDays(start, p.days), goalId: goal.id, steps: p.steps })
   }
-}
-
-/** Saves a template as it is: the goal, its value (made if it doesn't exist yet), and everything it brings. */
-async function saveTemplate(tpl: Template, start: DateStr): Promise<Goal> {
-  const goal = await createGoal({ ...tpl.draft(start), whyValueId: await ensureValue(tpl.value) })
-  await addTemplateExtras(goal, tpl, start)
   return goal
 }
 
@@ -446,16 +424,18 @@ function PrepList({ preps }: { preps: PrepDraft[] }) {
   )
 }
 
-/** A template as it will be saved, laid out like a goal's page, with Edit goal (the form, filled in) and Save goal. */
+/** A template as it will be saved, laid out like a goal's page. Edit goal saves it and opens its page to change; Save goal saves it. */
 function TemplateDetails({ tpl, start }: { tpl: Template; start: DateStr }) {
   const [busy, setBusy] = useState(false)
   const d = tpl.draft(start)
   const outcome = d.goalKind === 'outcome'
-  const save = async () => {
+  const save = async (edit: boolean) => {
     setBusy(true)
     const goal = await saveTemplate(tpl, start)
     toast(tpl.habits.length || tpl.projects.length ? t('tpl.saved') : t('form.savedBacklog'))
-    navigate(`/goals/${goal.id}`)
+    // Either way the template steps leave the history: Back goes to Today.
+    if (edit) navigateFrom('/', `/goals/${goal.id}`)
+    else navigate('/')
   }
   const date = (s: DateStr) => `${dayMonth(s)} ${s.slice(0, 4)}`
 
@@ -524,8 +504,8 @@ function TemplateDetails({ tpl, start }: { tpl: Template; start: DateStr }) {
 
       <p className="small muted" style={{ margin: '16px 4px 0' }}>{t('tpl.editLater')}</p>
       <div className="wizard-nav">
-        <button className="btn" onClick={() => navigate(`/goals/new?template=${tpl.key}&edit=1`)}>{t('tpl.edit')}</button>
-        <button className="btn primary" disabled={busy} onClick={save}>{t('form.saveGoal')}</button>
+        <button className="btn" disabled={busy} onClick={() => save(true)}>{t('tpl.edit')}</button>
+        <button className="btn primary" disabled={busy} onClick={() => save(false)}>{t('form.saveGoal')}</button>
       </div>
     </div>
   )
@@ -576,7 +556,7 @@ interface Step {
   body: ReactNode
 }
 
-function Wizard({ d, set, patch, errors, onSave, top, suggest }: FormProps) {
+function Wizard({ d, set, patch, errors, onSave, top }: FormProps) {
   const [i, setI] = useState(0)
   const [tried, setTried] = useState(false)
   const outcome = d.goalKind === 'outcome'
@@ -589,7 +569,7 @@ function Wizard({ d, set, patch, errors, onSave, top, suggest }: FormProps) {
       fields: ['title'],
       body: (
         <Field label={t('form.goal')} htmlFor="title" error={err('title')}>
-          <input id="title" autoFocus value={d.title} placeholder={t('form.goalPlaceholder')} onChange={(e) => set('title', e.target.value)} />
+          <input id="title" value={d.title} placeholder={t('form.goalPlaceholder')} onChange={(e) => set('title', e.target.value)} />
         </Field>
       ),
     },
@@ -628,7 +608,7 @@ function Wizard({ d, set, patch, errors, onSave, top, suggest }: FormProps) {
       letter: 'R',
       q: t('form.qWhy'),
       fields: ['whyValueId', 'whyText'],
-      body: <WhyFields valueId={d.whyValueId} text={d.whyText} onValue={(v) => set('whyValueId', v)} onText={(x) => set('whyText', x)} errors={errors} showErrors={tried} suggest={suggest} />,
+      body: <WhyFields valueId={d.whyValueId} text={d.whyText} onValue={(v) => set('whyValueId', v)} onText={(x) => set('whyText', x)} errors={errors} showErrors={tried} />,
     },
     {
       letter: 'T',
@@ -695,7 +675,7 @@ export function DateFields({ d, set, err }: { d: GoalDraft; set: SetField; err: 
   )
 }
 
-function Compact({ d, set, patch, errors, onSave, top, suggest }: FormProps) {
+function Compact({ d, set, patch, errors, onSave, top }: FormProps) {
   const [tried, setTried] = useState(false)
   const outcome = d.goalKind === 'outcome'
   const submit = () => (isValid(errors) ? onSave() : setTried(true))
@@ -732,7 +712,7 @@ function Compact({ d, set, patch, errors, onSave, top, suggest }: FormProps) {
       </section>
       <section className="card pad smart-section">
         <SmartHead k="R" />
-        <WhyFields valueId={d.whyValueId} text={d.whyText} onValue={(v) => set('whyValueId', v)} onText={(x) => set('whyText', x)} errors={errors} showErrors={tried} suggest={suggest} />
+        <WhyFields valueId={d.whyValueId} text={d.whyText} onValue={(v) => set('whyValueId', v)} onText={(x) => set('whyText', x)} errors={errors} showErrors={tried} />
       </section>
       <section className="card pad smart-section">
         <SmartHead k="T" />

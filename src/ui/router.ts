@@ -37,11 +37,17 @@ function restoreScroll(y: number) {
 
 /** Set while unwinding the stack to a tab: where to land once the browser gets there. */
 let pendingRoot: string | null = null
+/** And a screen to open on top of that tab, if any. */
+let pendingNext: string | null = null
 
 window.addEventListener('popstate', () => {
   if (pendingRoot != null) {
     history.replaceState({ depth: 0 }, '', pendingRoot)
     pendingRoot = null
+    if (pendingNext != null) {
+      history.pushState({ depth: 1 }, '', pendingNext)
+      pendingNext = null
+    }
     notify()
     window.scrollTo(0, 0)
     return
@@ -66,6 +72,24 @@ export function navigate(to: string, opts: { replace?: boolean } = {}) {
     rememberScroll()
     history.pushState({ depth: depth() + 1 }, '', to)
   }
+  notify()
+  window.scrollTo(0, 0)
+}
+
+/**
+ * Opens `to` as if it had been reached from the tab `root`: everything in
+ * between leaves the history, so Back from `to` lands on the tab.
+ */
+export function navigateFrom(root: string, to: string) {
+  const d = depth()
+  if (d > 0) {
+    pendingRoot = root
+    pendingNext = to
+    history.go(-d)
+    return
+  }
+  history.replaceState({ depth: 0 }, '', root)
+  history.pushState({ depth: 1 }, '', to)
   notify()
   window.scrollTo(0, 0)
 }
