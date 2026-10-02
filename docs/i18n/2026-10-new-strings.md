@@ -21,31 +21,23 @@ Added with templates, Looking back, the new Settings and the release note. The E
 | `set.signInSub` | Keeps a copy of your data in your private database. | Guarda uma cópia dos seus dados no seu banco de dados privado. |
 | `set.exportRow` | Export a backup | Exportar um backup |
 | `set.importRow` | Import a backup | Importar um backup |
-| `set.importSub` | Merges a backup file with what’s here. Newer records win. | Junta um arquivo de backup com o que já está aqui. Os registros mais novos valem. |
+| `set.importSub` | Merges a backup file with what’s here. Newer records win. | Junta um arquivo de backup com o que já está aqui. Os registros mais novos têm preferência. |
 | `set.version` | Version | Versão |
 | `set.install` | Install the app | Instalar o app |
 | `set.installSub` | Opens from your home screen, like any app. | Abre pela tela inicial, como qualquer app. |
 | `set.madeBy` | Made by Pedro Daccache | Feito por Pedro Daccache |
 | `tpl.button` | Start from a template | Começar de um modelo |
-| `tpl.buttonSub` | A ready goal to adjust, some with habits and projects | Uma meta pronta para ajustar, algumas com hábitos e projetos |
+| `tpl.buttonSub` | A ready-to-use goal, some with habits and projects | Uma meta pronta para usar, algumas com hábitos e projetos |
 | `tpl.title` | Templates | Modelos |
 | `tpl.forYou` | For you | Para você |
 | `tpl.more` | More | Mais |
 | `tpl.from` | From a template | De um modelo |
-| `tpl.alsoAdds` | Saving also adds: | Ao salvar, também entram: |
-| `tpl.habitStarts` | {name}, {cadence}, starting {when} | {name}, {cadence}, começando {when} |
-| `tpl.habitLine` | {name}, {cadence} | {name}, {cadence} |
-| `tpl.projectLine` | {name}, {steps} | {name}, {steps} |
-| `tpl.clear` | Start blank instead | Começar do zero |
-| `tpl.whyHint` | The why is yours to write: it’s what you’ll read on Today. | O porquê é você quem escreve: é o que você vai ler em Hoje. |
 | `tpl.preps.one` | {n} prep | {n} preparo |
 | `tpl.preps.other` | {n} preps | {n} preparos |
 | `tpl.habits.one` | {n} habit | {n} hábito |
 | `tpl.habits.other` | {n} habits | {n} hábitos |
 | `tpl.projects.one` | {n} project | {n} projeto |
 | `tpl.projects.other` | {n} projects | {n} projetos |
-| `tpl.steps.one` | {n} step | {n} etapa |
-| `tpl.steps.other` | {n} steps | {n} etapas |
 | `tpl.saved` | Saved, with its habits and projects. It waits in the backlog. | Salva, com seus hábitos e projetos. Ela espera na fila. |
 | `tpl.gym.title` | Exercise regularly | Fazer exercício com frequência |
 | `tpl.gym.what` | At least 45 minutes of exercise | Pelo menos 45 minutos de exercício |
@@ -83,7 +75,7 @@ Added with templates, Looking back, the new Settings and the release note. The E
 | `tpl.focus.title` | Focused work | Trabalho com foco |
 | `tpl.focus.what` | At least 90 minutes of work with the phone away | Pelo menos 90 minutos de trabalho com o celular longe |
 | `tpl.focus.short` | focus | foco |
-| `tpl.focus.why` | So the important work gets done, not just the urgent. | Para o trabalho importante sair, não só o urgente. |
+| `tpl.focus.why` | So the important work gets done. | Para o trabalho importante ficar pronto. |
 | `tpl.focus.prep` | Write down tomorrow’s one main task | Anotar a tarefa principal de amanhã |
 | `tpl.read.title` | Read 10 books a year | Ler 10 livros por ano |
 | `tpl.read.what` | Read at least 20 pages | Li pelo menos 20 páginas |
@@ -152,12 +144,11 @@ Added with templates, Looking back, the new Settings and the release note. The E
 | `tpl.tidy.what` | At least 30 minutes tidying the house | Pelo menos 30 minutos arrumando a casa |
 | `tpl.tidy.short` | tidy | arrumação |
 | `tpl.tidy.why` | So home feels like rest, not another to-do. | Para a casa ser descanso, não mais uma tarefa. |
-| `tpl.change` | Change | Trocar |
-| `tpl.habit` | Habit | Hábito |
 | `news.tplTitle` | Start from a template | Comece de um modelo |
-| `news.tplText` | New goal now offers ready goals to adjust, picked from what you wanted to work on. Some come with habits and projects. | Nova meta agora oferece metas prontas para ajustar, escolhidas pelo que você queria trabalhar. Algumas já vêm com hábitos e projetos. |
+| `news.tplText` | You can now pick ready-to-use goals based on what you wanted to work on. | Agora você pode escolher metas prontas para usar, a partir do que você queria melhorar. |
 | `news.tplAction` | Try it | Experimentar |
-| `news.backTitle` | Looking back | Olhando para trás |
-| `news.backText` | A finished goal now shows what happened and your journal right at the top of its page. | Uma meta encerrada agora mostra o que aconteceu e o seu diário logo no topo da página. |
-| `news.paceTitle` | Project pace on Today | Ritmo dos projetos em Hoje |
-| `news.paceText` | A project’s next step says whether it’s on pace, behind or overdue. | A próxima etapa de um projeto mostra se ele está no ritmo, atrasado ou vencido. |
+| `intro.demoWhy` | So I have energy to play with my kids. | Disposição para brincar com meus filhos. |
+| `intro.demoWhat` | At least 30 minutes of exercise | Mínimo 30 minutos de exercício |
+| `plan.waitsForGoal` | Starts with its goal | Começa junto com a meta |
+| `tpl.another` | Choose another | Escolher outra |
+| `tpl.editLater` | Everything here can be changed later, on the goal’s page. | Dá para mudar tudo isso depois, na página da meta. |

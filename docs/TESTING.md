@@ -91,7 +91,7 @@ On a finish-line goal, go to Supporting habits → **Add**, with **Starts** 2 we
 
 **15a. From a template**
 Go to Plan → Goals → **+** → **Start from a template** → *Get a new job*.
-- **Expect:** the areas picked in the intro are under **For you**. The form is filled; the card lists 2 habits (applications starting in 3 weeks) and 2 projects. At R, the value is one tap away and the why shows an example but stays empty. After saving, the goal page has both habits with their preps and both projects. **Start blank instead** empties the form.
+- **Expect:** the areas picked in the intro are under **For you**. Tapping it shows one screen: value, reason, deadline, 2 supporting habits (applications starting in 3 weeks) with preps, and 2 projects with their steps. **Choose another** reopens the list. **Save goal** opens the new goal (in the backlog) with all of it. Its projects aren't on Today, and Plan → Projects says *Starts with its goal*. **Start** the goal a few days later (pretend today): the projects appear, their dates moved by the days they waited.
 
 **15b. First value, mid-goal**
 With no values yet (fresh install, skip the intro), create a goal and reach R.
@@ -247,7 +247,7 @@ In Portuguese, write *What counts* as "Pelo menos 30 minutos de exercício"; in 
 
 **L6. Release note**
 After this version reaches a phone that already used the app, open it (or bring it back to the front).
-- **Expect:** the app reloads once and shows *What's new* with the Brazil flag and **Change language**, which opens Settings. Closed once, it doesn't come back. A brand-new user doesn't see it.
+- **Expect:** the app reloads once and shows *What's new*, oldest note first: the Brazil flag with **Change language** (if not seen yet), then templates. Closed once, it doesn't come back. A brand-new user sees it after the intro, never during it. A note stops showing 10 days after its date, seen or not.
 
 ## Sync
 

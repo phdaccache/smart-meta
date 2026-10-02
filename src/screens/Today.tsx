@@ -257,7 +257,7 @@ function ItemRow({ item, date, onOpen }: { item: TodayItem; date: DateStr; onOpe
           {item.detail && <div className="item-detail">{item.detail}</div>}
           {item.due && <span className={`due due-${item.due.tone}`}>{item.due.label}</span>}
           {item.pace && <span className={`due item-pace due-${PACE_TONE[item.pace]}`}>{tk(PACE_LABEL[item.pace])}</span>}
-          {item.step && (
+          {item.step && !item.pace && (
             <div className="stepdots" aria-hidden="true">
               {Array.from({ length: item.step.total }, (_, i) => <i key={i} className={i < item.step!.index - (item.done ? 0 : 1) ? 'on' : ''} />)}
             </div>

@@ -105,7 +105,7 @@ export function App() {
         </>
       )}
       <QuickAdd />
-      <WhatsNew firstRun={onboarding} />
+      <WhatsNew waiting={onboarding || path.startsWith('/welcome')} />
       <Toaster />
     </Fragment>
   )

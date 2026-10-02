@@ -8,8 +8,9 @@ import type { DateStr, Period } from './types'
 /**
  * Ready-made goals to start from, in the spirit of the sample data: a goal
  * with its habit and preps, and for the bigger ones the supporting habits and
- * projects that make them real. Their text lives in the language files under
- * `tpl.<key>`; the why is left to the person (only a placeholder).
+ * projects that make them real. Everything comes filled in, a generic why
+ * included, so a template can be saved as is and adjusted later. Their text
+ * lives in the language files under `tpl.<key>`.
  */
 
 type Shape = Pick<CommitmentDraft, 'shape' | 'checkinType' | 'period' | 'times' | 'targetValue' | 'targetTime' | 'comparator'>
@@ -128,7 +129,7 @@ export interface Template {
   title: string
   /** The value it's usually for, offered when picking one. */
   value: string
-  /** An example of a reason, as a placeholder: the real one has to be theirs. */
+  /** A reason that fits most people; theirs to change later. */
   why: string
   /** Everything the goal form holds, starting on `start`. */
   draft: (start: DateStr) => GoalDraft
@@ -175,7 +176,7 @@ function template(s: Spec): Template {
     get why() { return text(s.key, 'why') },
     draft(start) {
       const base = emptyGoalDraft(start)
-      const shared = { title: text(s.key, 'title'), tolerancePct: s.tolerancePct ?? 80, startDate: start, targetDate: addMonths(start, s.months) }
+      const shared = { title: text(s.key, 'title'), whyText: text(s.key, 'why'), tolerancePct: s.tolerancePct ?? 80, startDate: start, targetDate: addMonths(start, s.months) }
       if (outcome) return { ...base, ...shared, goalKind: 'outcome', doneWhen: text(s.key, 'what'), graceDays: s.graceDays ?? 0 }
       return { ...base, ...habitDraft(s.key, '', s.habit!.shape), ...shared, goalKind: 'habit', preps: prepDraft(s.key, '', s.habit!.prep) }
     },

@@ -89,9 +89,11 @@ the first intro screen. It is kept on the device only.
 
 When something new ships that people should know about, add a release at the
 top of `RELEASES` in `src/lib/releases.ts` (a new id, an optional icon, and
-`news.` texts in both language files). After the update, the app shows it
-once, the first time it opens, then never again on that phone. First-time users
-don't see older notes. Fixes don't need one.
+`news.` texts in both language files) with `date` set to the day it ships.
+After the update, the app shows what that phone hasn't seen, oldest first, once,
+then never again. New users see it after the intro, not during it. A note stops
+showing 10 days after its date, seen or not (`FRESH_DAYS`); Settings → What's
+new still lists every note. Fixes don't need one.
 
 The app looks for a new version when it opens and whenever it comes back to
 the front, so nobody needs to close it: the update installs, the app reloads

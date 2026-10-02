@@ -7,7 +7,7 @@ import {
   activeEntries, goalPct, missPrompt, outcomeTime, scoreCommitment, statusFor, withoutDismissed, type MissPrompt,
   type ScoreContext,
 } from './scoring'
-import type { Snapshot } from './today'
+import { waitsForGoal, type Snapshot } from './today'
 import type {
   Commitment, DateStr, Displacement, Entry, Goal, ID, MissReason, Project, Revision, Status, WeekReview,
 } from './types'
@@ -383,7 +383,7 @@ function suggest(g: Goal, cs: Commitment[], input: ReviewInput, week: Span, entr
 function stalledProjects(snap: Snapshot, entries: Entry[], today: DateStr): StalledProject[] {
   const out: StalledProject[] = []
   for (const p of live(snap.projects)) {
-    if (p.state !== 'active') continue
+    if (p.state !== 'active' || waitsForGoal(p, snap.goals, today)) continue
     const steps = live(snap.tasks).filter((t) => t.projectId === p.id)
     const done = entries.filter((e) => e.subjectType === 'task' && e.outcome === 'hit' && steps.some((s) => s.id === e.subjectId))
     const remaining = steps.filter((s) => !done.some((e) => e.subjectId === s.id)).length

@@ -10,8 +10,8 @@ describe('templates', () => {
     it(`are goals the form would accept, with valid habits and projects (${lang})`, () => {
       inLang(lang, () => {
         for (const x of TEMPLATES) {
-          // The value and the why are the person's own: everything else comes ready.
-          const errors = validateGoal({ ...x.draft(start), whyValueId: 'v', whyText: 'mine' })
+          // Everything comes ready but the value's id, made when it's saved.
+          const errors = validateGoal({ ...x.draft(start), whyValueId: 'v' })
           expect(errors, x.key).toEqual({})
           for (const h of x.habits) expect(isValid(validateCommitment(h.draft)), `${x.key} habit`).toBe(true)
           for (const p of x.projects) {

@@ -108,6 +108,15 @@ export interface DayView {
 }
 
 /** Shown goals: those still generating daily work. */
+/**
+ * A project waits with its goal: while the goal is in the backlog (or not at
+ * its start date yet) the project stays off Today, Review and Insights.
+ */
+export function waitsForGoal(p: Project, goals: Goal[], date: DateStr): boolean {
+  const g = p.goalId ? goals.find((x) => x.id === p.goalId && !x.deletedAt) : undefined
+  return !!g && (g.state === 'backlog' || g.startDate > date)
+}
+
 export const isLiveGoal = (g: Goal) => !g.deletedAt && (g.state === 'active' || g.state === 'maintenance')
 
 export function buildDay(
@@ -305,7 +314,7 @@ export function buildDay(
   // ——— standalone projects ———
 
   for (const p of s.projects) {
-    if (p.deletedAt || p.state !== 'active' || projectsInGoals.has(p.id)) continue
+    if (p.deletedAt || p.state !== 'active' || projectsInGoals.has(p.id) || waitsForGoal(p, s.goals, date)) continue
     const items = stepItems(p, false)
     if (!items.length) continue
     const goal = p.goalId ? s.goals.find((g) => g.id === p.goalId) : undefined

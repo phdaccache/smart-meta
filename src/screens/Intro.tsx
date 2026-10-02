@@ -337,7 +337,9 @@ function IntroGoal({ step }: { step: Step }) {
   const snap = useSnapshot()
   const [tried, setTried] = useState(false)
   const [busy, setBusy] = useState(false)
-  const [other, setOther] = useState(false)
+  // Adding a value of their own, as in New goal: a name, then Add.
+  const [adding, setAdding] = useState(false)
+  const [newValue, setNewValue] = useState('')
 
   if (s.goalId) return <IntroPlan />
 
@@ -456,18 +458,33 @@ function IntroGoal({ step }: { step: Step }) {
       if (n.trim() && !names.some((x) => x.toLowerCase() === n.trim().toLowerCase())) names.push(n.trim())
     }
     const chosen = (n: string) => s.valueName.trim().toLowerCase() === n.toLowerCase()
+    const open = adding || names.length === 0
+    const add = () => {
+      if (!newValue.trim()) return
+      setIntro({ valueName: newValue.trim() })
+      setNewValue('')
+      setAdding(false)
+    }
     body = (
       <>
         <Field label={t('form.value')}>
-          <div className="chips">
-            {names.map((n) => (
-              <Chip key={n} selected={chosen(n) && !other} onClick={() => { setOther(false); setIntro({ valueName: chosen(n) ? '' : n }) }}>{n}</Chip>
-            ))}
-            <Chip selected={other} onClick={() => { setOther(!other); setIntro({ valueName: '' }) }}>{t('intro.other')}</Chip>
-          </div>
-          {other && (
-            <input style={{ marginTop: 10 }} autoFocus aria-label={t('intro.yourValue')} placeholder={t('intro.phValue')} value={s.valueName}
-              onChange={(e) => setIntro({ valueName: e.target.value })} />
+          {names.length > 0 && (
+            <div className="chips">
+              {names.map((n) => (
+                <Chip key={n} selected={chosen(n)} onClick={() => setIntro({ valueName: chosen(n) ? '' : n })}>{n}</Chip>
+              ))}
+              {!open && <Chip selected={false} onClick={() => setAdding(true)}>{t('form.newValue')}</Chip>}
+            </div>
+          )}
+          {open && (
+            <>
+              {names.length === 0 && <p className="field-hint" style={{ marginTop: 0, marginBottom: 8 }}>{t('form.firstValueHint')}</p>}
+              <form className="inline-add" onSubmit={(e) => { e.preventDefault(); add() }} style={names.length ? { marginTop: 10 } : undefined}>
+                <input value={newValue} aria-label={t('form.valueName')} placeholder={t('intro.phValue')} autoFocus={adding}
+                  onChange={(e) => setNewValue(e.target.value)} />
+                <button type="submit" className="btn outline" disabled={!newValue.trim()}>{t('common.add')}</button>
+              </form>
+            </>
           )}
         </Field>
         <Field label={t('form.why')} htmlFor="why">

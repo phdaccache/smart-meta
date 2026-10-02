@@ -1,4 +1,4 @@
-import { addDays, formatTime, parseTime } from '../lib/dates'
+import { addDays, diffDays, formatTime, logicalDate, parseTime } from '../lib/dates'
 import { commitmentRevision } from '../lib/revisions'
 import type { CommitmentDraft, GoalDraft, PrepDraft } from '../lib/draft'
 import { meetsTarget, type MissPrompt } from '../lib/scoring'
@@ -209,6 +209,27 @@ export async function setGoalState(goal: Goal, state: GoalState, reason?: string
   if (state === 'abandoned') changes.abandonReason = reason?.trim() || null
   if (state === 'maintenance') changes.targetDate = null
   await updateGoal(goal, changes)
+  if (goal.state === 'backlog' && state === 'active') await shiftWaitingProjects(goal)
+}
+
+/**
+ * Projects wait while their goal is in the backlog. When it starts, those with
+ * nothing done move their date by the days they waited, so a template's
+ * "3 weeks for the CV" still means 3 weeks from now.
+ */
+async function shiftWaitingProjects(goal: Goal) {
+  const { rolloverHour, devToday } = await getSettings()
+  const today = devToday ?? logicalDate(new Date(), rolloverHour)
+  const projects = (await db.projects.where('goalId').equals(goal.id).toArray()).filter((p) => !p.deletedAt && p.state === 'active')
+  const writes: { c: Collection; r: Base }[] = []
+  for (const p of projects) {
+    const waited = Math.max(0, diffDays(p.createdAt.slice(0, 10), today))
+    if (!waited) continue
+    const steps = (await db.tasks.where('projectId').equals(p.id).toArray()).map((x) => x.id)
+    const touched = (await db.entries.toArray()).some((e) => !e.deletedAt && steps.includes(e.subjectId))
+    if (!touched) writes.push({ c: 'projects', r: { ...p, targetDate: addDays(p.targetDate, waited) } as Project })
+  }
+  if (writes.length) await putAll(writes)
 }
 
 /** Genuinely removes a goal and everything it generated. For mistakes only. */

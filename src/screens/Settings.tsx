@@ -301,7 +301,7 @@ function DevSection({ devToday }: { devToday: string | null }) {
     }
   }
   return (
-    <Section title="Developer">
+    <Section title={<span className="title-row">Developer<InfoTip label="About Developer">Just for testing the app. Nothing here is needed day to day.</InfoTip></span>}>
       <div className="card list settings">
         <div className="list-row">
           <div className="text">

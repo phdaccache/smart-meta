@@ -4,7 +4,7 @@ import { t } from '../i18n'
 import { dayMonth, relativeDay } from '../lib/dates'
 import { cadenceText } from '../lib/describe'
 import { activeEntries, summarizeGoal, type ScoreContext } from '../lib/scoring'
-import type { Snapshot } from '../lib/today'
+import { waitsForGoal, type Snapshot } from '../lib/today'
 import type { Goal, Project } from '../lib/types'
 import { InfoTip, Screen, Section, Segmented, Sheet, StatusInfo, StatusWord, toast, WeekBar } from '../ui/components'
 import { useAllGoalReviews, useSettings, useSnapshot, useToday } from '../ui/hooks'
@@ -267,7 +267,9 @@ function ProjectRow({ project, snap, today }: { project: Project; snap: Snapshot
         <div className="title">{project.title}</div>
         <div className="sub">
           {total ? t('plan.stepsOf', { done, total }) : t('plan.noSteps')}
-          {project.state === 'active'
+          {project.state === 'active' && waitsForGoal(project, snap.goals, today)
+            ? <> · {t('plan.waitsForGoal')}</>
+            : project.state === 'active'
             ? <> · <span style={overdue ? { color: 'var(--at-risk)' } : undefined}>{t('today.due', { when: relativeDay(project.targetDate, today) })}</span></>
             : project.state === 'archived' ? t('plan.setAside') : t('plan.done')}
           {goal && ` · ${goal.title}`}

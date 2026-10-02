@@ -4,7 +4,7 @@ import { reasonLower } from './describe'
 import { reviewWeek } from './review'
 import { commitmentEdit, revisionValue } from './revisions'
 import { activeEntries, evaluateThreshold, meetsTarget, pct, scoreCommitment, thresholdAggregate, type Score, type ScoreContext } from './scoring'
-import { projectPace, type ProjectPace, type Snapshot } from './today'
+import { projectPace, waitsForGoal, type ProjectPace, type Snapshot } from './today'
 import type {
   Commitment, DateStr, Displacement, Entry, Goal, GoalState, ID, MissReason, Prep, Project, Revision, Value, WeekReview,
 } from './types'
@@ -689,7 +689,7 @@ export function burnup(p: Prepared, project: Project): Burnup {
 export function burnups(p: Prepared): Burnup[] {
   const since = addDays(p.ctx.today, -183)
   return live(p.snap.projects)
-    .filter((pr) => pr.state === 'active' || pr.state === 'done')
+    .filter((pr) => pr.state === 'done' || (pr.state === 'active' && !waitsForGoal(pr, p.snap.goals, p.ctx.today)))
     .map((pr) => burnup(p, pr))
     .filter((b) => b.total > 0 && (b.project.state === 'active' || (b.done.at(-1) ?? '') >= since))
     .sort((a, b) => (a.project.state === b.project.state ? a.project.targetDate.localeCompare(b.project.targetDate) : a.project.state === 'active' ? -1 : 1))

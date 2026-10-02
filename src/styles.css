@@ -348,13 +348,8 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 
 /* new goal: templates */
 .template-btn { margin-bottom: 18px; }
-.template-card { margin-bottom: 18px; }
-.template-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.template-head .title { font-weight: 650; font-size: 17px; }
-.template-head .link-btn { min-height: 0; padding: 2px 0; }
-.template-extras { list-style: none; margin: 6px 0 4px; padding: 0; display: grid; gap: 8px; font-size: 14px; }
-.template-extras li { display: flex; align-items: baseline; gap: 8px; }
-.template-extras .badge { flex: none; }
+.template-title { font: 700 24px/1.2 var(--font-display); letter-spacing: -0.01em; margin: 2px 0 14px; }
+.template-steps { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 4px; font-size: 15px; }
 .tpl-group { font-size: 13px; font-weight: 650; color: var(--ink-2); margin: 18px 4px 8px; }
 .tpl-group:first-child { margin-top: 4px; }
 
@@ -953,6 +948,11 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .demo-status { margin-left: auto; font-size: 13px; font-weight: 600; color: var(--on-track); opacity: 0; transition: opacity 0.3s; white-space: nowrap; }
 .demo-status.show { opacity: 1; }
 
+/* The welcome demo: the reason and the habit each fit one line on a 375px phone, in both languages. */
+.welcome .demo .group-why { font-size: 16px; }
+.welcome .demo .item-title { font-size: 15px; }
+.welcome .demo .item { padding-right: 8px; }
+
 /* The note */
 .creator {
   display: block; width: 76px; height: 76px; margin: 0 auto 14px; border-radius: 50%; object-fit: cover;
@@ -963,7 +963,7 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .note p + p { margin-top: 10px; }
 .note-page .intro-nav { padding-top: 16px; }
 .signature {
-  width: 130px; aspect-ratio: 600 / 120; margin: 12px 0 0; background: var(--ink);
+  width: 130px; aspect-ratio: 600 / 126; margin: 12px 0 0; background: var(--ink);
   -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
 }
 

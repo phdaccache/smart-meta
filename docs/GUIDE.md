@@ -36,9 +36,11 @@ The app speaks English or Brazilian Portuguese and follows the phone's language.
 
 New goals wait in the **backlog**. Open the goal and tap **Start**.
 
-**Or start from a template.** The New goal screen begins with **Start from a template**: ready goals to adjust, the areas you picked in the intro first. The bigger ones come with their supporting habits (with preps, some starting a few weeks later) and projects with steps; the form lists what saving adds. Only the value and the why are left to you. The value is one tap away, and the why shows an example, but it has to be yours: it's what Today shows you.
+**Or start from a template.** The New goal screen begins with **Start from a template**: ready-to-use goals, the areas you picked in the intro first. Tap one to see all of it on one screen: the goal with its value and a reason, its habit and preps, and for the bigger ones the supporting habits (some starting a few weeks later) and projects with steps. **Save goal** saves it all as is (the value is created if you don't have it); **Choose another** goes back to the list. Change anything later on the goal's page.
 
-If you have no values yet, add one right there in the R step (or tap **+ New value** next to the ones you have); the goal you're writing stays as it is.
+A goal's projects wait with it: while the goal is in the backlog they stay off Today and Review (Plan → Projects says "Starts with its goal"). When you start the goal, projects with nothing done yet move their date by the days they waited.
+
+If you have no values yet, add one right there in the R step (or tap **+ New value** next to the ones you have); the goal you're writing stays as it is. The intro works the same way.
 
 **2. Add supporting habits** on the goal page (Supporting habits → **Add**). Each one has its own start date:
 - LeetCode: "Solved at least 2 LeetCode problems", 4× a week, starting now.
