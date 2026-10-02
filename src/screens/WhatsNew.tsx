@@ -3,13 +3,14 @@ import { t, tk } from '../i18n'
 import { RELEASES, unseen, type Release, type ReleaseIcon } from '../lib/releases'
 import { Sheet } from '../ui/components'
 import { useSettings, useToday } from '../ui/hooks'
-import { FlagBR, IconTemplate } from '../ui/icons'
+import { FlagBR, IconSparkle, IconTemplate } from '../ui/icons'
 import { navigate } from '../ui/router'
 
 const STORE = 'seen-release'
 const ICONS: Record<ReleaseIcon, ReactNode> = {
   'flag-br': <FlagBR />,
   template: <IconTemplate width={22} height={22} />,
+  tutorial: <IconSparkle width={22} height={22} />,
 }
 
 function readSeen(): string | null {
@@ -36,12 +37,14 @@ function markSeen() {
 export function WhatsNew({ waiting }: { waiting: boolean }) {
   const settings = useSettings()
   const today = useToday(settings.rolloverHour)
-  const [news, setNews] = useState(() => unseen(readSeen(), today))
+  const [seen, setSeen] = useState(readSeen)
+  // Worked out on each render: settings (when the intro was last done) can arrive after the first one.
+  const news = unseen(seen, today, RELEASES, settings.introAt)
   if (waiting || news.length === 0) return null
 
   const close = () => {
     markSeen()
-    setNews([])
+    setSeen(RELEASES[0]?.id ?? null)
   }
   return <ReleaseNotes open releases={news} onClose={close} />
 }

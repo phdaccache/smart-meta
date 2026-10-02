@@ -248,7 +248,7 @@ In Portuguese, write *What counts* as "Pelo menos 30 minutos de exercício"; in 
 
 **L6. Release note**
 After this version reaches a phone that already used the app, open it (or bring it back to the front).
-- **Expect:** the app reloads once and shows *What's new*, oldest note first: the Brazil flag with **Change language** (if not seen yet), then templates. Closed once, it doesn't come back. A brand-new user sees it after the intro, never during it. A note stops showing 10 days after its date, seen or not.
+- **Expect:** the app reloads once and shows *What's new*, oldest note first: the Brazil flag with **Change language** (if not seen yet), then templates, then *A new tutorial* with **Watch it** (opens the intro). Closed once, it doesn't come back. A brand-new user sees it after the intro, never during it, and without the tutorial note; so does anyone who replays the intro before seeing it. A note stops showing 10 days after its date, seen or not.
 
 ## Sync
 

@@ -7,7 +7,7 @@ import { db } from '../db/db'
 import { commitmentFields, createGoal, ensureValue } from '../db/repo'
 import { getSettings, setSettings } from '../db/settings'
 import { getLang, setLangSetting, t, tk, type Key } from '../i18n'
-import { dayMonth, diffDays } from '../lib/dates'
+import { dayMonth, diffDays, toDateStr } from '../lib/dates'
 import { cadenceText } from '../lib/describe'
 import { doneWhenProblem, emptyGoalDraft, validateCommitment, validatePrep, type Errors, type GoalDraft } from '../lib/draft'
 import {
@@ -83,7 +83,8 @@ function useIntro(): IntroState {
 /** Skip or finish: first run leaves the Getting started card on Today. */
 async function leaveIntro() {
   const s = await getSettings()
-  if (!s.onboarded) await setSettings({ onboarded: true, gettingStarted: true })
+  const introAt = toDateStr(new Date())
+  await setSettings(s.onboarded ? { introAt } : { onboarded: true, gettingStarted: true, introAt })
   resetIntro()
   navigate('/')
 }
@@ -200,10 +201,14 @@ const MESS: { x: number; y: number; r: number }[] = [
   { x: 2, y: 160, r: 4 },
 ]
 const MESS_WORDS: Key[] = ['intro.mess.1', 'intro.mess.2', 'intro.mess.3', 'intro.mess.4', 'intro.mess.5']
-/** Steps of 600 ms: floating, then a list, then each one ticked, a long look, then back to floating. */
+/**
+ * Steps of 600 ms: floating; moving into line (still pills); turning into a
+ * list once they're there; each one ticked; a long look; back to floating.
+ */
 const SNAP_AT = 4
-const TICKS_AT = [8, 9, 10, 11, 12]
-const LOOP = 21
+const LISTED_AT = 8
+const TICKS_AT = [10, 11, 12, 13, 14]
+const LOOP = 23
 
 /**
  * Goals floating around loose, tilted and overlapping, then snapping into a
@@ -218,8 +223,9 @@ function WelcomeDemo() {
     return () => clearInterval(timer)
   }, [])
   const plan = step >= SNAP_AT
+  const listed = step >= LISTED_AT
   return (
-    <div className={`mess ${plan ? 'plan' : ''}`} aria-hidden="true">
+    <div className={`mess ${plan ? 'plan' : ''} ${listed ? 'listed' : ''}`} aria-hidden="true">
       {MESS_WORDS.map((k, i) => {
         const m = MESS[i]
         const ticked = plan && step >= TICKS_AT[i]
@@ -366,7 +372,7 @@ function IntroGoal({ step }: { step: Step }) {
       const valueId = state.valueName.trim() ? await ensureValue(state.valueName) : ''
       const goal = await createGoal({ ...draft, whyValueId: valueId }, { start: true })
       const st = await getSettings()
-      if (!st.onboarded) await setSettings({ onboarded: true, gettingStarted: true })
+      await setSettings(st.onboarded ? { introAt: toDateStr(new Date()) } : { onboarded: true, gettingStarted: true, introAt: toDateStr(new Date()) })
       setIntro({ goalId: goal.id })
       navigate('/welcome/plan', { replace: true })
     } finally {

@@ -1019,9 +1019,9 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 /* The welcome: loose goals floating around, then snapping into a list */
 .mess {
   position: relative; height: 222px; margin: 0 0 36px; border-radius: var(--radius); border: 1px solid transparent;
-  transition: border-color 0.5s ease, background 0.5s ease;
+  transition: border-color 0.3s ease, background 0.3s ease;
 }
-.mess.plan { border-color: var(--line); background: var(--surface); }
+.mess.listed { border-color: var(--line); background: var(--surface); transition-duration: 1s; }
 .mess-item {
   position: absolute; white-space: nowrap;
   transition: left 1.4s cubic-bezier(0.45, 0, 0.2, 1), top 1.4s cubic-bezier(0.45, 0, 0.2, 1), transform 1.4s cubic-bezier(0.45, 0, 0.2, 1);
@@ -1029,10 +1029,12 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .mess-float {
   display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; font-size: 15px; font-weight: 550;
   border: 1px solid var(--line-strong); background: var(--surface-2);
-  animation: mess-float 3.2s ease-in-out infinite alternate; transition: border-color 0.4s ease, background 0.4s ease;
+  animation: mess-float 3.2s ease-in-out infinite alternate; transition: border-color 0.3s ease, background 0.3s ease;
 }
 @keyframes mess-float { from { transform: translate(0, -3px); } to { transform: translate(3px, 4px); } }
-.plan .mess-float { animation: none; border-color: transparent; background: transparent; }
+/* Floating stops as they head for the list (the jump hides in the move); they stay pills until they're in place. */
+.plan .mess-float { animation: none; }
+.listed .mess-float { border-color: transparent; background: transparent; transition-duration: 1s; }
 .mess-check {
   flex: none; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--line-strong);
   display: grid; place-items: center; color: var(--bg); transition: background 0.25s, border-color 0.25s;

@@ -24,6 +24,13 @@ describe('release notes', () => {
     expect(unseen('old', '2026-10-31', notes)).toEqual([])
   })
 
+  it('skips a note about the intro for someone who went through it since', () => {
+    const notes = [{ ...r('intro', '2026-10-02'), aboutIntro: true }, r('other')]
+    expect(unseen(null, day, notes, null).map((x) => x.id)).toEqual(['other', 'intro'])
+    expect(unseen(null, day, notes, '2026-09-30').map((x) => x.id)).toEqual(['other', 'intro'])
+    expect(unseen(null, day, notes, '2026-10-02').map((x) => x.id)).toEqual(['other'])
+  })
+
   it('every note has its texts and a unique id', () => {
     expect(new Set(RELEASES.map((x) => x.id)).size).toBe(RELEASES.length)
     for (const item of RELEASES.flatMap((x) => x.items)) {

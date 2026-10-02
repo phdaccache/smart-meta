@@ -1063,6 +1063,9 @@ export const en = {
   // What's new
   'news.title': 'What\'s new',
   'news.ok': 'Got it',
+  'news.tutorialTitle': 'A new tutorial',
+  'news.tutorialText': 'A quicker walk through making a SMART goal, and how preps, reviews and projects fit in.',
+  'news.tutorialAction': 'Watch it',
   'news.ptTitle': 'Now in Portuguese',
   'news.ptText': 'The app follows your phone’s language. You can change it any time in Settings.',
   'news.ptAction': 'Change language',

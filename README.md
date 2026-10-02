@@ -95,7 +95,9 @@ top of `RELEASES` in `src/lib/releases.ts` (a new id, an optional icon, and
 After the update, the app shows what that phone hasn't seen, oldest first, once,
 then never again. New users see it after the intro, not during it. A note stops
 showing 10 days after its date, seen or not (`FRESH_DAYS`); Settings → What's
-new still lists every note. Fixes don't need one.
+new still lists every note. Fixes don't need one. A note marked `aboutIntro`
+(a new intro) skips anyone who went through the intro since its date
+(`introAt` in settings), so a new user isn't told about what they just saw.
 
 The app looks for a new version when it opens and whenever it comes back to
 the front, so nobody needs to close it: the update installs, the app reloads
