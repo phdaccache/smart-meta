@@ -4,7 +4,7 @@ import { t, tlist } from '../i18n'
 import { statusLabel } from '../lib/describe'
 import type { Status } from '../lib/types'
 import { IconCheck, IconChevronLeft, IconClose, IconInfo, IconSettings } from './icons'
-import { goBack, navigate } from './router'
+import { goBack, navigate, pushLayer } from './router'
 
 // ——— screen chrome ———
 
@@ -64,6 +64,13 @@ export function Sheet(props: { open: boolean; onClose: () => void; title: string
   const ref = useRef<HTMLDivElement>(null)
   const titleId = useId()
   const [view, setView] = useState<{ top: number; height: number } | null>(null)
+  const onClose = useRef(props.onClose)
+  onClose.current = props.onClose
+
+  // Android's back button closes the sheet rather than leaving the screen under it.
+  useEffect(() => {
+    if (props.open) return pushLayer(() => onClose.current())
+  }, [props.open])
 
   // iOS doesn't shrink the page for the keyboard; it scrolls it, sometimes leaving the field
   // underneath. Pinning the sheet to the visible area keeps it right above the keyboard.
