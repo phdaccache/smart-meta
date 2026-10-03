@@ -25,9 +25,13 @@ export interface Hit {
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
+/** A page named in a text ([Today]) reads without its brackets on screen. */
+const unmark = (s: string) => s.replace(/\[([^\]]+)\]/g, '$1')
+
 export function compile(table: Record<string, string>): Compiled[] {
   const out: Compiled[] = []
-  for (const [key, template] of Object.entries(table)) {
+  for (const [key, marked] of Object.entries(table)) {
+    const template = unmark(marked)
     const parts = template.split(/\{(\w+)\}/)
     const literal = parts.filter((_, i) => i % 2 === 0).join('')
     const letters = (literal.match(/\p{L}/gu) ?? []).length
@@ -70,7 +74,7 @@ export function looseness(hit: Hit): number {
 /** `template` filled the way the screen filled it before. */
 export function refill(template: string, names: string[], captures: string[]): string {
   const values = Object.fromEntries(names.map((n, i) => [n, captures[i]]))
-  return template.replace(/\{(\w+)\}/g, (m, b: string) => values[b] ?? m)
+  return unmark(template).replace(/\{(\w+)\}/g, (m, b: string) => values[b] ?? m)
 }
 
 /** A plural's other form: x.one ↔ x.other. */

@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createGoal, ensureValue } from '../db/repo'
 import { setSettings } from '../db/settings'
-import { getLang, t, tk, tlist, tn, type Key } from '../i18n'
+import { getLang, type Key, marked, t, tk, tlist, tn } from '../i18n'
 import {
   CHECKIN_TYPES, emptyGoalDraft, isValid, MAX_PREPS, validateGoal, validatePrep,
   type CommitmentDraft, type Errors, type GoalDraft, type PrepDraft,
@@ -10,7 +10,7 @@ import { addMonths, OBSTACLE_PREPS, toleranceLine } from '../lib/intro'
 import type { Period, Shape } from '../lib/types'
 import { templateByKey, templatesFor, type Template } from '../lib/templates'
 import { startTemplate, TemplateGoalScreen } from './TemplateGoal'
-import { Chip, Field, InfoTip, Screen, Segmented, Sheet, Stepper, toast, WeekdayPicker } from '../ui/components'
+import { Chip, Field, InfoTip, PageText, Screen, Segmented, Sheet, Stepper, toast, WeekdayPicker } from '../ui/components'
 import { IconChevronRight, IconClose } from '../ui/icons'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { goBack, navigate, useLocation } from '../ui/router'
@@ -283,7 +283,7 @@ export function WhyText({ text, onText, error, placeholder, labelled = true }: {
       {labelled && <div className="field-label-row"><label className="field-label" htmlFor="why">{t('form.qWhy')}</label></div>}
       <textarea id="why" rows={2} value={text} placeholder={placeholder ?? t('form.phWhy')} aria-label={labelled ? undefined : t('form.qWhy')}
         onChange={(ev) => onText(ev.target.value)} />
-      <div className="field-hint after">{t('intro.seeOnToday')}</div>
+      <div className="field-hint after"><PageText text={marked('intro.seeOnToday')} /></div>
       {error && <div className="field-error" role="alert">{error}</div>}
     </div>
   )
@@ -514,7 +514,7 @@ export function TitleFields({ d, set, err, placeholder, children }: {
       </Field>
       {children}
       {d.goalKind !== 'outcome' && (
-        <Field label={t('form.shortName')} htmlFor="m-label" hint={t('form.shortNameHint')} error={err('label')}>
+        <Field label={t('form.shortName')} htmlFor="m-label" hint={<PageText text={marked('form.shortNameHint')} />} error={err('label')}>
           <input id="m-label" value={d.label} onChange={(e) => set('label', e.target.value)} autoCapitalize="off" />
         </Field>
       )}

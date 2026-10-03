@@ -901,6 +901,14 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .intro-title { font: 700 28px/1.15 var(--font-display); letter-spacing: -0.02em; overflow-wrap: anywhere; text-wrap: balance; }
 .intro-sub { color: var(--ink-2); font-size: 17px; line-height: 1.45; margin: 12px auto 0; max-width: 34ch; text-wrap: balance; }
 .intro-center { text-align: center; margin-top: 24px; }
+/* A page named in a text ("Open [Today]"): highlighted, with the tab's icon, so it reads as a place. */
+.page-ref {
+  display: inline-flex; align-items: center; gap: 3px; padding: 0 6px 0 4px; margin: 0 1px; border-radius: 6px;
+  color: var(--accent); background: var(--accent-soft); font-weight: 600; white-space: nowrap; vertical-align: baseline;
+}
+.page-ref svg { flex: none; stroke-width: 2.2; }
+/* On a filled button or the (i) popup, the page takes their colours. */
+.btn .page-ref, .info-pop .page-ref { color: inherit; background: color-mix(in srgb, currentColor 14%, transparent); }
 .quiet-link { color: var(--ink-3); font-size: 14px; font-weight: 500; min-height: 40px; }
 .intro .eyebrow { margin-bottom: 6px; }
 .intro .smart { margin: 0 0 8px; }
@@ -1031,12 +1039,11 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .mess-float {
   display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; font-size: 15px; font-weight: 550;
   border: 1px solid var(--line-strong); background: var(--surface-2);
-  animation: mess-float 3.2s ease-in-out infinite alternate; transition: border-color 0.3s ease, background 0.3s ease;
+  /* Drifting is driven step by step from the screen (see drift() in Intro.tsx): each move eases into the next. */
+  transition: transform var(--drift, 1800ms) ease-in-out, border-color 0.3s ease, background 0.3s ease;
 }
-@keyframes mess-float { from { transform: translate(0, -3px); } to { transform: translate(3px, 4px); } }
-/* Floating stops as they head for the list (the jump hides in the move); they stay pills until they're in place. */
-.plan .mess-float { animation: none; }
-.listed .mess-float { border-color: transparent; background: transparent; transition-duration: 1s; }
+/* They stay pills until they're in place, then lose the pill. */
+.listed .mess-float { border-color: transparent; background: transparent; transition: transform var(--drift, 900ms) ease-in-out, border-color 1s ease, background 1s ease; }
 .mess-check {
   flex: none; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--line-strong);
   display: grid; place-items: center; color: var(--bg); transition: background 0.25s, border-color 0.25s;

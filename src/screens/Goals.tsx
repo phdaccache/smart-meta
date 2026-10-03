@@ -1,12 +1,12 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { reorderGoals, setGoalState } from '../db/repo'
-import { t } from '../i18n'
+import { marked, t } from '../i18n'
 import { dayMonth, relativeDay } from '../lib/dates'
 import { cadenceText } from '../lib/describe'
 import { activeEntries, summarizeGoal, type ScoreContext } from '../lib/scoring'
 import { waitsForGoal, type Snapshot } from '../lib/today'
 import type { Goal, Project } from '../lib/types'
-import { InfoTip, Screen, Section, Segmented, Sheet, StatusInfo, StatusWord, toast, WeekBar } from '../ui/components'
+import { InfoTip, PageText, Screen, Section, Segmented, Sheet, StatusInfo, StatusWord, toast, WeekBar } from '../ui/components'
 import { useAllGoalReviews, useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconMore, IconPlus } from '../ui/icons'
 import { navigate } from '../ui/router'
@@ -184,7 +184,7 @@ export function GoalStateSheet({ goal, slotOpen, onClose }: { goal: Goal | null;
           <button className="list-row" onClick={() => move('maintenance', t('move.nowMaintenance'))}>
             <div className="text">
               <div className="title">{t('move.toMaintenance')}</div>
-              <div className="sub">{goal.targetDate ? t('move.toMaintenanceSubDate') : t('move.toMaintenanceSub')}</div>
+              <div className="sub"><PageText text={goal.targetDate ? marked('move.toMaintenanceSubDate') : marked('move.toMaintenanceSub')} /></div>
             </div>
           </button>
         )}
@@ -199,7 +199,7 @@ export function GoalStateSheet({ goal, slotOpen, onClose }: { goal: Goal | null;
         <button className="list-row" onClick={() => move('backlog', t('move.paused'))}>
           <div className="text">
             <div className="title">{t('move.pause')}</div>
-            <div className="sub">{t('move.pauseSub')}</div>
+            <div className="sub"><PageText text={marked('move.pauseSub')} /></div>
           </div>
         </button>
       </div>

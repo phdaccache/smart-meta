@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { dismissInReview, markWeekReviewed, setGoalState, updateProject } from '../db/repo'
-import { t, tk, tn, type Key } from '../i18n'
+import { type Key, markedK, t, tk, tn } from '../i18n'
 import { dayMonth, isDateStr, untilText } from '../lib/dates'
 import { promptQuestion, reasonLower } from '../lib/describe'
 import {
@@ -9,7 +9,7 @@ import {
 } from '../lib/review'
 import { missKey, type MissPrompt, type ScoreContext } from '../lib/scoring'
 import type { Commitment, Goal, Prep } from '../lib/types'
-import { Field, InfoTip, Screen, Section, Sheet, StatusWord, toast } from '../ui/components'
+import { Field, InfoTip, PageText, Screen, Section, Sheet, StatusWord, toast } from '../ui/components'
 import { useAllRevisions, useDisplacements, useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
 import { IconCalendar, IconCheck, IconChevronRight } from '../ui/icons'
 import { navigate, useLocation } from '../ui/router'
@@ -272,7 +272,7 @@ function GoalReviewCard(props: { card: GoalCard; onAccept: (s: Suggestion, alt?:
       </div>
       {s && (
         <div className="suggestion">
-          <div className="suggestion-q">{tk(QUESTION[s.kind])}</div>
+          <div className="suggestion-q"><PageText text={markedK(QUESTION[s.kind])} /></div>
           <div className="small muted">{s.evidence}</div>
           <div className="actions">
             <button className="link-btn" onClick={() => props.onDismiss(s)}>{t('common.dismiss')}</button>

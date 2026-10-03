@@ -25,6 +25,10 @@ export function num(n: number): string {
   return lang === 'pt-BR' ? s.replace('.', ',') : s
 }
 
+/** A page's name in a text is marked like [Today]: plain text drops the brackets, PageText shows a page. */
+const PAGE_MARK = /\[([^\]]+)\]/g
+const plain = (s: string) => s.replace(PAGE_MARK, '$1')
+
 function fill(s: string, p?: Record<string, string | number>): string {
   if (!p) return s
   return s.replace(/\{(\w+)\}/g, (m, b: string) => (b in p ? (typeof p[b] === 'number' ? num(p[b]) : p[b]) : m))
@@ -32,18 +36,28 @@ function fill(s: string, p?: Record<string, string | number>): string {
 
 /** The text for `key` in the current language, with its blanks filled. */
 export function t<K extends Key>(key: K, ...params: Params<K>): string {
-  return fill(TABLES[lang][key] ?? en[key], params[0])
+  return fill(plain(TABLES[lang][key] ?? en[key]), params[0])
 }
 
 /** Like t, for a key chosen at run time. */
 export function tk(key: Key, params?: Record<string, string | number>): string {
+  return fill(plain(TABLES[lang][key] ?? en[key]), params)
+}
+
+/** Like t, keeping [Page] marks, for PageText to show them as pages. */
+export function marked<K extends Key>(key: K, ...params: Params<K>): string {
+  return fill(TABLES[lang][key] ?? en[key], params[0])
+}
+
+/** Like marked, for a key chosen at run time. */
+export function markedK(key: Key, params?: Record<string, string | number>): string {
   return fill(TABLES[lang][key] ?? en[key], params)
 }
 
 /** Singular or plural of `key`, with `{n}` filled. */
 export function tn(key: PluralKey, n: number, params: Record<string, string | number> = {}): string {
   const k = `${key}.${n === 1 ? 'one' : 'other'}` as Key
-  return fill(TABLES[lang][k], { ...params, n })
+  return fill(plain(TABLES[lang][k]), { ...params, n })
 }
 
 /** A space-separated list text, like the month names. */

@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
-import { t, tk } from '../i18n'
+import { markedK, t, tk } from '../i18n'
 import { RELEASES, unseen, type Release, type ReleaseIcon } from '../lib/releases'
-import { Sheet } from '../ui/components'
+import { PageText, Sheet } from '../ui/components'
 import { useSettings, useToday } from '../ui/hooks'
 import { FlagBR, IconSparkle, IconTemplate } from '../ui/icons'
 import { navigate } from '../ui/router'
@@ -59,7 +59,7 @@ export function ReleaseNotes({ open, releases, onClose }: { open: boolean; relea
             {item.icon && <span className="news-icon">{ICONS[item.icon]}</span>}
             <div className="news-text">
               <div className="news-title">{tk(item.title)}</div>
-              <p>{tk(item.text)}</p>
+              <p><PageText text={markedK(item.text)} /></p>
               {item.action && (
                 <button className="btn outline" onClick={() => { onClose(); navigate(item.action!.to) }}>{tk(item.action.label)}</button>
               )}

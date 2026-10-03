@@ -1,12 +1,12 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type MouseEvent, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type MouseEvent, type ReactNode } from 'react'
 import creator from '../assets/creator.jpg'
 import signature from '../assets/signature.png'
 import { exportData, shareOrDownload } from '../db/backup'
 import { db } from '../db/db'
 import { commitmentFields, createGoal, ensureValue } from '../db/repo'
 import { getSettings, setSettings } from '../db/settings'
-import { getLang, setLangSetting, t, tk, type Key } from '../i18n'
+import { getLang, type Key, marked, markedK, setLangSetting, t, tk } from '../i18n'
 import { dayMonth, diffDays, toDateStr } from '../lib/dates'
 import { cadenceText } from '../lib/describe'
 import { doneWhenProblem, emptyGoalDraft, validateCommitment, validatePrep, type Errors, type GoalDraft } from '../lib/draft'
@@ -16,7 +16,7 @@ import {
 import { MAINTENANCE_WEEKS } from '../lib/review'
 import { buildDay, type Snapshot } from '../lib/today'
 import type { Commitment, Goal } from '../lib/types'
-import { Badge, CheckButton, Chip, Field, toast } from '../ui/components'
+import { Badge, CheckButton, Chip, Field, PageText, toast } from '../ui/components'
 import { useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
 import { FlagBR, FlagUS, IconCheck, IconChevronLeft, IconClose } from '../ui/icons'
 import { useInstall, useInstalled } from '../ui/install'
@@ -273,6 +273,23 @@ const LISTED_AT = 8
 const TICKS_AT = [8, 9, 10, 11, 12]
 const LOOP = 21
 
+/** The two places each loose goal drifts between, and how many steps one drift takes (a little different for each). */
+const DRIFT = ['translate(0px, -3px)', 'translate(3px, 4px)']
+const driftSteps = (i: number) => 3 + (i % 2)
+
+/**
+ * Where a goal is in its drift. Drifting is a transition between two places, not
+ * an animation, so when the list forms it glides to rest instead of snapping out
+ * of the animation (which made the goals jump a few pixels before they moved).
+ */
+function drift(i: number, step: number, plan: boolean): CSSProperties {
+  if (plan) return { transform: 'translate(0px, 0px)', '--drift': '900ms' } as CSSProperties
+  const every = driftSteps(i)
+  // Each turns on steps 1, 1 + every, … (every other goal a step later), so all set off in the first 1.2 s.
+  const turns = Math.floor((step + every - 1 - (i % 2)) / every)
+  return { transform: DRIFT[(turns + i) % 2], '--drift': `${every * 600}ms` } as CSSProperties
+}
+
 /**
  * Goals floating around loose, tilted and overlapping, then snapping into a
  * plan: a list, with the first ones ticked. The app's promise, before any
@@ -296,7 +313,7 @@ function WelcomeDemo() {
           <div key={k} className="mess-item" style={plan
             ? { left: '16px', top: `${16 + i * 40}px`, transform: 'rotate(0deg)', transitionDelay: `${i * 150}ms` }
             : { left: `${m.x}%`, top: `${m.y}px`, transform: `rotate(${m.r}deg)`, transitionDelay: `${(4 - i) * 120}ms` }}>
-            <span className="mess-float" style={{ animationDelay: `${-i * 0.7}s` }}>
+            <span className="mess-float" style={drift(i, step, plan)}>
               <span className={`mess-check ${ticked ? 'on' : ''}`}>{ticked && <IconCheck width={12} height={12} />}</span>
               {tk(k)}
             </span>
@@ -686,15 +703,15 @@ function IntroPlan() {
   }
   return (
     <Frame onTap={forward} nav={<button className="btn primary" onClick={forward}>
-      {s.short && (shown || !p) ? t('intro.goToday') : t('common.continue')}
+      {s.short && (shown || !p) ? <PageText text={marked('intro.goToday')} /> : t('common.continue')}
     </button>}>
       <div className="intro-head">
         <div className="eyebrow">{t('intro.planEyebrow')}</div>
         <h1 className="intro-title">{waiting ? t('intro.inBacklog', { name }) : starts}</h1>
-        {waiting && <p className="intro-sub">{t('intro.inBacklogSub', { n: settings.goalCap })}</p>}
+        {waiting && <p className="intro-sub"><PageText text={marked('intro.inBacklogSub', { n: settings.goalCap })} /></p>}
       </div>
       <GoalPreview goal={goal} snap={snap} />
-      {!waiting && <p className="intro-hint center">{t(goal.kind === 'outcome' ? 'intro.tickHintFinish' : 'intro.tickHint')}</p>}
+      {!waiting && <p className="intro-hint center"><PageText text={marked(goal.kind === 'outcome' ? 'intro.tickHintFinish' : 'intro.tickHint')} /></p>}
       {p && (
         <div className={`intro-projection ${shown ? 'shown' : ''}`}>
           <p className="proj-line">{p.line}</p>
@@ -752,7 +769,7 @@ function IntroReview() {
               {cards.map((c, i) => (
                 <div key={c.week} className={`suggestion rev-sugg ${i < shown ? 'gone' : ''}`} style={{ zIndex: cards.length - i }}
                   aria-hidden={i !== shown || stage === 0}>
-                  <div className="suggestion-q">{tk(c.q)}</div>
+                  <div className="suggestion-q"><PageText text={markedK(c.q)} /></div>
                   <div className="small muted">{c.evidence}</div>
                   <div className="actions">
                     <span />
@@ -801,7 +818,7 @@ function IntroPieces() {
   const pieces = piecesFor(s.draft, s.example, habitText(s.draft))
   // 0–3: one piece large. 4: all four in the row. 5: inside the goal.
   const [stage, setStage] = useState(() => (reducedMotion() ? 5 : 0))
-  const label = stage >= 5 ? t('intro.goToday') : stage === 4 ? t('intro.pieces.join') : t('common.continue')
+  const label = stage >= 5 ? <PageText text={marked('intro.goToday')} /> : stage === 4 ? t('intro.pieces.join') : t('common.continue')
 
   // Joining: each chip starts where it sat in the row and moves into the goal (FLIP).
   const chips = useRef(new Map<PieceKey, HTMLElement>())

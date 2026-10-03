@@ -3,7 +3,7 @@ import {
   addCommitment, addPrep, deleteGoal, draftFromCommitment, removeCommitment, removePrep, saveGoalReview, setGoalState,
   updateCommitment, updateGoal, updatePrep,
 } from '../db/repo'
-import { t } from '../i18n'
+import { marked, t } from '../i18n'
 import { dayMonth, isDateStr, relativeDay, untilText, weekdaysLabel } from '../lib/dates'
 import { cadenceText } from '../lib/describe'
 import {
@@ -14,7 +14,7 @@ import { activeEntries, summarizeGoal, type ScoreContext } from '../lib/scoring'
 import { dueBadge, type Snapshot } from '../lib/today'
 import { stateLabel } from '../lib/revisions'
 import type { Commitment, Goal, GoalReview, Prep } from '../lib/types'
-import { Field, InfoTip, Screen, Section, Sheet, StatusInfo, StatusWord, toast, TypeToConfirm, WeekBar } from '../ui/components'
+import { Field, InfoTip, PageText, Screen, Section, Sheet, StatusInfo, StatusWord, toast, TypeToConfirm, WeekBar } from '../ui/components'
 import { useGoalReviews, useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconHistory, IconInsights } from '../ui/icons'
 import { goBack, navigate } from '../ui/router'
@@ -240,7 +240,7 @@ function CommitmentCard({ c, snap, today, canRemove, onEdit }: { c: Commitment; 
       <div className="prep-block">
         <div className="prep-block-head">
           <span className="title-row">{t('ins.preps')}
-            <InfoTip label={t('goal.aboutPreps')}>{t('goal.prepsInfo')}</InfoTip>
+            <InfoTip label={t('goal.aboutPreps')}><PageText text={marked('goal.prepsInfo')} /></InfoTip>
           </span>
         </div>
         <div className="list">
@@ -325,7 +325,7 @@ export function CommitmentSheet({ goal, editing, today, onClose }: { goal: Goal;
       <MeasurementFields d={d} set={patch} e={e} showErrors={tried} />
       <div style={{ marginTop: 18 }}><CadenceFields d={d} set={patch} e={e} showErrors={tried} /></div>
       {editing === 'new' && (
-        <Field label={t('goal.starts')} htmlFor="c-start" info={t('goal.startsInfo')}>
+        <Field label={t('goal.starts')} htmlFor="c-start" info={<PageText text={marked('goal.startsInfo')} />}>
           <input id="c-start" type="date" value={start} onChange={(ev) => setStart(ev.target.value)} />
         </Field>
       )}
@@ -339,7 +339,7 @@ function AbandonSheet({ goal, onClose }: { goal: Goal | null; onClose: () => voi
   if (!goal) return null
   return (
     <Sheet open onClose={onClose} title={t('goal.abandonTitle')}>
-      <Field label={t('goal.abandonReason')} htmlFor="abandon-why" info={t('goal.abandonInfo')}>
+      <Field label={t('goal.abandonReason')} htmlFor="abandon-why" info={<PageText text={marked('goal.abandonInfo')} />}>
         <textarea id="abandon-why" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />
       </Field>
       <div className="sheet-actions">

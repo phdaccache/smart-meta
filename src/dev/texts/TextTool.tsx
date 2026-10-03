@@ -28,12 +28,14 @@ const compiledFor = (lang: 'en' | 'pt-BR') => (compiled[lang] ??= compile(tables
  * One place on screen a text was found: a text node, or an attribute like a placeholder.
  * `score` is how likely it's the real one (lower is likelier; see looseness).
  */
-interface Spot { node: Text | Element; attr?: string; hit: Hit; score: number }
+interface Spot { node: Text | Element; attr?: string; hit: Hit; score: number; whole?: boolean }
 
 const ATTRS = ['placeholder', 'aria-label', 'title', 'alt']
 
-function stringsIn(root: Element): { node: Text | Element; attr?: string; text: string }[] {
-  const out: { node: Text | Element; attr?: string; text: string }[] = []
+function stringsIn(root: Element): { node: Text | Element; attr?: string; text: string; whole?: boolean }[] {
+  const out: { node: Text | Element; attr?: string; text: string; whole?: boolean }[] = []
+  // A sentence split by a page chip ("Open [Today] and…") only reads whole across its pieces.
+  if (root.querySelector('.page-ref') && root.textContent?.trim()) out.push({ node: root, text: root.textContent, whole: true })
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
   for (let n = walker.nextNode(); n; n = walker.nextNode()) {
     if ((n as Text).data.trim()) out.push({ node: n as Text, text: (n as Text).data })
@@ -52,10 +54,13 @@ function spotsOf(key: string): Spot[] {
   const c = compiledFor(getLang()).find((x) => x.key === key)
   if (!c) return []
   const spots: Spot[] = []
-  for (const s of stringsIn(document.body)) {
+  // Sentences split by a page chip are read whole, from the element around the chip.
+  const split = [...document.querySelectorAll('.page-ref')].map((c) => c.parentElement).filter((e): e is HTMLElement => !!e)
+  const strings = [...stringsIn(document.body), ...split.map((e) => ({ node: e as Element, attr: undefined, text: e.textContent ?? '', whole: true }))]
+  for (const s of strings) {
     if ((s.node instanceof Text ? s.node.parentElement : s.node)?.closest('.tt-ui')) continue
     const m = c.exact.exec(s.text)
-    if (m) spots.push({ node: s.node, attr: s.attr, hit: { key, names: c.names, captures: m.slice(1), matched: s.text.trim(), exact: true }, score: 0 })
+    if (m) spots.push({ node: s.node, attr: s.attr, hit: { key, names: c.names, captures: m.slice(1), matched: s.text.trim(), exact: true }, score: 0, whole: s.whole })
   }
   return spots
 }
@@ -66,9 +71,10 @@ function spotsIn(root: Element): Spot[] {
     let hits = findKeys(s.text, compiledFor(getLang()))
     // The Developer section and a few names stay in English whatever the language.
     if (!hits.length) hits = findKeys(s.text, compiledFor(otherLang()))
+    if (s.whole) hits = hits.filter((h) => h.exact)
     for (const hit of hits) {
       const score = looseness(hit)
-      spots.push({ node: s.node, attr: s.attr, hit, score })
+      spots.push({ node: s.node, attr: s.attr, hit, score, whole: s.whole })
       // A blank filled with another text ("nesta semana"): that one is editable too.
       for (const filled of hit.captures) {
         const inners = findKeys(filled, compiledFor(getLang())).filter((h) => h.exact)
@@ -96,8 +102,9 @@ function spotsAt(target: Element): Spot[] {
 /** Puts an edited text on screen right away; the app shows the same once it next renders. */
 function repaint(spots: Spot[], key: string) {
   const template = tables[getLang()][key]
-  for (const { node, attr, hit } of spots) {
-    if (hit.key !== key) continue
+  for (const { node, attr, hit, whole } of spots) {
+    // A sentence with a page chip shows the edit when the app next draws it.
+    if (hit.key !== key || whole) continue
     const now = refill(template, hit.names, hit.captures)
     if (attr) {
       const el = node as Element

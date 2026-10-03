@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { check, createProject, createTask, deleteProject, reorderSteps, uncheck, updateProject, updateTask } from '../db/repo'
-import { t } from '../i18n'
+import { marked, t } from '../i18n'
 import { addDays, dayMonth, isDateStr, relativeDay } from '../lib/dates'
 import { activeEntries } from '../lib/scoring'
 import type { Task } from '../lib/types'
-import { CheckButton, Field, Screen, Section, toast, TypeToConfirm } from '../ui/components'
+import { CheckButton, Field, PageText, Screen, Section, toast, TypeToConfirm } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconClose } from '../ui/icons'
 import { Sortable } from '../ui/Sortable'
@@ -42,7 +42,7 @@ export function NewProjectScreen({ goalId: presetGoal }: { goalId?: string | nul
       <Field label={t('common.goal')} htmlFor="p-goal">
         <GoalSelect id="p-goal" value={goalId} onChange={setGoalId} />
       </Field>
-      <Field label={t('project.steps')} info={t('project.stepsHint')}>
+      <Field label={t('project.steps')} info={<PageText text={marked('project.stepsHint')} />}>
         <ol className="steps-editor">
           {steps.map((s, i) => (
             <li key={i}>

@@ -1,7 +1,7 @@
 import { useMemo, useState, useSyncExternalStore } from 'react'
 import { addCommitment, addPrep, createGoal, createProject, ensureValue } from '../db/repo'
 import { setSettings } from '../db/settings'
-import { t } from '../i18n'
+import { marked, t } from '../i18n'
 import { addDays, dayMonth, diffDays, isDateStr, weekdaysLabel } from '../lib/dates'
 import {
   emptyCommitmentDraft, isValid, validateCommitment, validateGoal, validatePrep,
@@ -9,7 +9,7 @@ import {
 } from '../lib/draft'
 import { cadenceOf, type Template, type TemplateHabit, type TemplateProject } from '../lib/templates'
 import type { DateStr, Value } from '../lib/types'
-import { Field, Screen, Section, Sheet, toast } from '../ui/components'
+import { Field, PageText, Screen, Section, Sheet, toast } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconClose } from '../ui/icons'
 import { goBack, navigate } from '../ui/router'
@@ -308,7 +308,7 @@ function HabitSheet({ editing, draft, onSave, onClose }: {
       <div style={{ height: 18 }} />
       <MeasurementFields d={d} set={patch} e={e} showErrors={tried} />
       <div style={{ marginTop: 18 }}><CadenceFields d={d} set={patch} e={e} showErrors={tried} /></div>
-      <Field label={t('goal.starts')} htmlFor="h-start" info={t('goal.startsInfo')}>
+      <Field label={t('goal.starts')} htmlFor="h-start" info={<PageText text={marked('goal.startsInfo')} />}>
         <input id="h-start" type="date" min={start} value={from} onChange={(ev) => setFrom(ev.target.value)} />
       </Field>
       <Field label={t('ins.preps')}>

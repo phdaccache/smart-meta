@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react'
-import { getLang, num, t, tk, tn, type Key } from '../i18n'
+import { getLang, type Key, marked, num, t, tk, tn } from '../i18n'
 import { capitalize, dayMonth, formatTime, monthName } from '../lib/dates'
 import { periodWord } from '../lib/describe'
 import {
@@ -13,7 +13,7 @@ import {
   Distribution, GoalChips, ProjectPace, ReasonBars, Sparkline, TimelineChart, ToleranceChart, TrendChart, useTapOutside,
   ValueMonths, WeekdayGrid,
 } from '../ui/charts'
-import { InfoTip, Screen, Section, Segmented } from '../ui/components'
+import { InfoTip, PageText, Screen, Section, Segmented } from '../ui/components'
 import { useAllRevisions, useDisplacements, useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
 import { IconChevronRight } from '../ui/icons'
 import { navigate } from '../ui/router'
@@ -87,7 +87,7 @@ export function InsightsScreen() {
   if (!p) return null
   const title = (
     <span className="title-row">{t('nav.insights')}
-      <InfoTip label={t('ins.about')}>{t('ins.aboutText')}</InfoTip>
+      <InfoTip label={t('ins.about')}><PageText text={marked('ins.aboutText')} /></InfoTip>
     </span>
   )
   return (

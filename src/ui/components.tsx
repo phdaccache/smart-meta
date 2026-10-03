@@ -1,9 +1,9 @@
 import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { t, tlist } from '../i18n'
+import { t, tk, tlist, type Key } from '../i18n'
 import { statusLabel } from '../lib/describe'
 import type { Status } from '../lib/types'
-import { IconCheck, IconChevronLeft, IconClose, IconInfo, IconSettings } from './icons'
+import { IconCheck, IconChevronLeft, IconClose, IconGoals, IconInfo, IconInsights, IconReview, IconSettings, IconToday } from './icons'
 import { goBack, navigate, pushLayer } from './router'
 
 // ——— screen chrome ———
@@ -55,6 +55,34 @@ export function Section(props: { title?: ReactNode; aside?: ReactNode; children:
       )}
       {props.children}
     </section>
+  )
+}
+
+// ——— pages named in text ———
+
+const PAGES: { name: Key; Icon: typeof IconToday }[] = [
+  { name: 'nav.today', Icon: IconToday },
+  { name: 'nav.plan', Icon: IconGoals },
+  { name: 'nav.review', Icon: IconReview },
+  { name: 'nav.insights', Icon: IconInsights },
+  { name: 'nav.settings', Icon: IconSettings },
+]
+
+/**
+ * A text from `marked`, with each [Page] shown as that page: highlighted, with
+ * its tab's icon, so "Today" reads as the screen and not the word.
+ */
+export function PageText({ text }: { text: string }) {
+  const parts = text.split(/\[([^\]]+)\]/)
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (i % 2 === 0) return part
+        const page = PAGES.find((p) => tk(p.name).toLowerCase() === part.toLowerCase())
+        if (!page) return part
+        return <span key={i} className="page-ref"><page.Icon width={13} height={13} />{part}</span>
+      })}
+    </>
   )
 }
 

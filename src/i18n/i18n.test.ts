@@ -11,7 +11,7 @@ import { isTargetChange, revisionField, revisionValue } from '../lib/revisions'
 import { commitment, goal } from '../lib/testkit'
 import type { Revision } from '../lib/types'
 import { en } from './en'
-import { getLang, inLang, num, setLangSetting, t, tn } from '.'
+import { getLang, inLang, marked, num, setLangSetting, t, tn } from '.'
 import { ptBR } from './pt-BR'
 
 const blanks = (s: string) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort()
@@ -32,6 +32,18 @@ describe('language files', () => {
     for (const k of Object.keys(en)) {
       if (k.endsWith('.one')) expect(Object.keys(en)).toContain(k.replace(/one$/, 'other'))
     }
+  })
+
+  it('marks only page names with [ ], and plain text drops the marks', () => {
+    const pages = ['nav.today', 'nav.plan', 'nav.review', 'nav.insights', 'nav.settings'] as const
+    for (const [table, l] of [[en, 'en'], [ptBR, 'pt-BR']] as const) {
+      const names = inLang(l, () => pages.map((p) => t(p).toLowerCase()))
+      for (const [k, v] of Object.entries(table)) {
+        for (const m of v.matchAll(/\[([^\]]+)\]/g)) expect([l, k, names.includes(m[1].toLowerCase())]).toEqual([l, k, true])
+      }
+    }
+    expect(t('intro.goToday')).toBe('Go to Today')
+    expect(marked('intro.goToday')).toBe('Go to [Today]')
   })
 
   it('tests and anything before startup run in English', () => {

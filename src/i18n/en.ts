@@ -1,7 +1,9 @@
 /**
  * English text, the source for every language. Keys are grouped by screen.
  * `{name}` blanks are filled in by the app; keys ending in .one / .other are
- * the singular and plural of the same text. To change wording, edit it here
+ * the singular and plural of the same text. A page's name in brackets, like
+ * [Today], shows as that page (highlighted, with its icon) where the screen
+ * supports it, and as plain text elsewhere. To change wording, edit it here
  * (and the same key in pt-BR.ts). See docs/2026-09-30-ptbr-spec.md.
  */
 export const en = {
@@ -257,8 +259,8 @@ export const en = {
   'plan.done': ' · done',
   'plan.fromDate': '(from {when})',
   'move.toMaintenance': 'Move to maintenance',
-  'move.toMaintenanceSub': 'Stays on Today and scored; frees its slot.',
-  'move.toMaintenanceSubDate': 'Stays on Today and scored; frees its slot and clears the review date.',
+  'move.toMaintenanceSub': 'Stays on [Today] and scored; frees its slot.',
+  'move.toMaintenanceSubDate': 'Stays on [Today] and scored; frees its slot and clears the review date.',
   'move.nowMaintenance': 'Now in maintenance.',
   'move.makeActive': 'Make active',
   'move.makeActiveNoSlot': 'Make active (no free slot)',
@@ -267,7 +269,7 @@ export const en = {
   'move.activeAgain': 'Active again.',
   'move.pause': 'Pause',
   'move.pauseToBacklog': 'Pause (back to backlog)',
-  'move.pauseSub': 'Back to the backlog: off Today, history kept. Start it again any time.',
+  'move.pauseSub': 'Back to the backlog: off [Today], history kept. Start it again any time.',
   'move.paused': 'Paused. It’s in the backlog.',
 
   // Goal page
@@ -309,7 +311,7 @@ export const en = {
   'goal.deleteConfirm': 'Delete goal and its history',
   'goal.removeCommitment': 'Remove “{name}”? Its history stays, but it stops being scored.',
   'goal.aboutPreps': 'About preps',
-  'goal.prepsInfo': 'Small things done ahead, like packing the bag the night before, so the commitment is easier. They show on Today on their days, and never count toward the score.',
+  'goal.prepsInfo': 'Small things done ahead, like packing the bag the night before, so the commitment is easier. They show on [Today] on their days, and never count toward the score.',
   'goal.prepFor': 'Prep for {name}',
   'goal.prepWhen': '{days} at {time}',
   'goal.editPrep': 'Edit prep',
@@ -318,10 +320,10 @@ export const en = {
   'goal.kind': 'Kind',
   'goal.starts': 'Starts',
   'goal.startsOn': 'starts {when}',
-  'goal.startsInfo': 'Scoring starts on this day. Pick a later date to prepare first. It won’t show on Today until then.',
+  'goal.startsInfo': 'Scoring starts on this day. Pick a later date to prepare first. It won’t show on [Today] until then.',
   'goal.abandonTitle': 'Abandon this goal?',
   'goal.abandonReason': 'Reason (optional)',
-  'goal.abandonInfo': 'It leaves Today but stays in your history. Your decision.',
+  'goal.abandonInfo': 'It leaves [Today] but stays in your history. Your decision.',
   'goal.keepIt': 'Keep it',
   'goal.abandon': 'Abandon',
   'goal.abandoned': 'Abandoned.',
@@ -414,7 +416,7 @@ export const en = {
   'form.phThreshold': 'Slept at least 8 hours',
   'form.phRhythm': 'Did at least 45 minutes of exercise',
   'form.shortName': 'Short name',
-  'form.shortNameHint': 'How Today and check-ins call it, like “gym”.',
+  'form.shortNameHint': 'How [Today] and check-ins call it, like “gym”.',
   'form.phShortThreshold': 'sleep',
   'form.phShortStandard': 'punctuality',
   'form.phShortRhythm': 'gym',
@@ -465,7 +467,7 @@ export const en = {
   'project.phOutcome': 'Get driver’s license',
   'project.targetDate': 'Target date',
   'project.steps': 'Steps',
-  'project.stepsHint': 'Today shows only the current step.',
+  'project.stepsHint': '[Today] shows only the current step.',
   'project.stepN': 'Step {n}',
   'project.removeStepN': 'Remove step {n}',
   'project.phStep': 'Book the theory exam',
@@ -532,7 +534,7 @@ export const en = {
   'review.q.changePrep': 'The prep isn’t helping yet. Change it?',
   'review.q.lowerTarget': 'Lower the target, or change how often?',
   'review.q.pause': 'Pause it and free the slot?',
-  'review.q.maintenance': 'Switch to maintenance? It stays on Today and frees a slot.',
+  'review.q.maintenance': 'Switch to maintenance? It stays on [Today] and frees a slot.',
   'review.a.addPrep': 'Add prep',
   'review.a.editPrep': 'Edit prep',
   'review.a.edit': 'Edit',
@@ -570,7 +572,7 @@ export const en = {
 
   // Insights
   'ins.about': 'About insights',
-  'ins.aboutText': 'The long run: whether goals are working, what gets in the way, and where the effort goes. Review is for next week; this is for the months behind you.',
+  'ins.aboutText': 'The long run: whether goals are working, what gets in the way, and where the effort goes. [Review] is for next week; this is for the months behind you.',
   'ins.view': 'Insights view',
   'ins.tabGoals': 'Goals',
   'ins.tabPatterns': 'Patterns',
@@ -915,7 +917,7 @@ export const en = {
   'intro.toleranceLine': 'At {pct}%, missing {miss} in {of} still counts as on track.',
   'intro.toleranceAll': 'At 100%, every miss puts you off track.',
   'intro.phValue': 'Freedom',
-  'intro.seeOnToday': 'You’ll see this reason on Today.',
+  'intro.seeOnToday': 'You’ll see this reason on [Today].',
   'intro.in1Month': 'In 1 month',
   'intro.nMonths': '{n} months',
   'intro.qInTheWay': 'What usually gets in the way?',
@@ -930,16 +932,16 @@ export const en = {
   'intro.startsTomorrow': '{name} starts tomorrow',
   'intro.startsOn': '{name} starts on {date}',
   'intro.inBacklog': '{name} is in your backlog',
-  'intro.inBacklogSub': 'You already have {n} active goals. Start it from Plan when there’s room.',
-  'intro.tickHint': 'Open Today and tick it when you do it.',
-  'intro.tickHintFinish': 'Open Today and plan the steps to get there.',
+  'intro.inBacklogSub': 'You already have {n} active goals. Start it from [Plan] when there’s room.',
+  'intro.tickHint': 'Open [Today] and tick it when you do it.',
+  'intro.tickHintFinish': 'Open [Today] and plan the steps to get there.',
   'intro.proj.rhythm': 'In {time}, at {pct}%, you’ll have done at least…',
   'intro.proj.threshold': 'In {time}, at {pct}%, you’ll have at least…',
   'intro.proj.standard': 'Every time it comes up counts. Until {date}, that’s…',
   'intro.proj.deadline': 'Your deadline is {date}. That gives you…',
   'intro.proj.onTrack': '{name} on track',
   'intro.proj.toDoIt': 'to make it happen',
-  'intro.goToday': 'Go to Today',
+  'intro.goToday': 'Go to [Today]',
   'intro.weekThreeTitle': 'Review your goals',
   'intro.reviewSub': 'Once a week, review your goals and get suggestions.',
   'intro.rev.week': 'Week {n}',
@@ -1077,7 +1079,7 @@ export const en = {
   'news.tutorialText': 'Check out the new design and learn how preps, reviews and projects fit in.',
   'news.tutorialAction': 'Watch it',
   'news.ptTitle': 'Now in Portuguese',
-  'news.ptText': 'The app follows your phone’s language. You can change it any time in Settings.',
+  'news.ptText': 'The app follows your phone’s language. You can change it any time in [Settings].',
   'news.ptAction': 'Change language',
   'news.tplTitle': 'Start from a template',
   'news.tplText': 'You can now pick ready-to-use goals based on what you wanted to work on.',
