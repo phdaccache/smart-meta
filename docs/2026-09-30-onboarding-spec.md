@@ -46,6 +46,33 @@ data, so a goal made in Safari would not be in the installed app.
 >
 > link: *Continue in Safari*
 
+### 0b · Install — only on Android, in the browser (not installed)
+
+On Android the browser and the installed app share data, so this is a
+suggestion, not a gate: continuing in the browser loses nothing. The app's icon
+sits above the title.
+
+When the browser offers to install (`beforeinstallprompt`, Chrome, Edge, Samsung
+Internet):
+
+> **Put it on your home screen**
+> It opens like an app, one tap from your home screen.
+>
+> **[Install]** (the browser's own install dialog)
+> link: *Continue in the browser*
+
+When it doesn't offer it within 1.5 s (Firefox, or Chrome deciding not to), the
+steps through the menu instead:
+
+> 1. Tap ⋮ at the top of the browser
+> 2. Tap **Install app** or **Add to Home screen**
+> 3. Open Smart Meta from your home screen
+>
+> link: *Continue in the browser*
+
+Once installed from this screen: **It's on your home screen**, *Open it from
+there or keep going here. Your goals are the same in both.* **[Continue]**
+
 ### 1 · Welcome
 
 Visual: an animated Today goal card — "Exercise 3× a week" with its why line;

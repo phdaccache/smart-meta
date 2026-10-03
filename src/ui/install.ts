@@ -11,6 +11,8 @@ interface InstallPromptEvent extends Event {
 }
 
 let deferred: InstallPromptEvent | null = null
+/** Installed from this page, by our button or the browser's own menu. */
+let installed = false
 const listeners = new Set<() => void>()
 const notify = () => listeners.forEach((l) => l())
 
@@ -21,19 +23,26 @@ window.addEventListener('beforeinstallprompt', (e) => {
 })
 window.addEventListener('appinstalled', () => {
   deferred = null
+  installed = true
   notify()
 })
 
+const subscribe = (l: () => void) => (listeners.add(l), () => listeners.delete(l))
+
+/** Whether the app was just installed from this page. */
+export const useInstalled = (): boolean => useSyncExternalStore(subscribe, () => installed)
+
 /** A function that shows the browser's install dialog, or null where it isn't offered. */
 export function useInstall(): (() => Promise<void>) | null {
-  const available = useSyncExternalStore((l) => (listeners.add(l), () => listeners.delete(l)), () => deferred != null)
+  const available = useSyncExternalStore(subscribe, () => deferred != null)
   if (!available) return null
   return async () => {
     const e = deferred
     if (!e) return
     await e.prompt()
-    await e.userChoice.catch(() => null)
+    const choice = await e.userChoice.catch(() => null)
     deferred = null
+    if (choice?.outcome === 'accepted') installed = true
     notify()
   }
 }

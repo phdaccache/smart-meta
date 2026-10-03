@@ -1012,6 +1012,7 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
   background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 14px;
 }
 .intro-steps .share { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); }
+.intro-appicon { display: block; width: 88px; height: 88px; margin: 24px auto 20px; border-radius: 22px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18); }
 
 .intro-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 18px; }
 .intro-dots i { width: 7px; height: 7px; border-radius: 4px; background: var(--line-strong); transition: width 0.2s; }

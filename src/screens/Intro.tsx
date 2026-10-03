@@ -19,6 +19,7 @@ import type { Commitment, Goal } from '../lib/types'
 import { Badge, CheckButton, Chip, Field, toast } from '../ui/components'
 import { useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
 import { FlagBR, FlagUS, IconCheck, IconChevronLeft, IconClose } from '../ui/icons'
+import { useInstall, useInstalled } from '../ui/install'
 import { goBack, match, navigate } from '../ui/router'
 import {
   AchieveFields, KindField, MeasureFields, measureFields, PrepFields, PrepHead, SMART, SMART_LINE, SMART_Q, SmartBar, TimeFields, TitleFields, WhyText,
@@ -91,22 +92,28 @@ async function leaveIntro() {
 
 // ——— routing ———
 
+const inBrowser = () =>
+  (navigator as Navigator & { standalone?: boolean }).standalone !== true && !window.matchMedia('(display-mode: standalone)').matches
+
 /** On an iPhone, Safari and the Home Screen app keep separate data: install first. */
 function inIosBrowser(): boolean {
-  const nav = navigator as Navigator & { standalone?: boolean }
   const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-  return ios && nav.standalone !== true && !window.matchMedia('(display-mode: standalone)').matches
+  return ios && inBrowser()
 }
+
+/** On Android the browser and the installed app share data, so installing is only a suggestion. */
+const inAndroidBrowser = () => /Android/i.test(navigator.userAgent) && inBrowser()
 
 /** The first screen of a first run, shown at whatever address the app opened on. */
 export function IntroStart() {
-  return inIosBrowser() ? <IntroHome /> : <IntroWelcome />
+  return inIosBrowser() ? <IntroHome /> : inAndroidBrowser() ? <IntroInstall /> : <IntroWelcome />
 }
 
 export function introRoute(path: string): ReactNode | null {
   let m: Record<string, string> | null
   if (path === '/welcome') return <IntroWelcome />
   if (path === '/welcome/home') return <IntroHome />
+  if (path === '/welcome/install') return <IntroInstall />
   if (path === '/welcome/note') return <IntroNote />
   if (path === '/welcome/areas') return <IntroAreas />
   if ((m = match('/welcome/goal/:step', path))) return <IntroGoal key={m.step} step={m.step as Step} />
@@ -186,6 +193,62 @@ function IntroHome() {
       <p className="intro-center">
         <button className="quiet-link" onClick={() => navigate('/welcome')}>{t('intro.continueSafari')}</button>
       </p>
+    </Frame>
+  )
+}
+
+/** Chrome's ⋮ menu. */
+const IconMenu = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" />
+  </svg>
+)
+
+/** How long to wait for the browser to offer its install before showing the menu steps instead. */
+const OFFER_WAIT_MS = 1500
+
+/**
+ * Android: the browser's own install dialog behind one button. Where the browser doesn't offer it
+ * (Firefox, or Chrome deciding not to), the steps through its menu.
+ */
+function IntroInstall() {
+  const install = useInstall()
+  const installed = useInstalled()
+  const [waited, setWaited] = useState(false)
+  useEffect(() => {
+    const timer = setTimeout(() => setWaited(true), OFFER_WAIT_MS)
+    return () => clearTimeout(timer)
+  }, [])
+  const goOn = () => navigate('/welcome')
+  if (installed) {
+    return (
+      <Frame className="centered" lead={<LanguageFlags />}
+        nav={<button className="btn primary block" onClick={goOn}>{t('common.continue')}</button>}>
+        <img className="intro-appicon" src="/icons/icon-192.png" alt="" />
+        <h1 className="intro-title">{t('intro.installedTitle')}</h1>
+        <p className="intro-sub">{t('intro.installedSub')}</p>
+      </Frame>
+    )
+  }
+  return (
+    <Frame className="centered" lead={<LanguageFlags />}
+      nav={install && <button className="btn primary block" onClick={install}>{t('intro.install')}</button>}
+      below={install && <button className="quiet-link" onClick={goOn}>{t('intro.continueBrowser')}</button>}>
+      <img className="intro-appicon" src="/icons/icon-192.png" alt="" />
+      <h1 className="intro-title">{t('intro.installTitle')}</h1>
+      <p className="intro-sub">{t('intro.installSub')}</p>
+      {!install && waited && (
+        <>
+          <ol className="intro-steps">
+            <li><span className="n">1</span><span>{t('intro.homeTap')} <b className="share"><IconMenu /></b> {t('intro.installMenuWhere')}</span></li>
+            <li><span className="n">2</span><span>{t('intro.homeTap')} <b>{t('intro.installApp')}</b> {t('intro.installOr')} <b>{t('intro.installAddHome')}</b></span></li>
+            <li><span className="n">3</span>{t('intro.installOpen')}</li>
+          </ol>
+          <p className="intro-center">
+            <button className="quiet-link" onClick={goOn}>{t('intro.continueBrowser')}</button>
+          </p>
+        </>
+      )}
     </Frame>
   )
 }

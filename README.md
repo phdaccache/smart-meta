@@ -165,10 +165,13 @@ is the one iOS lets keep storage long-term.
 
 ## Install on Android
 
-Open the URL in Chrome: it offers **Install** (also in ⋮ → **Add to Home
-screen**, or Settings → **Install the app**, which appears only where the
-browser supports it). The browser and the installed app share storage, so
-there's no "install first" step as on iPhone.
+Open the URL in Chrome. The intro's first screen offers **Install** (the
+browser's own dialog), or, where the browser doesn't offer it, the steps through
+⋮ → **Install app** / **Add to Home screen**; it can be skipped with *Continue in
+the browser*. Later, Settings → **Install the app** appears where the browser
+supports it. The browser and the installed app share storage, so unlike on
+iPhone, installing is a suggestion, not a requirement. Chrome never offers to
+install on a phone where the app is already installed.
 
 ## Schema changes
 
