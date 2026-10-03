@@ -3,9 +3,9 @@
  * group, and writes edits straight into src/i18n/en.ts and pt-BR.ts. Dev only
  * (`apply: 'serve'`); nothing here reaches a build. See README.md here.
  */
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { resolve } from 'node:path'
+import { basename, join, resolve } from 'node:path'
 import type { Plugin } from 'vite'
 
 const FILES = { en: 'src/i18n/en.ts', pt: 'src/i18n/pt-BR.ts' } as const
@@ -19,7 +19,8 @@ const unquote = (s: string) => s.replace(/\\(.)/g, (_, c: string) => (c === 'n' 
 const quote = (s: string) => s.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, '\\n')
 const blanks = (s: string) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(', ')
 
-export interface CatalogItem { key: string; group: string; en: string; pt: string }
+/** `uses`: the source files that name the key, to guess which screen shows it. */
+export interface CatalogItem { key: string; group: string; en: string; pt: string; uses: string[] }
 export interface Catalog { items: CatalogItem[]; reviewed: Record<string, string> }
 
 export function textTool(): Plugin {
@@ -47,10 +48,32 @@ export function textTool(): Plugin {
     writeFileSync(path(REVIEWED), JSON.stringify(sorted, null, 2) + '\n')
   }
 
+  /** The app's source files (not the texts themselves, tests or this tool), by name. */
+  const sources = () => {
+    const out: { name: string; text: string }[] = []
+    const walk = (dir: string) => {
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        const p = join(dir, e.name)
+        if (e.isDirectory()) {
+          if (!['i18n', 'dev'].includes(e.name)) walk(p)
+        } else if (/\.tsx?$/.test(e.name) && !e.name.includes('.test.')) {
+          out.push({ name: basename(p), text: readFileSync(p, 'utf8') })
+        }
+      }
+    }
+    walk(path('src'))
+    return out
+  }
+
   const catalog = (): Catalog => {
     const en = parse(FILES.en)
     const pt = parse(FILES.pt)
-    const items = [...en].map(([key, { value, group }]) => ({ key, group, en: value, pt: pt.get(key)?.value ?? '' }))
+    const files = sources()
+    const items = [...en].map(([key, { value, group }]) => ({
+      key, group, en: value, pt: pt.get(key)?.value ?? '',
+      // A plural is named without its .one / .other.
+      uses: files.filter((f) => f.text.includes(`'${key.replace(/\.(one|other)$/, '')}'`)).map((f) => f.name),
+    }))
     return { items, reviewed: readReviewed() }
   }
 

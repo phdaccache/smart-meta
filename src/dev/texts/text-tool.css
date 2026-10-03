@@ -60,6 +60,14 @@ html.tt-on body *:not(input):not(textarea) { -webkit-user-select: none; user-sel
 .tt-group { border-bottom: 1px solid var(--line); }
 .tt-group-head { width: 100%; display: flex; justify-content: space-between; padding: 12px 0; font-weight: 600; text-align: left; }
 .tt-group-head .tt-all { color: var(--on-track); }
+.tt-row-wrap { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--line); }
+.tt-row-wrap .tt-row { border-top: 0 !important; flex: 1; min-width: 0; }
+.tt-find { flex: none; padding: 6px 10px !important; border-radius: 8px; font-size: 13px; font-weight: 600 !important; background: var(--surface-2) !important; color: var(--accent) !important; }
+.tt-status {
+  position: fixed; z-index: 1002; left: 16px; right: 16px; bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 16px); max-width: 520px; margin: 0 auto;
+  padding: 10px 14px; border-radius: 12px; font-size: 14px; background: var(--ink); color: var(--bg); box-shadow: var(--shadow);
+}
+.tt-found { outline: 3px solid var(--behind) !important; outline-offset: 3px; border-radius: 6px; transition: outline-color 0.3s; }
 .tt-row { width: 100%; display: flex; gap: 8px; text-align: left; padding: 8px 0; border-top: 1px solid var(--line) !important; }
 .tt-row-text { display: flex; flex-direction: column; gap: 2px; font-size: 14px; min-width: 0; }
 .tt-row-text .tt-muted { margin: 0; }

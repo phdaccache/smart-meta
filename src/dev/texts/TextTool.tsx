@@ -4,9 +4,12 @@
  * and follow progress in the list. Dev only; see README.md here.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { db } from '../../db/db'
 import { en } from '../../i18n/en'
 import { getLang, useLang } from '../../i18n'
 import { ptBR } from '../../i18n/pt-BR'
+import { openQuickAdd } from '../../screens/QuickAdd'
+import { navigate } from '../../ui/router'
 import { compile, findKeys, looseness, pluralPair, refill, type Compiled, type Hit } from './match'
 import type { Catalog, CatalogItem } from './vite-plugin'
 
@@ -107,6 +110,67 @@ function repaint(spots: Spot[], key: string) {
   }
 }
 
+// ——— finding a text in the app ———
+
+const INTRO: Record<string, string[]> = {
+  'Intro: first screens': ['/welcome', '/welcome/home', '/welcome/install', '/welcome/note'],
+  'Intro: areas and examples': ['/welcome/areas', '/welcome/goal/s', '/welcome/goal/m', '/welcome/goal/r', '/welcome/goal/prep'],
+  'Intro: first goal': ['/welcome/goal/smart', '/welcome/goal/s', '/welcome/goal/m', '/welcome/goal/a', '/welcome/goal/r', '/welcome/goal/t', '/welcome/goal/prep'],
+  'Intro: plan and week': ['/welcome/plan', '/welcome/review', '/welcome/pieces'],
+}
+
+/** Where each screen file shows up. `:goal` and `:project` become the first ones in the data. */
+const SCREENS: Record<string, string[]> = {
+  'App.tsx': ['/'],
+  'Today.tsx': ['/'],
+  'OccurrenceSheet.tsx': ['/'],
+  'TaskSheet.tsx': ['/'],
+  'QuickAdd.tsx': ['quick-add'],
+  'Goals.tsx': ['/goals'],
+  'GoalDetail.tsx': ['/goals/:goal', '/goals/:goal/review', '/goals/:goal/edit'],
+  'GoalHistory.tsx': ['/goals/:goal'],
+  'GoalForm.tsx': ['/goals/new'],
+  'TemplateGoal.tsx': ['/goals/new'],
+  'Projects.tsx': ['/projects/:project', '/goals'],
+  'Review.tsx': ['/review'],
+  'Insights.tsx': ['/insights', '/insights/goals/:goal'],
+  'Settings.tsx': ['/settings', '/settings/values'],
+  'WhatsNew.tsx': ['/settings'],
+}
+
+/** For keys built at run time, which no file names: the screen their group belongs to. */
+const GROUP_SCREEN: Record<string, string> = {
+  'Tabs and navigation': 'App.tsx', Today: 'Today.tsx', 'Misses (Today and Review)': 'Today.tsx', 'Quick add': 'QuickAdd.tsx',
+  'Habit wording': 'GoalDetail.tsx', Plan: 'Goals.tsx', 'Goal page': 'GoalDetail.tsx', 'New goal form': 'GoalForm.tsx',
+  'Projects and tasks': 'Projects.tsx', 'Weekly review': 'Review.tsx', Insights: 'Insights.tsx', Charts: 'Insights.tsx',
+  Settings: 'Settings.tsx', "What's new": 'WhatsNew.tsx',
+}
+
+/** The screens to try for a text, likeliest first: the one open now first if it's one of them, else last. */
+async function placesFor(item: CatalogItem): Promise<string[]> {
+  const files = item.uses.length ? item.uses : GROUP_SCREEN[item.group] ? [GROUP_SCREEN[item.group]] : []
+  let routes = files.includes('Intro.tsx') && INTRO[item.group] ? INTRO[item.group] : files.flatMap((f) => SCREENS[f] ?? [])
+  if (files.includes('Intro.tsx') && !INTRO[item.group]) routes = [...routes, ...Object.values(INTRO).flat()]
+  const goal = (await db.goals.toArray()).find((g) => !g.deletedAt && g.state === 'active') ?? (await db.goals.toArray()).find((g) => !g.deletedAt)
+  const project = (await db.projects.toArray()).find((p) => !(p as { deletedAt?: string | null }).deletedAt)
+  const here = location.pathname + location.search
+  const places = routes
+    .map((r) => r.replace(':goal', goal?.id ?? '').replace(':project', project?.id ?? ''))
+    .filter((r, i, all) => (!r.includes('//') && (!r.endsWith('/') || r === '/') ? all.indexOf(r) === i : false))
+  // The same words elsewhere (the tab bar's "Review") shouldn't count before the text's own screens.
+  return places.includes(here) ? [here, ...places.filter((r) => r !== here)] : [...places, here]
+}
+
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+/** Scrolls to where `key` shows and outlines it for a moment. */
+function highlight(spots: Spot[]) {
+  const els = spots.map((s) => (s.node instanceof Text ? s.node.parentElement : s.node)).filter((e): e is Element => !!e)
+  els[0]?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  for (const el of els) el.classList.add('tt-found')
+  setTimeout(() => els.forEach((el) => el.classList.remove('tt-found')), 3000)
+}
+
 /** Today on this device, YYYY-MM-DD: when a text was marked OK. */
 const localDay = () => new Date().toLocaleDateString('sv-SE')
 
@@ -141,6 +205,30 @@ export function TextTool() {
   const [catalog, setCatalog] = useState<Catalog | null>(null)
   const [here, setHere] = useState<Spot[] | null>(null)
   const [listOpen, setListOpen] = useState(false)
+  const [status, setStatus] = useState<string | null>(null)
+
+  /** Opens each likely screen in turn until the text shows, then points at it. */
+  const find = async (item: CatalogItem) => {
+    setListOpen(false)
+    const places = await placesFor(item)
+    for (const [i, place] of places.entries()) {
+      setStatus(`Looking for it… ${i + 1}/${places.length}`)
+      if (place !== location.pathname + location.search) {
+        if (place === 'quick-add') openQuickAdd()
+        else navigate(place)
+        await wait(500)
+      }
+      const spots = spotsOf(item.key)
+      if (spots.length) {
+        setStatus(null)
+        highlight(spots)
+        return
+      }
+    }
+    const where = item.uses.length ? ` It’s used in ${item.uses.join(', ')}.` : ''
+    setStatus(`Not on screen right now: it only shows in some situations (a panel, an error, a state of your data).${where}`)
+    setTimeout(() => setStatus(null), 6000)
+  }
 
   const refresh = () => call<Catalog>('catalog').then(setCatalog).catch(() => setCatalog(null))
   useEffect(() => {
@@ -283,8 +371,10 @@ export function TextTool() {
       )}
 
       {listOpen && catalog && (
-        <TextList catalog={catalog} done={done} pct={pct} pctText={pctText} onClose={() => setListOpen(false)} onSaved={saved} onMarked={marked} />
+        <TextList catalog={catalog} done={done} pct={pct} pctText={pctText} onClose={() => setListOpen(false)} onSaved={saved} onMarked={marked} onFind={find} />
       )}
+
+      {status && <div className="tt-status" onClick={() => setStatus(null)}>{status}</div>}
     </div>
   )
 }
@@ -395,15 +485,18 @@ function KeyCard(props: {
 }
 
 /** A text folded to one line; tap to edit it. */
-function Row(props: { item: CatalogItem; ok: boolean; onOpen: () => void }) {
+function Row(props: { item: CatalogItem; ok: boolean; onOpen: () => void; onFind?: () => void }) {
   return (
-    <button type="button" className={`tt-row ${props.ok ? 'ok' : ''}`} onClick={props.onOpen}>
-      <span className="tt-check">{props.ok ? '✓' : ''}</span>
-      <span className="tt-row-text">
-        <span>{props.item.en}</span>
-        <span className="tt-muted">{props.item.pt}</span>
-      </span>
-    </button>
+    <div className="tt-row-wrap">
+      <button type="button" className={`tt-row ${props.ok ? 'ok' : ''}`} onClick={props.onOpen}>
+        <span className="tt-check">{props.ok ? '✓' : ''}</span>
+        <span className="tt-row-text">
+          <span>{props.item.en}</span>
+          <span className="tt-muted">{props.item.pt}</span>
+        </span>
+      </button>
+      {props.onFind && <button type="button" className="tt-find" onClick={props.onFind} title="Show it in the app">Find</button>}
+    </div>
   )
 }
 
@@ -415,6 +508,7 @@ function TextList(props: {
   catalog: Catalog; done: number; pct: number; pctText: string; onClose: () => void
   onSaved: (key: string, en: string, pt: string) => void
   onMarked: (key: string, ok: boolean) => void
+  onFind: (item: CatalogItem) => void
 }) {
   const { items, reviewed } = props.catalog
   const [filter, setFilter] = useState<Filter>('todo')
@@ -470,7 +564,7 @@ function TextList(props: {
             {open && g.shown.map((i) => openKey === i.key ? (
               <KeyCard key={i.key} item={i} ok={!!reviewed[i.key]} onSaved={props.onSaved} onMarked={props.onMarked} />
             ) : (
-              <Row key={i.key} item={i} ok={!!reviewed[i.key]} onOpen={() => setOpenKey(i.key)} />
+              <Row key={i.key} item={i} ok={!!reviewed[i.key]} onOpen={() => setOpenKey(i.key)} onFind={() => props.onFind(i)} />
             ))}
           </section>
         )

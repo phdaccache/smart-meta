@@ -27,6 +27,9 @@ in the built app.
    group. Filter *To do / OK / All*, or search English, Portuguese or the key.
    Tap a row to edit it. Use it for texts you can't hold on screen: errors,
    empty states, plurals, texts that only flash by in an animation.
+   **Find** opens the screens that use the text, one by one, until it shows,
+   then scrolls to it and outlines it. Texts inside a panel, an error or a
+   rare state can't be shown that way; it says so, and which file uses them.
 
 Your OKs are saved in `src/dev/texts/reviewed.json`. Commit it if you want the
 progress kept on another computer or branch.
