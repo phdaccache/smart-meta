@@ -1057,15 +1057,17 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 
 /* The note */
 .creator {
-  display: block; width: 76px; height: 76px; margin: 0 auto 14px; border-radius: 50%; object-fit: cover;
+  display: block; width: 76px; height: 76px; margin: 0 auto 20px; border-radius: 50%; object-fit: cover;
   box-shadow: 0 0 0 4px var(--bg), 0 0 0 5px var(--line-strong);
 }
-.note { margin: 16px auto 0; max-width: 32ch; text-align: left; }
+/* A smaller title than other intro screens, so the photo, title and note each get room. */
+.note-page .intro-title { font-size: 24px; }
+.note { margin: 24px auto 0; max-width: 350px; text-align: left; }
 .note p { font-size: 17px; line-height: 1.45; }
-.note p + p { margin-top: 10px; }
+.note p + p { margin-top: 12px; }
 .note-page .intro-nav { padding-top: 16px; }
 .signature {
-  width: 130px; aspect-ratio: 600 / 126; margin: 12px 0 0; background: var(--ink);
+  width: 130px; aspect-ratio: 600 / 126; margin: 14px 0 0; background: var(--ink);
   -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
 }
 
