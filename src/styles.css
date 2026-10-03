@@ -1062,7 +1062,7 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 }
 /* A smaller title than other intro screens, so the photo, title and note each get room. */
 .note-page .intro-title { font-size: 24px; }
-.note { margin: 24px auto 0; max-width: 350px; text-align: left; }
+.note { margin: 24px auto 0; max-width: 330px; text-align: left; }
 .note p { font-size: 17px; line-height: 1.45; }
 .note p + p { margin-top: 12px; }
 .note-page .intro-nav { padding-top: 16px; }
