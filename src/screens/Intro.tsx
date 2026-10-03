@@ -266,12 +266,13 @@ const MESS: { x: number; y: number; r: number }[] = [
 const MESS_WORDS: Key[] = ['intro.mess.1', 'intro.mess.2', 'intro.mess.3', 'intro.mess.4', 'intro.mess.5']
 /**
  * Steps of 600 ms: floating; moving into line (still pills); turning into a
- * list once they're there, ticking each one as it does; a long look; back to floating.
+ * list as the last one settles (each line takes 1.4 s, 120 ms after the one above),
+ * ticking each one as it does; a long look; back to floating.
  */
 const SNAP_AT = 4
-const LISTED_AT = 8
-const TICKS_AT = [8, 9, 10, 11, 12]
-const LOOP = 21
+const LISTED_AT = 7
+const TICKS_AT = [7, 8, 9, 10, 11]
+const LOOP = 20
 
 /** The two places each loose goal drifts between, and how many steps one drift takes (a little different for each). */
 const DRIFT = ['translate(0px, -3px)', 'translate(3px, 4px)']
@@ -311,7 +312,7 @@ function WelcomeDemo() {
         const ticked = plan && step >= TICKS_AT[i]
         return (
           <div key={k} className="mess-item" style={plan
-            ? { left: '16px', top: `${16 + i * 40}px`, transform: 'rotate(0deg)', transitionDelay: `${i * 150}ms` }
+            ? { left: '16px', top: `${16 + i * 40}px`, transform: 'rotate(0deg)', transitionDelay: `${i * 120}ms` }
             : { left: `${m.x}%`, top: `${m.y}px`, transform: `rotate(${m.r}deg)`, transitionDelay: `${(4 - i) * 120}ms` }}>
             <span className="mess-float" style={drift(i, step, plan)}>
               <span className={`mess-check ${ticked ? 'on' : ''}`}>{ticked && <IconCheck width={12} height={12} />}</span>
