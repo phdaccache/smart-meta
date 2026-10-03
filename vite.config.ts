@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { execSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
+import { textTool } from './src/dev/texts/vite-plugin'
 
 const version: string = JSON.parse(readFileSync('package.json', 'utf8')).version
 // Vercel builds from a clone without .git history sometimes, but always sets this.
@@ -21,6 +22,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    textTool(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icons/apple-touch-icon.png', 'icons/favicon.svg'],

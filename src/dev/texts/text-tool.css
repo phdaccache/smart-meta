@@ -1,0 +1,66 @@
+/* The text tool (dev only). Uses the app's colors so it reads in light and dark. */
+
+/* Holding text mustn't select it or open the phone's menu while the tool is on. */
+html.tt-on body *:not(input):not(textarea) { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+
+.tt-ui { font-family: var(--font); color: var(--ink); }
+.tt-ui button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+
+.tt-pill {
+  position: fixed; z-index: 1000; right: 0; top: 42%;
+  display: flex; flex-direction: column; border-radius: 10px 0 0 10px; overflow: hidden; font-size: 12px; font-weight: 650;
+  background: var(--surface-2); border: 1px solid var(--line-strong); border-right: 0; box-shadow: var(--shadow); opacity: 0.9;
+}
+.tt-pill button { padding: 8px 7px; min-width: 38px; }
+.tt-pill button + button { border-top: 1px solid var(--line-strong); }
+.tt-pill button.on { background: var(--behind); color: #fff; }
+
+.tt-layer { position: fixed; inset: 0; z-index: 1001; display: flex; flex-direction: column; justify-content: flex-end; }
+.tt-backdrop { position: absolute; inset: 0; background: rgb(0 0 0 / 0.35); }
+.tt-panel {
+  position: relative; max-height: 78vh; display: flex; flex-direction: column; width: 100%; max-width: 560px; margin: 0 auto;
+  background: var(--surface); border-radius: 18px 18px 0 0; box-shadow: var(--shadow); padding-bottom: var(--safe-bottom);
+}
+.tt-layer.full .tt-panel { max-height: calc(100vh - var(--safe-top) - 12px); height: 100%; }
+.tt-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 8px; }
+.tt-head h2 { margin: 0; font-size: 17px; }
+.tt-x { width: 36px; height: 36px; border-radius: 50%; background: var(--surface-2) !important; }
+.tt-body { overflow-y: auto; padding: 0 16px 16px; -webkit-overflow-scrolling: touch; }
+
+.tt-sub { font-size: 13px; color: var(--ink-3); font-weight: 600; margin: 16px 0 2px; }
+.tt-muted { color: var(--ink-3); font-size: 13px; margin: 6px 0; }
+.tt-error { color: var(--danger); font-size: 13px; margin: 6px 0; }
+
+.tt-card { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px 12px; margin: 8px 0; background: var(--bg); }
+.tt-card.ok { border-color: color-mix(in srgb, var(--on-track) 50%, var(--line)); }
+.tt-where { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--ink-3); margin-bottom: 6px; }
+.tt-where code { font-size: 11px; overflow-wrap: anywhere; text-align: right; }
+.tt-field { display: block; margin-top: 6px; }
+.tt-field span { display: block; font-size: 12px; font-weight: 600; color: var(--ink-2); margin-bottom: 2px; }
+.tt-field textarea {
+  min-height: 0; width: 100%; box-sizing: border-box; resize: none; overflow: hidden; font: inherit; font-size: 16px; line-height: 1.35;
+  color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 8px; padding: 7px 9px;
+}
+.tt-actions { display: flex; gap: 8px; margin-top: 10px; }
+.tt-btn { padding: 8px 12px !important; border-radius: 10px; font-weight: 600 !important; background: var(--surface-2) !important; }
+.tt-btn.primary { background: var(--accent) !important; color: var(--accent-ink) !important; }
+.tt-btn.done { color: var(--on-track) !important; }
+.tt-btn:disabled { opacity: 0.5; }
+
+.tt-progress { margin: 4px 0 10px; font-size: 14px; }
+.tt-bar { height: 6px; border-radius: 3px; background: var(--surface-2); margin-top: 6px; overflow: hidden; }
+.tt-bar i { display: block; height: 100%; background: var(--on-track); }
+.tt-search {
+  width: 100%; box-sizing: border-box; font: inherit; font-size: 16px; color: var(--ink); padding: 8px 10px;
+  background: var(--bg); border: 1px solid var(--line-strong); border-radius: 10px;
+}
+.tt-filter { display: flex; gap: 6px; margin: 10px 0 6px; }
+.tt-filter button { padding: 5px 12px; border-radius: 999px; font-size: 13px; background: var(--surface-2); }
+.tt-filter button.on { background: var(--ink); color: var(--bg); }
+.tt-group { border-bottom: 1px solid var(--line); }
+.tt-group-head { width: 100%; display: flex; justify-content: space-between; padding: 12px 0; font-weight: 600; text-align: left; }
+.tt-group-head .tt-all { color: var(--on-track); }
+.tt-row { width: 100%; display: flex; gap: 8px; text-align: left; padding: 8px 0; border-top: 1px solid var(--line) !important; }
+.tt-row-text { display: flex; flex-direction: column; gap: 2px; font-size: 14px; min-width: 0; }
+.tt-row-text .tt-muted { margin: 0; }
+.tt-check { flex: none; width: 16px; color: var(--on-track); font-weight: 700; }

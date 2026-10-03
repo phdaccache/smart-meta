@@ -40,6 +40,8 @@ registerSW({
   },
 })
 startSync()
+// Text tool, dev server only (src/dev/texts/README.md).
+if (import.meta.env.DEV) void import('./dev/texts/mount')
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
