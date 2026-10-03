@@ -739,8 +739,6 @@ export const ptBR: Messages = {
   'intro.homeAdd': 'Adicionar à Tela de Início',
   'intro.homeOpen': 'Abra o Smart Meta pela Tela de Início',
   'intro.continueSafari': 'Continuar no Safari',
-  'intro.installTitle': 'Coloque na sua tela inicial',
-  'intro.installSub': 'Ele abre como um app, a um toque na sua tela inicial.',
   'intro.install': 'Instalar',
   'intro.installMenuWhere': 'no alto do navegador',
   'intro.installApp': 'Instalar app',

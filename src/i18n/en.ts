@@ -742,8 +742,6 @@ export const en = {
   'intro.homeAdd': 'Add to Home Screen',
   'intro.homeOpen': 'Open Smart Meta from your Home Screen',
   'intro.continueSafari': 'Continue in Safari',
-  'intro.installTitle': 'Put it on your home screen',
-  'intro.installSub': 'It opens like an app, one tap from your home screen.',
   'intro.install': 'Install',
   'intro.installMenuWhere': 'at the top of the browser',
   'intro.installApp': 'Install app',

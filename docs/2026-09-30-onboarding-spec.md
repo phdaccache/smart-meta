@@ -55,8 +55,9 @@ sits above the title.
 When the browser offers to install (`beforeinstallprompt`, Chrome, Edge, Samsung
 Internet):
 
-> **Put it on your home screen**
-> It opens like an app, one tap from your home screen.
+> **Put it on your Home Screen first**
+> It opens like an app and keeps your goals saved on your phone.
+> (the same title and line as on iPhone)
 >
 > **[Install]** (the browser's own install dialog)
 > link: *Continue in the browser*

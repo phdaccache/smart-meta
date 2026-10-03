@@ -235,8 +235,8 @@ function IntroInstall() {
       nav={install && <button className="btn primary block" onClick={install}>{t('intro.install')}</button>}
       below={install && <button className="quiet-link" onClick={goOn}>{t('intro.continueBrowser')}</button>}>
       <img className="intro-appicon" src="/icons/icon-192.png" alt="" />
-      <h1 className="intro-title">{t('intro.installTitle')}</h1>
-      <p className="intro-sub">{t('intro.installSub')}</p>
+      <h1 className="intro-title">{t('intro.homeTitle')}</h1>
+      <p className="intro-sub">{t('intro.homeSub')}</p>
       {!install && waited && (
         <>
           <ol className="intro-steps">
