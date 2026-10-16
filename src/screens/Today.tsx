@@ -23,12 +23,12 @@ import { GettingStarted } from './Intro'
 type Filter = 'all' | 'goals' | 'projects' | 'tasks'
 
 /**
- * Goals: each goal with its habits, preps, tasks and the steps of its own projects.
- * Projects: every project step, wherever it sits. Tasks: one-off tasks.
+ * Goals: each goal with its habits, preps, tasks and its own projects.
+ * Projects: every project's step and tasks, wherever they sit. Tasks: every task.
  */
 function keep(f: Exclude<Filter, 'all'>, g: TodayGroup, i: TodayItem): boolean {
   if (f === 'goals') return g.kind === 'goal'
-  if (f === 'projects') return i.kind === 'step'
+  if (f === 'projects') return i.kind === 'step' || !!i.forProject
   return i.kind === 'task'
 }
 
@@ -106,7 +106,12 @@ export function TodayScreen({ date }: { date?: DateStr }) {
       )}
       actions={<>
         <DatePickerButton className="icon-btn" value={viewDate} max={today} label={t('today.goToPastDay')}
-          onPick={(d) => isDateStr(d) && d <= today && navigate(d === today ? '/' : `/day/${d}`)}>
+          onPick={(d) => {
+            if (!isDateStr(d)) return
+            // Phones' pickers can't grey out days after `max`, so say why nothing opened.
+            if (d > today) return toast(t('today.noFutureDays'))
+            navigate(d === today ? '/' : `/day/${d}`)
+          }}>
           <IconCalendar />
         </DatePickerButton>
       </>}

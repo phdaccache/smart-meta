@@ -398,15 +398,18 @@ export async function deleteOccurrence(o: Occurrence) {
 
 // ——— projects and tasks ———
 
-export async function createTask(fields: { title: string; date?: DateStr | null; time?: string | null; goalId?: ID | null; projectId?: ID | null }) {
+/** `projectId` makes it the project's next step; `forProjectId` a task of the project's own. */
+export async function createTask(fields: {
+  title: string; date?: DateStr | null; time?: string | null; goalId?: ID | null; projectId?: ID | null; forProjectId?: ID | null
+}) {
   let order: number | null = null
   if (fields.projectId) {
     const steps = await db.tasks.where('projectId').equals(fields.projectId).toArray()
     order = Math.max(-1, ...steps.map((s) => s.order ?? 0)) + 1
   }
   return put('tasks', make<'tasks'>({
-    title: fields.title.trim(), date: fields.date ?? null, time: fields.date ? fields.time ?? null : null, goalId: fields.goalId ?? null,
-    projectId: fields.projectId ?? null, order,
+    title: fields.title.trim(), date: fields.date ?? null, time: fields.date ? fields.time ?? null : null, goalId: fields.forProjectId || fields.projectId ? null : fields.goalId ?? null,
+    projectId: fields.projectId ?? null, order, forProjectId: fields.projectId ? null : fields.forProjectId ?? null,
   }))
 }
 
@@ -460,7 +463,8 @@ export async function pauseProject(p: Project, today: DateStr) {
 
 export async function deleteProject(p: Project) {
   const steps = await db.tasks.where('projectId').equals(p.id).primaryKeys()
-  await tombstone('tasks', steps)
+  const tasks = (await db.tasks.toArray()).filter((x) => x.forProjectId === p.id).map((x) => x.id)
+  await tombstone('tasks', [...steps, ...tasks])
   await tombstone('projects', [p.id])
 }
 

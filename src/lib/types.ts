@@ -99,8 +99,15 @@ export interface Task extends Base {
   /** Tasks only, optional: 'HH:MM'. */
   time?: string | null
   goalId?: ID | null
+  /** Set: one of that project's steps, in `order`. */
   projectId?: ID | null
   order?: number | null
+  /**
+   * A task for a project that isn't one of its steps: due when it's due, on
+   * Today with the project. Its own field (not projectId) so older versions
+   * of the app show it as a plain task rather than a step.
+   */
+  forProjectId?: ID | null
 }
 
 export type SubjectType = 'commitment' | 'prep' | 'task'

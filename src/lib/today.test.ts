@@ -202,3 +202,27 @@ describe('Step end dates', () => {
     expect(buildDay(s, today, ctx).groups[0].items[0].due?.label).toBe('due today at 21:00')
   })
 })
+
+describe('A project’s own tasks', () => {
+  const pr = project({ title: 'Learn to cook' })
+  const step = task({ title: 'Buy a knife', projectId: pr.id, order: 0 })
+  const oil = task({ title: 'Buy olive oil', forProjectId: pr.id, date: '2026-10-02' })
+
+  it('show with the project, after its step, and not as loose tasks', () => {
+    const v = buildDay(snapshot({ projects: [pr], tasks: [step, oil] }), today, ctx)
+    expect(v.groups.map((g) => g.kind)).toEqual(['project'])
+    expect(v.groups[0].items.map((i) => [i.title, i.kind, !!i.forProject])).toEqual([
+      ['Buy a knife', 'step', false], ['Buy olive oil', 'task', true],
+    ])
+  })
+
+  it('wait with a project in the backlog', () => {
+    const v = buildDay(snapshot({ projects: [{ ...pr, state: 'backlog' }], tasks: [step, oil] }), today, ctx)
+    expect(titles(v)).toEqual([])
+  })
+
+  it('become loose tasks if the project is gone', () => {
+    const v = buildDay(snapshot({ projects: [{ ...pr, deletedAt: '2026-09-29T00:00:00.000Z' }], tasks: [oil] }), today, ctx)
+    expect(v.groups.map((g) => g.kind)).toEqual(['errands'])
+  })
+})

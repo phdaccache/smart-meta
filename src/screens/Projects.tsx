@@ -4,14 +4,14 @@ import { check, createProject, createTask, deleteProject, pauseProject, reorderS
 import { marked, t } from '../i18n'
 import { addDays, dayMonth, dayMonthShort, isDateStr, relativeDay } from '../lib/dates'
 import { activeEntries } from '../lib/scoring'
-import { stepDeadlines } from '../lib/today'
+import { dueBadge, stepDeadlines } from '../lib/today'
 import type { DateStr, Task } from '../lib/types'
 import { CheckButton, DatePickerButton, Field, InfoTip, PageText, Screen, Section, toast, TypeToConfirm } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconCalendar, IconChevronRight, IconClose } from '../ui/icons'
 import { Sortable } from '../ui/Sortable'
 import { navigate } from '../ui/router'
-import { GoalSelect } from './TaskSheet'
+import { GoalSelect, TaskSheet } from './TaskSheet'
 
 /**
  * The step list of a project being written. Adding a step moves the cursor to
@@ -99,6 +99,8 @@ export function ProjectScreen({ id }: { id: string }) {
   const today = useToday(settings.rolloverHour)
   const snap = useSnapshot()
   const [newStep, setNewStep] = useState('')
+  const [newTask, setNewTask] = useState('')
+  const [openTask, setOpenTask] = useState<Task | null>(null)
   const [editing, setEditing] = useState(false)
   if (!snap) return null
   const project = snap.projects.find((p) => p.id === id)
@@ -109,6 +111,8 @@ export function ProjectScreen({ id }: { id: string }) {
   const goal = project.goalId ? snap.goals.find((g) => g.id === project.goalId) : undefined
   const steps = snap.tasks.filter((x) => x.projectId === id).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
   const deadlines = stepDeadlines(project, steps)
+  // The project's own tasks: open ones by when they're due (undated last), then the finished ones.
+  const dueKey = (x: Task) => (x.date ? `${x.date} ${x.time ?? '99:99'}` : '9999')
   const doneEntry = new Map(
     activeEntries(snap.entries).filter((e) => e.subjectType === 'task' && e.outcome === 'hit').map((e) => [e.subjectId, e]),
   )
@@ -122,10 +126,18 @@ export function ProjectScreen({ id }: { id: string }) {
     const e = doneEntry.get(step.id)
     return e ? uncheck(e.id) : check({ subjectType: 'task', subjectId: step.id }, today)
   }
+  const tasks = snap.tasks
+    .filter((x) => x.forProjectId === id && !x.projectId)
+    .sort((a, b) => Number(doneEntry.has(a.id)) - Number(doneEntry.has(b.id)) || dueKey(a).localeCompare(dueKey(b)))
   const add = async () => {
     if (!newStep.trim()) return
     await createTask({ title: newStep, projectId: id })
     setNewStep('')
+  }
+  const addTask = async () => {
+    if (!newTask.trim()) return
+    await createTask({ title: newTask, forProjectId: id })
+    setNewTask('')
   }
 
   return (
@@ -215,6 +227,34 @@ export function ProjectScreen({ id }: { id: string }) {
         </div>
       </Section>
 
+      <Section title={t('project.tasks')}>
+        <div className="card tint-project">
+          <ul className="items">
+            {tasks.map((task) => {
+              const isDone = doneEntry.has(task.id)
+              const due = !isDone && task.date ? dueBadge(task.date, today, task.time) : null
+              return (
+                <li key={task.id}>
+                  <div className={`item kind-task ${isDone ? 'done' : ''}`}>
+                    <CheckButton shape="square" checked={isDone} label={task.title} onClick={() => toggle(task)} />
+                    <button className="item-main" onClick={() => setOpenTask(task)}>
+                      <div className="item-title">{task.title}</div>
+                      {due && <span className={`due due-${due.tone}`}>{due.label}</span>}
+                    </button>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+          <form className="add-inline" style={{ padding: 12, marginTop: 0, borderTop: tasks.length ? '1px solid var(--line)' : 0 }}
+            onSubmit={(e) => { e.preventDefault(); addTask() }}>
+            <input value={newTask} onChange={(e) => setNewTask(e.target.value)} placeholder={t('project.addATask')} aria-label={t('project.newTask')}
+              enterKeyHint="done" />
+            <button className="btn" type="submit" disabled={!newTask.trim()} onPointerDown={(e) => e.preventDefault()}>{t('common.add')}</button>
+          </form>
+        </div>
+      </Section>
+
       <Section title={t('common.manage')}>
         <div className="card pad stack">
           {project.state === 'active' ? (
@@ -236,6 +276,7 @@ export function ProjectScreen({ id }: { id: string }) {
           </details>
         </div>
       </Section>
+      <TaskSheet task={openTask} onClose={() => setOpenTask(null)} today={today} />
     </Screen>
   )
 }

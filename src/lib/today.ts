@@ -44,6 +44,8 @@ export interface TodayItem {
   value?: number | null
   valueState?: PeriodEval
   step?: { index: number; total: number }
+  /** A project's own task (not a step): shown with the project's steps. */
+  forProject?: boolean
   /** Open tasks with a date: red when due today or late, yellow tomorrow, green later. */
   due?: { label: string; tone: 'red' | 'yellow' | 'green' }
   target: ItemTarget
@@ -192,7 +194,8 @@ export function buildDay(
     }
   }
 
-  const stepItems = (p: Project, inGoal: boolean): TodayItem[] => {
+  /** A project's current step (and any finished on this date), then its own tasks. */
+  const projectItems = (p: Project, inGoal: boolean): TodayItem[] => {
     if (p.deletedAt || p.state !== 'active') return []
     const steps = s.tasks
       .filter((t) => t.projectId === p.id && !t.deletedAt)
@@ -218,7 +221,13 @@ export function buildDay(
         }
       }
     })
-    return out
+    const tasks = s.tasks
+      .filter((t) => t.forProjectId === p.id && !t.projectId && !t.deletedAt)
+      .map((t) => taskItem(t, { kind: 'task', id: t.id }))
+      .filter((i): i is NonNullable<typeof i> => !!i)
+      .sort(byDue)
+      .map((i) => ({ ...i, forProject: true, detail: inGoal ? p.title : undefined }))
+    return [...out, ...tasks]
   }
 
   // ——— goal groups ———
@@ -315,7 +324,7 @@ export function buildDay(
 
     for (const p of s.projects.filter((p) => p.goalId === g.id && !p.deletedAt && p.state === 'active')) {
       projectsInGoals.add(p.id)
-      items.push(...stepItems(p, true))
+      items.push(...projectItems(p, true))
     }
     items.push(
       ...s.tasks
@@ -340,7 +349,7 @@ export function buildDay(
 
   for (const p of s.projects) {
     if (p.deletedAt || p.state !== 'active' || projectsInGoals.has(p.id) || waitsForGoal(p, s.goals, date)) continue
-    const items = stepItems(p, false)
+    const items = projectItems(p, false)
     if (!items.length) continue
     const goal = p.goalId ? s.goals.find((g) => g.id === p.goalId) : undefined
     groups.push({
@@ -355,6 +364,8 @@ export function buildDay(
   const errands: (TodayItem & { sortDate?: string | null })[] = []
   for (const t of s.tasks) {
     if (t.deletedAt || t.projectId) continue
+    // A project's tasks come and go with it; one whose project is gone is just a task.
+    if (t.forProjectId && s.projects.some((p) => p.id === t.forProjectId && !p.deletedAt)) continue
     if (t.goalId && liveGoalIds.has(t.goalId)) continue
     const item = taskItem(t, { kind: 'task', id: t.id })
     if (item) errands.push(item)

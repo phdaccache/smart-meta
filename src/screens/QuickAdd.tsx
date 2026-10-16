@@ -88,8 +88,8 @@ function TaskForm({ today, onDone }: { today: DateStr; onDone: () => void }) {
 
   const save = async () => {
     if (!title.trim()) return
-    // Always a task. With a project picked it becomes that project's next one, its date the task's end date.
-    await createTask(project ? { title, date, projectId: project.id } : { title, date, time: time || null, goalId })
+    // Always a task: of a project (not a step), of a goal, or on its own.
+    await createTask({ title, date, time: time || null, goalId: project ? null : goalId, forProjectId: project?.id ?? null })
     setTitle('')
     toast(project ? t('qa.addedTo', { project: project.title }) : t('common.added'))
     onDone()
@@ -108,25 +108,23 @@ function TaskForm({ today, onDone }: { today: DateStr; onDone: () => void }) {
           </DatePickerButton>
           {date && <button type="button" className="tool-clear" aria-label={t('qa.clearDueDate')} onClick={() => { setDate(null); setTime('') }}><IconClose width={14} height={14} /></button>}
         </span>
-        {!project && (
-          // A time with no date means today.
-          <span className={`tool fixed ${time ? 'on' : ''}`}>
-            <span className="date-overlay tool-hit">
-              <IconClock width={20} height={20} />
-              {time && <span className="tool-text">{time}</span>}
-              <input type="time" aria-label={t('qa.time')} value={time} onChange={(e) => {
-                setTime(e.target.value)
-                if (e.target.value && !date) setDate(today)
-              }} />
-            </span>
-            {time && <button type="button" className="tool-clear" aria-label={t('qa.clearTime')} onClick={() => setTime('')}><IconClose width={14} height={14} /></button>}
+        {/* A time with no date means today. */}
+        <span className={`tool fixed ${time ? 'on' : ''}`}>
+          <span className="date-overlay tool-hit">
+            <IconClock width={20} height={20} />
+            {time && <span className="tool-text">{time}</span>}
+            <input type="time" aria-label={t('qa.time')} value={time} onChange={(e) => {
+              setTime(e.target.value)
+              if (e.target.value && !date) setDate(today)
+            }} />
           </span>
-        )}
+          {time && <button type="button" className="tool-clear" aria-label={t('qa.clearTime')} onClick={() => setTime('')}><IconClose width={14} height={14} /></button>}
+        </span>
         {!project && goals.length > 0 && (
           <PickerTool icon={<IconGoals width={20} height={20} />} label={t('common.goal')} value={goalId} shown={goal?.title}
             options={goals} onChange={setGoalId} />
         )}
-        {!goalId && !time && projects.length > 0 && (
+        {!goalId && projects.length > 0 && (
           <PickerTool icon={<IconSteps width={20} height={20} />} label={t('common.project')} value={projectId} shown={project?.title}
             options={projects} onChange={setProjectId} />
         )}

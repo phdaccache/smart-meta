@@ -38,11 +38,24 @@ export function GoalSelect(props: { value: string | null; onChange: (id: string 
   )
 }
 
+/** Links a task to a project (as one of its tasks, not a step), or leaves it out of any. */
+export function ProjectSelect(props: { value: string | null; onChange: (id: string | null) => void; id?: string }) {
+  const snap = useSnapshot()
+  const projects = (snap?.projects ?? []).filter((p) => p.state === 'active' || p.state === 'backlog' || p.id === props.value)
+  return (
+    <select id={props.id} value={props.value ?? ''} onChange={(e) => props.onChange(e.target.value || null)}>
+      <option value="">{t('common.none')}</option>
+      {projects.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+    </select>
+  )
+}
+
 export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose: () => void; today: DateStr }) {
   const [title, setTitle] = useState('')
   const [date, setDate] = useState<DateStr | null>(null)
   const [time, setTime] = useState('')
   const [goalId, setGoalId] = useState<string | null>(null)
+  const [projectId, setProjectId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!task) return
@@ -50,13 +63,15 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
     setDate(task.date ?? null)
     setTime(task.time ?? '')
     setGoalId(task.goalId ?? null)
+    setProjectId(task.forProjectId ?? null)
   }, [task])
 
   if (!task) return null
 
   const save = async () => {
     if (!title.trim()) return
-    await updateTask(task, { title: title.trim(), date, time: date && time ? time : null, goalId })
+    // A project's task takes its goal from the project.
+    await updateTask(task, { title: title.trim(), date, time: date && time ? time : null, goalId: projectId ? null : goalId, forProjectId: projectId })
     onClose()
   }
 
@@ -84,22 +99,29 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
             )}
           </div>
         </Field>
-        <Field label={t('common.goal')} htmlFor="task-goal">
-          <GoalSelect id="task-goal" value={goalId} onChange={setGoalId} />
+        <Field label={t('common.project')} htmlFor="task-project">
+          <ProjectSelect id="task-project" value={projectId} onChange={setProjectId} />
         </Field>
+        {!projectId && (
+          <Field label={t('common.goal')} htmlFor="task-goal">
+            <GoalSelect id="task-goal" value={goalId} onChange={setGoalId} />
+          </Field>
+        )}
         <div className="sheet-actions">
           <button type="submit" className="btn primary" disabled={!title.trim()}>{t('common.save')}</button>
         </div>
       </form>
       <div className="stack" style={{ marginTop: 16 }}>
-        <button className="btn outline block" onClick={async () => {
-          const p = await promoteTask({ ...task, title: title.trim() || task.title, date, goalId }, today)
-          onClose()
-          toast(t('task.nowProject'))
-          navigate(`/projects/${p.id}`)
-        }}>
-          {t('task.toProject')}
-        </button>
+        {!projectId && (
+          <button className="btn outline block" onClick={async () => {
+            const p = await promoteTask({ ...task, title: title.trim() || task.title, date, goalId }, today)
+            onClose()
+            toast(t('task.nowProject'))
+            navigate(`/projects/${p.id}`)
+          }}>
+            {t('task.toProject')}
+          </button>
+        )}
         <button className="btn danger block" onClick={async () => {
           await deleteTask(task)
           onClose()
