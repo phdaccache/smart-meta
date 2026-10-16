@@ -353,11 +353,18 @@ export function DatePickerButton(props: {
   children: ReactNode
   onPick: (date: string) => void
 }) {
+  const [picks, setPicks] = useState(0)
   return (
     <span className={`date-overlay ${props.className ?? ''}`}>
       {props.children}
-      <input type="date" value={props.value} min={props.min} max={props.max} aria-label={props.label}
-        onChange={(e) => e.target.value && props.onPick(e.target.value)} />
+      {/* iPhone's calendar stays open after a day is picked, even one that's refused: a fresh field closes it. */}
+      <input key={picks} type="date" value={props.value} min={props.min} max={props.max} aria-label={props.label}
+        onChange={(e) => {
+          if (!e.target.value) return
+          e.target.blur()
+          setPicks((n) => n + 1)
+          props.onPick(e.target.value)
+        }} />
     </span>
   )
 }
