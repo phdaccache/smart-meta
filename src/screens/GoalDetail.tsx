@@ -58,7 +58,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
   const reviewDue = live && reviewOn && reviewOn <= today
   const activeCount = snap.goals.filter((g) => g.state === 'active').length
   const full = activeCount >= settings.goalCap
-  const projects = snap.projects.filter((p) => p.goalId === goal.id && p.state === 'active')
+  const projects = snap.projects.filter((p) => p.goalId === goal.id && (p.state === 'active' || p.state === 'backlog'))
   const tasks = snap.tasks.filter((x) => x.goalId === goal.id && !x.projectId)
   const doneTasks = new Set(activeEntries(snap.entries).filter((e) => e.subjectType === 'task' && e.outcome === 'hit').map((e) => e.subjectId))
   const openTasks = tasks.filter((x) => !doneTasks.has(x.id))
@@ -146,7 +146,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
                 <button key={p.id} className="list-row" onClick={() => navigate(`/projects/${p.id}`)}>
                   <div className="text">
                     <div className="title">{p.title}</div>
-                    <div className="sub">{t('plan.stepsOf', { done, total })} · {t('today.due', { when: relativeDay(p.targetDate, today) })}</div>
+                    <div className="sub">{t('plan.stepsOf', { done, total })} · {p.state === 'backlog' ? t('plan.backlog') : t('today.due', { when: relativeDay(p.targetDate, today) })}</div>
                   </div>
                   <IconChevronRight className="chev" width={18} />
                 </button>
@@ -163,7 +163,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
               <div key={task.id} className="list-row">
                 <div className="text">
                   <div className="title" style={{ fontSize: 15 }}>{task.title}</div>
-                  {task.date && <span className={`due due-${dueBadge(task.date, today).tone}`}>{dueBadge(task.date, today).label}</span>}
+                  {task.date && <span className={`due due-${dueBadge(task.date, today, task.time).tone}`}>{dueBadge(task.date, today, task.time).label}</span>}
                 </div>
               </div>
             ))}

@@ -35,6 +35,15 @@ export const FRESH_DAYS = 10
 /** Newest first. */
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-projects',
+    date: '2026-10-16',
+    items: [
+      { title: 'news.stepDatesTitle', text: 'news.stepDatesText' },
+      { title: 'news.projectBacklogTitle', text: 'news.projectBacklogText' },
+      { title: 'news.taskTimeTitle', text: 'news.taskTimeText' },
+    ],
+  },
+  {
     id: '2026-10-tutorial',
     date: '2026-10-02',
     aboutIntro: true,

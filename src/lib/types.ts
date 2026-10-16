@@ -78,18 +78,24 @@ export interface Prep extends Base {
   fireTime: string
 }
 
-export type ProjectState = 'active' | 'done' | 'archived'
+/** New projects wait in the backlog until started. */
+export type ProjectState = 'backlog' | 'active' | 'done' | 'archived'
 
 export interface Project extends Base {
   title: string
   targetDate: DateStr
   goalId?: ID | null
   state: ProjectState
+  /** The day it was started; missing on projects made active from the start (use createdAt). */
+  startDate?: DateStr | null
 }
 
 export interface Task extends Base {
   title: string
+  /** A task's due date. On a project step: the end date the person set (otherwise spread, see stepDeadlines). */
   date?: DateStr | null
+  /** Tasks only, optional: 'HH:MM'. */
+  time?: string | null
   goalId?: ID | null
   projectId?: ID | null
   order?: number | null

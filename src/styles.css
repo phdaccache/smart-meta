@@ -181,9 +181,9 @@ a { color: var(--accent); }
 .badge-prep { color: var(--prep); border-color: color-mix(in srgb, var(--prep) 45%, transparent); }
 .badge-step, .badge-task { color: var(--ink-2); border-color: var(--line-strong); }
 
-.stepdots { display: inline-flex; gap: 3px; margin-top: 6px; }
-.stepdots i { width: 14px; height: 3px; border-radius: 2px; background: var(--line-strong); }
-.stepdots i.on { background: var(--accent); }
+/* Loose tasks have no heading, so their first row needs no divider. */
+.group.tint-errands > .items > li:first-child > .item { border-top: 0; }
+.group-head .due { margin-top: 6px; }
 
 /* ——— quantity logging inline ——— */
 
@@ -205,6 +205,7 @@ a { color: var(--accent); }
   justify-content: center;
 }
 .chip.wide { flex-basis: 100%; }
+.chip.date-overlay { display: inline-flex; }
 .chip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .prompt .actions { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; gap: 8px; }
 .add-inline { display: flex; gap: 8px; margin-top: 8px; }
@@ -502,7 +503,6 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
   display: inline-block; font-size: 12px; font-weight: 650; padding: 1px 7px; border-radius: 6px; margin-top: 3px;
   color: var(--due); background: color-mix(in srgb, var(--due) 14%, transparent);
 }
-.due + .item-pace { margin-left: 6px; }
 .due-red { --due: var(--at-risk); }
 .due-yellow { --due: var(--behind); }
 .due-green { --due: var(--on-track); }
@@ -513,11 +513,14 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
   position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; min-height: 0; padding: 0; border: 0; cursor: pointer;
   font-size: 16px; background: none;
 }
-.qa-tools { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+.qa-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.qa-tools .btn { margin-left: auto; }
 .tool {
   display: inline-flex; align-items: center; height: 40px; border-radius: 12px; border: 1px solid var(--line-strong);
-  color: var(--ink-2); flex: 0 1 auto; min-width: 0;
+  color: var(--ink-2); flex: 0 1 auto; min-width: 42px;
 }
+/* Date and time stay readable; a long goal or project name gives way. */
+.tool.fixed { flex: none; }
 .tool.on { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 50%, transparent); background: var(--accent-soft); }
 .tool-hit { display: inline-flex; align-items: center; gap: 6px; height: 100%; padding: 0 10px; min-width: 0; }
 .tool-text { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1091,3 +1094,15 @@ li.done .gs-title { color: var(--ink-3); }
 .gs-sub { font-size: 13px; color: var(--ink-2); }
 
 .type-confirm { display: grid; gap: 14px; }
+
+/* ——— project steps: end dates ——— */
+
+.step-title { display: block; width: 100%; text-align: left; }
+.step-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 4px; font-size: 13px; color: var(--ink-2); }
+.step-end {
+  display: inline-flex; align-items: center; height: 26px; border-radius: 7px; color: var(--ink-2);
+  border: 1px dashed var(--line-strong);
+}
+.step-end.set { color: var(--accent); border-style: solid; border-color: color-mix(in srgb, var(--accent) 45%, transparent); background: var(--accent-soft); }
+.step-end-hit { display: inline-flex; align-items: center; gap: 4px; height: 100%; padding: 0 8px; font-size: 12.5px; font-weight: 600; }
+.step-end-clear { width: 24px; height: 100%; display: grid; place-items: center; margin-left: -6px; color: inherit; }

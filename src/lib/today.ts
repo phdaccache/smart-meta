@@ -1,5 +1,5 @@
 import { num, t, tn } from '../i18n'
-import { addDays, diffDays, inSpan, isoWeekday, minDate, periodOf, relativeDay } from './dates'
+import { addDays, diffDays, inSpan, isoWeekday, maxDate, minDate, periodOf, relativeDay } from './dates'
 import {
   activeEntries, evaluateThreshold, meetsTarget, missPrompt, thresholdAggregate, withoutDismissed, type MissPrompt, type PeriodEval,
   type ScoreContext,
@@ -46,8 +46,6 @@ export interface TodayItem {
   step?: { index: number; total: number }
   /** Open tasks with a date: red when due today or late, yellow tomorrow, green later. */
   due?: { label: string; tone: 'red' | 'yellow' | 'green' }
-  /** A project's open step: whether the project is on pace, behind or overdue (as in Insights). */
-  pace?: 'on_pace' | 'behind' | 'overdue'
   target: ItemTarget
 }
 
@@ -60,7 +58,7 @@ export type ProjectPace = 'done' | 'all_done' | 'not_started' | 'on_pace' | 'beh
  */
 export function projectPace(project: Project, total: number, doneDates: DateStr[], today: DateStr): { status: ProjectPace; start: DateStr; projected: DateStr | null } {
   const done = [...doneDates].sort()
-  const created = project.createdAt.slice(0, 10)
+  const created = projectStart(project)
   const start = minDate(created, done[0] ?? created)
   const remaining = total - done.length
   let projected: DateStr | null = null
@@ -74,17 +72,46 @@ export function projectPace(project: Project, total: number, doneDates: DateStr[
   return { status, start, projected }
 }
 
-export function dueBadge(due: DateStr, date: DateStr): NonNullable<TodayItem['due']> {
-  const d = diffDays(date, due)
-  if (d < 0) return { label: t('today.overdue', { when: relativeDay(due, date) }), tone: 'red' }
-  if (d === 0) return { label: t('today.due', { when: t('dates.today') }), tone: 'red' }
-  if (d === 1) return { label: t('today.due', { when: t('dates.tomorrow') }), tone: 'yellow' }
-  return { label: t('today.due', { when: relativeDay(due, date) }), tone: 'green' }
+/** When a project's clock started: the day it left the backlog, or the day it was made. */
+export const projectStart = (p: Project): DateStr => p.startDate ?? p.createdAt.slice(0, 10)
+
+/**
+ * Each step's end date. A date the person set is kept; the steps between two
+ * set dates (or the project's start, or its target date for the last step)
+ * share that stretch equally: 4 steps in a month get about a week each.
+ * `steps` in order.
+ */
+export function stepDeadlines(project: Project, steps: Task[]): DateStr[] {
+  const out: DateStr[] = []
+  let prevIndex = -1
+  let prevDate = minDate(projectStart(project), project.targetDate)
+  const anchors: [number, DateStr][] = steps.flatMap((s, i) => (s.date ? [[i, s.date] as [number, DateStr]] : []))
+  const last = steps.length - 1
+  if (last >= 0 && !steps[last].date) anchors.push([last, maxDate(project.targetDate, anchors.at(-1)?.[1] ?? project.targetDate)])
+  for (const [i, d] of anchors) {
+    const span = Math.max(0, diffDays(prevDate, d))
+    for (let k = prevIndex + 1; k < i; k++) out[k] = addDays(prevDate, Math.round(((k - prevIndex) * span) / (i - prevIndex)))
+    out[i] = d
+    prevIndex = i
+    prevDate = maxDate(prevDate, d)
+  }
+  return out
 }
 
-/** Dated tasks first, soonest due first; undated after. */
+export function dueBadge(due: DateStr, date: DateStr, time?: string | null): NonNullable<TodayItem['due']> {
+  const d = diffDays(date, due)
+  const label = (when: string) => (time ? t('today.dueAt', { when, time }) : t('today.due', { when }))
+  if (d < 0) return { label: t('today.overdue', { when: relativeDay(due, date) }), tone: 'red' }
+  if (d === 0) return { label: label(t('dates.today')), tone: 'red' }
+  if (d === 1) return { label: label(t('dates.tomorrow')), tone: 'yellow' }
+  return { label: label(relativeDay(due, date)), tone: 'green' }
+}
+
+/** Dated tasks first, soonest due first (a time before none); undated after. */
 const byDue = (a: TodayItem & { sortDate?: string | null }, b: TodayItem & { sortDate?: string | null }) =>
   (a.sortDate ?? '9999').localeCompare(b.sortDate ?? '9999')
+
+const sortKey = (t: Task) => (t.date ? `${t.date} ${t.time ?? '99:99'}` : null)
 
 export interface TodayGroup {
   key: string
@@ -92,6 +119,8 @@ export interface TodayGroup {
   eyebrow: string
   title: string
   why?: string
+  /** Projects: when the project is due, in the colors of a task's badge. */
+  due?: TodayItem['due']
   goalId?: ID
   projectId?: ID
   items: TodayItem[]
@@ -158,23 +187,19 @@ export function buildDay(
     if (!visible) return null
     return {
       key: `task:${t.id}`, kind: 'task', title: t.title, done: !!done,
-      due: !done && t.date && isToday ? dueBadge(t.date, date) : undefined,
-      subjectType: 'task', subjectId: t.id, entryId: done?.id, target, sortDate: t.date,
+      due: !done && t.date && isToday ? dueBadge(t.date, date, t.time) : undefined,
+      subjectType: 'task', subjectId: t.id, entryId: done?.id, target, sortDate: sortKey(t),
     }
   }
 
-  const stepItems = (p: Project, showDue: boolean): TodayItem[] => {
+  const stepItems = (p: Project, inGoal: boolean): TodayItem[] => {
     if (p.deletedAt || p.state !== 'active') return []
     const steps = s.tasks
       .filter((t) => t.projectId === p.id && !t.deletedAt)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
     const out: TodayItem[] = []
     let currentShown = false
-    const doneDates = steps
-      .map((step) => entriesOf('task', step.id).filter((e) => e.outcome === 'hit').map((e) => e.date).sort()[0])
-      .filter((d): d is DateStr => !!d)
-    const { status } = projectPace(p, steps.length, doneDates, date)
-    const pace = status === 'on_pace' || status === 'behind' || status === 'overdue' ? status : undefined
+    const deadlines = stepDeadlines(p, steps)
     steps.forEach((step, i) => {
       const done = latest(entriesOf('task', step.id).filter((e) => e.outcome === 'hit'))
       const base = {
@@ -187,8 +212,8 @@ export function buildDay(
         currentShown = true
         if (isToday) {
           out.push({
-            ...base, key: `task:${step.id}`, done: false, pace,
-            detail: showDue ? t('today.stepOf', { project: p.title, when: relativeDay(p.targetDate, date) }) : undefined,
+            ...base, key: `task:${step.id}`, done: false, due: dueBadge(deadlines[i], date),
+            detail: inGoal ? p.title : undefined,
           })
         }
       }
@@ -320,7 +345,7 @@ export function buildDay(
     const goal = p.goalId ? s.goals.find((g) => g.id === p.goalId) : undefined
     groups.push({
       key: `project:${p.id}`, kind: 'project', projectId: p.id,
-      eyebrow: t('today.projectDue', { when: relativeDay(p.targetDate, date) }), title: p.title, why: goal?.whyText || undefined,
+      eyebrow: '', title: p.title, why: goal?.whyText || undefined, due: isToday ? dueBadge(p.targetDate, date) : undefined,
       items, prompts: [], done: items.every((i) => i.done),
     })
   }

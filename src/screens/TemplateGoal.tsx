@@ -11,8 +11,8 @@ import { cadenceOf, type Template, type TemplateHabit, type TemplateProject } fr
 import type { DateStr, Value } from '../lib/types'
 import { Field, PageText, Screen, Section, Sheet, toast } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
-import { IconClose } from '../ui/icons'
 import { goBack, navigate } from '../ui/router'
+import { StepsEditor } from './Projects'
 import { CadenceFields, Compact, graceLabel, MeasurementFields, PrepEditor, ShapeField, ShapeInfo, Wizard, type SetField } from './GoalForm'
 
 /**
@@ -355,22 +355,7 @@ function ProjectSheet({ editing, draft, onSave, onClose }: {
         <input id="tp-date" type="date" min={start} value={date} onChange={(e) => setDate(e.target.value)} />
       </Field>
       <Field label={t('project.steps')}>
-        <ol className="steps-editor">
-          {steps.map((s, i) => (
-            <li key={i}>
-              <span className="num">{i + 1}</span>
-              <input value={s} aria-label={t('project.stepN', { n: i + 1 })} placeholder={i === 0 ? t('project.phStep') : ''}
-                onChange={(e) => setSteps(steps.map((x, j) => (j === i ? e.target.value : x)))} />
-              {steps.length > 1 && (
-                <button type="button" className="icon-btn step-remove" aria-label={t('project.removeStepN', { n: i + 1 })}
-                  onClick={() => setSteps(steps.filter((_, j) => j !== i))}>
-                  <IconClose width={16} height={16} />
-                </button>
-              )}
-            </li>
-          ))}
-        </ol>
-        <button className="link-btn" onClick={() => setSteps([...steps, ''])}>{t('project.addStepPlus')}</button>
+        <StepsEditor steps={steps} onChange={setSteps} />
       </Field>
       <div className="sheet-actions"><button className="btn primary" onClick={save}>{t('common.save')}</button></div>
     </Sheet>

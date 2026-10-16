@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { reorderGoals, setGoalState } from '../db/repo'
+import { reorderGoals, setGoalState, startProject } from '../db/repo'
 import { marked, t } from '../i18n'
 import { dayMonth, relativeDay } from '../lib/dates'
 import { cadenceText } from '../lib/describe'
@@ -54,7 +54,8 @@ export function GoalsScreen() {
   }
   const projects = snap.projects.filter((p) => p.state === 'active' && !waitsForGoal(p, snap.goals, today))
   const waiting = snap.projects.filter((p) => p.state === 'active' && waitsForGoal(p, snap.goals, today))
-  const doneProjects = snap.projects.filter((p) => p.state !== 'active')
+  const backlogProjects = snap.projects.filter((p) => p.state === 'backlog')
+  const doneProjects = snap.projects.filter((p) => p.state === 'done' || p.state === 'archived')
   const slotOpen = active.length < settings.goalCap
 
   return (
@@ -83,6 +84,20 @@ export function GoalsScreen() {
               aside={<span>{waiting.length}</span>}>
               <div className="card list">
                 {waiting.map((p) => <ProjectRow key={p.id} project={p} snap={snap} today={today} />)}
+              </div>
+            </Section>
+          )}
+          {backlogProjects.length > 0 && (
+            <Section title={t('plan.backlog')} aside={<span>{backlogProjects.length}</span>}>
+              <div className="card list tint-project">
+                {backlogProjects.map((p) => (
+                  <ProjectRow key={p.id} project={p} snap={snap} today={today} action={
+                    <button className="btn" onClick={async () => {
+                      await startProject(p, today)
+                      toast(t('project.started'))
+                    }}>{t('common.start')}</button>
+                  } />
+                ))}
               </div>
             </Section>
           )}
@@ -266,17 +281,18 @@ export function projectProgress(p: Project, snap: Snapshot) {
   return { done, total: steps.length, doneIds }
 }
 
-function ProjectRow({ project, snap, today }: { project: Project; snap: Snapshot; today: string }) {
+/** `action` (a backlog's Start) takes the chevron's place; the rest of the row still opens the project. */
+function ProjectRow({ project, snap, today, action }: { project: Project; snap: Snapshot; today: string; action?: ReactNode }) {
   const { done, total } = projectProgress(project, snap)
   const goal = project.goalId ? snap.goals.find((g) => g.id === project.goalId) : undefined
   const overdue = project.state === 'active' && project.targetDate < today
-  return (
-    <button className="list-row" onClick={() => navigate(`/projects/${project.id}`)}>
-      <div className="text">
-        <div className="title">{project.title}</div>
+  const open = () => navigate(`/projects/${project.id}`)
+  const text = (
+    <>
+      <div className="title">{project.title}</div>
         <div className="sub">
           {total ? t('plan.stepsOf', { done, total }) : t('plan.noSteps')}
-          {project.state === 'active' && waitsForGoal(project, snap.goals, today)
+          {project.state === 'backlog' || (project.state === 'active' && waitsForGoal(project, snap.goals, today))
             ? null
             : project.state === 'active'
             ? <> · <span style={overdue ? { color: 'var(--at-risk)' } : undefined}>{t('today.due', { when: relativeDay(project.targetDate, today) })}</span></>
@@ -284,7 +300,19 @@ function ProjectRow({ project, snap, today }: { project: Project; snap: Snapshot
           {goal && ` · ${goal.title}`}
         </div>
         {total > 0 && <div className="progress"><i style={{ width: `${(100 * done) / total}%` }} /></div>}
+    </>
+  )
+  if (action) {
+    return (
+      <div className="list-row">
+        <button className="text" style={{ textAlign: 'left' }} onClick={open}>{text}</button>
+        {action}
       </div>
+    )
+  }
+  return (
+    <button className="list-row" onClick={open}>
+      <div className="text">{text}</div>
       <IconChevronRight className="chev" width={18} />
     </button>
   )

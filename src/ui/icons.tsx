@@ -63,6 +63,9 @@ export const IconSparkle = (p: P) => (
 export const IconTemplate = (p: P) => (
   <Svg {...p}><rect x="4" y="3.5" width="16" height="17" rx="2.5" /><path d="M8 8.5h8M8 12.5h8M8 16.5h4.5" /></Svg>
 )
+export const IconClock = (p: P) => (
+  <Svg {...p}><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></Svg>
+)
 export const IconHistory = (p: P) => (
   <Svg {...p}><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6" /><path d="M3 4v4h4" /><path d="M12 8v4.5l3 2" /></Svg>
 )

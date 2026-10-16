@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { measurementProblem, emptyGoalDraft, validateGoal } from './draft'
 import { commitment, goal, hit, miss, prep, project, snapshot, task, value } from './testkit'
-import { buildDay } from './today'
+import { buildDay, stepDeadlines } from './today'
 import { addDays } from './dates'
 
 const today = '2026-09-30' // Wednesday
@@ -170,5 +170,35 @@ describe('Goals must be SMART to be saved', () => {
     expect(Object.keys(e).sort()).toEqual(['targetDate', 'whyText', 'whyValueId'])
     expect(e.targetDate).toBe('Pick a day to look back.')
     expect(validateGoal({ ...d, whyValueId: 'v', whyText: 'Health and energy.', targetDate: addDays(today, 90) })).toEqual({})
+  })
+})
+
+describe('Step end dates', () => {
+  // Started 2026-10-01, due a month later: 4 steps get about a week each.
+  const pr = project({ startDate: '2026-10-01', targetDate: '2026-10-29', state: 'active' })
+  const steps = (dates: (string | null)[]) => dates.map((date, order) => task({ projectId: pr.id, order, date }))
+
+  it('spreads the time equally when no step has a date', () => {
+    expect(stepDeadlines(pr, steps([null, null, null, null]))).toEqual(['2026-10-08', '2026-10-15', '2026-10-22', '2026-10-29'])
+  })
+
+  it('keeps a date that was set and spreads the rest around it', () => {
+    expect(stepDeadlines(pr, steps([null, '2026-10-05', null, null]))).toEqual(['2026-10-03', '2026-10-05', '2026-10-17', '2026-10-29'])
+  })
+
+  it('gives the last step the project’s date unless it has its own', () => {
+    expect(stepDeadlines(pr, steps([null, '2026-11-10']))).toEqual(['2026-10-21', '2026-11-10'])
+    expect(stepDeadlines(pr, steps(['2026-11-10', null]))).toEqual(['2026-11-10', '2026-11-10'])
+  })
+
+  it('shows the current step’s end date on Today as a badge', () => {
+    const s = snapshot({ projects: [pr], tasks: steps([null, null, null, null]) })
+    const v = buildDay(s, '2026-10-07', { ...ctx, today: '2026-10-07' })
+    expect(v.groups[0].items[0].due).toEqual({ label: 'due tomorrow', tone: 'yellow' })
+  })
+
+  it('shows a task’s time in its badge', () => {
+    const s = snapshot({ tasks: [task({ title: 'Call mom', date: today, time: '21:00' })] })
+    expect(buildDay(s, today, ctx).groups[0].items[0].due?.label).toBe('due today at 21:00')
   })
 })

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { deleteTask, promoteTask, updateTask } from '../db/repo'
 import { t } from '../i18n'
-import { addDays, isDateStr } from '../lib/dates'
+import { addDays, dayMonthShort, isDateStr } from '../lib/dates'
 import type { DateStr, Task } from '../lib/types'
-import { Chip, Field, Sheet, toast } from '../ui/components'
+import { Chip, DatePickerButton, Field, Sheet, toast } from '../ui/components'
 import { useSnapshot } from '../ui/hooks'
+import { IconCalendar, IconClose } from '../ui/icons'
 import { navigate } from '../ui/router'
 
 /** Today / Tomorrow / No date / a picked date. */
@@ -16,9 +17,11 @@ export function DateChoice(props: { value: DateStr | null; today: DateStr; onCha
       <Chip selected={!props.value} onClick={() => props.onChange(null)}>{t('task.noDate')}</Chip>
       <Chip selected={props.value === props.today} onClick={() => props.onChange(props.today)}>{t('dates.Today')}</Chip>
       <Chip selected={props.value === tomorrow} onClick={() => props.onChange(tomorrow)}>{t('dates.Tomorrow')}</Chip>
-      <input type="date" aria-label={t('task.pickDate')} value={custom ? props.value! : ''} min={props.today}
-        style={{ width: 'auto', minHeight: 40, borderRadius: 999, padding: '0 12px', fontSize: 14 }}
-        onChange={(e) => isDateStr(e.target.value) && props.onChange(e.target.value)} />
+      <DatePickerButton className={`chip ${custom ? 'on' : ''}`} value={custom ? props.value! : ''} min={props.today} label={t('task.pickDate')}
+        onPick={(d) => isDateStr(d) && props.onChange(d)}>
+        <IconCalendar width={16} height={16} />
+        {custom ? dayMonthShort(props.value!) : t('task.pickDate')}
+      </DatePickerButton>
     </div>
   )
 }
@@ -38,12 +41,14 @@ export function GoalSelect(props: { value: string | null; onChange: (id: string 
 export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose: () => void; today: DateStr }) {
   const [title, setTitle] = useState('')
   const [date, setDate] = useState<DateStr | null>(null)
+  const [time, setTime] = useState('')
   const [goalId, setGoalId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!task) return
     setTitle(task.title)
     setDate(task.date ?? null)
+    setTime(task.time ?? '')
     setGoalId(task.goalId ?? null)
   }, [task])
 
@@ -51,7 +56,7 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
 
   const save = async () => {
     if (!title.trim()) return
-    await updateTask(task, { title: title.trim(), date, goalId })
+    await updateTask(task, { title: title.trim(), date, time: date && time ? time : null, goalId })
     onClose()
   }
 
@@ -63,6 +68,21 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
         </Field>
         <Field label={t('task.due')}>
           <DateChoice value={date} today={today} onChange={setDate} />
+        </Field>
+        <Field label={t('common.time')} htmlFor="task-time">
+          {/* A time with no date means today. */}
+          <div className="row" style={{ gap: 4 }}>
+            <input id="task-time" type="time" value={time} style={{ width: 140 }}
+              onChange={(e) => {
+                setTime(e.target.value)
+                if (e.target.value && !date) setDate(today)
+              }} />
+            {time && (
+              <button type="button" className="icon-btn" aria-label={t('qa.clearTime')} onClick={() => setTime('')}>
+                <IconClose width={16} height={16} />
+              </button>
+            )}
+          </div>
         </Field>
         <Field label={t('common.goal')} htmlFor="task-goal">
           <GoalSelect id="task-goal" value={goalId} onChange={setGoalId} />

@@ -4,7 +4,7 @@ import { t } from '../i18n'
 import { capitalize, isDateStr, relativeDay } from '../lib/dates'
 import type { DateStr } from '../lib/types'
 import { DatePickerButton, Sheet, toast } from '../ui/components'
-import { IconCalendar, IconClose, IconGoals, IconSteps } from '../ui/icons'
+import { IconCalendar, IconClock, IconClose, IconGoals, IconSteps } from '../ui/icons'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 
 
@@ -78,17 +78,18 @@ function TaskForm({ today, onDone }: { today: DateStr; onDone: () => void }) {
   const snap = useSnapshot()
   const [title, setTitle] = useState('')
   const [date, setDate] = useState<DateStr | null>(null)
+  const [time, setTime] = useState('')
   const [goalId, setGoalId] = useState<string | null>(null)
   const [projectId, setProjectId] = useState<string | null>(null)
   const goals = (snap?.goals ?? []).filter((g) => g.state === 'active' || g.state === 'maintenance' || g.state === 'backlog')
-  const projects = (snap?.projects ?? []).filter((p) => p.state === 'active')
+  const projects = (snap?.projects ?? []).filter((p) => p.state === 'active' || p.state === 'backlog')
   const goal = goals.find((g) => g.id === goalId)
   const project = projects.find((p) => p.id === projectId)
 
   const save = async () => {
     if (!title.trim()) return
     // With a project picked, the text becomes that project's next step.
-    await createTask(project ? { title, projectId: project.id } : { title, date, goalId })
+    await createTask(project ? { title, projectId: project.id } : { title, date, time: time || null, goalId })
     setTitle('')
     toast(project ? t('qa.stepAdded', { project: project.title }) : t('common.added'))
     onDone()
@@ -100,20 +101,34 @@ function TaskForm({ today, onDone }: { today: DateStr; onDone: () => void }) {
         placeholder={project ? t('qa.stepPlaceholder') : t('qa.placeholder')} aria-label={project ? t('common.step') : t('common.task')} enterKeyHint="done" />
       <div className="qa-tools">
         {!project && (
-          <span className={`tool ${date ? 'on' : ''}`}>
+          <span className={`tool fixed ${date ? 'on' : ''}`}>
             <DatePickerButton className="tool-hit" value={date ?? ''} min={today} label={t('qa.dueDate')}
               onPick={(d) => isDateStr(d) && setDate(d)}>
               <IconCalendar width={20} height={20} />
               {date && <span className="tool-text">{capitalize(relativeDay(date, today))}</span>}
             </DatePickerButton>
-            {date && <button type="button" className="tool-clear" aria-label={t('qa.clearDueDate')} onClick={() => setDate(null)}><IconClose width={14} height={14} /></button>}
+            {date && <button type="button" className="tool-clear" aria-label={t('qa.clearDueDate')} onClick={() => { setDate(null); setTime('') }}><IconClose width={14} height={14} /></button>}
+          </span>
+        )}
+        {!project && (
+          // A time with no date means today.
+          <span className={`tool fixed ${time ? 'on' : ''}`}>
+            <span className="date-overlay tool-hit">
+              <IconClock width={20} height={20} />
+              {time && <span className="tool-text">{time}</span>}
+              <input type="time" aria-label={t('qa.time')} value={time} onChange={(e) => {
+                setTime(e.target.value)
+                if (e.target.value && !date) setDate(today)
+              }} />
+            </span>
+            {time && <button type="button" className="tool-clear" aria-label={t('qa.clearTime')} onClick={() => setTime('')}><IconClose width={14} height={14} /></button>}
           </span>
         )}
         {!project && goals.length > 0 && (
           <PickerTool icon={<IconGoals width={20} height={20} />} label={t('common.goal')} value={goalId} shown={goal?.title}
             options={goals} onChange={setGoalId} />
         )}
-        {!goalId && !date && projects.length > 0 && (
+        {!goalId && !date && !time && projects.length > 0 && (
           <PickerTool icon={<IconSteps width={20} height={20} />} label={t('common.project')} value={projectId} shown={project?.title}
             options={projects} onChange={setProjectId} />
         )}

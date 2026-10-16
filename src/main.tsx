@@ -5,6 +5,7 @@ import { inject, pageview } from '@vercel/analytics'
 import { App } from './App'
 import { initLang } from './i18n'
 import { startSync } from './sync/controller'
+import { installCaretAtEnd } from './ui/caret'
 import './ui/install'
 import './styles.css'
 
@@ -12,6 +13,7 @@ import './styles.css'
 navigator.storage?.persist?.().catch(() => {})
 
 initLang()
+installCaretAtEnd()
 
 // Vercel Web Analytics: visitors and app opens, no cookies. One page view per open (and per return
 // after half an hour away), not per screen: the free plan's 50,000 events a month then cover hundreds

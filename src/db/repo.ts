@@ -3,7 +3,7 @@ import { commitmentRevision } from '../lib/revisions'
 import type { CommitmentDraft, GoalDraft, PrepDraft } from '../lib/draft'
 import { meetsTarget, type MissPrompt } from '../lib/scoring'
 import type {
-  Base, Commitment, DateStr, Entry, Goal, GoalReview, GoalState, ID, MissReason, Occurrence, Prep, Project,
+  Base, Commitment, DateStr, Entry, Goal, GoalReview, GoalState, ID, MissReason, Occurrence, Prep, Project, ProjectState,
   Task, Value, WeekReview,
 } from '../lib/types'
 import { db, type Collection, type CollectionTypes } from './db'
@@ -225,9 +225,12 @@ async function shiftWaitingProjects(goal: Goal) {
   for (const p of projects) {
     const waited = Math.max(0, diffDays(p.createdAt.slice(0, 10), today))
     if (!waited) continue
-    const steps = (await db.tasks.where('projectId').equals(p.id).toArray()).map((x) => x.id)
-    const touched = (await db.entries.toArray()).some((e) => !e.deletedAt && steps.includes(e.subjectId))
-    if (!touched) writes.push({ c: 'projects', r: { ...p, targetDate: addDays(p.targetDate, waited) } as Project })
+    const steps = (await db.tasks.where('projectId').equals(p.id).toArray()).filter((x) => !x.deletedAt)
+    const ids = steps.map((x) => x.id)
+    const touched = (await db.entries.toArray()).some((e) => !e.deletedAt && ids.includes(e.subjectId))
+    if (touched) continue
+    writes.push({ c: 'projects', r: { ...p, startDate: today, targetDate: addDays(p.targetDate, waited) } as Project })
+    for (const x of steps) if (x.date) writes.push({ c: 'tasks', r: { ...x, date: addDays(x.date, waited) } as Task })
   }
   if (writes.length) await putAll(writes)
 }
@@ -395,14 +398,14 @@ export async function deleteOccurrence(o: Occurrence) {
 
 // ——— projects and tasks ———
 
-export async function createTask(fields: { title: string; date?: DateStr | null; goalId?: ID | null; projectId?: ID | null }) {
+export async function createTask(fields: { title: string; date?: DateStr | null; time?: string | null; goalId?: ID | null; projectId?: ID | null }) {
   let order: number | null = null
   if (fields.projectId) {
     const steps = await db.tasks.where('projectId').equals(fields.projectId).toArray()
     order = Math.max(-1, ...steps.map((s) => s.order ?? 0)) + 1
   }
   return put('tasks', make<'tasks'>({
-    title: fields.title.trim(), date: fields.date ?? null, goalId: fields.goalId ?? null,
+    title: fields.title.trim(), date: fields.date ?? null, time: fields.date ? fields.time ?? null : null, goalId: fields.goalId ?? null,
     projectId: fields.projectId ?? null, order,
   }))
 }
@@ -415,9 +418,10 @@ export async function deleteTask(t: Task) {
   await tombstone('tasks', [t.id])
 }
 
-export async function createProject(fields: { title: string; targetDate: DateStr; goalId?: ID | null; steps: string[] }) {
+/** Projects made on their own wait in the backlog (`state: 'backlog'`); a template's start with their goal. */
+export async function createProject(fields: { title: string; targetDate: DateStr; goalId?: ID | null; steps: string[]; state?: ProjectState }) {
   const project = make<'projects'>({
-    title: fields.title.trim(), targetDate: fields.targetDate, goalId: fields.goalId ?? null, state: 'active',
+    title: fields.title.trim(), targetDate: fields.targetDate, goalId: fields.goalId ?? null, state: fields.state ?? 'active',
   })
   const steps = fields.steps
     .map((s) => s.trim())
@@ -429,6 +433,19 @@ export async function createProject(fields: { title: string; targetDate: DateStr
 
 export async function updateProject(p: Project, changes: Partial<Fields<Project>>) {
   return patch('projects', p.id, changes)
+}
+
+/**
+ * Takes a project out of the backlog. Its dates move by the days it waited,
+ * so "a month for this" still means a month from now.
+ */
+export async function startProject(p: Project, today: DateStr) {
+  const waited = Math.max(0, diffDays(p.createdAt.slice(0, 10), today))
+  const steps = (await db.tasks.where('projectId').equals(p.id).toArray()).filter((x) => !x.deletedAt && x.date)
+  await putAll([
+    { c: 'projects', r: { ...p, state: 'active', startDate: today, targetDate: addDays(p.targetDate, waited) } as Project },
+    ...steps.map((x) => ({ c: 'tasks' as const, r: { ...x, date: addDays(x.date!, waited) } })),
+  ])
 }
 
 export async function deleteProject(p: Project) {
