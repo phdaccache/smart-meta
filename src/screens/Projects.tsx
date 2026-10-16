@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { check, createProject, createTask, deleteProject, pauseProject, reorderSteps, startProject, uncheck, updateProject, updateTask } from '../db/repo'
 import { marked, t } from '../i18n'
@@ -6,9 +6,9 @@ import { addDays, dayMonth, dayMonthShort, isDateStr, relativeDay } from '../lib
 import { activeEntries } from '../lib/scoring'
 import { dueBadge, stepDeadlines } from '../lib/today'
 import type { DateStr, Task } from '../lib/types'
-import { CheckButton, DatePickerButton, Field, InfoTip, PageText, Screen, Section, toast, TypeToConfirm } from '../ui/components'
+import { CheckButton, DatePickerButton, Field, InfoTip, NoteField, PageText, Screen, Section, toast, TypeToConfirm } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
-import { IconCalendar, IconChevronRight, IconClose } from '../ui/icons'
+import { IconCalendar, IconChevronRight, IconClose, IconNote } from '../ui/icons'
 import { Sortable } from '../ui/Sortable'
 import { navigate } from '../ui/router'
 import { GoalSelect, TaskSheet } from './TaskSheet'
@@ -197,6 +197,10 @@ export function ProjectScreen({ id }: { id: string }) {
         </div>
       </Section>
 
+      <Section title={t('common.notes')}>
+        <ProjectNote key={project.id} note={project.note ?? ''} onSave={(note) => updateProject(project, { note: note.trim() || null })} />
+      </Section>
+
       <Section title={<span className="title-row">{t('project.steps')}<InfoTip label={t('project.stepDates')}>{t('project.stepDatesInfo')}</InfoTip></span>}>
         <div className="card tint-project">
           <Sortable items={steps} keyOf={(x) => x.id} labelOf={(x) => x.title} onReorder={reorderSteps} className="items"
@@ -238,7 +242,10 @@ export function ProjectScreen({ id }: { id: string }) {
                   <div className={`item kind-task ${isDone ? 'done' : ''}`}>
                     <CheckButton shape="square" checked={isDone} label={task.title} onClick={() => toggle(task)} />
                     <button className="item-main" onClick={() => setOpenTask(task)}>
-                      <div className="item-title">{task.title}</div>
+                      <div className="item-title">
+                        {task.title}
+                        {task.note?.trim() && <IconNote className="note-mark" width={15} height={15} role="img" aria-hidden={false} aria-label={t('common.hasNotes')} />}
+                      </div>
                       {due && <span className={`due due-${due.tone}`}>{due.label}</span>}
                     </button>
                   </div>
@@ -279,6 +286,30 @@ export function ProjectScreen({ id }: { id: string }) {
       <TaskSheet task={openTask} onClose={() => setOpenTask(null)} today={today} />
     </Screen>
   )
+}
+
+/** Saved when the field is left, like a step's title, or when the page is (an app sent to the background may skip the blur). */
+function ProjectNote({ note, onSave }: { note: string; onSave: (note: string) => void }) {
+  const [text, setText] = useState(note)
+  const saved = useRef(note)
+  const latest = useRef(text)
+  latest.current = text
+  const save = (v: string) => {
+    if (v === saved.current) return
+    saved.current = v
+    onSave(v)
+  }
+  const saveRef = useRef(save)
+  saveRef.current = save
+  useEffect(() => {
+    const away = () => document.visibilityState === 'hidden' && saveRef.current(latest.current)
+    document.addEventListener('visibilitychange', away)
+    return () => {
+      document.removeEventListener('visibilitychange', away)
+      saveRef.current(latest.current)
+    }
+  }, [])
+  return <NoteField value={text} label={t('common.notes')} onChange={setText} onBlur={save} />
 }
 
 function StepTitle({ task }: { task: Task }) {

@@ -633,6 +633,11 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 
 .commitment-card { overflow: hidden; }
 .commitment-kind { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+/* A card's own Edit, top-right: it edits what's on that card. */
+.card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.card-top .commitment-kind { margin-bottom: 0; }
+.card-top > :first-child { min-width: 0; }
+.card-top .link-btn { min-height: 32px; margin: -6px 0; flex: none; }
 /* Preps sit inside their commitment's card, set apart: support, not the habit itself. */
 .prep-block { border-top: 1px solid var(--line); background: color-mix(in srgb, var(--prep) 6%, var(--surface)); }
 .prep-block-head { padding: 10px 16px 0; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--prep); }
@@ -1106,3 +1111,8 @@ li.done .gs-title { color: var(--ink-3); }
 .step-end.set { color: var(--accent); border-style: solid; border-color: color-mix(in srgb, var(--accent) 45%, transparent); background: var(--accent-soft); }
 .step-end-hit { display: inline-flex; align-items: center; gap: 4px; height: 100%; padding: 0 8px; font-size: 12.5px; font-weight: 600; }
 .step-end-clear { width: 24px; height: 100%; display: grid; place-items: center; margin-left: -6px; color: inherit; }
+
+/* ——— notes ——— */
+
+textarea.note-field { min-height: 88px; line-height: 1.45; }
+.note-mark { display: inline-block; vertical-align: -2px; margin-left: 6px; color: var(--ink-3); }

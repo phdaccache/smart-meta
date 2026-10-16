@@ -87,7 +87,8 @@ export function GoalDetailScreen({ id }: { id: string }) {
 
       {ended && <LookingBack goal={goal} />}
 
-      <Section title={t('common.details')}>
+      {/* Each Edit changes what's on its own card: this one the goal, a commitment's that commitment. */}
+      <Section title={t('common.details')} aside={<button className="link-btn" onClick={() => navigate(`/goals/${goal.id}/edit`)}>{t('common.edit')}</button>}>
         <div className="card tint-goal">
           {goal.whyText && <div className="pad card-head"><div className="group-why">{goal.whyText}</div></div>}
           <div className="pad">
@@ -128,8 +129,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
         ) : (
           <div className="stack">
             {commitments.map((c) => (
-              <CommitmentCard key={c.id} c={c} snap={snap} today={today} canRemove={outcome || commitments.length > 1}
-                onEdit={() => setEditingC(c)} />
+              <CommitmentCard key={c.id} c={c} snap={snap} today={today} onEdit={() => setEditingC(c)} />
             ))}
           </div>
         )}
@@ -173,7 +173,6 @@ export function GoalDetailScreen({ id }: { id: string }) {
 
       <Section title={t('common.manage')}>
         <div className="card pad stack">
-          <button className="btn outline block" onClick={() => navigate(`/goals/${goal.id}/edit`)}>{t('goal.editGoal')}</button>
           {goal.state === 'active' && !outcome && (
             <button className="btn outline block" onClick={() => setGoalState(goal, 'maintenance').then(() => toast(t('move.nowMaintenance')))}>
               {t('move.toMaintenance')}
@@ -211,12 +210,12 @@ export function GoalDetailScreen({ id }: { id: string }) {
 
       <AbandonSheet goal={abandoning ? goal : null} onClose={() => setAbandoning(false)} />
       <GoalHistorySheet goal={goal} snap={snap} today={today} open={history} onClose={() => setHistory(false)} />
-      <CommitmentSheet goal={goal} editing={editingC} today={today} onClose={() => setEditingC(null)} />
+      <CommitmentSheet goal={goal} editing={editingC} today={today} canRemove={outcome || commitments.length > 1} onClose={() => setEditingC(null)} />
     </Screen>
   )
 }
 
-function CommitmentCard({ c, snap, today, canRemove, onEdit }: { c: Commitment; snap: Snapshot; today: string; canRemove: boolean; onEdit: () => void }) {
+function CommitmentCard({ c, snap, today, onEdit }: { c: Commitment; snap: Snapshot; today: string; onEdit: () => void }) {
   const preps = snap.preps.filter((p) => p.commitmentId === c.id)
   const [editingPrep, setEditingPrep] = useState<Prep | 'new' | null>(null)
   const [logging, setLogging] = useState(false)
@@ -224,18 +223,17 @@ function CommitmentCard({ c, snap, today, canRemove, onEdit }: { c: Commitment; 
   return (
     <div className="card commitment-card">
       <div className="pad">
-        <div className="commitment-kind">{outcome ? t('goal.supportingHabit') : t('goal.commitment')}</div>
+        <div className="card-top">
+          <div className="commitment-kind">{outcome ? t('goal.supportingHabit') : t('goal.commitment')}</div>
+          <button className="link-btn" onClick={onEdit}>{t('common.edit')}</button>
+        </div>
         <div className="group-eyebrow">{c.label} · {cadenceText(c)}{c.startDate > today && <> · <b>{t('goal.startsOn', { when: relativeDay(c.startDate, today) })}</b></>}</div>
         <div style={{ fontWeight: 600 }}>{c.measurementDefinition}</div>
-        <div className="row" style={{ marginTop: 10, gap: 4, flexWrap: 'wrap' }}>
-          <button className="btn" onClick={onEdit}>{t('common.edit')}</button>
-          {c.shape === 'standard' && <button className="btn" onClick={() => setLogging(true)}>{t('common.log')}</button>}
-          {canRemove && (
-            <button className="btn ghost" onClick={async () => {
-              if (confirm(t('goal.removeCommitment', { name: c.label }))) await removeCommitment(c)
-            }}>{t('common.remove')}</button>
-          )}
-        </div>
+        {c.shape === 'standard' && (
+          <div className="row" style={{ marginTop: 10 }}>
+            <button className="btn" onClick={() => setLogging(true)}>{t('common.log')}</button>
+          </div>
+        )}
       </div>
       <div className="prep-block">
         <div className="prep-block-head">
@@ -295,7 +293,9 @@ export function PrepSheet({ commitment, editing, onClose }: { commitment: Commit
   )
 }
 
-export function CommitmentSheet({ goal, editing, today, onClose }: { goal: Goal; editing: Commitment | 'new' | null; today: string; onClose: () => void }) {
+export function CommitmentSheet({ goal, editing, today, canRemove = false, onClose }: {
+  goal: Goal; editing: Commitment | 'new' | null; today: string; canRemove?: boolean; onClose: () => void
+}) {
   const [d, setD] = useState<CommitmentDraft>(emptyCommitmentDraft)
   const [start, setStart] = useState(today)
   const [tried, setTried] = useState(false)
@@ -329,7 +329,16 @@ export function CommitmentSheet({ goal, editing, today, onClose }: { goal: Goal;
           <input id="c-start" type="date" value={start} onChange={(ev) => setStart(ev.target.value)} />
         </Field>
       )}
-      <div className="sheet-actions"><button className="btn primary" onClick={save}>{t('common.save')}</button></div>
+      <div className="sheet-actions">
+        {editing !== 'new' && canRemove && (
+          <button className="btn danger" onClick={async () => {
+            if (!confirm(t('goal.removeCommitment', { name: editing.label }))) return
+            await removeCommitment(editing)
+            onClose()
+          }}>{t('common.remove')}</button>
+        )}
+        <button className="btn primary" onClick={save}>{t('common.save')}</button>
+      </div>
     </Sheet>
   )
 }

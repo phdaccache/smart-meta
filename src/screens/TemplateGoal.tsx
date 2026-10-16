@@ -113,20 +113,20 @@ function TemplateEdit({ draft, values, back }: { draft: TemplateDraft; values: V
   return (
     <Screen back="/goals/new" title={t('form.newGoal')}>
       <DraftView draft={draft} values={values} edit={{
+        editGoal: () => navigate(`${back}&smart=1`),
         addHabit: () => setHabit('new'),
         editHabit: setHabit,
-        removeHabit: (i) => update({ habits: draft.habits.filter((_, j) => j !== i) }),
         addProject: () => setProject('new'),
         editProject: setProject,
-        removeProject: (i) => update({ projects: draft.projects.filter((_, j) => j !== i) }),
       }} />
       <div className="wizard-nav">
-        <button className="btn" disabled={busy} onClick={() => navigate(`${back}&smart=1`)}>{t('common.edit')}</button>
         <button className="btn primary" disabled={busy} onClick={save}>{t('form.saveGoal')}</button>
       </div>
       <HabitSheet editing={habit} draft={draft} onClose={() => setHabit(null)}
+        onRemove={(i) => update({ habits: draft.habits.filter((_, j) => j !== i) })}
         onSave={(h) => update({ habits: habit === 'new' ? [...draft.habits, h] : draft.habits.map((x, j) => (j === habit ? h : x)) })} />
       <ProjectSheet editing={project} draft={draft} onClose={() => setProject(null)}
+        onRemove={(i) => update({ projects: draft.projects.filter((_, j) => j !== i) })}
         onSave={(p) => update({ projects: project === 'new' ? [...draft.projects, p] : draft.projects.map((x, j) => (j === project ? p : x)) })} />
     </Screen>
   )
@@ -163,13 +163,13 @@ function TemplateSmartForm({ draft, back }: { draft: TemplateDraft; back: string
 
 // ——— the draft, shown like a goal's page ———
 
+/** Each Edit sits on the card it changes (the goal's on Details); removing is in a habit's or project's sheet. */
 interface EditActions {
+  editGoal: () => void
   addHabit: () => void
   editHabit: (i: number) => void
-  removeHabit: (i: number) => void
   addProject: () => void
   editProject: (i: number) => void
-  removeProject: (i: number) => void
 }
 
 function DraftView({ draft, values, edit }: { draft: TemplateDraft; values: Value[]; edit?: EditActions }) {
@@ -178,12 +178,7 @@ function DraftView({ draft, values, edit }: { draft: TemplateDraft; values: Valu
   const start = d.startDate
   const value = values.find((v) => v.id === d.whyValueId)?.name ?? draft.valueName
   const date = (s: DateStr) => `${dayMonth(s)} ${s.slice(0, 4)}`
-  const buttons = (onEdit: () => void, onRemove: () => void) => edit && (
-    <div className="row" style={{ marginTop: 10, gap: 4 }}>
-      <button className="btn" onClick={onEdit}>{t('common.edit')}</button>
-      <button className="btn ghost" onClick={onRemove}>{t('common.remove')}</button>
-    </div>
-  )
+  const editLink = (onClick: () => void) => edit && <button className="link-btn" onClick={onClick}>{t('common.edit')}</button>
   const add = (onClick: () => void) => edit && <button className="link-btn" onClick={onClick}>{t('common.add')}</button>
 
   return (
@@ -191,19 +186,21 @@ function DraftView({ draft, values, edit }: { draft: TemplateDraft; values: Valu
       <div className="eyebrow">{t('tpl.from')} · {value}</div>
       <h2 className="template-title">{d.title}</h2>
 
-      <div className="card tint-goal">
-        {d.whyText && <div className="pad card-head"><div className="group-why">{d.whyText}</div></div>}
-        <div className="pad">
-          <dl className="kv">
-            {outcome && <><dt>{t('goal.doneWhen')}</dt><dd>{d.doneWhen}</dd></>}
-            {outcome && d.targetDate && <><dt>{t('goal.deadline')}</dt><dd>{date(d.targetDate)}</dd></>}
-            {outcome && <><dt>{t('goal.extraTime')}</dt><dd>{graceLabel(d.graceDays)}</dd></>}
-            <dt>{t('goal.since')}</dt><dd>{date(start)}</dd>
-            {!outcome && <><dt>{t('goal.tolerance')}</dt><dd>{d.tolerancePct}%</dd></>}
-            {!outcome && d.targetDate && <><dt>{t('goal.reviewOn')}</dt><dd>{date(d.targetDate)}</dd></>}
-          </dl>
+      <Section title={edit && t('common.details')} aside={edit && editLink(edit.editGoal)}>
+        <div className="card tint-goal">
+          {d.whyText && <div className="pad card-head"><div className="group-why">{d.whyText}</div></div>}
+          <div className="pad">
+            <dl className="kv">
+              {outcome && <><dt>{t('goal.doneWhen')}</dt><dd>{d.doneWhen}</dd></>}
+              {outcome && d.targetDate && <><dt>{t('goal.deadline')}</dt><dd>{date(d.targetDate)}</dd></>}
+              {outcome && <><dt>{t('goal.extraTime')}</dt><dd>{graceLabel(d.graceDays)}</dd></>}
+              <dt>{t('goal.since')}</dt><dd>{date(start)}</dd>
+              {!outcome && <><dt>{t('goal.tolerance')}</dt><dd>{d.tolerancePct}%</dd></>}
+              {!outcome && d.targetDate && <><dt>{t('goal.reviewOn')}</dt><dd>{date(d.targetDate)}</dd></>}
+            </dl>
+          </div>
         </div>
-      </div>
+      </Section>
 
       {(!outcome || draft.habits.length > 0 || edit) && (
         <Section title={outcome ? t('goal.supportingHabits') : t('goal.commitments')} aside={edit && add(edit.addHabit)}>
@@ -220,12 +217,14 @@ function DraftView({ draft, values, edit }: { draft: TemplateDraft; values: Valu
             {draft.habits.map((h, i) => (
               <div key={i} className="card commitment-card">
                 <div className="pad">
-                  <div className="group-eyebrow">
-                    {h.draft.label} · {cadenceOf(h.draft)}
-                    {h.startIn > 0 && <> · <b>{t('goal.startsOn', { when: dayMonth(addDays(start, h.startIn)) })}</b></>}
+                  <div className="card-top">
+                    <div className="group-eyebrow">
+                      {h.draft.label} · {cadenceOf(h.draft)}
+                      {h.startIn > 0 && <> · <b>{t('goal.startsOn', { when: dayMonth(addDays(start, h.startIn)) })}</b></>}
+                    </div>
+                    {edit && editLink(() => edit.editHabit(i))}
                   </div>
                   <div style={{ fontWeight: 600 }}>{h.draft.measurementDefinition}</div>
-                  {edit && buttons(() => edit.editHabit(i), () => edit.removeHabit(i))}
                 </div>
                 <PrepList preps={h.preps} />
               </div>
@@ -240,10 +239,12 @@ function DraftView({ draft, values, edit }: { draft: TemplateDraft; values: Valu
           <div className="stack">
             {draft.projects.map((p, i) => (
               <div key={i} className="card pad tint-project">
-                <div style={{ fontWeight: 650 }}>{p.title}</div>
+                <div className="card-top">
+                  <div style={{ fontWeight: 650 }}>{p.title}</div>
+                  {edit && editLink(() => edit.editProject(i))}
+                </div>
                 <div className="small muted">{t('today.due', { when: dayMonth(addDays(start, p.days)) })}</div>
                 <ol className="template-steps">{p.steps.map((s, j) => <li key={j}>{s}</li>)}</ol>
-                {edit && buttons(() => edit.editProject(i), () => edit.removeProject(i))}
               </div>
             ))}
             {!draft.projects.length && <div className="card list-empty">{t('common.noneYet')}</div>}
@@ -276,8 +277,8 @@ function PrepList({ preps }: { preps: PrepDraft[] }) {
 
 // ——— sheets ———
 
-function HabitSheet({ editing, draft, onSave, onClose }: {
-  editing: number | 'new' | null; draft: TemplateDraft; onSave: (h: TemplateHabit) => void; onClose: () => void
+function HabitSheet({ editing, draft, onSave, onRemove, onClose }: {
+  editing: number | 'new' | null; draft: TemplateDraft; onSave: (h: TemplateHabit) => void; onRemove: (i: number) => void; onClose: () => void
 }) {
   const start = draft.goal.startDate
   const [d, setD] = useState<CommitmentDraft>(emptyCommitmentDraft)
@@ -314,13 +315,16 @@ function HabitSheet({ editing, draft, onSave, onClose }: {
       <Field label={t('ins.preps')}>
         <PrepEditor preps={preps} onChange={setPreps} showErrors={tried} />
       </Field>
-      <div className="sheet-actions"><button className="btn primary" onClick={save}>{t('common.save')}</button></div>
+      <div className="sheet-actions">
+        {typeof editing === 'number' && <button className="btn danger" onClick={() => { onRemove(editing); onClose() }}>{t('common.remove')}</button>}
+        <button className="btn primary" onClick={save}>{t('common.save')}</button>
+      </div>
     </Sheet>
   )
 }
 
-function ProjectSheet({ editing, draft, onSave, onClose }: {
-  editing: number | 'new' | null; draft: TemplateDraft; onSave: (p: TemplateProject) => void; onClose: () => void
+function ProjectSheet({ editing, draft, onSave, onRemove, onClose }: {
+  editing: number | 'new' | null; draft: TemplateDraft; onSave: (p: TemplateProject) => void; onRemove: (i: number) => void; onClose: () => void
 }) {
   const start = draft.goal.startDate
   const [title, setTitle] = useState('')
@@ -357,7 +361,10 @@ function ProjectSheet({ editing, draft, onSave, onClose }: {
       <Field label={t('project.steps')}>
         <StepsEditor steps={steps} onChange={setSteps} />
       </Field>
-      <div className="sheet-actions"><button className="btn primary" onClick={save}>{t('common.save')}</button></div>
+      <div className="sheet-actions">
+        {typeof editing === 'number' && <button className="btn danger" onClick={() => { onRemove(editing); onClose() }}>{t('common.remove')}</button>}
+        <button className="btn primary" onClick={save}>{t('common.save')}</button>
+      </div>
     </Sheet>
   )
 }

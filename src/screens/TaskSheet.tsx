@@ -3,7 +3,7 @@ import { deleteTask, promoteTask, updateTask } from '../db/repo'
 import { t } from '../i18n'
 import { addDays, dayMonthShort, isDateStr } from '../lib/dates'
 import type { DateStr, Task } from '../lib/types'
-import { Chip, DatePickerButton, Field, Sheet, toast } from '../ui/components'
+import { Chip, DatePickerButton, Field, NoteField, Sheet, toast } from '../ui/components'
 import { useSnapshot } from '../ui/hooks'
 import { IconCalendar, IconClose } from '../ui/icons'
 import { navigate } from '../ui/router'
@@ -56,6 +56,7 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
   const [time, setTime] = useState('')
   const [goalId, setGoalId] = useState<string | null>(null)
   const [projectId, setProjectId] = useState<string | null>(null)
+  const [note, setNote] = useState('')
 
   useEffect(() => {
     if (!task) return
@@ -64,6 +65,7 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
     setTime(task.time ?? '')
     setGoalId(task.goalId ?? null)
     setProjectId(task.forProjectId ?? null)
+    setNote(task.note ?? '')
   }, [task])
 
   if (!task) return null
@@ -71,7 +73,9 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
   const save = async () => {
     if (!title.trim()) return
     // A project's task takes its goal from the project.
-    await updateTask(task, { title: title.trim(), date, time: date && time ? time : null, goalId: projectId ? null : goalId, forProjectId: projectId })
+    await updateTask(task, {
+      title: title.trim(), date, time: date && time ? time : null, goalId: projectId ? null : goalId, forProjectId: projectId, note: note.trim() || null,
+    })
     onClose()
   }
 
@@ -80,6 +84,9 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
       <form onSubmit={(e) => { e.preventDefault(); save() }}>
         <Field label={t('common.task')} htmlFor="task-title">
           <input id="task-title" value={title} onChange={(e) => setTitle(e.target.value)} />
+        </Field>
+        <Field label={t('common.notes')} htmlFor="task-note">
+          <NoteField id="task-note" value={note} onChange={setNote} />
         </Field>
         <Field label={t('task.due')}>
           <DateChoice value={date} today={today} onChange={setDate} />

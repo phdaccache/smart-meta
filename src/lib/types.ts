@@ -83,6 +83,8 @@ export type ProjectState = 'backlog' | 'active' | 'done' | 'archived'
 
 export interface Project extends Base {
   title: string
+  /** Free text kept with it. */
+  note?: string | null
   targetDate: DateStr
   goalId?: ID | null
   state: ProjectState
@@ -94,6 +96,8 @@ export interface Project extends Base {
 
 export interface Task extends Base {
   title: string
+  /** Free text kept with it. */
+  note?: string | null
   /** A task's due date. On a project step: the end date the person set (otherwise spread, see stepDeadlines). */
   date?: DateStr | null
   /** Tasks only, optional: 'HH:MM'. */

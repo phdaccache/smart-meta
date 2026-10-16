@@ -11,7 +11,7 @@ import type { Commitment, DateStr, ID, MissReason, Task } from '../lib/types'
 import { Badge, CheckButton, Chip, DatePickerButton, Screen, Segmented, toast } from '../ui/components'
 import { useDisplacements, useSettings, useSnapshot, useSnoozes, useToday, useWeekReviews } from '../ui/hooks'
 import { dismissedMisses, reviewPending } from '../lib/review'
-import { IconCalendar, IconCheck, IconChevronLeft, IconChevronRight, IconPlus } from '../ui/icons'
+import { IconCalendar, IconCheck, IconChevronLeft, IconChevronRight, IconNote, IconPlus } from '../ui/icons'
 import { navigate } from '../ui/router'
 import { openQuickAdd } from './QuickAdd'
 import { OccurrenceSheet } from './OccurrenceSheet'
@@ -255,7 +255,10 @@ function ItemRow({ item, date, onOpen }: { item: TodayItem; date: DateStr; onOpe
         <CheckButton shape={shape} checked={item.done} tone={miss ? 'miss' : satisfiedElsewhere ? 'muted' : undefined}
           label={valued ? t('today.logItem', { name: item.title }) : item.title} onClick={toggle} />
         <button className="item-main" onClick={onOpen}>
-          <div className="item-title">{item.title}</div>
+          <div className="item-title">
+            {item.title}
+            {item.note && <IconNote className="note-mark" width={15} height={15} role="img" aria-hidden={false} aria-label={t('common.hasNotes')} />}
+          </div>
           {item.detail && <div className="item-detail">{item.detail}</div>}
           {item.due && <span className={`due due-${item.due.tone}`}>{item.due.label}</span>}
         </button>

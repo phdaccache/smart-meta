@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { t, tk, tlist, type Key } from '../i18n'
 import { statusLabel } from '../lib/describe'
@@ -359,6 +359,21 @@ export function DatePickerButton(props: {
       <input type="date" value={props.value} min={props.min} max={props.max} aria-label={props.label}
         onChange={(e) => e.target.value && props.onPick(e.target.value)} />
     </span>
+  )
+}
+
+/** Notes on a task or project: several lines, growing with what's written. */
+export function NoteField(props: { id?: string; value: string; onChange: (v: string) => void; onBlur?: (v: string) => void; label?: string }) {
+  const ref = useRef<HTMLTextAreaElement>(null)
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight + el.offsetHeight - el.clientHeight}px`
+  }, [props.value])
+  return (
+    <textarea ref={ref} id={props.id} rows={3} className="growing note-field" value={props.value} placeholder={t('common.notesPlaceholder')}
+      aria-label={props.label} onChange={(e) => props.onChange(e.target.value)} onBlur={(e) => props.onBlur?.(e.target.value)} />
   )
 }
 

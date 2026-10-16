@@ -44,6 +44,8 @@ export interface TodayItem {
   value?: number | null
   valueState?: PeriodEval
   step?: { index: number; total: number }
+  /** Tasks: has notes (shown as a small mark). */
+  note?: boolean
   /** A project's own task (not a step): shown with the project's steps. */
   forProject?: boolean
   /** Open tasks with a date: red when due today or late, yellow tomorrow, green later. */
@@ -188,7 +190,7 @@ export function buildDay(
     else visible = isToday || t.date === date
     if (!visible) return null
     return {
-      key: `task:${t.id}`, kind: 'task', title: t.title, done: !!done,
+      key: `task:${t.id}`, kind: 'task', title: t.title, done: !!done, note: !!t.note?.trim(),
       due: !done && t.date && isToday ? dueBadge(t.date, date, t.time) : undefined,
       subjectType: 'task', subjectId: t.id, entryId: done?.id, target, sortDate: sortKey(t),
     }
