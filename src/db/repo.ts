@@ -436,16 +436,26 @@ export async function updateProject(p: Project, changes: Partial<Fields<Project>
 }
 
 /**
- * Takes a project out of the backlog. Its dates move by the days it waited,
- * so "a month for this" still means a month from now.
+ * Takes a project out of the backlog. Its dates (start, target, steps' end
+ * dates) move by the days it waited, so "a month for this" still means a
+ * month from now, and a paused one picks up where it left off.
  */
 export async function startProject(p: Project, today: DateStr) {
-  const waited = Math.max(0, diffDays(p.createdAt.slice(0, 10), today))
+  const waited = Math.max(0, diffDays(p.backlogSince ?? p.createdAt.slice(0, 10), today))
+  const start = p.startDate ?? p.createdAt.slice(0, 10)
   const steps = (await db.tasks.where('projectId').equals(p.id).toArray()).filter((x) => !x.deletedAt && x.date)
   await putAll([
-    { c: 'projects', r: { ...p, state: 'active', startDate: today, targetDate: addDays(p.targetDate, waited) } as Project },
+    {
+      c: 'projects',
+      r: { ...p, state: 'active', backlogSince: null, startDate: addDays(start, waited), targetDate: addDays(p.targetDate, waited) } as Project,
+    },
     ...steps.map((x) => ({ c: 'tasks' as const, r: { ...x, date: addDays(x.date!, waited) } })),
   ])
+}
+
+/** Off Today until started again; its history stays. */
+export async function pauseProject(p: Project, today: DateStr) {
+  await updateProject(p, { state: 'backlog', backlogSince: today })
 }
 
 export async function deleteProject(p: Project) {

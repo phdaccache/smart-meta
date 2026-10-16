@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { check, createProject, createTask, deleteProject, reorderSteps, startProject, uncheck, updateProject, updateTask } from '../db/repo'
+import { check, createProject, createTask, deleteProject, pauseProject, reorderSteps, startProject, uncheck, updateProject, updateTask } from '../db/repo'
 import { marked, t } from '../i18n'
 import { addDays, dayMonth, dayMonthShort, isDateStr, relativeDay } from '../lib/dates'
 import { activeEntries } from '../lib/scoring'
@@ -113,7 +113,6 @@ export function ProjectScreen({ id }: { id: string }) {
     activeEntries(snap.entries).filter((e) => e.subjectType === 'task' && e.outcome === 'hit').map((e) => [e.subjectId, e]),
   )
   const done = steps.filter((s) => doneEntry.has(s.id)).length
-  const currentId = steps.find((s) => !doneEntry.has(s.id))?.id
   const allDone = steps.length > 0 && done === steps.length
   const eyebrow = {
     backlog: 'project.eyebrowBacklog', active: 'project.eyebrow', archived: 'project.eyebrowSetAside', done: 'project.eyebrowDone',
@@ -198,7 +197,6 @@ export function ProjectScreen({ id }: { id: string }) {
                     <StepTitle task={step} />
                     {!isDone && (
                       <div className="step-meta">
-                        {step.id === currentId && <span>{t('project.current')}</span>}
                         <StepEnd task={step} end={deadlines[steps.indexOf(step)]} />
                       </div>
                     )}
@@ -220,7 +218,12 @@ export function ProjectScreen({ id }: { id: string }) {
       <Section title={t('common.manage')}>
         <div className="card pad stack">
           {project.state === 'active' ? (
-            <button className="btn outline block" onClick={() => updateProject(project, { state: 'done' })}>{t('project.markDoneArchive')}</button>
+            <>
+              <button className="btn outline block" onClick={() => updateProject(project, { state: 'done' })}>{t('project.markDoneArchive')}</button>
+              <button className="btn outline block" onClick={() => pauseProject(project, today).then(() => toast(t('project.paused')))}>
+                {t('project.pauseToBacklog')}
+              </button>
+            </>
           ) : project.state !== 'backlog' && (
             <button className="btn outline block" onClick={() => updateProject(project, { state: 'active' })}>{t('project.reopen')}</button>
           )}

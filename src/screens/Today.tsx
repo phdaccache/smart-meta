@@ -11,7 +11,7 @@ import type { Commitment, DateStr, ID, MissReason, Task } from '../lib/types'
 import { Badge, CheckButton, Chip, DatePickerButton, Screen, Segmented, toast } from '../ui/components'
 import { useDisplacements, useSettings, useSnapshot, useSnoozes, useToday, useWeekReviews } from '../ui/hooks'
 import { dismissedMisses, reviewPending } from '../lib/review'
-import { IconCalendar, IconCheck, IconChevronRight, IconPlus } from '../ui/icons'
+import { IconCalendar, IconCheck, IconChevronLeft, IconChevronRight, IconPlus } from '../ui/icons'
 import { navigate } from '../ui/router'
 import { openQuickAdd } from './QuickAdd'
 import { OccurrenceSheet } from './OccurrenceSheet'
@@ -98,8 +98,13 @@ export function TodayScreen({ date }: { date?: DateStr }) {
       eyebrow={isPast ? t('today.pastDay', { date: dayMonth(viewDate) }) : [dayMonth(viewDate), count].filter(Boolean).join(' · ')}
       title={isPast && diffDays(viewDate, today) === 1 ? t('dates.Yesterday') : weekdayName(viewDate)}
       settings
+      // Top-left, not beside the title: a long day name ("Wednesday") keeps one line.
+      top={isPast && (
+        <button type="button" className="back" onClick={() => navigate('/')}>
+          <IconChevronLeft width={20} height={20} /> {t('dates.Today')}
+        </button>
+      )}
       actions={<>
-        {isPast && <button className="btn" onClick={() => navigate('/')}>{t('dates.Today')}</button>}
         <DatePickerButton className="icon-btn" value={viewDate} max={today} label={t('today.goToPastDay')}
           onPick={(d) => isDateStr(d) && d <= today && navigate(d === today ? '/' : `/day/${d}`)}>
           <IconCalendar />

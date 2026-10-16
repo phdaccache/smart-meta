@@ -12,6 +12,8 @@ export function Screen(props: {
   eyebrow?: ReactNode
   title: ReactNode
   back?: string
+  /** In place of Back: a link of the screen's own (Today's way back from a past day). */
+  top?: ReactNode
   actions?: ReactNode
   settings?: boolean
   children: ReactNode
@@ -19,6 +21,7 @@ export function Screen(props: {
   return (
     <div className="screen">
       <header className="screen-head">
+        {props.top}
         {props.back && (
           <button type="button" className="back" onClick={() => goBack(props.back!)}>
             <IconChevronLeft width={20} height={20} /> {t('nav.back')}

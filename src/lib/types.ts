@@ -86,8 +86,10 @@ export interface Project extends Base {
   targetDate: DateStr
   goalId?: ID | null
   state: ProjectState
-  /** The day it was started; missing on projects made active from the start (use createdAt). */
+  /** The day its clock started (moved on by any time spent back in the backlog); missing: createdAt. */
   startDate?: DateStr | null
+  /** The day it went back to the backlog; missing on one waiting since it was made (use createdAt). */
+  backlogSince?: DateStr | null
 }
 
 export interface Task extends Base {

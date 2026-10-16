@@ -88,28 +88,26 @@ function TaskForm({ today, onDone }: { today: DateStr; onDone: () => void }) {
 
   const save = async () => {
     if (!title.trim()) return
-    // With a project picked, the text becomes that project's next step.
-    await createTask(project ? { title, projectId: project.id } : { title, date, time: time || null, goalId })
+    // Always a task. With a project picked it becomes that project's next one, its date the task's end date.
+    await createTask(project ? { title, date, projectId: project.id } : { title, date, time: time || null, goalId })
     setTitle('')
-    toast(project ? t('qa.stepAdded', { project: project.title }) : t('common.added'))
+    toast(project ? t('qa.addedTo', { project: project.title }) : t('common.added'))
     onDone()
   }
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); save() }}>
       <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)}
-        placeholder={project ? t('qa.stepPlaceholder') : t('qa.placeholder')} aria-label={project ? t('common.step') : t('common.task')} enterKeyHint="done" />
+        placeholder={t('qa.placeholder')} aria-label={t('common.task')} enterKeyHint="done" />
       <div className="qa-tools">
-        {!project && (
-          <span className={`tool fixed ${date ? 'on' : ''}`}>
-            <DatePickerButton className="tool-hit" value={date ?? ''} min={today} label={t('qa.dueDate')}
-              onPick={(d) => isDateStr(d) && setDate(d)}>
-              <IconCalendar width={20} height={20} />
-              {date && <span className="tool-text">{capitalize(relativeDay(date, today))}</span>}
-            </DatePickerButton>
-            {date && <button type="button" className="tool-clear" aria-label={t('qa.clearDueDate')} onClick={() => { setDate(null); setTime('') }}><IconClose width={14} height={14} /></button>}
-          </span>
-        )}
+        <span className={`tool fixed ${date ? 'on' : ''}`}>
+          <DatePickerButton className="tool-hit" value={date ?? ''} min={today} label={t('qa.dueDate')}
+            onPick={(d) => isDateStr(d) && setDate(d)}>
+            <IconCalendar width={20} height={20} />
+            {date && <span className="tool-text">{capitalize(relativeDay(date, today))}</span>}
+          </DatePickerButton>
+          {date && <button type="button" className="tool-clear" aria-label={t('qa.clearDueDate')} onClick={() => { setDate(null); setTime('') }}><IconClose width={14} height={14} /></button>}
+        </span>
         {!project && (
           // A time with no date means today.
           <span className={`tool fixed ${time ? 'on' : ''}`}>
@@ -128,7 +126,7 @@ function TaskForm({ today, onDone }: { today: DateStr; onDone: () => void }) {
           <PickerTool icon={<IconGoals width={20} height={20} />} label={t('common.goal')} value={goalId} shown={goal?.title}
             options={goals} onChange={setGoalId} />
         )}
-        {!goalId && !date && !time && projects.length > 0 && (
+        {!goalId && !time && projects.length > 0 && (
           <PickerTool icon={<IconSteps width={20} height={20} />} label={t('common.project')} value={projectId} shown={project?.title}
             options={projects} onChange={setProjectId} />
         )}
