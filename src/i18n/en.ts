@@ -211,10 +211,11 @@ export const en = {
   // Quick add
   'qa.title': 'Quick add',
   'qa.placeholder': 'New task',
-  'qa.dueDate': 'Due date',
-  'qa.time': 'Time',
-  'qa.clear': 'Clear {name}',
   'qa.addedTo': 'Task added to {project}.',
+  'qa.prevMonth': 'Previous month',
+  'qa.nextMonth': 'Next month',
+  'qa.hours': 'Hours',
+  'qa.minutes': 'Minutes',
 
   // Habit wording
   'cadence.once': 'once a {period}',

@@ -206,10 +206,11 @@ export const ptBR: Messages = {
   // Quick add
   'qa.title': 'Nova tarefa',
   'qa.placeholder': 'Nova tarefa',
-  'qa.dueDate': 'Prazo',
-  'qa.time': 'Horário',
-  'qa.clear': 'Limpar {name}',
   'qa.addedTo': 'Tarefa adicionada a {project}.',
+  'qa.prevMonth': 'Mês anterior',
+  'qa.nextMonth': 'Próximo mês',
+  'qa.hours': 'Horas',
+  'qa.minutes': 'Minutos',
 
   // Habit wording
   'cadence.once': 'uma vez por {period}',

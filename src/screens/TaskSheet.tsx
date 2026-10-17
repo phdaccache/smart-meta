@@ -1,9 +1,10 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { deleteTask, promoteTask, updateTask } from '../db/repo'
 import { t } from '../i18n'
-import { capitalize, dayMonth, diffDays, formatTime, isDateStr, nowMinutes, relativeDay, weekdayName } from '../lib/dates'
+import { capitalize, dayMonth, diffDays, formatTime, nowMinutes, relativeDay, weekdayName } from '../lib/dates'
 import type { DateStr, Task } from '../lib/types'
-import { DatePickerButton, NoteField, Sheet, Switch, toast } from '../ui/components'
+import { NoteField, Sheet, Switch, toast } from '../ui/components'
+import { InlineCalendar, TimeWheel } from '../ui/pickers'
 import { useSnapshot } from '../ui/hooks'
 import { IconCalendar, IconChevronUpDown, IconClock, IconGoals, IconSteps } from '../ui/icons'
 import { navigate } from '../ui/router'
@@ -15,47 +16,67 @@ function dateText(d: DateStr, today: DateStr): string {
 
 /**
  * Date and time as two switches, as in iPhone's Reminders: switching one on picks today (or the
- * next hour), and tapping what it picked opens the iPhone's own calendar or clock to change it.
+ * next hour) and opens a calendar (or clock) right under it; tapping the row opens or closes it again.
  * A time needs a date, so switching the time on also switches the date on, and the date off takes the time with it.
  */
 export function DateTimeRows(props: { date: DateStr | null; time: string; today: DateStr; onChange: (date: DateStr | null, time: string) => void }) {
   const { date, time, today, onChange } = props
+  const [open, setOpen] = useState<'date' | 'time' | null>(null)
+  const pickerRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    pickerRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [open])
+  const show = (which: 'date' | 'time' | null) => {
+    // The keyboard would cover what opens.
+    if (which) (document.activeElement as HTMLElement | null)?.blur?.()
+    setOpen(which)
+  }
   const nextHour = () => formatTime(Math.min(23 * 60, (Math.floor(nowMinutes(new Date()) / 60) + 1) * 60))
   return (
     <div className="card list settings dt-rows">
       <div className="list-row">
         <IconCalendar className="row-icon" width={22} height={22} />
-        {date ? (
-          <DatePickerButton className="dt-text" value={date} min={today} label={t('qa.dueDate')} onPick={(d) => isDateStr(d) && onChange(d, time)}>
-            <span className="title">{t('common.date')}</span>
-            <span className="dt-value">{dateText(date, today)}</span>
-          </DatePickerButton>
-        ) : (
-          <span className="dt-text"><span className="title">{t('common.date')}</span></span>
-        )}
-        <Switch checked={!!date} label={t('common.date')} onChange={(on) => onChange(on ? today : null, '')} />
+        <button type="button" className="dt-text" disabled={!date} aria-expanded={date ? open === 'date' : undefined}
+          onClick={() => show(open === 'date' ? null : 'date')}>
+          <span className="title">{t('common.date')}</span>
+          {date && <span className="dt-value">{dateText(date, today)}</span>}
+        </button>
+        <Switch checked={!!date} label={t('common.date')} onChange={(on) => {
+          onChange(on ? today : null, '')
+          show(on ? 'date' : null)
+        }} />
       </div>
+      {date && open === 'date' && (
+        <div className="dt-picker" ref={pickerRef}>
+          <InlineCalendar value={date} min={date < today ? date : today} today={today} onPick={(d) => onChange(d, time)} />
+        </div>
+      )}
       <div className="list-row">
         <IconClock className="row-icon" width={22} height={22} />
-        {time ? (
-          <span className="date-overlay dt-text">
-            <span className="title">{t('common.time')}</span>
-            <span className="dt-value">{time}</span>
-            <input type="time" aria-label={t('qa.time')} value={time} onChange={(e) => e.target.value && onChange(date ?? today, e.target.value)} />
-          </span>
-        ) : (
-          <span className="dt-text"><span className="title">{t('common.time')}</span></span>
-        )}
-        <Switch checked={!!time} label={t('common.time')} onChange={(on) => onChange(on ? date ?? today : date, on ? nextHour() : '')} />
+        <button type="button" className="dt-text" disabled={!time} aria-expanded={time ? open === 'time' : undefined}
+          onClick={() => show(open === 'time' ? null : 'time')}>
+          <span className="title">{t('common.time')}</span>
+          {time && <span className="dt-value">{time}</span>}
+        </button>
+        <Switch checked={!!time} label={t('common.time')} onChange={(on) => {
+          onChange(on ? date ?? today : date, on ? nextHour() : '')
+          show(on ? 'time' : open === 'time' ? null : open)
+        }} />
       </div>
+      {time && open === 'time' && (
+        <div className="dt-picker" ref={pickerRef}>
+          <TimeWheel value={time} onChange={(tm) => onChange(date ?? today, tm)} />
+        </div>
+      )}
     </div>
   )
 }
 
-/** A row that picks one of a list with the phone's own picker, showing the choice at the right. */
-function ChoiceRow(props: {
+/** A row that picks one of a list with the phone's own picker, showing the choice at the right. Nothing to pick from, no row. */
+export function ChoiceRow(props: {
   id: string; icon: ReactNode; label: string; value: string | null; options: { id: string; title: string }[]; onChange: (id: string | null) => void
 }) {
+  if (!props.options.length) return null
   return (
     <div className="list-row select-row">
       {props.icon}
@@ -66,6 +87,24 @@ function ChoiceRow(props: {
         <option value="">{t('common.none')}</option>
         {props.options.map((o) => <option key={o.id} value={o.id}>{o.title}</option>)}
       </select>
+    </div>
+  )
+}
+
+/** A task's project and goal; a project's task takes its goal from the project, so the goal row goes while a project is picked. */
+export function TaskLinks(props: { projectId: string | null; goalId: string | null; onProject: (id: string | null) => void; onGoal: (id: string | null) => void }) {
+  const snap = useSnapshot()
+  const goals = (snap?.goals ?? []).filter((g) => g.state === 'active' || g.state === 'maintenance' || g.state === 'backlog' || g.id === props.goalId)
+  const projects = (snap?.projects ?? []).filter((p) => p.state === 'active' || p.state === 'backlog' || p.id === props.projectId)
+  if (!projects.length && (props.projectId || !goals.length)) return null
+  return (
+    <div className="card list settings">
+      <ChoiceRow id="task-project" icon={<IconSteps className="row-icon" width={22} height={22} />} label={t('common.project')}
+        value={props.projectId} options={projects} onChange={props.onProject} />
+      {!props.projectId && (
+        <ChoiceRow id="task-goal" icon={<IconGoals className="row-icon" width={22} height={22} />} label={t('common.goal')}
+          value={props.goalId} options={goals} onChange={props.onGoal} />
+      )}
     </div>
   )
 }
@@ -89,7 +128,6 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
   const [goalId, setGoalId] = useState<string | null>(null)
   const [projectId, setProjectId] = useState<string | null>(null)
   const [note, setNote] = useState('')
-  const snap = useSnapshot()
 
   useEffect(() => {
     if (!task) return
@@ -112,26 +150,16 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
     onClose()
   }
 
-  const goals = (snap?.goals ?? []).filter((g) => g.state === 'active' || g.state === 'maintenance' || g.state === 'backlog' || g.id === goalId)
-  const projects = (snap?.projects ?? []).filter((p) => p.state === 'active' || p.state === 'backlog' || p.id === projectId)
-
   return (
-    <Sheet open={!!task} onClose={onClose} title={t('common.task')}>
+    <Sheet open={!!task} onClose={onClose} title={t('common.task')} done={{ label: t('common.save'), disabled: !title.trim(), onClick: save }}>
       <form className="task-form" onSubmit={(e) => { e.preventDefault(); save() }}>
         <div className="card task-text">
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('qa.placeholder')} aria-label={t('common.task')} />
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('qa.placeholder')} aria-label={t('common.task')}
+            enterKeyHint="done" onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); save() } }} />
           <NoteField compact value={note} onChange={setNote} label={t('common.notes')} />
         </div>
         <DateTimeRows date={date} time={time} today={today} onChange={(d, tm) => { setDate(d); setTime(tm) }} />
-        <div className="card list settings">
-          <ChoiceRow id="task-project" icon={<IconSteps className="row-icon" width={22} height={22} />} label={t('common.project')}
-            value={projectId} options={projects} onChange={setProjectId} />
-          {!projectId && (
-            <ChoiceRow id="task-goal" icon={<IconGoals className="row-icon" width={22} height={22} />} label={t('common.goal')}
-              value={goalId} options={goals} onChange={setGoalId} />
-          )}
-        </div>
-        <button type="submit" className="btn primary block" disabled={!title.trim()}>{t('common.save')}</button>
+        <TaskLinks projectId={projectId} goalId={goalId} onProject={setProjectId} onGoal={setGoalId} />
       </form>
       <div className="stack" style={{ marginTop: 16 }}>
         {!projectId && (

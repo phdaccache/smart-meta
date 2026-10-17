@@ -91,8 +91,14 @@ export function PageText({ text }: { text: string }) {
 
 // ——— sheet ———
 
-/** A sheet with no title (just its `label` for screen readers) starts straight with its content. */
-export function Sheet(props: { open: boolean; onClose: () => void; title?: string; label?: string; children: ReactNode }) {
+/**
+ * A sheet with no title (just its `label` for screen readers) starts straight with its content.
+ * With `done`, it has ✕ at the left to leave without saving and ✓ at the right to save, as in iPhone's Reminders.
+ */
+export function Sheet(props: {
+  open: boolean; onClose: () => void; title?: string; label?: string; children: ReactNode
+  done?: { label: string; disabled?: boolean; onClick: () => void }
+}) {
   const ref = useRef<HTMLDivElement>(null)
   const titleId = useId()
   const [view, setView] = useState<{ top: number; height: number } | null>(null)
@@ -139,9 +145,19 @@ export function Sheet(props: { open: boolean; onClose: () => void; title?: strin
   return createPortal(
     <div className="sheet-layer" style={view ? { top: view.top, height: view.height, bottom: 'auto' } : undefined}>
       <div className="sheet-backdrop" onClick={props.onClose} />
-      <div className={`sheet ${props.title ? '' : 'untitled'}`} role="dialog" aria-modal="true" ref={ref}
+      <div className={`sheet ${props.title || props.done ? '' : 'untitled'}`} role="dialog" aria-modal="true" ref={ref}
         aria-labelledby={props.title ? titleId : undefined} aria-label={props.title ? undefined : props.label}>
-        {props.title && (
+        {props.done ? (
+          <div className="sheet-head bar">
+            <button type="button" className="round-btn" aria-label={t('nav.close')} onClick={props.onClose}>
+              <IconClose width={20} height={20} />
+            </button>
+            {props.title ? <h2 id={titleId}>{props.title}</h2> : <span />}
+            <button type="button" className="round-btn primary" aria-label={props.done.label} disabled={props.done.disabled} onClick={props.done.onClick}>
+              <IconCheck width={20} height={20} />
+            </button>
+          </div>
+        ) : props.title && (
           <div className="sheet-head">
             <h2 id={titleId}>{props.title}</h2>
             <button type="button" className="icon-btn" aria-label={t('nav.close')} onClick={props.onClose}>
