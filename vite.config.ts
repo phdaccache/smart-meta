@@ -19,6 +19,8 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(version),
     __APP_COMMIT__: JSON.stringify(commit),
+    // A Vercel preview deployment (a branch, not the real app): the Developer section shows there for testing.
+    __APP_PREVIEW__: JSON.stringify(process.env.VERCEL_ENV === 'preview'),
   },
   plugins: [
     react(),

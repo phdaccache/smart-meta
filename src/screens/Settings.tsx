@@ -291,7 +291,10 @@ function DevSection({ devToday }: { devToday: string | null }) {
   const settings = useSettings()
   const today = useToday(settings.rolloverHour)
   const [busy, setBusy] = useState(false)
+  const { email } = useSyncStatus()
   const load = async () => {
+    // A preview shares the real sync account: loading here while signed in would erase the real data.
+    if (__APP_PREVIEW__ && email) return void alert('This is a preview. Sign out first: loading sample data here would erase your synced data.')
     if (busy || !confirm('Replace ALL data with sample data? Your current data is erased (including the synced copy).')) return
     setBusy(true)
     try {

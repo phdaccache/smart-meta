@@ -400,7 +400,7 @@ export async function deleteOccurrence(o: Occurrence) {
 
 /** `projectId` makes it the project's next step; `forProjectId` a task of the project's own. */
 export async function createTask(fields: {
-  title: string; date?: DateStr | null; time?: string | null; goalId?: ID | null; projectId?: ID | null; forProjectId?: ID | null
+  title: string; note?: string | null; date?: DateStr | null; time?: string | null; goalId?: ID | null; projectId?: ID | null; forProjectId?: ID | null
 }) {
   let order: number | null = null
   if (fields.projectId) {
@@ -409,7 +409,7 @@ export async function createTask(fields: {
   }
   return put('tasks', make<'tasks'>({
     title: fields.title.trim(), date: fields.date ?? null, time: fields.date ? fields.time ?? null : null, goalId: fields.forProjectId || fields.projectId ? null : fields.goalId ?? null,
-    projectId: fields.projectId ?? null, order, forProjectId: fields.projectId ? null : fields.forProjectId ?? null,
+    projectId: fields.projectId ?? null, order, forProjectId: fields.projectId ? null : fields.forProjectId ?? null, note: fields.note?.trim() || null,
   }))
 }
 

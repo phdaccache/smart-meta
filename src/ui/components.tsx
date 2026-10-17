@@ -91,7 +91,8 @@ export function PageText({ text }: { text: string }) {
 
 // ——— sheet ———
 
-export function Sheet(props: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
+/** A sheet with no title (just its `label` for screen readers) starts straight with its content. */
+export function Sheet(props: { open: boolean; onClose: () => void; title?: string; label?: string; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
   const titleId = useId()
   const [view, setView] = useState<{ top: number; height: number } | null>(null)
@@ -138,13 +139,16 @@ export function Sheet(props: { open: boolean; onClose: () => void; title: string
   return createPortal(
     <div className="sheet-layer" style={view ? { top: view.top, height: view.height, bottom: 'auto' } : undefined}>
       <div className="sheet-backdrop" onClick={props.onClose} />
-      <div className="sheet" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={ref}>
-        <div className="sheet-head">
-          <h2 id={titleId}>{props.title}</h2>
-          <button type="button" className="icon-btn" aria-label={t('nav.close')} onClick={props.onClose}>
-            <IconClose width={20} height={20} />
-          </button>
-        </div>
+      <div className={`sheet ${props.title ? '' : 'untitled'}`} role="dialog" aria-modal="true" ref={ref}
+        aria-labelledby={props.title ? titleId : undefined} aria-label={props.title ? undefined : props.label}>
+        {props.title && (
+          <div className="sheet-head">
+            <h2 id={titleId}>{props.title}</h2>
+            <button type="button" className="icon-btn" aria-label={t('nav.close')} onClick={props.onClose}>
+              <IconClose width={20} height={20} />
+            </button>
+          </div>
+        )}
         <div className="sheet-body">{props.children}</div>
       </div>
     </div>,
@@ -297,6 +301,14 @@ export function Chip(props: { selected?: boolean; onClick: () => void; children:
   )
 }
 
+/** An on/off switch, like iPhone's Settings. */
+export function Switch(props: { checked: boolean; label: string; onChange: (on: boolean) => void }) {
+  return (
+    <button type="button" role="switch" className="switch" aria-checked={props.checked} aria-label={props.label}
+      onClick={() => props.onChange(!props.checked)} />
+  )
+}
+
 export function WeekdayPicker(props: { value: number[]; onChange: (v: number[]) => void }) {
   const days = tlist('dates.weekdayInitials')
   const names = (['dates.monday', 'dates.tuesday', 'dates.wednesday', 'dates.thursday', 'dates.friday', 'dates.saturday', 'dates.sunday'] as const).map((k) => t(k))
@@ -354,13 +366,17 @@ export function DatePickerButton(props: {
   onPick: (date: string) => void
 }) {
   const [picks, setPicks] = useState(0)
+  const focusedAt = useRef(0)
   return (
     <span className={`date-overlay ${props.className ?? ''}`}>
       {props.children}
       {/* iPhone's calendar stays open after a day is picked, even one that's refused: a fresh field closes it. */}
       <input key={picks} type="date" value={props.value} min={props.min} max={props.max} aria-label={props.label}
+        onFocus={() => { focusedAt.current = Date.now() }}
         onChange={(e) => {
           if (!e.target.value) return
+          // An empty field gets today filled in by iPhone as its calendar opens: that's not a pick, so it stays open.
+          if (!props.value && Date.now() - focusedAt.current < 600) return
           e.target.blur()
           setPicks((n) => n + 1)
           props.onPick(e.target.value)
@@ -370,7 +386,9 @@ export function DatePickerButton(props: {
 }
 
 /** Notes on a task or project: several lines, growing with what's written. */
-export function NoteField(props: { id?: string; value: string; onChange: (v: string) => void; onBlur?: (v: string) => void; label?: string }) {
+export function NoteField(props: {
+  id?: string; value: string; onChange: (v: string) => void; onBlur?: (v: string) => void; label?: string; compact?: boolean
+}) {
   const ref = useRef<HTMLTextAreaElement>(null)
   useLayoutEffect(() => {
     const el = ref.current
@@ -379,7 +397,8 @@ export function NoteField(props: { id?: string; value: string; onChange: (v: str
     el.style.height = `${el.scrollHeight + el.offsetHeight - el.clientHeight}px`
   }, [props.value])
   return (
-    <textarea ref={ref} id={props.id} rows={3} className="growing note-field" value={props.value} placeholder={t('common.notesPlaceholder')}
+    <textarea ref={ref} id={props.id} rows={props.compact ? 1 : 3} className={`growing note-field ${props.compact ? 'compact' : ''}`} value={props.value}
+      placeholder={props.compact ? t('common.notes') : t('common.notesPlaceholder')}
       aria-label={props.label} onChange={(e) => props.onChange(e.target.value)} onBlur={(e) => props.onBlur?.(e.target.value)} />
   )
 }
