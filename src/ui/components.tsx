@@ -100,6 +100,7 @@ export function Sheet(props: {
   done?: { label: string; disabled?: boolean; onClick: () => void }
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  const layerRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
   const [view, setView] = useState<{ top: number; height: number } | null>(null)
   const onClose = useRef(props.onClose)
@@ -125,6 +126,23 @@ export function Sheet(props: {
       setView(null)
     }
   }, [props.open])
+  // iPhone hands a drag on the sheet to the page under it (or, with the keyboard up, moves the whole view).
+  // Only what scrolls inside the sheet may move; any other drag goes nowhere.
+  useEffect(() => {
+    const layer = layerRef.current
+    if (!props.open || !layer) return
+    const onMove = (e: TouchEvent) => {
+      // Moving the caret or a selection in the field being typed in.
+      if (e.target === document.activeElement && (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) return
+      for (let el = e.target as HTMLElement | null; el && el !== layer; el = el.parentElement) {
+        const { overflowY } = getComputedStyle(el)
+        if ((overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight) return
+      }
+      e.preventDefault()
+    }
+    layer.addEventListener('touchmove', onMove, { passive: false })
+    return () => layer.removeEventListener('touchmove', onMove)
+  }, [props.open])
   useEffect(() => {
     if (!props.open) return
     const prev = document.activeElement as HTMLElement | null
@@ -145,7 +163,7 @@ export function Sheet(props: {
   // The visible area shrinks by the keyboard's height; a small change is just the browser's own bars.
   const keyboard = !!view && view.height < window.innerHeight - 150
   return createPortal(
-    <div className={`sheet-layer ${keyboard ? 'keyboard' : ''}`} style={view ? { top: view.top, height: view.height, bottom: 'auto' } : undefined}>
+    <div ref={layerRef} className={`sheet-layer ${keyboard ? 'keyboard' : ''}`} style={view ? { top: view.top, height: view.height, bottom: 'auto' } : undefined}>
       <div className="sheet-backdrop" onClick={props.onClose} />
       <div className={`sheet ${props.title || props.done ? '' : 'untitled'}`} role="dialog" aria-modal="true" ref={ref}
         aria-labelledby={props.title ? titleId : undefined} aria-label={props.title ? undefined : props.label}>
