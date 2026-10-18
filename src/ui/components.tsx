@@ -142,8 +142,10 @@ export function Sheet(props: {
     }
   }, [props.open])
   if (!props.open) return null
+  // The visible area shrinks by the keyboard's height; a small change is just the browser's own bars.
+  const keyboard = !!view && view.height < window.innerHeight - 150
   return createPortal(
-    <div className="sheet-layer" style={view ? { top: view.top, height: view.height, bottom: 'auto' } : undefined}>
+    <div className={`sheet-layer ${keyboard ? 'keyboard' : ''}`} style={view ? { top: view.top, height: view.height, bottom: 'auto' } : undefined}>
       <div className="sheet-backdrop" onClick={props.onClose} />
       <div className={`sheet ${props.title || props.done ? '' : 'untitled'}`} role="dialog" aria-modal="true" ref={ref}
         aria-labelledby={props.title ? titleId : undefined} aria-label={props.title ? undefined : props.label}>

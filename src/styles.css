@@ -429,6 +429,9 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .sheet-head h2 { font-size: 18px; font-weight: 700; }
 .sheet-body { overflow-y: auto; padding: 8px 20px 20px; -webkit-overflow-scrolling: touch; }
 .sheet.untitled .sheet-body { padding-top: 20px; }
+/* With the keyboard up, the home bar's room is the keyboard's, and the page shouldn't show around iPhone's floating bar above it. */
+.sheet-layer.keyboard .sheet { padding-bottom: 0; }
+.sheet-layer.keyboard .sheet::after { content: ''; position: absolute; top: 100%; left: 0; right: 0; height: 100vh; background: var(--bg); }
 .sheet-actions { display: flex; gap: 10px; margin-top: 20px; }
 .sheet-actions .btn { flex: 1; }
 @keyframes rise { from { transform: translateY(40px); opacity: 0; } }
