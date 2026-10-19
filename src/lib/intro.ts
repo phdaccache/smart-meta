@@ -40,14 +40,16 @@ export interface Example {
   draft: Partial<GoalDraft>
   /** Finish lines: deadline this many months after the start. */
   months?: number
+  /** The New goal template it matches: picking the example fills in that template's why, dates and prep too. */
+  template?: string
 }
 
 const text = (key: string, part = '') => tk(`example.${key}${part}` as Key)
 
 /** An example's wording (title, what counts, short name) comes from the language files. */
-function example(key: string, area: Area, shape: (key: string) => Partial<GoalDraft>, months?: number): Example {
+function example(key: string, area: Area, shape: (key: string) => Partial<GoalDraft>, months?: number, template?: string): Example {
   return {
-    key, area, months,
+    key, area, months, template,
     get title() { return text(key) },
     get draft() { return shape(key) },
   }
@@ -60,35 +62,35 @@ const rhythm = (times: number) => (key: string): Partial<GoalDraft> => ({
 const finish = (graceDays: number) => (key: string): Partial<GoalDraft> => ({ goalKind: 'outcome', doneWhen: text(key, '.what'), graceDays })
 
 export const EXAMPLES: Example[] = [
-  example('exercise', 'health', rhythm(3)),
+  example('exercise', 'health', rhythm(3), undefined, 'gym'),
   example('sleep', 'health', (key) => ({
     goalKind: 'habit', shape: 'threshold', checkinType: 'quantity', period: 'day', comparator: 'gte',
     targetValue: num(7.5), unit: text(key, '.unit'), measurementDefinition: text(key, '.what'), label: text(key, '.short'),
-  })),
-  example('job', 'work', finish(30), 6),
-  example('focus', 'work', rhythm(4)),
+  }), undefined, 'sleep'),
+  example('job', 'work', finish(30), 6, 'job'),
+  example('focus', 'work', rhythm(4), undefined, 'focus'),
   example('study', 'study', rhythm(4)),
-  example('course', 'study', finish(14), 3),
-  example('fund', 'money', finish(61), 12),
-  example('spending', 'money', rhythm(1)),
-  example('family', 'people', rhythm(1)),
+  example('course', 'study', finish(14), 3, 'course'),
+  example('fund', 'money', finish(61), 12, 'fund'),
+  example('spending', 'money', rhythm(1), undefined, 'spending'),
+  example('family', 'people', rhythm(1), undefined, 'family'),
   example('ontime', 'people', (key) => ({
     goalKind: 'habit', shape: 'standard', checkinType: 'timestamp', period: 'week',
     measurementDefinition: text(key, '.what'), label: text(key, '.short'),
-  })),
-  example('practise', 'create', rhythm(4)),
-  example('project', 'create', finish(14), 3),
+  }), undefined, 'ontime'),
+  example('practise', 'create', rhythm(4), undefined, 'practise'),
+  example('project', 'create', finish(14), 3, 'create'),
   example('phone', 'mind', (key) => ({
     goalKind: 'habit', shape: 'threshold', checkinType: 'timestamp', period: 'day', comparator: 'lte',
     targetTime: '23:00', measurementDefinition: text(key, '.what'), label: text(key, '.short'),
-  })),
-  example('meditate', 'mind', rhythm(5)),
-  example('tidy', 'home', rhythm(1)),
-  example('cook', 'home', rhythm(4)),
+  }), undefined, 'phone'),
+  example('meditate', 'mind', rhythm(5), undefined, 'meditate'),
+  example('tidy', 'home', rhythm(1), undefined, 'tidy'),
+  example('cook', 'home', rhythm(4), undefined, 'cook'),
 ]
 
 /** Not tied to an area: fills the list when few areas are picked. */
-const READ: Example = example('read', 'study', rhythm(3))
+const READ: Example = example('read', 'study', rhythm(3), undefined, 'read')
 
 export const exampleByKey = (key: string) => [...EXAMPLES, READ].find((e) => e.key === key)
 
@@ -112,13 +114,21 @@ export function addMonths(d: DateStr, n: number): DateStr {
   return `${ty}-${String(tm).padStart(2, '0')}-${String(Math.min(day, last)).padStart(2, '0')}`
 }
 
-/** A full draft from an example, keeping the chosen start date. */
-export function draftFromExample(e: Example, startDate: DateStr): GoalDraft {
+/**
+ * A full draft from an example, keeping the chosen start date: every step comes
+ * filled in. `from` is the matching template's draft (its why, dates, how often
+ * it may slip, and a habit's prep); without one, the area's why and 3 months.
+ */
+export function draftFromExample(e: Example, startDate: DateStr, from?: GoalDraft): GoalDraft {
+  const habit = e.draft.goalKind !== 'outcome'
   return {
     ...emptyGoalDraft(startDate),
     ...e.draft,
     title: e.title,
-    targetDate: e.months ? addMonths(startDate, e.months) : '',
+    whyText: from?.whyText || areaInfo(e.area).why,
+    tolerancePct: from?.tolerancePct ?? 80,
+    targetDate: from?.targetDate || addMonths(startDate, e.months ?? 3),
+    preps: habit ? from?.preps ?? [] : [],
   }
 }
 

@@ -1357,7 +1357,12 @@ button.goal-why { margin-top: 14px; }
 
 /* Sheets from main, in the new style */
 .switch[aria-checked='true'] { background: var(--c-green); }
-.sheet-head.bar { padding-top: 4px; }
+.sheet-head.bar { padding-top: 12px; }
 .sheet-layer.keyboard .sheet::after { background: inherit; }
 .btn.outline { background: var(--surface-2); border: 0; }
 .dt-rows .list-row, .select-row { gap: 12px; }
+
+/* A large sheet (Quick add, a task): its top stays just under the status bar; the keyboard only moves its bottom. */
+.sheet.large { height: calc(100% - var(--safe-top) - 10px); max-height: none; }
+.sheet-layer.keyboard .sheet.large { height: calc(100% - var(--safe-top) - 10px); }
+.weekdays button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }

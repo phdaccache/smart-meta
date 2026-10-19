@@ -14,6 +14,7 @@ import {
   AREAS, areaInfo, draftFromExample, EXAMPLES, exampleByKey, examplesFor, piecesFor, projection, type Area, type Example, type Pieces,
 } from '../lib/intro'
 import { MAINTENANCE_WEEKS } from '../lib/review'
+import { templateByKey } from '../lib/templates'
 import { buildDay, type Snapshot } from '../lib/today'
 import type { Commitment, Goal, Value } from '../lib/types'
 import { CheckButton, Chip, Field, PageText, toast } from '../ui/components'
@@ -471,7 +472,8 @@ function IntroGoal({ step }: { step: Step }) {
 
   const pick = (e: Example) => {
     if (s.example === e.key) return setIntro({ example: null, draft: emptyGoalDraft(d.startDate), valueName: '' })
-    setIntro({ example: e.key, draft: draftFromExample(e, d.startDate), valueName: areaInfo(e.area).value })
+    const from = e.template ? templateByKey(e.template)?.draft(d.startDate) : undefined
+    setIntro({ example: e.key, draft: draftFromExample(e, d.startDate, from), valueName: areaInfo(e.area).value })
   }
 
   const fit = placeholderFor(s.areas, d)

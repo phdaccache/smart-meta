@@ -153,7 +153,7 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
   }
 
   return (
-    <Sheet open={!!task} onClose={onClose} title={t('common.task')} done={{ label: t('common.save'), disabled: !title.trim(), onClick: save }}>
+    <Sheet open={!!task} large onClose={onClose} title={t('common.task')} done={{ label: t('common.save'), disabled: !title.trim(), onClick: save }}>
       <form className="task-form" onSubmit={(e) => { e.preventDefault(); save() }}>
         <div className="card task-text">
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('qa.placeholder')} aria-label={t('common.task')}

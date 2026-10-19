@@ -94,10 +94,12 @@ export function PageText({ text }: { text: string }) {
 /**
  * A sheet with no title (just its `label` for screen readers) starts straight with its content.
  * With `done`, it has ✕ at the left to leave without saving and ✓ at the right to save, as in iPhone's Reminders.
+ * `large`: nearly full height, its top fixed just under the status bar whether the keyboard is up or not.
  */
 export function Sheet(props: {
   open: boolean; onClose: () => void; title?: string; label?: string; children: ReactNode
   done?: { label: string; disabled?: boolean; onClick: () => void }
+  large?: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const layerRef = useRef<HTMLDivElement>(null)
@@ -159,7 +161,8 @@ export function Sheet(props: {
       prev?.focus?.({ preventScroll: true })
     }
   }, [props.open])
-  useSwipeToDismiss(ref, props.open, onClose)
+  // A sheet with ✕ and ✓ holds unsaved typing: only ✕ throws it away, never a stray swipe.
+  useSwipeToDismiss(ref, props.open && !props.done, onClose)
   // The visible area shrinks by the keyboard's height; a small change is just the browser's own bars.
   const keyboard = !!view && view.height < window.innerHeight - 150
   // When the keyboard goes away the sheet stays where the keyboard pushed it, as on the iPhone, instead
@@ -168,7 +171,7 @@ export function Sheet(props: {
   useLayoutEffect(() => {
     const sheet = ref.current
     const layer = layerRef.current
-    if (!props.open || !sheet || !layer || !view) {
+    if (!props.open || !sheet || !layer || !view || props.large) {
       keptTop.current = null
       return
     }
@@ -179,14 +182,14 @@ export function Sheet(props: {
     } else if (keptTop.current != null) {
       sheet.style.minHeight = `${Math.max(0, view.height - keptTop.current)}px`
     }
-  }, [props.open, view, keyboard])
+  }, [props.open, view, keyboard, props.large])
   if (!props.open) return null
   return createPortal(
     <div ref={layerRef} className={`sheet-layer ${keyboard ? 'keyboard' : ''}`} style={view ? { top: view.top, height: view.height, bottom: 'auto' } : undefined}>
       <div className="sheet-backdrop" onClick={props.onClose} />
-      <div className={`sheet ${props.title || props.done ? '' : 'untitled'}`} role="dialog" aria-modal="true" ref={ref}
+      <div className={`sheet ${props.title || props.done ? '' : 'untitled'} ${props.large ? 'large' : ''}`} role="dialog" aria-modal="true" ref={ref}
         aria-labelledby={props.title ? titleId : undefined} aria-label={props.title ? undefined : props.label}>
-        <div className="sheet-grabber" aria-hidden="true" />
+        {!props.done && <div className="sheet-grabber" aria-hidden="true" />}
         {props.done ? (
           <div className="sheet-head bar">
             <button type="button" className="round-btn" aria-label={t('nav.close')} onClick={props.onClose}>
