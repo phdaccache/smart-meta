@@ -72,6 +72,9 @@ export function Sortable<T>(props: {
     let suppressClick = false
     let frame = 0
     let lastClientY = 0
+    // A tab screen scrolls in its own layer (see App); any other screen scrolls the page.
+    const scroller = ul.closest<HTMLElement>('.tab-root')
+    const scrollY = () => (scroller ? scroller.scrollTop : window.scrollY)
 
     const targetIndex = (dy: number, d: Drag) => {
       const n = d.tops.length
@@ -108,9 +111,9 @@ export function Sortable<T>(props: {
       const step = lastClientY < EDGE ? -Math.ceil((EDGE - lastClientY) / 6)
         : lastClientY > h - EDGE - 60 ? Math.ceil((lastClientY - (h - EDGE - 60)) / 6) : 0
       if (step) {
-        const before = window.scrollY
-        window.scrollBy(0, step)
-        d.y += window.scrollY - before
+        const before = scrollY()
+        ;(scroller ?? window).scrollBy(0, step)
+        d.y += scrollY() - before
         update()
       }
       frame = requestAnimationFrame(autoscroll)
@@ -120,7 +123,7 @@ export function Sortable<T>(props: {
       if (!start) return
       const els = rows.current.slice(0, latest.current.items.length)
       const rects = els.map((r) => r!.getBoundingClientRect())
-      const sy = window.scrollY
+      const sy = scrollY()
       const i = start.i
       const gap = rects.length > 1 ? rects[1].top - rects[0].bottom : 0
       drag.current = {
@@ -158,7 +161,7 @@ export function Sortable<T>(props: {
     const track = (x: number, y: number): boolean => {
       if (drag.current) {
         lastClientY = y
-        drag.current.y = y + window.scrollY
+        drag.current.y = y + scrollY()
         update()
         return true
       }

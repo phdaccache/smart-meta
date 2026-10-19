@@ -54,9 +54,16 @@ interface NavState {
   scrollY?: number
   /** How many sheets are open over the screen: each one has its own entry, so Back closes it. */
   layer?: number
+  /** The tab screen this one was reached from, kept as it was underneath (see App). */
+  root?: string
 }
 
 const depth = () => (history.state as NavState | null)?.depth ?? 0
+/**
+ * The tab screen kept under the screen shown, or null on a tab screen (or one opened from a link).
+ * It stays drawn, scrolled where it was, so Back to it has nothing to rebuild or scroll.
+ */
+export const tabUnder = () => (depth() > 0 && (history.state as NavState | null)?.root) || null
 const layer = () => (history.state as NavState | null)?.layer ?? 0
 
 /** The open sheets, innermost last. `pushed` once its history entry exists. */
@@ -88,7 +95,8 @@ const rememberScroll = () => history.replaceState({ ...(history.state as NavStat
  * draw its parts that weren't on screen yet mid-slide, and they showed black until it caught up.
  */
 function slideBack(then: () => void) {
-  const main = document.querySelector('main.app')
+  // The screen being left is the last one: a tab screen kept underneath comes before it.
+  const main = [...document.querySelectorAll('main.app')].pop()
   if (!main) {
     notify()
     then()
@@ -217,13 +225,18 @@ export function navigate(to: string, opts: { replace?: boolean } = {}) {
     }
     history.replaceState({ depth: 0 }, '', to)
   } else if (opts.replace) {
-    history.replaceState({ depth: depth() }, '', to)
+    history.replaceState({ depth: depth(), root: tabUnder() ?? undefined }, '', to)
   } else {
     rememberScroll()
-    history.pushState({ depth: depth() + 1 }, '', to)
+    const from = getPath()
+    history.pushState({ depth: depth() + 1, root: tabUnder() ?? (isRoot(from) ? from : undefined) }, '', to)
     dir = 'forward'
   }
-  show(dir, () => window.scrollTo(0, 0))
+  show(dir, () => {
+    window.scrollTo(0, 0)
+    // A tab screen scrolls in its own layer: tapping its tab again takes it to the top.
+    if (isRoot(to)) document.querySelector('.tab-root')?.scrollTo(0, 0)
+  })
 }
 
 /** Back within the app when there is somewhere to go, otherwise to a sensible parent. */

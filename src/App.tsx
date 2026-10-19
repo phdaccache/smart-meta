@@ -8,7 +8,7 @@ import { Toaster } from './ui/components'
 import { reviewPending } from './lib/review'
 import { useSettingsLoaded, useToday } from './ui/hooks'
 import { IconGoals, IconInsights, IconPlus, IconReview, IconToday } from './ui/icons'
-import { match, navigate, useLocation } from './ui/router'
+import { match, navigate, tabUnder, useLocation } from './ui/router'
 import { GoalDetailScreen, GoalEditScreen, GoalReviewScreen } from './screens/GoalDetail'
 import { NewGoalScreen } from './screens/GoalForm'
 import { GoalsScreen } from './screens/Goals'
@@ -72,6 +72,12 @@ export function App() {
   const onboarding = !settings.onboarded && goalCount === 0
   const content = onboarding && !path.startsWith('/welcome') && path !== '/settings' ? <IntroStart /> : route(path, query)
   const tabbed = !onboarding && (TABS.some((tab) => tab.path === path) || path.startsWith('/day/'))
+  const main = <main className={`app ${tabbed ? '' : 'no-tabs'}`}>{content}</main>
+  // A tab screen scrolls in a layer of its own and stays drawn under the screens opened from it, so Back
+  // finds it where it was. Rebuilding it and scrolling the page back down to where it had been showed it
+  // black for a moment on a phone, which draws a far-off part of the page only after it gets there.
+  const tab = onboarding ? null : TABS.some((x) => x.path === path) ? path : tabUnder()
+  const covered = !!tab && tab !== path
 
   // Keyed by language: switching remounts the screens, so every text (and anything computed from it) is redone.
   return (
@@ -81,7 +87,14 @@ export function App() {
           Pretending it’s {dayMonth(settings.devToday)} · tap to reset
         </button>
       )}
-      <main className={`app ${tabbed ? '' : 'no-tabs'}`}>{content}</main>
+      {tab ? (
+        <>
+          <div className="tab-root" key={tab} inert={covered} aria-hidden={covered || undefined}>
+            {covered ? <main className="app">{route(tab, new URLSearchParams())}</main> : main}
+          </div>
+          {covered && <div className="nav-top">{main}</div>}
+        </>
+      ) : main}
       {tabbed && (
         <>
           <button className="fab" aria-label={t('nav.quickAdd')} onClick={openQuickAdd}><IconPlus width={26} height={26} /></button>

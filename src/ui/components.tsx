@@ -132,9 +132,29 @@ export function Sheet(props: {
   // iOS doesn't shrink the page for the keyboard; it scrolls it, sometimes leaving the field
   // underneath. Pinning the sheet to the visible area keeps it right above the keyboard.
   const underRef = useRef<HTMLDivElement>(null)
+  const large = !!props.large
   useEffect(() => {
     const vv = window.visualViewport
     if (!props.open || !vv) return
+    // A large sheet doesn't move or resize for the keyboard, which simply covers its bottom, as on the iPhone:
+    // only its content gets room to scroll above it. Following the keyboard meant moving the sheet a frame after
+    // the phone had moved the view, and each time it glitched, with the page showing where the sheet should be.
+    if (large) {
+      const layer = layerRef.current
+      const update = () => {
+        if (!layer) return
+        layer.style.setProperty('--kb', `${Math.max(0, layer.clientHeight - vv.height - vv.offsetTop)}px`)
+        // Should the phone still slide the view up, the sheet stays where it is on screen.
+        layer.style.transform = vv.offsetTop > 0 ? `translateY(${vv.offsetTop}px)` : ''
+      }
+      update()
+      vv.addEventListener('resize', update)
+      vv.addEventListener('scroll', update)
+      return () => {
+        vv.removeEventListener('resize', update)
+        vv.removeEventListener('scroll', update)
+      }
+    }
     const update = () => {
       // Moved here and now, in the same frame the iPhone moves what's visible: going through a React render
       // left the sheet a frame behind as the keyboard closed, and the page flashed where the sheet should be.
@@ -151,7 +171,7 @@ export function Sheet(props: {
       vv.removeEventListener('scroll', update)
       setView(null)
     }
-  }, [props.open])
+  }, [props.open, large])
   // iPhone hands a drag on the sheet to the page under it (or, with the keyboard up, moves the whole view).
   // Only what scrolls inside the sheet may move; any other drag goes nowhere.
   useEffect(() => {
@@ -227,7 +247,7 @@ export function Sheet(props: {
         the page shows through, and the sheet's own fixed layer doesn't reach it. This sits in the page itself, just
         below what's visible, in the sheet's colour. */}
     {view && <div ref={underRef} className="sheet-underlay" aria-hidden="true" style={{ top: view.pageTop + view.height }} />}
-    <div ref={layerRef} className={`sheet-layer ${keyboard ? 'keyboard' : ''}`} style={view ? { top: view.top, height: view.height, bottom: 'auto' } : undefined}>
+    <div ref={layerRef} className={`sheet-layer ${keyboard ? 'keyboard' : ''} ${large ? 'large' : ''}`} style={view ? { top: view.top, height: view.height, bottom: 'auto' } : undefined}>
       <div className="sheet-backdrop" onClick={() => leave.current() && props.onClose()} />
       <div className={`sheet ${props.title || props.done ? '' : 'untitled'} ${props.large ? 'large' : ''}`} role="dialog" aria-modal="true" ref={ref}
         aria-labelledby={props.title ? titleId : undefined} aria-label={props.title ? undefined : props.label}>

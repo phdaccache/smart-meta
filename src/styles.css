@@ -1350,6 +1350,8 @@ button.goal-why { margin-top: 14px; }
 /* A large sheet (Quick add, a task): its top stays just under the status bar; the keyboard only moves its bottom. */
 .sheet.large { height: calc(100% - var(--safe-top) - 10px); max-height: none; }
 .sheet-layer.keyboard .sheet.large { height: calc(100% - var(--safe-top) - 10px); }
+/* The keyboard covers a large sheet's bottom (see Sheet): what's under it can still scroll up into view. */
+.sheet.large .sheet-body { padding-bottom: calc(20px + var(--kb, 0px)); }
 .weekdays button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 
 /* Long words and pasted links wrap instead of widening the page: a grid track or flex item never grows past its column. */
@@ -1445,6 +1447,10 @@ button, a, summary, [role='button'], .chip {
   box-shadow: -6px 0 24px rgb(0 0 0 / 0.12);
 }
 .nav-shade { position: fixed; inset: 0; z-index: 29; pointer-events: none; background: rgb(0 0 0 / 0.1); }
+/* A tab screen scrolls in a layer of its own that stays where it was under the screens opened from it (see App);
+   those scroll the page, over it. */
+.tab-root { position: fixed; inset: 0; overflow-y: auto; overscroll-behavior-y: none; -webkit-overflow-scrolling: touch; background: var(--bg); }
+.nav-top { position: relative; z-index: 1; min-height: 100dvh; background: var(--bg); }
 
 /* Under a sheet it's always the sheet, never the page: with the keyboard up, iPhone's floating ↑ ↓ ✓ bar
    leaves a strip between the sheet and the keyboard, and the page under it used to show through there. */
@@ -1456,6 +1462,7 @@ button, a, summary, [role='button'], .chip {
   padding: 0 8px calc(var(--safe-bottom) + 8px);
 }
 .sheet-layer.keyboard .action-sheet { padding-bottom: 8px; }
+.sheet-layer.large .action-sheet { padding-bottom: calc(max(var(--safe-bottom), var(--kb, 0px)) + 8px); }
 .action-sheet-shade { position: absolute; inset: 0; background: rgb(0 0 0 / 0.2); animation: fade 0.2s ease; }
 .action-sheet-group, .action-sheet-btn.cancel { position: relative; animation: sheet-in 0.3s var(--ease-drawer); }
 .action-sheet-group { border-radius: 14px; overflow: hidden; background: var(--surface-raised); }
