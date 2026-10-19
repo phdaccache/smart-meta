@@ -13,7 +13,7 @@ import { startTemplate, TemplateGoalScreen } from './TemplateGoal'
 import { Chip, Field, InfoTip, PageText, Screen, Segmented, Sheet, Stepper, toast, WeekdayPicker } from '../ui/components'
 import { IconChevronRight, IconClose } from '../ui/icons'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
-import { goBack, navigate, useLocation } from '../ui/router'
+import { goBack, navigate, scrollScreenToTop, useLocation } from '../ui/router'
 
 const SHAPES: { value: Shape; title: Key }[] = [
   { value: 'rhythm', title: 'shape.rhythm' },
@@ -670,7 +670,7 @@ export function Wizard({ d, set, patch, errors, onSave, top, suggest }: FormProp
       return
     }
     setI(at + 1)
-    window.scrollTo(0, 0)
+    scrollScreenToTop()
   }
 
   const letter = step.letter

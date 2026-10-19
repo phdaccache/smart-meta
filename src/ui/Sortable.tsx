@@ -72,8 +72,8 @@ export function Sortable<T>(props: {
     let suppressClick = false
     let frame = 0
     let lastClientY = 0
-    // A tab screen scrolls in its own layer (see App); any other screen scrolls the page.
-    const scroller = ul.closest<HTMLElement>('.tab-root')
+    // Each screen scrolls in its own layer (see App).
+    const scroller = ul.closest<HTMLElement>('.screen-layer')
     const scrollY = () => (scroller ? scroller.scrollTop : window.scrollY)
 
     const targetIndex = (dy: number, d: Drag) => {

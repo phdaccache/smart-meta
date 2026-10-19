@@ -1447,10 +1447,11 @@ button, a, summary, [role='button'], .chip {
   box-shadow: -6px 0 24px rgb(0 0 0 / 0.12);
 }
 .nav-shade { position: fixed; inset: 0; z-index: 29; pointer-events: none; background: rgb(0 0 0 / 0.1); }
-/* A tab screen scrolls in a layer of its own that stays where it was under the screens opened from it (see App);
-   those scroll the page, over it. */
-.tab-root { position: fixed; inset: 0; overflow-y: auto; overscroll-behavior-y: none; -webkit-overflow-scrolling: touch; background: var(--bg); }
-.nav-top { position: relative; z-index: 1; min-height: 100dvh; background: var(--bg); }
+/* Each screen scrolls in a layer of its own, over the screens it was opened from, which stay where they were (see App).
+   It bounces at its ends as the page did, within itself, so pulling past the top never shows the screen underneath;
+   one pixel more than its height lets a short screen bounce too. */
+.screen-layer { position: fixed; inset: 0; overflow-y: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; background: var(--bg); }
+.screen-layer > .app { min-height: calc(100% + 1px); }
 
 /* Under a sheet it's always the sheet, never the page: with the keyboard up, iPhone's floating ↑ ↓ ✓ bar
    leaves a strip between the sheet and the keyboard, and the page under it used to show through there. */

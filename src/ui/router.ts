@@ -6,38 +6,22 @@ const notify = () => listeners.forEach((l) => l())
 
 /** Each slide's own number, so one that ends late doesn't clear the next one's direction. */
 let slides = 0
-/** True while a slide pictures the new screen: it has already rendered, so its scroll can be set at once. */
-let rendered = false
 
 /**
  * Shows the new screen. Going deeper it slides in from the right over the old one, and Back slides it
  * away to the right again, as on the iPhone; switching tabs, replacing a screen, or with less motion
- * asked for, it just changes. `then` places the scroll before the new screen is pictured, so it
- * doesn't jump when the slide ends.
+ * asked for, it just changes.
  */
-function show(dir: 'forward' | 'back' | null, then: () => void) {
+function show(dir: 'forward' | 'back' | null) {
   const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   // A sheet going away plays its own exit; the page under it changes at once.
-  if (!dir || still || document.querySelector('.sheet-layer')) {
-    notify()
-    then()
-    return
-  }
-  if (dir === 'back') return slideBack(then)
-  if (!document.startViewTransition) {
-    notify()
-    then()
-    return
-  }
+  if (!dir || still || document.querySelector('.sheet-layer')) return notify()
+  if (dir === 'back') return slideBack()
+  if (!document.startViewTransition) return notify()
   const n = ++slides
   const root = document.documentElement
   root.dataset.nav = dir
-  const slide = document.startViewTransition(() => {
-    flushSync(notify)
-    rendered = true
-    then()
-    rendered = false
-  })
+  const slide = document.startViewTransition(() => flushSync(notify))
   slide.finished.finally(() => {
     if (n === slides) delete root.dataset.nav
   })
@@ -50,20 +34,24 @@ const isRoot = (to: string) => ROOTS.includes(to.split('?')[0])
 interface NavState {
   /** How many in-app screens sit below this one. 0 on a tab screen. */
   depth: number
-  /** Where the screen was scrolled when we left it, to put it back on Back. */
-  scrollY?: number
   /** How many sheets are open over the screen: each one has its own entry, so Back closes it. */
   layer?: number
-  /** The tab screen this one was reached from, kept as it was underneath (see App). */
-  root?: string
+  /** The screens this one was opened from, bottom first. */
+  under?: string[]
 }
 
 const depth = () => (history.state as NavState | null)?.depth ?? 0
 /**
- * The tab screen kept under the screen shown, or null on a tab screen (or one opened from a link).
- * It stays drawn, scrolled where it was, so Back to it has nothing to rebuild or scroll.
+ * The screens under the one shown, bottom first. They stay drawn, each in its own layer and scrolled
+ * where it was (see App), so Back has nothing to rebuild or scroll: rebuilding a screen and scrolling the
+ * page back down to where it had been showed it black for a moment on a phone, which draws a far-off
+ * part of a page only once it gets there.
  */
-export const tabUnder = () => (depth() > 0 && (history.state as NavState | null)?.root) || null
+export const screensUnder = (): string[] => (depth() > 0 && (history.state as NavState | null)?.under) || []
+/** The layer of the screen shown: each screen scrolls in its own. */
+const topScreen = () => [...document.querySelectorAll<HTMLElement>('.screen-layer')].pop()
+/** Takes the screen shown back to its top. */
+export const scrollScreenToTop = () => topScreen()?.scrollTo(0, 0)
 const layer = () => (history.state as NavState | null)?.layer ?? 0
 
 /** The open sheets, innermost last. `pushed` once its history entry exists. */
@@ -83,25 +71,18 @@ if (layer() > 0) {
 // Entries made before this app ran (or by a reload) count as the bottom of the stack.
 else if (!depth()) history.replaceState({ depth: 0 }, '')
 
-// The browser restores scroll before the screen has re-rendered, which on iOS can leave half
-// the page unpainted. We restore it ourselves once the content is tall enough.
+// Screens keep their own scroll (see screensUnder); the page itself doesn't scroll.
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual'
-
-const rememberScroll = () => history.replaceState({ ...(history.state as NavState), scrollY: window.scrollY }, '')
 
 /**
  * Back: the screen underneath is drawn as usual, in place and scrolled where it was, and a copy of the
  * screen being left slides off to the right over it. Sliding the live screen in instead made a phone
  * draw its parts that weren't on screen yet mid-slide, and they showed black until it caught up.
  */
-function slideBack(then: () => void) {
-  // The screen being left is the last one: a tab screen kept underneath comes before it.
-  const main = [...document.querySelectorAll('main.app')].pop()
-  if (!main) {
-    notify()
-    then()
-    return
-  }
+function slideBack() {
+  const top = topScreen()
+  const main = top?.querySelector('main.app')
+  if (!top || !main) return notify()
   const leaving = document.createElement('div')
   leaving.className = 'nav-leaving'
   leaving.setAttribute('aria-hidden', 'true')
@@ -109,20 +90,16 @@ function slideBack(then: () => void) {
   const copy = main.cloneNode(true) as HTMLElement
   const fields = main.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea')
   copy.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea').forEach((el, i) => { el.value = fields[i]?.value ?? '' })
-  copy.style.transform = `translateY(${-window.scrollY}px)`
+  copy.style.transform = `translateY(${-top.scrollTop}px)`
   leaving.appendChild(copy)
   const shade = document.createElement('div')
   shade.className = 'nav-shade'
   document.body.append(shade, leaving)
   flushSync(notify)
-  rendered = true
-  then()
-  rendered = false
   const done = () => { leaving.remove(); shade.remove() }
   // Animations wait while the app is in the background; the copy must not outlive its moment.
   setTimeout(done, 1000)
-  // The copy holds still for two frames while the screen underneath is drawn at its scroll, so the
-  // phone has drawn it by the time it shows.
+  // The copy holds still for two frames, so the phone has drawn the screen underneath by the time it shows.
   requestAnimationFrame(() => requestAnimationFrame(() => {
     const ease = 'cubic-bezier(0.32, 0.72, 0, 1)'
     const runs = [
@@ -131,18 +108,6 @@ function slideBack(then: () => void) {
     ]
     Promise.all(runs.map((a) => a.finished)).catch(() => {}).finally(done)
   }))
-}
-
-function restoreScroll(y: number) {
-  let frames = 0
-  const attempt = () => {
-    const room = document.documentElement.scrollHeight - window.innerHeight
-    if (room >= y || ++frames > 60) window.scrollTo(0, Math.min(y, Math.max(0, room)))
-    else requestAnimationFrame(attempt)
-  }
-  // Inside a slide the new screen is already there; otherwise wait for it to render.
-  if (rendered) attempt()
-  else requestAnimationFrame(attempt)
 }
 
 /** Set while unwinding the stack to a tab: where to land once the browser gets there. */
@@ -161,12 +126,11 @@ window.addEventListener('popstate', (e: PopStateEvent & { hasUAVisualTransition?
   if (pendingRoot != null) {
     history.replaceState({ depth: 0 }, '', pendingRoot)
     pendingRoot = null
-    show(null, () => window.scrollTo(0, 0))
+    show(null)
     return
   }
   // Safari's own swipe back already slid the page; sliding it again would play it twice.
-  const y = (history.state as NavState | null)?.scrollY ?? 0
-  show(e.hasUAVisualTransition ? null : 'back', () => restoreScroll(y))
+  show(e.hasUAVisualTransition ? null : 'back')
 })
 
 /** Takes `n` of our own entries off the history. */
@@ -214,6 +178,7 @@ export function pushLayer(close: () => void): () => void {
 
 export function navigate(to: string, opts: { replace?: boolean } = {}) {
   if (afterOwnMoves(() => navigate(to, opts))) return
+  const from = getPath()
   let dir: 'forward' | null = null
   if (isRoot(to)) {
     const d = depth()
@@ -225,18 +190,14 @@ export function navigate(to: string, opts: { replace?: boolean } = {}) {
     }
     history.replaceState({ depth: 0 }, '', to)
   } else if (opts.replace) {
-    history.replaceState({ depth: depth(), root: tabUnder() ?? undefined }, '', to)
+    history.replaceState({ depth: depth(), under: screensUnder() }, '', to)
   } else {
-    rememberScroll()
-    const from = getPath()
-    history.pushState({ depth: depth() + 1, root: tabUnder() ?? (isRoot(from) ? from : undefined) }, '', to)
+    history.pushState({ depth: depth() + 1, under: [...screensUnder(), getPath()] }, '', to)
     dir = 'forward'
   }
-  show(dir, () => {
-    window.scrollTo(0, 0)
-    // A tab screen scrolls in its own layer: tapping its tab again takes it to the top.
-    if (isRoot(to)) document.querySelector('.tab-root')?.scrollTo(0, 0)
-  })
+  // The same screen again (its tab tapped once more): back to its top.
+  if (to === from) scrollScreenToTop()
+  show(dir)
 }
 
 /** Back within the app when there is somewhere to go, otherwise to a sensible parent. */

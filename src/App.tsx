@@ -8,7 +8,7 @@ import { Toaster } from './ui/components'
 import { reviewPending } from './lib/review'
 import { useSettingsLoaded, useToday } from './ui/hooks'
 import { IconGoals, IconInsights, IconPlus, IconReview, IconToday } from './ui/icons'
-import { match, navigate, tabUnder, useLocation } from './ui/router'
+import { match, navigate, screensUnder, useLocation } from './ui/router'
 import { GoalDetailScreen, GoalEditScreen, GoalReviewScreen } from './screens/GoalDetail'
 import { NewGoalScreen } from './screens/GoalForm'
 import { GoalsScreen } from './screens/Goals'
@@ -28,6 +28,8 @@ const TABS: { path: string; label: Key; Icon: typeof IconToday }[] = [
   { path: '/review', label: 'nav.review', Icon: IconReview },
   { path: '/insights', label: 'nav.insights', Icon: IconInsights },
 ]
+
+const hasTabs = (path: string) => TABS.some((tab) => tab.path === path) || path.startsWith('/day/')
 
 function route(path: string, query: URLSearchParams) {
   let m: Record<string, string> | null
@@ -71,13 +73,11 @@ export function App() {
   // Settings live on the device; goals arrive with sync, so a restored phone skips first run.
   const onboarding = !settings.onboarded && goalCount === 0
   const content = onboarding && !path.startsWith('/welcome') && path !== '/settings' ? <IntroStart /> : route(path, query)
-  const tabbed = !onboarding && (TABS.some((tab) => tab.path === path) || path.startsWith('/day/'))
-  const main = <main className={`app ${tabbed ? '' : 'no-tabs'}`}>{content}</main>
-  // A tab screen scrolls in a layer of its own and stays drawn under the screens opened from it, so Back
-  // finds it where it was. Rebuilding it and scrolling the page back down to where it had been showed it
-  // black for a moment on a phone, which draws a far-off part of the page only after it gets there.
-  const tab = onboarding ? null : TABS.some((x) => x.path === path) ? path : tabUnder()
-  const covered = !!tab && tab !== path
+  const tabbed = !onboarding && hasTabs(path)
+  // Each screen scrolls in a layer of its own, and the ones it was opened from stay drawn underneath,
+  // each where it was, so Back finds them as they were (see screensUnder).
+  const under = onboarding ? [] : screensUnder()
+  const here = window.location.pathname + window.location.search
 
   // Keyed by language: switching remounts the screens, so every text (and anything computed from it) is redone.
   return (
@@ -87,14 +87,17 @@ export function App() {
           Pretending it’s {dayMonth(settings.devToday)} · tap to reset
         </button>
       )}
-      {tab ? (
-        <>
-          <div className="tab-root" key={tab} inert={covered} aria-hidden={covered || undefined}>
-            {covered ? <main className="app">{route(tab, new URLSearchParams())}</main> : main}
+      {[...under, here].map((at, i) => {
+        const shown = i === under.length
+        const [p, search = ''] = at.split('?')
+        return (
+          <div key={`${i}:${at}`} className="screen-layer" inert={!shown} aria-hidden={shown ? undefined : true}>
+            <main className={`app ${(shown ? tabbed : hasTabs(p)) ? '' : 'no-tabs'}`}>
+              {shown ? content : route(p, new URLSearchParams(search))}
+            </main>
           </div>
-          {covered && <div className="nav-top">{main}</div>}
-        </>
-      ) : main}
+        )
+      })}
       {tabbed && (
         <>
           <button className="fab" aria-label={t('nav.quickAdd')} onClick={openQuickAdd}><IconPlus width={26} height={26} /></button>
