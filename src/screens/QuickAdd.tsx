@@ -60,7 +60,8 @@ function TaskForm({ today, onDone }: { today: DateStr; onDone: () => void }) {
   }
 
   return (
-    <Sheet open large onClose={onDone} label={t('qa.title')} done={{ label: t('common.add'), disabled: !title.trim(), onClick: save }}>
+    <Sheet open large onClose={onDone} label={t('qa.title')} done={{ label: t('common.add'), disabled: !title.trim(), onClick: save }}
+      dirty={!!(title.trim() || note.trim() || date || goalId || projectId)}>
       <form className="task-form" onSubmit={(e) => { e.preventDefault(); save() }}>
         <div className="card task-text">
           <TitleField autoFocus value={title} onChange={setTitle} onEnter={save} placeholder={t('qa.placeholder')} label={t('common.task')} />

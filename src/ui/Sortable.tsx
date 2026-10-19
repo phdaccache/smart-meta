@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { flushSync } from 'react-dom'
 import { haptic } from './haptics'
 
 const HOLD_MS = 450
@@ -40,14 +41,25 @@ export function Sortable<T>(props: {
   const drag = useRef<Drag | null>(null)
   const [phase, setPhase] = useState<Phase | null>(null)
   const [held, setHeld] = useState<number | null>(null)
-  const latest = useRef(props)
-  latest.current = props
+  // The new order, shown at once: the saved one comes back a moment later, and until then the list
+  // would flash its old order.
+  const [pending, setPending] = useState<string[] | null>(null)
+  const keys = props.items.map(props.keyOf)
+  const items = pending && pending.length === keys.length && pending.every((k) => keys.includes(k))
+    ? pending.map((k) => props.items[keys.indexOf(k)])
+    : props.items
+  useEffect(() => {
+    if (pending && (pending.join() === keys.join() || pending.length !== keys.length)) setPending(null)
+  })
+  const latest = useRef({ ...props, items })
+  latest.current = { ...props, items }
 
   const move = (from: number, to: number) => {
     if (from === to) return
     const next = [...latest.current.items]
     const [it] = next.splice(from, 1)
     next.splice(to, 0, it)
+    setPending(next.map(latest.current.keyOf))
     latest.current.onReorder(next)
   }
 
@@ -172,13 +184,16 @@ export function Sortable<T>(props: {
       setPhase({ from: d.from, kind: 'dropping' })
       haptic()
       setTimeout(() => {
+        // Reorder and let go of the shifts in the same frame, so nothing jumps.
+        flushSync(() => {
+          setPhase(null)
+          move(d.from, to)
+        })
         for (const el of els) {
           if (!el) continue
           el.style.transition = 'none'
           el.style.transform = ''
         }
-        setPhase(null)
-        move(d.from, to)
         requestAnimationFrame(() => requestAnimationFrame(() => els.forEach((el) => el && (el.style.transition = ''))))
       }, 300)
     }
@@ -239,7 +254,7 @@ export function Sortable<T>(props: {
 
   return (
     <ul ref={list} className={`sortable ${phase ? 'lifting' : ''} ${props.className ?? ''}`}>
-      {props.items.map((item, i) => {
+      {items.map((item, i) => {
         const mine = phase?.from === i
         return (
           <li key={props.keyOf(item)} ref={(el) => { rows.current[i] = el }}

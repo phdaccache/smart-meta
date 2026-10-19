@@ -1441,4 +1441,31 @@ button, a, summary, [role='button'], .chip {
 @keyframes nav-in { from { transform: translateX(100%); } }
 @keyframes nav-out { to { transform: translateX(100%); } }
 @keyframes nav-under { to { transform: translateX(-30%); filter: brightness(0.9); } }
-@keyframes nav-from-under { from { transform: translateX(-30%); filter: brightness(0.9); } }
+/* The screen coming back is live, not a picture: no filter on it, or a phone redraws it every frame and can show it blank. */
+@keyframes nav-from-under { from { transform: translateX(-30%); } }
+
+/* A sheet that opens straight into typing rises a little and fades in with the keyboard, instead of sliding the whole height. */
+.sheet.typing { animation: sheet-rise 0.25s var(--ease-out); }
+@keyframes sheet-rise { from { transform: translateY(40px); opacity: 0; } }
+
+/* Asking before unsaved typing is thrown away: an iOS action sheet at the bottom of the screen. */
+.action-sheet {
+  position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px;
+  padding: 0 8px calc(var(--safe-bottom) + 8px);
+}
+.sheet-layer.keyboard .action-sheet { padding-bottom: 8px; }
+.action-sheet-shade { position: absolute; inset: 0; background: rgb(0 0 0 / 0.2); animation: fade 0.2s ease; }
+.action-sheet-group, .action-sheet-btn.cancel { position: relative; animation: sheet-in 0.3s var(--ease-drawer); }
+.action-sheet-group { border-radius: 14px; overflow: hidden; background: var(--surface-raised); }
+.action-sheet-btn {
+  display: block; width: 100%; min-height: 56px; font-size: 20px; color: var(--accent); background: var(--surface-raised);
+  border-radius: 14px; transition: background-color 0.25s ease-out;
+}
+.action-sheet-group .action-sheet-btn { border-radius: 0; }
+.action-sheet-btn.danger { color: var(--danger); }
+.action-sheet-btn.cancel { font-weight: 600; }
+.action-sheet-btn:active { background: color-mix(in srgb, var(--ink) 10%, var(--surface-raised)); transition-duration: 0s; }
+@media (prefers-reduced-motion: reduce) {
+  .sheet.typing { animation: fade 0.2s ease; }
+  .action-sheet-group, .action-sheet-btn.cancel { animation: fade 0.2s ease; }
+}

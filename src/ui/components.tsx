@@ -105,13 +105,21 @@ export function PageText({ text }: { text: string }) {
  * A sheet with no title (just its `label` for screen readers) starts straight with its content.
  * With `done`, it has ✕ at the left to leave without saving and ✓ at the right to save, as in iPhone's Reminders.
  * `large`: nearly full height, its top fixed just under the status bar whether the keyboard is up or not.
+ * `dirty`: it holds typing not saved yet, so pulling it down (or tapping outside) asks before throwing that away.
  */
 export function Sheet(props: {
   open: boolean; onClose: () => void; title?: string; label?: string; children: ReactNode
   done?: { label: string; disabled?: boolean; onClick: () => void }
   large?: boolean
+  dirty?: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  // Asking whether to throw away unsaved typing, as Reminders does.
+  const [asking, setAsking] = useState(false)
+  const dirty = useRef(props.dirty)
+  dirty.current = props.dirty
+  // Opened straight into typing (the keyboard comes up with it): a short rise, so it doesn't race the keyboard.
+  const [typing, setTyping] = useState(false)
   const layerRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
   const [view, setView] = useState<{ top: number; height: number } | null>(null)
@@ -155,10 +163,22 @@ export function Sheet(props: {
     layer.addEventListener('touchmove', onMove, { passive: false })
     return () => layer.removeEventListener('touchmove', onMove)
   }, [props.open])
+  useLayoutEffect(() => {
+    if (!props.open) return setTyping(false)
+    const el = document.activeElement
+    setTyping(!!ref.current?.contains(el) && (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement))
+  }, [props.open])
+  /** Leaves, unless that would lose typing: then it asks first. */
+  const leave = useRef<() => boolean>(() => true)
+  leave.current = () => {
+    if (!dirty.current) return true
+    setAsking(true)
+    return false
+  }
   useEffect(() => {
     if (!props.open) return
     const prev = document.activeElement as HTMLElement | null
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && props.onClose()
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && leave.current() && onClose.current()
     document.addEventListener('keydown', onKey)
     document.body.classList.add('sheet-open')
     // A field that focused itself on mount (autoFocus) keeps it; otherwise the first control gets it.
@@ -171,14 +191,16 @@ export function Sheet(props: {
       prev?.focus?.({ preventScroll: true })
     }
   }, [props.open])
-  // A sheet with ✕ and ✓ holds unsaved typing: only ✕ throws it away, never a stray swipe.
-  useSwipeToDismiss(ref, props.open && !props.done, onClose)
+  // Pull it down to close it, as in Reminders; with unsaved typing it springs back and asks.
+  useSwipeToDismiss(ref, props.open && !asking, onClose, leave)
   // Closing, it slides back down the way it came, as on the iPhone. React lets go of the sheet at once
   // (often its parent goes too), so a still copy plays the way out while the page is already usable.
+  const typingNow = useRef(false)
+  typingNow.current = typing
   useLayoutEffect(() => {
     const layer = layerRef.current
     if (!props.open || !layer) return
-    return () => slideAway(layer)
+    return () => slideAway(layer, typingNow.current)
   }, [props.open])
   // The visible area shrinks by the keyboard's height; a small change is just the browser's own bars.
   const keyboard = !!view && view.height < window.innerHeight - 150
@@ -203,8 +225,8 @@ export function Sheet(props: {
   if (!props.open) return null
   return createPortal(
     <div ref={layerRef} className={`sheet-layer ${keyboard ? 'keyboard' : ''}`} style={view ? { top: view.top, height: view.height, bottom: 'auto' } : undefined}>
-      <div className="sheet-backdrop" onClick={props.onClose} />
-      <div className={`sheet ${props.title || props.done ? '' : 'untitled'} ${props.large ? 'large' : ''}`} role="dialog" aria-modal="true" ref={ref}
+      <div className="sheet-backdrop" onClick={() => leave.current() && props.onClose()} />
+      <div className={`sheet ${props.title || props.done ? '' : 'untitled'} ${props.large ? 'large' : ''} ${typing ? 'typing' : ''}`} role="dialog" aria-modal="true" ref={ref}
         aria-labelledby={props.title ? titleId : undefined} aria-label={props.title ? undefined : props.label}>
         {!props.done && <div className="sheet-grabber" aria-hidden="true" />}
         {props.done ? (
@@ -227,12 +249,21 @@ export function Sheet(props: {
         )}
         <div className="sheet-body">{props.children}</div>
       </div>
+      {asking && (
+        <div className="action-sheet" role="alertdialog" aria-label={t('sheet.discard')}>
+          <div className="action-sheet-shade" onClick={() => setAsking(false)} />
+          <div className="action-sheet-group">
+            <button type="button" className="action-sheet-btn danger" onClick={() => { setAsking(false); props.onClose() }}>{t('sheet.discard')}</button>
+          </div>
+          <button type="button" className="action-sheet-btn cancel" autoFocus onClick={() => setAsking(false)}>{t('sheet.keepEditing')}</button>
+        </div>
+      )}
     </div>,
     document.body,
   )
 }
 
-function slideAway(layer: HTMLElement) {
+function slideAway(layer: HTMLElement, typing: boolean) {
   const ghost = layer.cloneNode(true) as HTMLElement
   // The copy carries attributes, not what was typed: put the fields' text back so nothing blanks out.
   const fields = layer.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea')
@@ -245,13 +276,19 @@ function slideAway(layer: HTMLElement) {
   const backdrop = ghost.querySelector<HTMLElement>('.sheet-backdrop')
   const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const ease = 'cubic-bezier(0.32, 0.72, 0, 1)'
+  // A sheet that was typed in drops a little and fades as the keyboard goes: its room is changing under it.
+  const quick = still || (typing && !sheet?.style.transform)
   const runs = [
     // From wherever a swipe left it, not from the top.
-    sheet?.animate(still ? [{ opacity: 1 }, { opacity: 0 }] : [{ transform: sheet.style.transform || 'none' }, { transform: 'translateY(100%)' }],
-      { duration: still ? 150 : 300, easing: ease, fill: 'forwards' }),
+    sheet?.animate(still ? [{ opacity: 1 }, { opacity: 0 }]
+      : quick ? [{ transform: 'none', opacity: 1 }, { transform: 'translateY(40px)', opacity: 0 }]
+      : [{ transform: sheet.style.transform || 'none' }, { transform: 'translateY(100%)' }],
+    { duration: quick ? 180 : 300, easing: quick ? 'ease-in' : ease, fill: 'forwards' }),
     backdrop?.animate([{ opacity: backdrop.style.opacity || 1 }, { opacity: 0 }], { duration: still ? 150 : 300, easing: 'ease-out', fill: 'forwards' }),
   ]
   Promise.all(runs.map((a) => a?.finished)).catch(() => {}).finally(() => ghost.remove())
+  // Animations wait while the app is in the background; the copy must not outlive its moment.
+  setTimeout(() => ghost.remove(), 700)
 }
 
 /**
@@ -259,7 +296,9 @@ function slideAway(layer: HTMLElement) {
  * anywhere once its content is scrolled to the top. It follows the finger;
  * let go far enough down, or with a flick, and it slides away.
  */
-function useSwipeToDismiss(ref: React.RefObject<HTMLDivElement | null>, open: boolean, close: React.RefObject<() => void>) {
+function useSwipeToDismiss(
+  ref: React.RefObject<HTMLDivElement | null>, open: boolean, close: React.RefObject<() => void>, mayLeave: React.RefObject<() => boolean>,
+) {
   useEffect(() => {
     const sheet = ref.current
     if (!open || !sheet) return
@@ -307,7 +346,7 @@ function useSwipeToDismiss(ref: React.RefObject<HTMLDivElement | null>, open: bo
       dragging = false
       // Where a flick would carry it (Apple's projection), not just where the finger stopped.
       const projected = dy + (last.v * 0.998) / (1 - 0.998)
-      if (projected > sheet.offsetHeight * 0.45 && last.v > -0.1) {
+      if (projected > sheet.offsetHeight * 0.45 && last.v > -0.1 && mayLeave.current()) {
         set(sheet.offsetHeight, true)
         setTimeout(() => close.current(), 300)
       } else {
@@ -324,7 +363,7 @@ function useSwipeToDismiss(ref: React.RefObject<HTMLDivElement | null>, open: bo
       sheet.removeEventListener('touchend', onEnd)
       sheet.removeEventListener('touchcancel', onEnd)
     }
-  }, [ref, open, close])
+  }, [ref, open, close, mayLeave])
 }
 
 // ——— controls ———

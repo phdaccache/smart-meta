@@ -10,6 +10,8 @@ export const ptBR: Messages = {
   'nav.settings': 'Ajustes',
   'nav.back': 'Voltar',
   'nav.close': 'Fechar',
+  'sheet.discard': 'Descartar alterações',
+  'sheet.keepEditing': 'Continuar editando',
   'nav.main': 'Principal',
   'nav.quickAdd': 'Nova tarefa',
   'nav.reviewReady': 'Revisão pronta',

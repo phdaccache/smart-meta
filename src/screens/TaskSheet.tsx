@@ -142,6 +142,8 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
   }, [task])
 
   if (!task) return null
+  const dirty = title !== task.title || date !== (task.date ?? null) || time !== (task.time ?? '') || goalId !== (task.goalId ?? null)
+    || projectId !== (task.forProjectId ?? null) || note !== (task.note ?? '')
 
   const save = async () => {
     if (!title.trim()) return
@@ -153,7 +155,7 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
   }
 
   return (
-    <Sheet open={!!task} large onClose={onClose} title={t('common.task')} done={{ label: t('common.save'), disabled: !title.trim(), onClick: save }}>
+    <Sheet open={!!task} large onClose={onClose} title={t('common.task')} done={{ label: t('common.save'), disabled: !title.trim(), onClick: save }} dirty={dirty}>
       <form className="task-form" onSubmit={(e) => { e.preventDefault(); save() }}>
         <div className="card task-text">
           <TitleField value={title} onChange={setTitle} onEnter={save} placeholder={t('qa.placeholder')} label={t('common.task')} />

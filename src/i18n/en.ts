@@ -15,6 +15,8 @@ export const en = {
   'nav.settings': 'Settings',
   'nav.back': 'Back',
   'nav.close': 'Close',
+  'sheet.discard': 'Discard changes',
+  'sheet.keepEditing': 'Keep editing',
   'nav.main': 'Main',
   'nav.quickAdd': 'Quick add',
   'nav.reviewReady': 'Review ready',
