@@ -60,6 +60,21 @@ export function installNavProbe() {
       log(`first frame · leaving layer: ${document.querySelector('.screen-layer.leaving') ? 'yes' : 'no'}`)
       requestAnimationFrame(frame)
     })
+    // The app's own code: if it keeps running while no frame is drawn, the phone is holding the drawing back,
+    // not the app being busy.
+    setTimeout(() => log('first code after the Back'))
+    let lastTick = performance.now()
+    let busiest = 0
+    let ticks = 0
+    const tick = setInterval(() => {
+      const now = performance.now()
+      busiest = Math.max(busiest, now - lastTick)
+      lastTick = now
+      ticks++
+      if (now - t0 < 1500) return
+      clearInterval(tick)
+      log(`code ran ${ticks} times in 1.5 s, longest pause ${Math.round(busiest)} ms`)
+    }, 10)
   }, true)
 
   // The first three touches after the Back: where each starts, and its first move.
