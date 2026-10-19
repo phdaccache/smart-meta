@@ -451,7 +451,11 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 2px 8px 4px 20px; }
 .sheet-head h2 { font-size: 18px; font-weight: 700; }
-.sheet-body { overflow-y: auto; padding: 8px 20px 20px; -webkit-overflow-scrolling: touch; }
+.sheet-body { overflow-y: auto; overscroll-behavior: contain; padding: 8px 20px 20px; -webkit-overflow-scrolling: touch; }
+.sheet.untitled .sheet-body { padding-top: 20px; }
+/* With the keyboard up, the home bar's room is the keyboard's, and the page shouldn't show around iPhone's floating bar above it. */
+.sheet-layer.keyboard .sheet { padding-bottom: 0; }
+.sheet-layer.keyboard .sheet::after { content: ''; position: absolute; top: 100%; left: 0; right: 0; height: 100vh; background: var(--bg); }
 .sheet-actions { display: flex; gap: 10px; margin-top: 20px; }
 .sheet-actions .btn { flex: 1; }
 @keyframes rise { from { transform: translateY(40px); opacity: 0; } }
@@ -534,18 +538,76 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
   position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; min-height: 0; padding: 0; border: 0; cursor: pointer;
   font-size: 16px; background: none;
 }
-.qa-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
-.qa-tools .btn { margin-left: auto; }
-.tool {
-  display: inline-flex; align-items: center; height: 40px; border-radius: 12px; border: 1px solid var(--line-strong);
-  color: var(--ink-2); flex: 0 1 auto; min-width: 42px;
+/* A task's fields, as in iPhone's Reminders: title and notes in one card, date and time as switches. */
+.task-form { display: grid; gap: 12px; }
+.task-text { overflow: hidden; }
+/* 16px or more, or iPhone zooms in on focus. No focus ring: the caret shows where you are. */
+.task-text input, .task-text textarea { border: 0; border-radius: 0; background: none; box-shadow: none; padding: 12px 16px; font-size: 17px; }
+.task-text input { font-weight: 600; }
+.task-text textarea.note-field.compact { min-height: 44px; border-top: 1px solid var(--line); font-size: 16px; }
+.task-text input:focus, .task-text textarea:focus, .task-text textarea.note-field.compact:focus { box-shadow: none; border-color: var(--line); outline: none; }
+.row-icon { color: var(--ink-2); flex: none; }
+.dt-text {
+  flex: 1; min-width: 0; align-self: stretch; display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
+  text-align: left; margin: -12px 0; padding: 12px 0;
 }
-/* Date and time stay readable; a long goal or project name gives way. */
-.tool.fixed { flex: none; }
-.tool.on { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 50%, transparent); background: var(--accent-soft); }
-.tool-hit { display: inline-flex; align-items: center; gap: 6px; height: 100%; padding: 0 10px; min-width: 0; }
-.tool-text { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tool-clear { width: 30px; height: 100%; display: grid; place-items: center; color: inherit; margin-left: -6px; }
+.dt-text:disabled { cursor: default; }
+.dt-value { font-size: 14px; font-weight: 600; color: var(--accent); margin-top: 1px; }
+.dt-picker { border-top: 1px solid var(--line); padding: 8px 12px 12px; }
+
+/* inline calendar and time wheels */
+.cal-head { display: flex; align-items: center; gap: 2px; padding: 0 0 4px 6px; }
+.cal-title { flex: 1; font-weight: 650; font-size: 16px; }
+.cal-head .icon-btn { color: var(--accent); }
+.cal-head .icon-btn:disabled { color: var(--ink-3); opacity: 0.5; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 2px; text-align: center; }
+.cal-wd { font-size: 12px; font-weight: 600; color: var(--ink-3); padding: 4px 0; text-transform: uppercase; }
+.cal-day {
+  justify-self: center; width: 40px; height: 40px; border-radius: 50%; font-size: 17px; font-variant-numeric: tabular-nums;
+}
+.cal-day.today { color: var(--accent); font-weight: 650; }
+.cal-day.on { background: var(--accent); color: var(--accent-ink); font-weight: 650; }
+.cal-day:disabled { color: var(--ink-3); opacity: 0.45; }
+.wheels { position: relative; display: flex; justify-content: center; align-items: center; gap: 4px; }
+.wheels::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 36px; transform: translateY(-50%);
+  border-radius: 10px; background: var(--surface-2); pointer-events: none;
+}
+.wheel {
+  position: relative; width: 72px; height: 180px; overflow-y: scroll; scroll-snap-type: y mandatory; padding: 72px 0;
+  scrollbar-width: none; overscroll-behavior: contain;
+  mask-image: linear-gradient(transparent, #000 35%, #000 65%, transparent);
+  -webkit-mask-image: linear-gradient(transparent, #000 35%, #000 65%, transparent);
+}
+.wheel::-webkit-scrollbar { display: none; }
+.wheel:focus-visible { outline: none; }
+.wheel-item {
+  height: 36px; line-height: 36px; text-align: center; scroll-snap-align: center; font-size: 22px;
+  font-variant-numeric: tabular-nums; color: var(--ink-2); cursor: pointer;
+}
+.wheel-item.on { color: var(--ink); font-weight: 600; }
+.wheels-colon { position: relative; font-size: 22px; font-weight: 600; }
+
+/* ✕ and ✓ at the top of a sheet that saves. */
+.sheet-head.bar { padding: 12px 16px 4px; gap: 8px; }
+.sheet-head.bar h2 { flex: 1; text-align: center; }
+.round-btn {
+  width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; flex: none;
+  background: var(--surface-2); color: var(--ink);
+}
+.round-btn.primary { background: var(--accent); color: var(--accent-ink); }
+.round-btn:disabled { opacity: 0.4; }
+.switch {
+  position: relative; flex: none; width: 51px; height: 31px; border-radius: 16px; background: var(--line-strong);
+  transition: background 0.2s ease;
+}
+.switch::after {
+  content: ''; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%;
+  background: #fff; box-shadow: 0 2px 4px rgb(0 0 0 / 0.2); transition: transform 0.2s ease;
+}
+.switch[aria-checked='true'] { background: var(--accent); }
+.switch[aria-checked='true']::after { transform: translateX(20px); }
+
 
 
 .dev-pill {

@@ -56,6 +56,7 @@ export const ptBR: Messages = {
   'common.week': 'Semana',
   'common.month': 'Mês',
   'common.days': 'Dias',
+  'common.date': 'Data',
   'common.time': 'Horário',
   'common.goal': 'Meta',
   'common.project': 'Projeto',
@@ -204,13 +205,12 @@ export const ptBR: Messages = {
 
   // Quick add
   'qa.title': 'Nova tarefa',
-  'qa.placeholder': 'O que precisa ser feito?',
-  'qa.dueDate': 'Prazo',
-  'qa.clearDueDate': 'Limpar prazo',
-  'qa.time': 'Horário',
-  'qa.clearTime': 'Limpar horário',
-  'qa.clear': 'Limpar {name}',
+  'qa.placeholder': 'Nova tarefa',
   'qa.addedTo': 'Tarefa adicionada a {project}.',
+  'qa.prevMonth': 'Mês anterior',
+  'qa.nextMonth': 'Próximo mês',
+  'qa.hours': 'Horas',
+  'qa.minutes': 'Minutos',
 
   // Habit wording
   'cadence.once': 'uma vez por {period}',
@@ -550,9 +550,6 @@ export const ptBR: Messages = {
   'project.stepUntil': 'até {date}',
   'project.stepEndLabel': 'Prazo de {step}',
   'project.stepEndClear': 'Usar o prazo automático',
-  'task.noDate': 'Sem data',
-  'task.pickDate': 'Escolher data',
-  'task.due': 'Prazo',
   'task.nowProject': 'Agora é um projeto.',
   'task.toProject': 'Transformar em projeto',
   'task.delete': 'Excluir tarefa',

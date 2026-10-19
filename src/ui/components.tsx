@@ -91,8 +91,16 @@ export function PageText({ text }: { text: string }) {
 
 // ——— sheet ———
 
-export function Sheet(props: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
+/**
+ * A sheet with no title (just its `label` for screen readers) starts straight with its content.
+ * With `done`, it has ✕ at the left to leave without saving and ✓ at the right to save, as in iPhone's Reminders.
+ */
+export function Sheet(props: {
+  open: boolean; onClose: () => void; title?: string; label?: string; children: ReactNode
+  done?: { label: string; disabled?: boolean; onClick: () => void }
+}) {
   const ref = useRef<HTMLDivElement>(null)
+  const layerRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
   const [view, setView] = useState<{ top: number; height: number } | null>(null)
   const onClose = useRef(props.onClose)
@@ -118,6 +126,23 @@ export function Sheet(props: { open: boolean; onClose: () => void; title: string
       setView(null)
     }
   }, [props.open])
+  // iPhone hands a drag on the sheet to the page under it (or, with the keyboard up, moves the whole view).
+  // Only what scrolls inside the sheet may move; any other drag goes nowhere.
+  useEffect(() => {
+    const layer = layerRef.current
+    if (!props.open || !layer) return
+    const onMove = (e: TouchEvent) => {
+      // Moving the caret or a selection in the field being typed in.
+      if (e.target === document.activeElement && (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) return
+      for (let el = e.target as HTMLElement | null; el && el !== layer; el = el.parentElement) {
+        const { overflowY } = getComputedStyle(el)
+        if ((overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight) return
+      }
+      e.preventDefault()
+    }
+    layer.addEventListener('touchmove', onMove, { passive: false })
+    return () => layer.removeEventListener('touchmove', onMove)
+  }, [props.open])
   useEffect(() => {
     if (!props.open) return
     const prev = document.activeElement as HTMLElement | null
@@ -136,17 +161,32 @@ export function Sheet(props: { open: boolean; onClose: () => void; title: string
   }, [props.open])
   useSwipeToDismiss(ref, props.open, onClose)
   if (!props.open) return null
+  // The visible area shrinks by the keyboard's height; a small change is just the browser's own bars.
+  const keyboard = !!view && view.height < window.innerHeight - 150
   return createPortal(
-    <div className="sheet-layer" style={view ? { top: view.top, height: view.height, bottom: 'auto' } : undefined}>
+    <div ref={layerRef} className={`sheet-layer ${keyboard ? 'keyboard' : ''}`} style={view ? { top: view.top, height: view.height, bottom: 'auto' } : undefined}>
       <div className="sheet-backdrop" onClick={props.onClose} />
-      <div className="sheet" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={ref}>
+      <div className={`sheet ${props.title || props.done ? '' : 'untitled'}`} role="dialog" aria-modal="true" ref={ref}
+        aria-labelledby={props.title ? titleId : undefined} aria-label={props.title ? undefined : props.label}>
         <div className="sheet-grabber" aria-hidden="true" />
-        <div className="sheet-head">
-          <h2 id={titleId}>{props.title}</h2>
-          <button type="button" className="icon-btn" aria-label={t('nav.close')} onClick={props.onClose}>
-            <IconClose width={20} height={20} />
-          </button>
-        </div>
+        {props.done ? (
+          <div className="sheet-head bar">
+            <button type="button" className="round-btn" aria-label={t('nav.close')} onClick={props.onClose}>
+              <IconClose width={20} height={20} />
+            </button>
+            {props.title ? <h2 id={titleId}>{props.title}</h2> : <span />}
+            <button type="button" className="round-btn primary" aria-label={props.done.label} disabled={props.done.disabled} onClick={props.done.onClick}>
+              <IconCheck width={20} height={20} />
+            </button>
+          </div>
+        ) : props.title && (
+          <div className="sheet-head">
+            <h2 id={titleId}>{props.title}</h2>
+            <button type="button" className="icon-btn" aria-label={t('nav.close')} onClick={props.onClose}>
+              <IconClose width={20} height={20} />
+            </button>
+          </div>
+        )}
         <div className="sheet-body">{props.children}</div>
       </div>
     </div>,
@@ -372,6 +412,14 @@ export function Chip(props: { selected?: boolean; onClick: () => void; children:
   )
 }
 
+/** An on/off switch, like iPhone's Settings. */
+export function Switch(props: { checked: boolean; label: string; onChange: (on: boolean) => void }) {
+  return (
+    <button type="button" role="switch" className="switch" aria-checked={props.checked} aria-label={props.label}
+      onClick={() => props.onChange(!props.checked)} />
+  )
+}
+
 export function WeekdayPicker(props: { value: number[]; onChange: (v: number[]) => void }) {
   const days = tlist('dates.weekdayInitials')
   const names = (['dates.monday', 'dates.tuesday', 'dates.wednesday', 'dates.thursday', 'dates.friday', 'dates.saturday', 'dates.sunday'] as const).map((k) => t(k))
@@ -429,13 +477,17 @@ export function DatePickerButton(props: {
   onPick: (date: string) => void
 }) {
   const [picks, setPicks] = useState(0)
+  const focusedAt = useRef(0)
   return (
     <span className={`date-overlay ${props.className ?? ''}`}>
       {props.children}
       {/* iPhone's calendar stays open after a day is picked, even one that's refused: a fresh field closes it. */}
       <input key={picks} type="date" value={props.value} min={props.min} max={props.max} aria-label={props.label}
+        onFocus={() => { focusedAt.current = Date.now() }}
         onChange={(e) => {
           if (!e.target.value) return
+          // An empty field gets today filled in by iPhone as its calendar opens: that's not a pick, so it stays open.
+          if (!props.value && Date.now() - focusedAt.current < 600) return
           e.target.blur()
           setPicks((n) => n + 1)
           props.onPick(e.target.value)
@@ -445,7 +497,9 @@ export function DatePickerButton(props: {
 }
 
 /** Notes on a task or project: several lines, growing with what's written. */
-export function NoteField(props: { id?: string; value: string; onChange: (v: string) => void; onBlur?: (v: string) => void; label?: string }) {
+export function NoteField(props: {
+  id?: string; value: string; onChange: (v: string) => void; onBlur?: (v: string) => void; label?: string; compact?: boolean
+}) {
   const ref = useRef<HTMLTextAreaElement>(null)
   useLayoutEffect(() => {
     const el = ref.current
@@ -454,7 +508,8 @@ export function NoteField(props: { id?: string; value: string; onChange: (v: str
     el.style.height = `${el.scrollHeight + el.offsetHeight - el.clientHeight}px`
   }, [props.value])
   return (
-    <textarea ref={ref} id={props.id} rows={3} className="growing note-field" value={props.value} placeholder={t('common.notesPlaceholder')}
+    <textarea ref={ref} id={props.id} rows={props.compact ? 1 : 3} className={`growing note-field ${props.compact ? 'compact' : ''}`} value={props.value}
+      placeholder={props.compact ? t('common.notes') : t('common.notesPlaceholder')}
       aria-label={props.label} onChange={(e) => props.onChange(e.target.value)} onBlur={(e) => props.onBlur?.(e.target.value)} />
   )
 }

@@ -61,6 +61,7 @@ export const en = {
   'common.week': 'Week',
   'common.month': 'Month',
   'common.days': 'Days',
+  'common.date': 'Date',
   'common.time': 'Time',
   'common.goal': 'Goal',
   'common.project': 'Project',
@@ -209,13 +210,12 @@ export const en = {
 
   // Quick add
   'qa.title': 'Quick add',
-  'qa.placeholder': 'What needs doing?',
-  'qa.dueDate': 'Due date',
-  'qa.clearDueDate': 'Clear due date',
-  'qa.time': 'Time',
-  'qa.clearTime': 'Clear time',
-  'qa.clear': 'Clear {name}',
+  'qa.placeholder': 'New task',
   'qa.addedTo': 'Task added to {project}.',
+  'qa.prevMonth': 'Previous month',
+  'qa.nextMonth': 'Next month',
+  'qa.hours': 'Hours',
+  'qa.minutes': 'Minutes',
 
   // Habit wording
   'cadence.once': 'once a {period}',
@@ -555,9 +555,6 @@ export const en = {
   'project.stepUntil': 'until {date}',
   'project.stepEndLabel': 'End date for {step}',
   'project.stepEndClear': 'Use the automatic date',
-  'task.noDate': 'No date',
-  'task.pickDate': 'Pick a date',
-  'task.due': 'Due',
   'task.nowProject': 'Now a project.',
   'task.toProject': 'Turn into project',
   'task.delete': 'Delete task',

@@ -3,8 +3,7 @@ import { useSyncStatus } from '../sync/controller'
 
 /**
  * The Developer section is for the app's author only: shown when running
- * locally, on preview builds (protected by a Vercel login), or when signed in
- * to sync with the author's account. Only a hash of
+ * locally, on a preview deployment of a branch, or when signed in to sync with the author's account. Only a hash of
  * that email is here, since everything in the app's code is public.
  */
 const DEVELOPER_EMAIL_SHA256 = 'b62a4c356a22ce19fe9b1e10ad382e3d37e1dde10d0543546e709729e90eae17'
@@ -25,5 +24,5 @@ export function useIsDeveloper(): boolean {
       live = false
     }
   }, [email])
-  return import.meta.env.DEV || __PREVIEW__ || match
+  return import.meta.env.DEV || __APP_PREVIEW__ || match
 }

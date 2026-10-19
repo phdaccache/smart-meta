@@ -407,9 +407,9 @@ export async function loadSampleData(today: DateStr): Promise<void> {
 
   // ——— tasks ———
 
-  await createTask({ title: 'Pay Ana back', date: addDays(today, 1) })
+  await createTask({ title: 'Pay Ana back', date: addDays(today, 1), note: 'R$ 120 for the concert tickets' })
   await createTask({ title: 'Clean shoes' })
-  await createTask({ title: 'Message Lucas', date: today, goalId: friends.id })
+  await createTask({ title: 'Message Lucas', date: today, time: '18:00', goalId: friends.id })
   await createTask({ title: 'Ask Ana for a referral', date: addDays(today, 1), goalId: bigTech.id })
   await createTask({ title: 'Read “Deep Work”', goalId: reading.id })
   await createTask({ title: 'Renew gym membership', date: addDays(today, -1), goalId: gym.id })
