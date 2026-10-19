@@ -6,11 +6,14 @@ import { App } from './App'
 import { initLang } from './i18n'
 import { startSync } from './sync/controller'
 import { installCaretAtEnd } from './ui/caret'
+import { installNavProbe } from './dev/navProbe'
 import './ui/install'
 import './styles.css'
 
 // Developer: tint invisible layers (see Settings → Developer).
 try { if (localStorage.getItem('debugPaint')) document.documentElement.classList.add('debug-paint') } catch { /* private mode */ }
+// Developer: with Debug colors on, a readout after each Back (see navProbe).
+if (import.meta.env.DEV || __APP_PREVIEW__) installNavProbe()
 
 // Safari may evict a web app's storage after weeks of disuse; Home Screen apps get to keep it.
 navigator.storage?.persist?.().catch(() => {})
