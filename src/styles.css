@@ -1385,8 +1385,8 @@ body { overflow-wrap: break-word; }
 .nav-row { display: flex; align-items: center; gap: 8px; min-height: 44px; margin-bottom: 6px; }
 .nav-row .back { margin: 0 0 0 -6px; }
 .nav-row .head-actions { margin: 0 -10px 0 auto; }
-/* Long words break where the language allows ("Profissio-nal"), not at any letter. */
-.large-title, .goal-card-title, .group-title { -webkit-hyphens: auto; hyphens: auto; }
+/* Titles wrap between whole words, never with a hyphen; only a word too long for a line of its own breaks. */
+.large-title, .goal-card-title, .group-title { -webkit-hyphens: manual; hyphens: manual; }
 
 /* Plan cards: the value stays one line, a long title stops at three (the goal's page shows it all). */
 .goal-eyebrow { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
