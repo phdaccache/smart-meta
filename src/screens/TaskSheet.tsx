@@ -169,7 +169,7 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
       <div className="stack" style={{ marginTop: 16 }}>
         {!projectId && (
           <button className="btn outline block" onClick={async () => {
-            const p = await promoteTask({ ...task, title: title.trim() || task.title, date, goalId }, today)
+            const p = await promoteTask({ ...task, title: title.trim() || task.title, date, goalId, note }, today)
             onClose()
             toast(t('task.nowProject'))
             navigate(`/projects/${p.id}`)

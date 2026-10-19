@@ -482,10 +482,10 @@ export async function reorderSteps(steps: Task[]) {
   await putAll(steps.map((t, i) => ({ c: 'tasks' as const, r: { ...t, order: i } })))
 }
 
-/** A task that turned out to need steps becomes a project, keeping its link and date. */
+/** A task that turned out to need steps becomes a project, keeping its link, date and notes. */
 export async function promoteTask(t: Task, fallbackTargetDate: DateStr) {
   const project = make<'projects'>({
-    title: t.title, targetDate: t.date && t.date > fallbackTargetDate ? t.date : addDays(fallbackTargetDate, 14),
+    title: t.title, note: t.note?.trim() || null, targetDate: t.date && t.date > fallbackTargetDate ? t.date : addDays(fallbackTargetDate, 14),
     goalId: t.goalId ?? null, state: 'active',
   })
   await putAll([{ c: 'projects', r: project }, { c: 'tasks', r: { ...t, deletedAt: now() } }])
