@@ -514,6 +514,8 @@ export const ptBR: Messages = {
   // Projects and tasks
   'project.new': 'Novo projeto',
   'project.outcome': 'Resultado',
+  'project.title': 'Título do projeto',
+  'project.phTitle': 'Título',
   'project.phOutcome': 'Tirar a carteira de motorista',
   'project.targetDate': 'Data-alvo',
   'project.noDate': 'Sem prazo',
@@ -521,6 +523,7 @@ export const ptBR: Messages = {
   'project.stepsHint': '[Hoje] mostra só a etapa atual.',
   'project.stepN': 'Etapa {n}',
   'project.removeStepN': 'Remover etapa {n}',
+  'project.removeStep': 'Remover {step}',
   'project.phStep': 'Marcar a prova teórica',
   'project.addStepPlus': '+ Adicionar etapa',
   'project.save': 'Salvar projeto',

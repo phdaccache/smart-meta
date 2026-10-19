@@ -365,7 +365,7 @@ export function buildDay(
     const goal = p.goalId ? s.goals.find((g) => g.id === p.goalId) : undefined
     groups.push({
       key: `project:${p.id}`, kind: 'project', projectId: p.id,
-      eyebrow: '', title: p.title, why: goal?.whyText || undefined, due: isToday && p.targetDate ? dueBadge(p.targetDate, date) : undefined,
+      eyebrow: '', title: p.title, why: goal?.whyText || undefined, due: isToday && p.targetDate ? dueBadge(p.targetDate, date, p.time) : undefined,
       items, prompts: [], done: items.every((i) => i.done),
     })
   }

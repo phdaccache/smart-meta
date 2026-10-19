@@ -519,6 +519,8 @@ export const en = {
   // Projects and tasks
   'project.new': 'New project',
   'project.outcome': 'Outcome',
+  'project.title': 'Project title',
+  'project.phTitle': 'Title',
   'project.phOutcome': 'Get driver’s license',
   'project.targetDate': 'Target date',
   'project.noDate': 'No due date',
@@ -526,6 +528,7 @@ export const en = {
   'project.stepsHint': '[Today] shows only the current step.',
   'project.stepN': 'Step {n}',
   'project.removeStepN': 'Remove step {n}',
+  'project.removeStep': 'Remove {step}',
   'project.phStep': 'Book the theory exam',
   'project.addStepPlus': '+ Add step',
   'project.save': 'Save project',

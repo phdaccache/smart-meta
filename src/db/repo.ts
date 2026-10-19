@@ -432,9 +432,12 @@ export async function deleteTask(t: Task) {
 }
 
 /** Projects made on their own wait in the backlog (`state: 'backlog'`); a template's start with their goal. */
-export async function createProject(fields: { title: string; targetDate: DateStr | null; goalId?: ID | null; steps: string[]; state?: ProjectState }) {
+export async function createProject(fields: {
+  title: string; note?: string; targetDate: DateStr | null; time?: string | null; goalId?: ID | null; steps: string[]; state?: ProjectState
+}) {
   const project = make<'projects'>({
-    title: fields.title.trim(), targetDate: fields.targetDate, goalId: fields.goalId ?? null, state: fields.state ?? 'active',
+    title: fields.title.trim(), note: fields.note?.trim() || null, targetDate: fields.targetDate,
+    time: fields.targetDate ? fields.time || null : null, goalId: fields.goalId ?? null, state: fields.state ?? 'active',
   })
   const steps = fields.steps
     .map((s) => s.trim())
@@ -482,10 +485,10 @@ export async function reorderSteps(steps: Task[]) {
   await putAll(steps.map((t, i) => ({ c: 'tasks' as const, r: { ...t, order: i } })))
 }
 
-/** A task that turned out to need steps becomes a project, keeping its link, date (or none) and notes. */
+/** A task that turned out to need steps becomes a project, keeping its link, date and time (or none) and notes. */
 export async function promoteTask(t: Task) {
   const project = make<'projects'>({
-    title: t.title, note: t.note?.trim() || null, targetDate: t.date ?? null,
+    title: t.title, note: t.note?.trim() || null, targetDate: t.date ?? null, time: t.date ? t.time ?? null : null,
     goalId: t.goalId ?? null, state: 'active',
   })
   await putAll([{ c: 'projects', r: project }, { c: 'tasks', r: { ...t, deletedAt: now() } }])

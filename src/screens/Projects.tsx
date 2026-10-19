@@ -2,17 +2,17 @@ import { useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { check, createProject, createTask, deleteProject, pauseProject, reorderSteps, startProject, uncheck, updateProject, updateTask } from '../db/repo'
 import { marked, t } from '../i18n'
-import { addDays, dayMonth, dayMonthShort, isDateStr, relativeDay } from '../lib/dates'
+import { addDays, dayMonth, dayMonthShort, diffDays, isDateStr, relativeDay } from '../lib/dates'
 import { activeEntries } from '../lib/scoring'
 import { stepDeadlines } from '../lib/today'
-import type { DateStr, Task } from '../lib/types'
-import { CheckButton, DatePickerButton, Field, InfoTip, NoteField, PageText, Screen, Section, toast, TypeToConfirm } from '../ui/components'
+import type { DateStr, Project, Task } from '../lib/types'
+import { CheckButton, DatePickerButton, InfoTip, NoteField, PageText, Screen, Section, TitleField, toast, TypeToConfirm } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
-import { IconCalendar, IconChevronRight, IconClose } from '../ui/icons'
+import { IconCalendar, IconClose } from '../ui/icons'
 import { Sortable } from '../ui/Sortable'
 import { navigate } from '../ui/router'
 import { openQuickAddFor } from './QuickAdd'
-import { DateTimeRows, GoalSelect, TaskList } from './TaskSheet'
+import { DateTimeRows, GoalChoice, linkableGoals, TaskList } from './TaskSheet'
 
 /**
  * The step list of a project being written. Adding a step moves the cursor to
@@ -56,43 +56,90 @@ export function StepsEditor({ steps, onChange }: { steps: string[]; onChange: (s
   )
 }
 
+/** Laid out like Quick add: title and notes, then date and time, then the goal; then its steps, as on its page. */
 export function NewProjectScreen({ goalId: presetGoal }: { goalId?: string | null }) {
   const settings = useSettings()
   const today = useToday(settings.rolloverHour)
+  const snap = useSnapshot()
   const [title, setTitle] = useState('')
+  const [note, setNote] = useState('')
   // A month to start with; switched off, it has no due date.
   const [targetDate, setTargetDate] = useState<DateStr | null>(() => addDays(today, 30))
+  const [time, setTime] = useState('')
   const [goalId, setGoalId] = useState<string | null>(presetGoal ?? null)
-  const [steps, setSteps] = useState<string[]>([''])
+  const [steps, setSteps] = useState<DraftStep[]>([])
   const [tried, setTried] = useState(false)
 
-  const errors = {
-    title: title.trim() ? undefined : t('project.nameOutcome'),
-    targetDate: !targetDate || (isDateStr(targetDate) && targetDate >= today) ? undefined : t('project.dateFromToday'),
-  }
   const save = async () => {
-    if (errors.title || errors.targetDate) return setTried(true)
-    const p = await createProject({ title, targetDate, goalId, steps, state: 'backlog' })
+    if (!title.trim()) return setTried(true)
+    const p = await createProject({ title, note, targetDate, time, goalId, steps: steps.map((s) => s.title), state: 'backlog' })
     toast(t('project.savedBacklog'))
     navigate(`/projects/${p.id}`, { replace: true })
   }
 
   return (
     <Screen back="/goals" title={t('project.new')}>
-      <Field label={t('project.outcome')} htmlFor="p-title" error={tried ? errors.title : undefined}>
-        <input id="p-title" value={title} placeholder={t('project.phOutcome')} onChange={(e) => setTitle(e.target.value)} />
-      </Field>
-      <Field label={t('project.targetDate')} error={tried ? errors.targetDate : undefined}>
-        <DateTimeRows date={targetDate} today={today} firstDate={addDays(today, 30)} onChange={(d) => setTargetDate(d)} />
-      </Field>
-      <Field label={t('common.goal')} htmlFor="p-goal">
-        <GoalSelect id="p-goal" value={goalId} onChange={setGoalId} />
-      </Field>
-      <Field label={t('project.steps')} info={<PageText text={marked('project.stepsHint')} />}>
-        <StepsEditor steps={steps} onChange={setSteps} />
-      </Field>
+      <div className="task-form">
+        <div>
+          <div className="card task-text">
+            <TitleField value={title} onChange={setTitle} onEnter={() => (document.activeElement as HTMLElement | null)?.blur()}
+              placeholder={t('project.phTitle')} label={t('project.title')} />
+            <NoteField compact value={note} onChange={setNote} label={t('common.notes')} />
+          </div>
+          {tried && !title.trim() && <div className="field-error" role="alert">{t('project.nameOutcome')}</div>}
+        </div>
+        <DateTimeRows date={targetDate} time={time} today={today} firstDate={addDays(today, 30)} onChange={(d, tm) => { setTargetDate(d); setTime(tm) }} />
+        {linkableGoals(snap, goalId).length > 0 && <div className="card list settings"><GoalChoice id="p-goal" goalId={goalId} onChange={setGoalId} /></div>}
+      </div>
+      <Section title={<span className="title-row">{t('project.steps')}<InfoTip label={t('project.steps')}><PageText text={marked('project.stepsHint')} /></InfoTip></span>}>
+        <DraftSteps steps={steps} onChange={setSteps} />
+      </Section>
       <div className="wizard-nav"><button className="btn primary" onClick={save}>{t('project.save')}</button></div>
     </Screen>
+  )
+}
+
+interface DraftStep { key: string; title: string }
+
+/** The steps of a project not saved yet, kept and changed as on a project's page (without ticking them off). */
+function DraftSteps({ steps, onChange }: { steps: DraftStep[]; onChange: (steps: DraftStep[]) => void }) {
+  const next = useRef(0)
+  const add = (title: string) => onChange([...steps, { key: `s${next.current++}`, title }])
+  return (
+    <div className="card">
+      <Sortable items={steps} keyOf={(s) => s.key} labelOf={(s) => s.title} onReorder={onChange} className="items"
+        render={(step) => (
+          <div className="item kind-step">
+            <div className="item-main">
+              <StepTitle title={step.title} onSave={(title) => onChange(steps.map((s) => (s.key === step.key ? { ...s, title } : s)))} />
+            </div>
+            <button type="button" className="icon-btn step-remove" aria-label={t('project.removeStep', { step: step.title })}
+              onClick={() => onChange(steps.filter((s) => s.key !== step.key))}>
+              <IconClose width={16} height={16} />
+            </button>
+          </div>
+        )} />
+      <AddStep first={!steps.length} onAdd={add} />
+    </div>
+  )
+}
+
+/** The field at the bottom of a project's steps. */
+function AddStep({ first, onAdd }: { first: boolean; onAdd: (title: string) => void | Promise<unknown> }) {
+  const [text, setText] = useState('')
+  const add = async () => {
+    if (!text.trim()) return
+    await onAdd(text.trim())
+    setText('')
+  }
+  return (
+    <form className="add-inline" style={{ padding: 12, marginTop: 0, borderTop: first ? 0 : '1px solid var(--line)' }}
+      onSubmit={(e) => { e.preventDefault(); add() }}>
+      <input value={text} onChange={(e) => setText(e.target.value)} placeholder={t('project.addAStep')} aria-label={t('project.newStep')}
+        enterKeyHint="done" />
+      {/* Not taking focus keeps the keyboard up for the next step. */}
+      <button className="btn" type="submit" disabled={!text.trim()} onPointerDown={(e) => e.preventDefault()}>{t('common.add')}</button>
+    </form>
   )
 }
 
@@ -100,7 +147,6 @@ export function ProjectScreen({ id }: { id: string }) {
   const settings = useSettings()
   const today = useToday(settings.rolloverHour)
   const snap = useSnapshot()
-  const [newStep, setNewStep] = useState('')
   const [editing, setEditing] = useState(false)
   if (!snap) return null
   const project = snap.projects.find((p) => p.id === id)
@@ -124,11 +170,6 @@ export function ProjectScreen({ id }: { id: string }) {
     const e = doneEntry.get(step.id)
     return e ? uncheck(e.id) : check({ subjectType: 'task', subjectId: step.id }, today)
   }
-  const add = async () => {
-    if (!newStep.trim()) return
-    await createTask({ title: newStep, projectId: id })
-    setNewStep('')
-  }
 
   return (
     <Screen back={goal ? `/goals/${goal.id}` : '/goals'} eyebrow={t(eyebrow[project.state])} title={project.title}>
@@ -149,44 +190,27 @@ export function ProjectScreen({ id }: { id: string }) {
       )}
 
       <Section title={t('common.details')} aside={<button className="link-btn" onClick={() => setEditing(!editing)}>{editing ? t('common.doneEditing') : t('common.edit')}</button>}>
-        <div className="card">
-          {goal && (
-            <button className="card-head pad list-row" style={{ borderRadius: 0 }} onClick={() => navigate(`/goals/${goal.id}`)}>
-              <div className="text">
-                {goal.whyText && <div className="group-eyebrow">{goal.title}</div>}
-                <div className="group-why">{goal.whyText || goal.title}</div>
+        {editing ? (
+          // As in Quick add, each its own card on the page: inside the details card, the date's card would be lost in it.
+          <div className="task-form">
+            <div className="card task-text"><ProjectTitle key={project.id} title={project.title} onSave={(title) => updateProject(project, { title })} /></div>
+            <DateTimeRows date={project.targetDate ?? null} time={project.time ?? ''} today={today} firstDate={addDays(today, 30)}
+              onChange={(targetDate, time) => updateProject(project, { targetDate, time: targetDate && time ? time : null })} />
+            {linkableGoals(snap, project.goalId ?? null).length > 0 && (
+              <div className="card list settings">
+                <GoalChoice id="pe-goal" goalId={project.goalId ?? null} onChange={(goalId) => updateProject(project, { goalId })} />
               </div>
-              <IconChevronRight className="chev" width={18} />
-            </button>
-          )}
-          <div className="pad">
-            {editing ? (
-              <>
-                <Field label={t('project.outcome')} htmlFor="pe-title">
-                  <input id="pe-title" defaultValue={project.title}
-                    onBlur={(e) => e.target.value.trim() && updateProject(project, { title: e.target.value.trim() })} />
-                </Field>
-                <Field label={t('project.targetDate')}>
-                  <DateTimeRows date={project.targetDate ?? null} today={today} firstDate={addDays(today, 30)}
-                    onChange={(targetDate) => updateProject(project, { targetDate })} />
-                </Field>
-                <Field label={t('common.goal')} htmlFor="pe-goal">
-                  <GoalSelect id="pe-goal" value={project.goalId ?? null} onChange={(goalId) => updateProject(project, { goalId })} />
-                </Field>
-              </>
-            ) : (
-              <>
-                <div className="row" style={{ justifyContent: 'space-between' }}>
-                  <span className="small muted">{t('plan.stepsOf', { done, total: steps.length })}</span>
-                  <span className="small muted">
-                    {project.targetDate ? `${t('today.due', { when: relativeDay(project.targetDate, today) })} · ${dayMonth(project.targetDate)}` : t('project.noDate')}
-                  </span>
-                </div>
-                <div className="progress project"><i style={{ width: `${steps.length ? (100 * done) / steps.length : 0}%` }} /></div>
-              </>
             )}
           </div>
-        </div>
+        ) : (
+          <div className="card pad">
+            <div className="row" style={{ justifyContent: 'space-between' }}>
+              <span className="small muted">{t('plan.stepsOf', { done, total: steps.length })}</span>
+              <span className="small muted">{dueText(project, today)}</span>
+            </div>
+            <div className="progress project"><i style={{ width: `${steps.length ? (100 * done) / steps.length : 0}%` }} /></div>
+          </div>
+        )}
       </Section>
 
       <Section title={t('common.notes')}>
@@ -202,7 +226,7 @@ export function ProjectScreen({ id }: { id: string }) {
                 <div className={`item kind-step ${isDone ? 'done' : ''}`}>
                   <CheckButton shape="square" checked={isDone} label={step.title} onClick={() => toggle(step)} />
                   <div className="item-main">
-                    <StepTitle task={step} />
+                    <StepTitle title={step.title} onSave={(title) => updateTask(step, { title })} />
                     {!isDone && (
                       <div className="step-meta">
                         <StepEnd task={step} end={deadlines[steps.indexOf(step)]} />
@@ -212,13 +236,7 @@ export function ProjectScreen({ id }: { id: string }) {
                 </div>
               )
             }} />
-          <form className="add-inline" style={{ padding: 12, marginTop: 0, borderTop: steps.length ? '1px solid var(--line)' : 0 }}
-            onSubmit={(e) => { e.preventDefault(); add() }}>
-            <input value={newStep} onChange={(e) => setNewStep(e.target.value)} placeholder={t('project.addAStep')} aria-label={t('project.newStep')}
-              enterKeyHint="done" />
-            {/* Not taking focus keeps the keyboard up for the next step. */}
-            <button className="btn" type="submit" disabled={!newStep.trim()} onPointerDown={(e) => e.preventDefault()}>{t('common.add')}</button>
-          </form>
+          <AddStep first={!steps.length} onAdd={(title) => createTask({ title, projectId: id })} />
         </div>
       </Section>
 
@@ -275,13 +293,40 @@ function ProjectNote({ note, onSave }: { note: string; onSave: (note: string) =>
   return <NoteField value={text} label={t('common.notes')} onChange={setText} onBlur={save} />
 }
 
-function StepTitle({ task }: { task: Task }) {
+/** "due Fri at 18:00 · 20 November" (the day spelled out only when the first part names it another way), or that it has no date. */
+function dueText(p: Project, today: DateStr): string {
+  if (!p.targetDate) return t('project.noDate')
+  const when = relativeDay(p.targetDate, today)
+  const due = p.time ? t('today.dueAt', { when, time: p.time }) : t('today.due', { when })
+  return Math.abs(diffDays(today, p.targetDate)) < 7 ? `${due} · ${dayMonth(p.targetDate)}` : due
+}
+
+/** The project's title while editing its details: saved when the field is left, or when Done closes it (a tap on iPhone may not leave it). */
+function ProjectTitle({ title, onSave }: { title: string; onSave: (title: string) => void }) {
+  const [text, setText] = useState(title)
+  const saved = useRef(title)
+  const save = (v: string) => {
+    if (!v.trim()) return setText(saved.current)
+    if (v.trim() === saved.current) return
+    saved.current = v.trim()
+    onSave(v.trim())
+  }
+  const latest = useRef({ text, save })
+  latest.current = { text, save }
+  useEffect(() => () => latest.current.save(latest.current.text), [])
+  return (
+    <TitleField value={text} onChange={setText} onEnter={() => (document.activeElement as HTMLElement | null)?.blur()} onBlur={() => save(text)}
+      placeholder={t('project.phTitle')} label={t('project.title')} />
+  )
+}
+
+function StepTitle({ title, onSave }: { title: string; onSave: (title: string) => void }) {
   const [editing, setEditing] = useState(false)
   if (editing) {
     return (
-      <input autoFocus defaultValue={task.title} aria-label={t('project.stepTitle')} style={{ margin: '6px 0' }}
-        onBlur={async (e) => {
-          if (e.target.value.trim() && e.target.value.trim() !== task.title) await updateTask(task, { title: e.target.value.trim() })
+      <input autoFocus defaultValue={title} aria-label={t('project.stepTitle')} style={{ margin: '6px 0' }}
+        onBlur={(e) => {
+          if (e.target.value.trim() && e.target.value.trim() !== title) onSave(e.target.value.trim())
           setEditing(false)
         }}
         onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()} />
@@ -289,13 +334,15 @@ function StepTitle({ task }: { task: Task }) {
   }
   return (
     <button className="step-title" onClick={() => setEditing(true)}>
-      <span className="item-title">{task.title}</span>
+      <span className="item-title">{title}</span>
     </button>
   )
 }
 
-/** A step's end date: spread from the project's dates until one is picked, then kept (× goes back to spread). */
-/** A step's end date; with none (a project with no date), a button to give it one. */
+/**
+ * A step's end date: spread from the project's dates until one is picked, then kept (× goes back to spread).
+ * With none (a project with no date), a button to give it one.
+ */
 function StepEnd({ task, end }: { task: Task; end: DateStr | null }) {
   const set = !!task.date
   return (

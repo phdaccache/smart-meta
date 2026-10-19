@@ -661,6 +661,7 @@ export function NoteField(props: {
 /** A task's title: one line that grows to show all of it, as in Reminders. Return saves instead of starting a new line. */
 export function TitleField(props: {
   value: string; onChange: (v: string) => void; onEnter: () => void; placeholder: string; label: string; autoFocus?: boolean
+  onBlur?: () => void
 }) {
   const ref = useRef<HTMLTextAreaElement>(null)
   useLayoutEffect(() => {
@@ -671,7 +672,7 @@ export function TitleField(props: {
   }, [props.value])
   return (
     <textarea ref={ref} rows={1} className="growing title-field" autoFocus={props.autoFocus} value={props.value}
-      placeholder={props.placeholder} aria-label={props.label} enterKeyHint="done"
+      placeholder={props.placeholder} aria-label={props.label} enterKeyHint="done" onBlur={props.onBlur}
       // A pasted title with line breaks stays one title.
       onChange={(e) => props.onChange(e.target.value.replace(/\s*\n\s*/g, ' '))}
       onKeyDown={(e) => {

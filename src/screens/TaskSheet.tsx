@@ -3,7 +3,7 @@ import { check, deleteTask, promoteTask, uncheck, updateTask } from '../db/repo'
 import { t } from '../i18n'
 import { capitalize, dayMonth, diffDays, formatTime, isDateStr, nowMinutes, relativeDay, weekdayName } from '../lib/dates'
 import { activeEntries } from '../lib/scoring'
-import { dueBadge } from '../lib/today'
+import { dueBadge, type Snapshot } from '../lib/today'
 import type { DateStr, Task } from '../lib/types'
 import { CheckButton, DatePickerButton, DueText, NoteField, Sheet, Switch, TitleField, toast } from '../ui/components'
 import { InlineCalendar, TimeWheel } from '../ui/pickers'
@@ -99,34 +99,34 @@ export function ChoiceRow(props: {
   )
 }
 
-/** A task's goal, then its project; a project's task takes its goal from the project, so the goal row goes while a project is picked. */
-export function TaskLinks(props: { projectId: string | null; goalId: string | null; onProject: (id: string | null) => void; onGoal: (id: string | null) => void }) {
+/** The goals something can be linked to: the live ones, and the one it already has. */
+export function linkableGoals(snap: Snapshot | null | undefined, current: string | null) {
+  return (snap?.goals ?? []).filter((g) => g.state === 'active' || g.state === 'maintenance' || g.state === 'backlog' || g.id === current)
+}
+
+/** Picks a goal, or none; its tile is the goal's value. */
+export function GoalChoice(props: { id: string; goalId: string | null; onChange: (id: string | null) => void }) {
   const snap = useSnapshot()
-  const goals = (snap?.goals ?? []).filter((g) => g.state === 'active' || g.state === 'maintenance' || g.state === 'backlog' || g.id === props.goalId)
-  const projects = (snap?.projects ?? []).filter((p) => p.state === 'active' || p.state === 'backlog' || p.id === props.projectId)
-  if (!projects.length && (props.projectId || !goals.length)) return null
+  const goals = linkableGoals(snap, props.goalId)
   const goal = goals.find((g) => g.id === props.goalId)
   return (
-    <div className="card list settings">
-      {!props.projectId && (
-        <ChoiceRow id="task-goal" icon={goal ? <ValueTile value={snap?.values.find((v) => v.id === goal.whyValueId)} values={snap?.values ?? []} size="sm" /> : <IconTile color="gray"><IconGoals width={16} height={16} /></IconTile>} label={t('common.goal')}
-          value={props.goalId} options={goals} onChange={props.onGoal} />
-      )}
-      <ChoiceRow id="task-project" icon={<ProjectTile size="sm" />} label={t('common.project')}
-        value={props.projectId} options={projects} onChange={props.onProject} />
-    </div>
+    <ChoiceRow id={props.id} icon={goal ? <ValueTile value={snap?.values.find((v) => v.id === goal.whyValueId)} values={snap?.values ?? []} size="sm" /> : <IconTile color="gray"><IconGoals width={16} height={16} /></IconTile>} label={t('common.goal')}
+      value={props.goalId} options={goals} onChange={props.onChange} />
   )
 }
 
-/** Links a task to a live goal, or leaves it standalone. */
-export function GoalSelect(props: { value: string | null; onChange: (id: string | null) => void; id?: string }) {
+/** A task's goal, then its project; a project's task takes its goal from the project, so the goal row goes while a project is picked. */
+export function TaskLinks(props: { projectId: string | null; goalId: string | null; onProject: (id: string | null) => void; onGoal: (id: string | null) => void }) {
   const snap = useSnapshot()
-  const goals = (snap?.goals ?? []).filter((g) => g.state === 'active' || g.state === 'maintenance' || g.state === 'backlog')
+  const goals = linkableGoals(snap, props.goalId)
+  const projects = (snap?.projects ?? []).filter((p) => p.state === 'active' || p.state === 'backlog' || p.id === props.projectId)
+  if (!projects.length && (props.projectId || !goals.length)) return null
   return (
-    <select id={props.id} value={props.value ?? ''} onChange={(e) => props.onChange(e.target.value || null)}>
-      <option value="">{t('common.none')}</option>
-      {goals.map((g) => <option key={g.id} value={g.id}>{g.title}</option>)}
-    </select>
+    <div className="card list settings">
+      {!props.projectId && <GoalChoice id="task-goal" goalId={props.goalId} onChange={props.onGoal} />}
+      <ChoiceRow id="task-project" icon={<ProjectTile size="sm" />} label={t('common.project')}
+        value={props.projectId} options={projects} onChange={props.onProject} />
+    </div>
   )
 }
 
@@ -174,7 +174,7 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
       <div className="stack" style={{ marginTop: 16 }}>
         {!projectId && (
           <button className="btn outline block" onClick={async () => {
-            const p = await promoteTask({ ...task, title: title.trim() || task.title, date, goalId, note })
+            const p = await promoteTask({ ...task, title: title.trim() || task.title, date, time: date && time ? time : null, goalId, note })
             onClose()
             toast(t('task.nowProject'))
             navigate(`/projects/${p.id}`)
