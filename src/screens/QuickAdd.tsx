@@ -18,21 +18,9 @@ const setOpen = (v: boolean) => {
 export const openQuickAdd = () => openWith({})
 export const openQuickAddFor = (link: { goalId: string } | { projectId: string }) => openWith(link)
 
-/**
- * iOS opens the keyboard only for a focus made during the tap itself, and the sheet's field
- * doesn't exist yet then. So a stand-in field takes focus now, and hands it (and the keyboard)
- * to the real one as soon as it mounts.
- */
 function openWith(link: typeof preset) {
   preset = link
-  const standIn = document.createElement('input')
-  standIn.setAttribute('aria-hidden', 'true')
-  standIn.tabIndex = -1
-  standIn.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px;'
-  document.body.appendChild(standIn)
-  standIn.focus({ preventScroll: true })
   setOpen(true)
-  setTimeout(() => standIn.remove(), 1000)
 }
 
 export function QuickAdd() {
@@ -70,7 +58,7 @@ function TaskForm({ today, onDone }: { today: DateStr; onDone: () => void }) {
       dirty={!!(title.trim() || note.trim() || date || goalId !== (preset.goalId ?? null) || projectId !== (preset.projectId ?? null))}>
       <form className="task-form" onSubmit={(e) => { e.preventDefault(); save() }}>
         <div className="card task-text">
-          <TitleField autoFocus value={title} onChange={setTitle} onEnter={save} placeholder={t('qa.placeholder')} label={t('common.task')} />
+          <TitleField value={title} onChange={setTitle} onEnter={save} placeholder={t('qa.placeholder')} label={t('common.task')} />
           <NoteField compact value={note} onChange={setNote} label={t('common.notes')} />
         </div>
         <DateTimeRows date={date} time={time} today={today} onChange={(d, tm) => { setDate(d); setTime(tm) }} />
