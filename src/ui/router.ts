@@ -4,8 +4,7 @@ import { flushSync } from 'react-dom'
 const listeners = new Set<() => void>()
 const notify = () => listeners.forEach((l) => l())
 
-/** Each slide's own number, so one that ends late doesn't clear the next one's direction. */
-let slides = 0
+const EASE = 'cubic-bezier(0.32, 0.72, 0, 1)'
 
 /**
  * Shows the new screen. Going deeper it slides in from the right over the old one, and Back slides it
@@ -17,14 +16,43 @@ function show(dir: 'forward' | 'back' | null) {
   // A sheet going away plays its own exit; the page under it changes at once.
   if (!dir || still || document.querySelector('.sheet-layer')) return notify()
   if (dir === 'back') return slideBack()
-  if (!document.startViewTransition) return notify()
-  const n = ++slides
-  const root = document.documentElement
-  root.dataset.nav = dir
-  const slide = document.startViewTransition(() => flushSync(notify))
-  slide.finished.finally(() => {
-    if (n === slides) delete root.dataset.nav
-  })
+  slideIn()
+}
+
+/**
+ * Deeper: the new screen slides in over the old one, which drifts a little left under a light shade.
+ * The new screen scrolls at the first touch, wherever it lands: its layer covers the whole screen from the
+ * start, see-through, and only its content slides. (A touch that reached nothing that scrolls, as during a
+ * view transition's picture or beside a layer still sliding in, held the screen stuck until let go.)
+ */
+function slideIn() {
+  flushSync(notify)
+  const screens = [...document.querySelectorAll<HTMLElement>('.screen-layer')]
+  const [under, top] = screens.slice(-2)
+  const page = top?.firstElementChild as HTMLElement | null
+  if (!under || !top || !page) return
+  const shade = document.createElement('div')
+  shade.className = 'nav-shade'
+  // Over the old screen, under the new one and the tab bar.
+  shade.style.zIndex = '19'
+  top.style.zIndex = '20'
+  top.style.background = 'transparent'
+  Object.assign(page.style, { background: 'var(--bg)', boxShadow: '-6px 0 24px rgb(0 0 0 / 0.12)' })
+  document.body.append(shade)
+  const timing = { duration: 400, easing: EASE }
+  const runs = [
+    page.animate([{ transform: 'translateX(100%)' }, { transform: 'none' }], timing),
+    under.animate([{ transform: 'none' }, { transform: 'translateX(-30%)' }], timing),
+    shade.animate([{ opacity: 0 }, { opacity: 1 }], timing),
+  ]
+  const done = () => {
+    shade.remove()
+    Object.assign(top.style, { zIndex: '', background: '' })
+    Object.assign(page.style, { background: '', boxShadow: '' })
+  }
+  // Animations wait while the app is in the background; the shade must not outlive its moment.
+  setTimeout(done, 1000)
+  Promise.all(runs.map((a) => a.finished)).catch(() => {}).finally(done)
 }
 
 /** Tab screens. Reaching one resets the history stack, so back can't go behind it. */
@@ -101,10 +129,9 @@ function slideBack() {
   setTimeout(done, 1000)
   // The copy holds still for two frames, so the phone has drawn the screen underneath by the time it shows.
   requestAnimationFrame(() => requestAnimationFrame(() => {
-    const ease = 'cubic-bezier(0.32, 0.72, 0, 1)'
     const runs = [
-      leaving.animate([{ transform: 'none' }, { transform: 'translateX(100%)' }], { duration: 400, easing: ease, fill: 'forwards' }),
-      shade.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, easing: ease, fill: 'forwards' }),
+      leaving.animate([{ transform: 'none' }, { transform: 'translateX(100%)' }], { duration: 400, easing: EASE, fill: 'forwards' }),
+      shade.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, easing: EASE, fill: 'forwards' }),
     ]
     Promise.all(runs.map((a) => a.finished)).catch(() => {}).finally(done)
   }))
