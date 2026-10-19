@@ -10,8 +10,8 @@ import {
   doneWhenProblem, emptyCommitmentDraft, isValid, MAX_PREPS, validateCommitment, validatePrep,
   type CommitmentDraft, type PrepDraft,
 } from '../lib/draft'
-import { activeEntries, summarizeGoal, type ScoreContext } from '../lib/scoring'
-import { dueBadge, type Snapshot } from '../lib/today'
+import { summarizeGoal, type ScoreContext } from '../lib/scoring'
+import type { Snapshot } from '../lib/today'
 import { stateLabel } from '../lib/revisions'
 import type { Commitment, Goal, GoalReview, Prep, Value } from '../lib/types'
 import { Field, InfoTip, PageText, Screen, Section, Sheet, StatusInfo, StatusWord, toast, TypeToConfirm, WeekBar } from '../ui/components'
@@ -23,6 +23,8 @@ import { CadenceFields, GraceField, graceLabel, MeasurementFields, PrepEditor, S
 import { projectProgress } from './Goals'
 import { GoalHistorySheet } from './GoalHistory'
 import { OccurrenceSheet } from './OccurrenceSheet'
+import { openQuickAddFor } from './QuickAdd'
+import { TaskList } from './TaskSheet'
 
 
 function useGoalContext(id: string) {
@@ -61,9 +63,6 @@ export function GoalDetailScreen({ id }: { id: string }) {
   const activeCount = snap.goals.filter((g) => g.state === 'active').length
   const full = activeCount >= settings.goalCap
   const projects = snap.projects.filter((p) => p.goalId === goal.id && (p.state === 'active' || p.state === 'backlog'))
-  const tasks = snap.tasks.filter((x) => x.goalId === goal.id && !x.projectId)
-  const doneTasks = new Set(activeEntries(snap.entries).filter((e) => e.subjectType === 'task' && e.outcome === 'hit').map((e) => e.subjectId))
-  const openTasks = tasks.filter((x) => !doneTasks.has(x.id))
   const ended = goal.state === 'completed' || goal.state === 'abandoned'
 
   return (
@@ -166,20 +165,9 @@ export function GoalDetailScreen({ id }: { id: string }) {
         )}
       </Section>
 
-      {openTasks.length > 0 && (
-        <Section title={t('goal.tasks')}>
-          <div className="card list">
-            {openTasks.map((task) => (
-              <div key={task.id} className="list-row">
-                <div className="text">
-                  <div className="title" style={{ fontSize: 15 }}>{task.title}</div>
-                  {task.date && <span className={`due due-${dueBadge(task.date, today, task.time).tone}`}>{dueBadge(task.date, today, task.time).label}</span>}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
+      <Section title={t('goal.tasks')} aside={<button className="link-btn" onClick={() => openQuickAddFor({ goalId: goal.id })}>{t('common.add')}</button>}>
+        <TaskList tasks={snap.tasks.filter((x) => x.goalId === goal.id && !x.projectId)} today={today} />
+      </Section>
 
       <Section title={t('common.manage')}>
         <div className="card list manage">

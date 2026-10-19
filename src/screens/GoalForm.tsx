@@ -13,7 +13,7 @@ import { startTemplate, TemplateGoalScreen } from './TemplateGoal'
 import { Chip, Field, InfoTip, PageText, Screen, Segmented, Sheet, Stepper, toast, WeekdayPicker } from '../ui/components'
 import { IconChevronRight, IconClose } from '../ui/icons'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
-import { goBack, navigate, scrollScreenToTop, useLocation } from '../ui/router'
+import { goBack, navigate, screensUnder, scrollScreenToTop, useLocation } from '../ui/router'
 
 const SHAPES: { value: Shape; title: Key }[] = [
   { value: 'rhythm', title: 'shape.rhythm' },
@@ -377,8 +377,12 @@ function GoalFormScreen({ initial, picking = false }: { initial: GoalDraft; pick
       <IconChevronRight className="chev" width={18} />
     </button>
   )
+  // Back leaves the new goal for the screen it was started from, so it's named after that tab.
+  const stack = [...screensUnder(), window.location.pathname]
+  const from = (stack[stack.findIndex((p) => p.startsWith('/goals/new')) - 1] ?? '/goals').split('?')[0]
+  const backLabel = from === '/goals' ? t('nav.plan') : from === '/' ? t('nav.today') : undefined
   return (
-    <Screen back="/goals" title={t('form.newGoal')}
+    <Screen back="/goals" backLabel={backLabel} title={t('form.newGoal')}
       actions={<button className="btn ghost" onClick={() => setSettings({ creationMode: mode === 'wizard' ? 'compact' : 'wizard' })}>
         {mode === 'wizard' ? t('form.compact') : t('form.guided')}
       </button>}>

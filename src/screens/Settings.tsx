@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { exportData, importData, parseBackup, shareOrDownload } from '../db/backup'
-import { deleteValue, saveValues } from '../db/repo'
+import { deleteValue, saveValues, setValueLook } from '../db/repo'
 import { setSettings } from '../db/settings'
 import { langSetting, setLangSetting, t, tlist, tn, type LangSetting } from '../i18n'
 import { formatTime, isDateStr } from '../lib/dates'
@@ -15,7 +15,7 @@ import { useIsDeveloper } from '../ui/developer'
 import { RELEASES } from '../lib/releases'
 import { ReleaseNotes } from './WhatsNew'
 import { navigate, useLocation } from '../ui/router'
-import { ValueLookSheet, ValueTile } from '../ui/valueLook'
+import { ValueLookSheet, ValueTile, valueLook } from '../ui/valueLook'
 import type { Value } from '../lib/types'
 import { resetIntro } from './Intro'
 
@@ -365,14 +365,25 @@ export function ValuesEditor(props: { onSaved?: () => void }) {
   const min = 1
   const max = 12
   const ok = filled.length >= min && filled.length <= max
-  const inUse = (id?: string) => !!id && snap.goals.some((g) => g.whyValueId === id)
+  const uses = (id: string) => snap.goals.filter((g) => g.whyValueId === id).length
   const update = (i: number, p: Partial<ValueDraft>) => setDrafts(drafts.map((x, j) => (j === i ? { ...x, ...p } : x)))
 
   const save = async () => {
     if (!ok) return setTried(true)
-    await saveValues(filled.map((d) => ({ id: d.id, name: d.name.trim(), description: d.description.trim() })))
     const removed = snap.values.filter((v) => !filled.some((d) => d.id === v.id))
-    for (const v of removed) if (!inUse(v.id)) await deleteValue(v)
+    // A goal whose value goes keeps going without one, like a goal that skipped it.
+    for (const v of removed) {
+      const goals = uses(v.id)
+      if (goals && !confirm(tn('set.removeUsedValueQ', goals, { name: v.name }))) return
+    }
+    // A color left unpicked comes from the value's place in the list: the ones after a removed value keep theirs.
+    const kept = snap.values.filter((v) => !removed.includes(v))
+    for (const v of kept) {
+      const color = valueLook(v, snap.values).color
+      if (removed.length && valueLook(v, kept).color !== color) await setValueLook(v, { color })
+    }
+    await saveValues(filled.map((d) => ({ id: d.id, name: d.name.trim(), description: d.description.trim() })))
+    for (const v of removed) await deleteValue(v)
     props.onSaved?.()
   }
 
@@ -389,7 +400,7 @@ export function ValuesEditor(props: { onSaved?: () => void }) {
               <input value={d.description} aria-label={t('set.valueMeansN', { n: i + 1 })} placeholder={t('set.valueMeans')}
                 style={{ minHeight: 38, fontSize: 14 }} onChange={(e) => update(i, { description: e.target.value })} />
             </div>
-            {drafts.length > 1 && !inUse(d.id) && (
+            {drafts.length > 1 && (
               <button className="icon-btn" aria-label={t('set.removeValueN', { n: i + 1 })} onClick={() => setDrafts(drafts.filter((_, j) => j !== i))}>
                 <IconClose width={18} height={18} />
               </button>

@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { deleteTask, promoteTask, updateTask } from '../db/repo'
+import { check, deleteTask, promoteTask, uncheck, updateTask } from '../db/repo'
 import { t } from '../i18n'
 import { capitalize, dayMonth, diffDays, formatTime, nowMinutes, relativeDay, weekdayName } from '../lib/dates'
+import { activeEntries } from '../lib/scoring'
+import { dueBadge } from '../lib/today'
 import type { DateStr, Task } from '../lib/types'
-import { NoteField, Sheet, Switch, TitleField, toast } from '../ui/components'
+import { CheckButton, NoteField, Sheet, Switch, TitleField, toast } from '../ui/components'
 import { InlineCalendar, TimeWheel } from '../ui/pickers'
 import { useSnapshot } from '../ui/hooks'
-import { IconCalendar, IconChevronUpDown, IconClock, IconGoals } from '../ui/icons'
+import { IconCalendar, IconChevronUpDown, IconClock, IconGoals, IconNote } from '../ui/icons'
 import { navigate } from '../ui/router'
 import { IconTile, ProjectTile, ValueTile } from '../ui/valueLook'
 
@@ -183,5 +185,54 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
         </button>
       </div>
     </Sheet>
+  )
+}
+
+/**
+ * A goal's or a project's own tasks: open ones by when they're due (undated last), then the finished ones.
+ * Each is checked off right here, and tapping one opens it to edit.
+ */
+export function TaskList({ tasks, today }: { tasks: Task[]; today: DateStr }) {
+  const snap = useSnapshot()
+  const [openTask, setOpenTask] = useState<Task | null>(null)
+  const doneEntry = new Map(
+    activeEntries(snap?.entries ?? []).filter((e) => e.subjectType === 'task' && e.outcome === 'hit').map((e) => [e.subjectId, e]),
+  )
+  const dueKey = (x: Task) => (x.date ? `${x.date} ${x.time ?? '99:99'}` : '9999')
+  const sorted = [...tasks].sort((a, b) => Number(doneEntry.has(a.id)) - Number(doneEntry.has(b.id)) || dueKey(a).localeCompare(dueKey(b)))
+  const toggle = (task: Task) => {
+    const e = doneEntry.get(task.id)
+    return e ? uncheck(e.id) : check({ subjectType: 'task', subjectId: task.id }, today)
+  }
+  return (
+    <>
+      {sorted.length === 0 ? (
+        <div className="card list-empty">{t('common.noneYet')}</div>
+      ) : (
+        <div className="card">
+          <ul className="items">
+            {sorted.map((task) => {
+              const isDone = doneEntry.has(task.id)
+              const due = !isDone && task.date ? dueBadge(task.date, today, task.time) : null
+              return (
+                <li key={task.id}>
+                  <div className={`item kind-task ${isDone ? 'done' : ''}`}>
+                    <CheckButton shape="square" checked={isDone} label={task.title} onClick={() => toggle(task)} />
+                    <button className="item-main" onClick={() => setOpenTask(task)}>
+                      <div className="item-title">
+                        {task.title}
+                        {task.note?.trim() && <IconNote className="note-mark" width={15} height={15} role="img" aria-hidden={false} aria-label={t('common.hasNotes')} />}
+                      </div>
+                      {due && <span className={`due due-${due.tone}`}>{due.label}</span>}
+                    </button>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
+      <TaskSheet task={openTask} onClose={() => setOpenTask(null)} today={today} />
+    </>
   )
 }

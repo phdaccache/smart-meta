@@ -343,6 +343,10 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .row-value { color: var(--ink-2); font-size: 17px; text-align: right; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .settings .list-row + .list-row .chev { margin-left: -4px; }
 .select-row { position: relative; }
+/* The label keeps its width; a long choice shortens with an ellipsis instead. */
+.select-row .text { flex: none; }
+.select-row .title { white-space: nowrap; }
+.select-row .row-value { flex: 1 1 auto; }
 .select-row select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; }
 .select-row .info-btn { position: relative; z-index: 1; }
 .list-row.accent .title { color: var(--accent); }
