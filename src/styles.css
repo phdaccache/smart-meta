@@ -1435,13 +1435,10 @@ button, a, summary, [role='button'], .chip {
 /* ——— screens slide as on the iPhone ———
    Deeper: the new screen comes in from the right over the old one, which drifts a little left under a shade.
    Back: the reverse, the top screen leaving to the right (see router). Tab switches don't slide. */
-/* Back: a copy of the screen being left slides off to the right over the screen underneath, which is drawn as
-   usual and lifts out of a light shade, so nothing has to be pictured mid-slide. */
-.nav-leaving {
-  position: fixed; inset: 0; z-index: 30; overflow: hidden; pointer-events: none; background: var(--bg);
-  box-shadow: -6px 0 24px rgb(0 0 0 / 0.12);
-}
-.nav-shade { position: fixed; inset: 0; z-index: 29; pointer-events: none; background: rgb(0 0 0 / 0.1); }
+/* Back: the screen being left slides off to the right, over the tab bar, letting every touch through to the
+   screen underneath, which lifts out of a light shade (see router). */
+.screen-layer.leaving { z-index: 22; pointer-events: none; box-shadow: -6px 0 24px rgb(0 0 0 / 0.12); }
+.nav-shade { position: fixed; inset: 0; z-index: 19; pointer-events: none; background: rgb(0 0 0 / 0.1); }
 /* Each screen scrolls in a layer of its own, over the screens it was opened from, which stay where they were (see App).
    It bounces at its ends as the page did, within itself, so pulling past the top never shows the screen underneath;
    one pixel more than its height lets a short screen bounce too. */

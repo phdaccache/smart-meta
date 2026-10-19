@@ -8,7 +8,7 @@ import { Toaster } from './ui/components'
 import { reviewPending } from './lib/review'
 import { useSettingsLoaded, useToday } from './ui/hooks'
 import { IconGoals, IconInsights, IconPlus, IconReview, IconToday } from './ui/icons'
-import { match, navigate, screensUnder, useLocation } from './ui/router'
+import { leavingScreen, match, navigate, screensUnder, useLocation } from './ui/router'
 import { GoalDetailScreen, GoalEditScreen, GoalReviewScreen } from './screens/GoalDetail'
 import { NewGoalScreen } from './screens/GoalForm'
 import { GoalsScreen } from './screens/Goals'
@@ -78,6 +78,9 @@ export function App() {
   // each where it was, so Back finds them as they were (see screensUnder).
   const under = onboarding ? [] : screensUnder()
   const here = window.location.pathname + window.location.search
+  // A layer is kept by its place, whatever screen it shows, so a drag begun as the screen changes isn't left
+  // on a layer that's gone. The screen Back is taking away stays the same layer while it slides off (see slideBack).
+  const leaving = leavingScreen()
 
   // Keyed by language: switching remounts the screens, so every text (and anything computed from it) is redone.
   return (
@@ -87,11 +90,13 @@ export function App() {
           Pretending it’s {dayMonth(settings.devToday)} · tap to reset
         </button>
       )}
-      {[...under, here].map((at, i) => {
+      {[...under, here, ...(leaving ? [leaving.at] : [])].map((at, i) => {
         const shown = i === under.length
+        const gone = i > under.length
         const [p, search = ''] = at.split('?')
         return (
-          <div key={`${i}:${at}`} className="screen-layer" inert={!shown} aria-hidden={shown ? undefined : true}>
+          <div key={gone ? leaving!.key : i} className={`screen-layer ${gone ? 'leaving' : ''}`} inert={!shown}
+            aria-hidden={shown ? undefined : true}>
             <main className={`app ${(shown ? tabbed : hasTabs(p)) ? '' : 'no-tabs'}`}>
               {shown ? content : route(p, new URLSearchParams(search))}
             </main>
