@@ -120,7 +120,7 @@ export function Sheet(props: {
   dirty.current = props.dirty
   const layerRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
-  const [view, setView] = useState<{ top: number; height: number } | null>(null)
+  const [view, setView] = useState<{ top: number; height: number; pageTop: number } | null>(null)
   const onClose = useRef(props.onClose)
   onClose.current = props.onClose
 
@@ -134,7 +134,7 @@ export function Sheet(props: {
   useEffect(() => {
     const vv = window.visualViewport
     if (!props.open || !vv) return
-    const update = () => setView({ top: vv.offsetTop, height: vv.height })
+    const update = () => setView({ top: vv.offsetTop, height: vv.height, pageTop: vv.pageTop })
     update()
     vv.addEventListener('resize', update)
     vv.addEventListener('scroll', update)
@@ -214,7 +214,11 @@ export function Sheet(props: {
     }
   }, [props.open, view, keyboard, props.large])
   if (!props.open) return null
-  return createPortal(
+  return createPortal(<>
+    {/* With the keyboard up, iPhone's floating ↑ ↓ ✓ bar leaves a strip between the sheet and the keyboard where
+        the page shows through, and the sheet's own fixed layer doesn't reach it. This sits in the page itself, just
+        below what's visible, in the sheet's colour. */}
+    {view && <div className="sheet-underlay" aria-hidden="true" style={{ top: view.pageTop + view.height }} />}
     <div ref={layerRef} className={`sheet-layer ${keyboard ? 'keyboard' : ''}`} style={view ? { top: view.top, height: view.height, bottom: 'auto' } : undefined}>
       <div className="sheet-backdrop" onClick={() => leave.current() && props.onClose()} />
       <div className={`sheet ${props.title || props.done ? '' : 'untitled'} ${props.large ? 'large' : ''}`} role="dialog" aria-modal="true" ref={ref}
@@ -249,9 +253,8 @@ export function Sheet(props: {
           <button type="button" className="action-sheet-btn cancel" autoFocus onClick={() => setAsking(false)}>{t('sheet.keepEditing')}</button>
         </div>
       )}
-    </div>,
-    document.body,
-  )
+    </div>
+  </>, document.body)
 }
 
 function slideAway(layer: HTMLElement) {

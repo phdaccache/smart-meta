@@ -1470,3 +1470,11 @@ button, a, summary, [role='button'], .chip {
 @media (prefers-reduced-motion: reduce) {
   .action-sheet-group, .action-sheet-btn.cancel { animation: fade 0.2s ease; }
 }
+
+/* In the page, just under what's visible: covers the strip around iPhone's keyboard bar (see Sheet). */
+.sheet-underlay { position: absolute; left: 0; right: 0; height: 100vh; z-index: 49; pointer-events: none; background: var(--bg); }
+@media (prefers-color-scheme: dark) { .sheet-underlay { background: #1c1c1e; } }
+
+/* Developer: debug colors. */
+.debug-paint .sheet::after { background: #ff2d55; }
+.debug-paint .sheet-underlay { background: #34c759; }

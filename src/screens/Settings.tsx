@@ -7,7 +7,7 @@ import { formatTime, isDateStr } from '../lib/dates'
 import { loadSampleData } from '../dev/sample'
 import { loadWorstCaseData } from '../dev/worst'
 import { eraseAllData, signIn, signOut, syncNow, useSyncStatus } from '../sync/controller'
-import { Field, InfoTip, Screen, Section, Sheet, Stepper, toast, TypeToConfirm } from '../ui/components'
+import { Field, InfoTip, Screen, Section, Sheet, Stepper, Switch, toast, TypeToConfirm } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconChevronUpDown, IconClose } from '../ui/icons'
 import { useInstall } from '../ui/install'
@@ -294,6 +294,7 @@ function DevSection({ devToday }: { devToday: string | null }) {
   const settings = useSettings()
   const today = useToday(settings.rolloverHour)
   const [busy, setBusy] = useState(false)
+  const [debugPaint, setDebugPaint] = useState(() => document.documentElement.classList.contains('debug-paint'))
   const { email } = useSyncStatus()
   const load = async (fill: (today: string) => Promise<void>) => {
     // Signed in, the erase would reach the synced copy and every device using it.
@@ -321,6 +322,16 @@ function DevSection({ devToday }: { devToday: string | null }) {
           </div>
           <input id="dev-today" className="row-date" type="date" value={devToday ?? ''}
             onChange={(e) => setSettings({ devToday: isDateStr(e.target.value) ? e.target.value : null })} />
+        </div>
+        <div className="list-row">
+          <div className="text">
+            <span className="title title-row">Debug colors<InfoTip label="Debug colors">Tints layers that are normally invisible, to see what shows where (red: the sheet's own cover under it; green: the cover in the page). Only on this device.</InfoTip></span>
+          </div>
+          <Switch checked={debugPaint} label="Debug colors" onChange={(on) => {
+            setDebugPaint(on)
+            try { if (on) localStorage.setItem('debugPaint', '1'); else localStorage.removeItem('debugPaint') } catch { /* private mode */ }
+            document.documentElement.classList.toggle('debug-paint', on)
+          }} />
         </div>
         <LinkRow title={busy ? 'Loading…' : 'Load sample data…'}
           sub={email ? 'Sign out of sync first, so your real data stays safe.' : 'Replaces everything on this device with a worked example and months of history.'} onClick={() => load(loadSampleData)} />
