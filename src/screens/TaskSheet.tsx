@@ -92,7 +92,7 @@ export function ChoiceRow(props: {
   )
 }
 
-/** A task's project and goal; a project's task takes its goal from the project, so the goal row goes while a project is picked. */
+/** A task's goal, then its project; a project's task takes its goal from the project, so the goal row goes while a project is picked. */
 export function TaskLinks(props: { projectId: string | null; goalId: string | null; onProject: (id: string | null) => void; onGoal: (id: string | null) => void }) {
   const snap = useSnapshot()
   const goals = (snap?.goals ?? []).filter((g) => g.state === 'active' || g.state === 'maintenance' || g.state === 'backlog' || g.id === props.goalId)
@@ -101,12 +101,12 @@ export function TaskLinks(props: { projectId: string | null; goalId: string | nu
   const goal = goals.find((g) => g.id === props.goalId)
   return (
     <div className="card list settings">
-      <ChoiceRow id="task-project" icon={<ProjectTile size="sm" />} label={t('common.project')}
-        value={props.projectId} options={projects} onChange={props.onProject} />
       {!props.projectId && (
         <ChoiceRow id="task-goal" icon={goal ? <ValueTile value={snap?.values.find((v) => v.id === goal.whyValueId)} values={snap?.values ?? []} size="sm" /> : <IconTile color="gray"><IconGoals width={16} height={16} /></IconTile>} label={t('common.goal')}
           value={props.goalId} options={goals} onChange={props.onGoal} />
       )}
+      <ChoiceRow id="task-project" icon={<ProjectTile size="sm" />} label={t('common.project')}
+        value={props.projectId} options={projects} onChange={props.onProject} />
     </div>
   )
 }

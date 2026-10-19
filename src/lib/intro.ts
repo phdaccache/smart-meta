@@ -40,7 +40,7 @@ export interface Example {
   draft: Partial<GoalDraft>
   /** Finish lines: deadline this many months after the start. */
   months?: number
-  /** The New goal template it matches: picking the example fills in that template's why, dates and prep too. */
+  /** The New goal template it matches: picking the example fills in that template's why and dates too. */
   template?: string
 }
 
@@ -116,11 +116,11 @@ export function addMonths(d: DateStr, n: number): DateStr {
 
 /**
  * A full draft from an example, keeping the chosen start date: every step comes
- * filled in. `from` is the matching template's draft (its why, dates, how often
- * it may slip, and a habit's prep); without one, the area's why and 3 months.
+ * filled in except preps, which they add themselves (from what gets in the way,
+ * or by hand). `from` is the matching template's draft (its why, dates and how
+ * often it may slip); without one, the area's why and 3 months.
  */
 export function draftFromExample(e: Example, startDate: DateStr, from?: GoalDraft): GoalDraft {
-  const habit = e.draft.goalKind !== 'outcome'
   return {
     ...emptyGoalDraft(startDate),
     ...e.draft,
@@ -128,7 +128,6 @@ export function draftFromExample(e: Example, startDate: DateStr, from?: GoalDraf
     whyText: from?.whyText || areaInfo(e.area).why,
     tolerancePct: from?.tolerancePct ?? 80,
     targetDate: from?.targetDate || addMonths(startDate, e.months ?? 3),
-    preps: habit ? from?.preps ?? [] : [],
   }
 }
 
