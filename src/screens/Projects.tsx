@@ -79,7 +79,7 @@ export function NewProjectScreen({ goalId: presetGoal }: { goalId?: string | nul
   return (
     <Screen back="/goals" title={t('project.new')}>
       <Field label={t('project.outcome')} htmlFor="p-title" error={tried ? errors.title : undefined}>
-        <input id="p-title" autoFocus value={title} placeholder={t('project.phOutcome')} onChange={(e) => setTitle(e.target.value)} />
+        <input id="p-title" value={title} placeholder={t('project.phOutcome')} onChange={(e) => setTitle(e.target.value)} />
       </Field>
       <Field label={t('project.targetDate')} htmlFor="p-date" error={tried ? errors.targetDate : undefined}>
         <input id="p-date" type="date" min={today} value={targetDate} onChange={(e) => setTargetDate(e.target.value)} />
