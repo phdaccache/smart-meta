@@ -11,7 +11,7 @@ import { cadenceOf, type Template, type TemplateHabit, type TemplateProject } fr
 import type { DateStr, Value } from '../lib/types'
 import { Field, PageText, Screen, Section, Sheet, toast } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
-import { goBack, navigate } from '../ui/router'
+import { finishFlow, goBack, navigate } from '../ui/router'
 import { StepsEditor } from './Projects'
 import { CadenceFields, Compact, graceLabel, MeasurementFields, PrepEditor, ShapeField, ShapeInfo, Wizard, type SetField } from './GoalForm'
 
@@ -109,8 +109,8 @@ function TemplateEdit({ draft, values, back }: { draft: TemplateDraft; values: V
     const goal = await saveDraft(draft)
     setStore(null)
     toast(draft.habits.length || draft.projects.length ? t('tpl.saved') : t('form.savedBacklog'))
-    // Its page, as a goal made from scratch does.
-    navigate(`/goals/${goal.id}`, { replace: true })
+    // Its page, as a goal made from scratch does; Back from it goes where New goal was tapped, not through the template's steps.
+    finishFlow('/goals/new', `/goals/${goal.id}`)
   }
   return (
     <Screen back="/goals/new" title={t('form.newGoal')}>

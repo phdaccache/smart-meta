@@ -249,6 +249,20 @@ export function navigate(to: string, opts: { replace?: boolean } = {}) {
   show(dir)
 }
 
+/**
+ * Leaves a finished flow for what it made: `to` takes the place of the flow's first screen (the first whose
+ * path starts with `flow`) and of every screen opened after it, so Back goes where the flow was started.
+ */
+export function finishFlow(flow: string, to: string) {
+  if (afterOwnMoves(() => finishFlow(flow, to))) return
+  const s = stack()
+  const first = s.findIndex((p) => p.startsWith(flow))
+  const drop = first < 0 ? 0 : s.length - 1 - first
+  if (drop === 0) return navigate(to, { replace: true })
+  dropEntries(drop)
+  later.push(() => navigate(to, { replace: true }))
+}
+
 /** Back within the app when there is somewhere to go, otherwise to a sensible parent. */
 export function goBack(fallback: string) {
   if (afterOwnMoves(() => goBack(fallback))) return
