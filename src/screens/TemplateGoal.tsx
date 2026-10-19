@@ -81,6 +81,7 @@ async function saveDraft(d: TemplateDraft) {
   for (const p of d.projects) {
     await createProject({ title: p.title, targetDate: addDays(start, p.days), goalId: goal.id, steps: p.steps })
   }
+  return goal
 }
 
 // ——— screens ———
@@ -105,10 +106,11 @@ function TemplateEdit({ draft, values, back }: { draft: TemplateDraft; values: V
   const update = (p: Partial<TemplateDraft>) => setStore({ ...draft, ...p })
   const save = async () => {
     setBusy(true)
-    await saveDraft(draft)
+    const goal = await saveDraft(draft)
     setStore(null)
     toast(draft.habits.length || draft.projects.length ? t('tpl.saved') : t('form.savedBacklog'))
-    navigate('/')
+    // Its page, as a goal made from scratch does.
+    navigate(`/goals/${goal.id}`, { replace: true })
   }
   return (
     <Screen back="/goals/new" title={t('form.newGoal')}>
