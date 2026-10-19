@@ -118,8 +118,6 @@ export function Sheet(props: {
   const [asking, setAsking] = useState(false)
   const dirty = useRef(props.dirty)
   dirty.current = props.dirty
-  // Opened straight into typing (the keyboard comes up with it): a short rise, so it doesn't race the keyboard.
-  const [typing, setTyping] = useState(false)
   const layerRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
   const [view, setView] = useState<{ top: number; height: number } | null>(null)
@@ -163,11 +161,6 @@ export function Sheet(props: {
     layer.addEventListener('touchmove', onMove, { passive: false })
     return () => layer.removeEventListener('touchmove', onMove)
   }, [props.open])
-  useLayoutEffect(() => {
-    if (!props.open) return setTyping(false)
-    const el = document.activeElement
-    setTyping(!!ref.current?.contains(el) && (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement))
-  }, [props.open])
   /** Leaves, unless that would lose typing: then it asks first. */
   const leave = useRef<() => boolean>(() => true)
   leave.current = () => {
@@ -195,12 +188,10 @@ export function Sheet(props: {
   useSwipeToDismiss(ref, props.open && !asking, onClose, leave)
   // Closing, it slides back down the way it came, as on the iPhone. React lets go of the sheet at once
   // (often its parent goes too), so a still copy plays the way out while the page is already usable.
-  const typingNow = useRef(false)
-  typingNow.current = typing
   useLayoutEffect(() => {
     const layer = layerRef.current
     if (!props.open || !layer) return
-    return () => slideAway(layer, typingNow.current)
+    return () => slideAway(layer)
   }, [props.open])
   // The visible area shrinks by the keyboard's height; a small change is just the browser's own bars.
   const keyboard = !!view && view.height < window.innerHeight - 150
@@ -226,7 +217,7 @@ export function Sheet(props: {
   return createPortal(
     <div ref={layerRef} className={`sheet-layer ${keyboard ? 'keyboard' : ''}`} style={view ? { top: view.top, height: view.height, bottom: 'auto' } : undefined}>
       <div className="sheet-backdrop" onClick={() => leave.current() && props.onClose()} />
-      <div className={`sheet ${props.title || props.done ? '' : 'untitled'} ${props.large ? 'large' : ''} ${typing ? 'typing' : ''}`} role="dialog" aria-modal="true" ref={ref}
+      <div className={`sheet ${props.title || props.done ? '' : 'untitled'} ${props.large ? 'large' : ''}`} role="dialog" aria-modal="true" ref={ref}
         aria-labelledby={props.title ? titleId : undefined} aria-label={props.title ? undefined : props.label}>
         {!props.done && <div className="sheet-grabber" aria-hidden="true" />}
         {props.done ? (
@@ -263,7 +254,7 @@ export function Sheet(props: {
   )
 }
 
-function slideAway(layer: HTMLElement, typing: boolean) {
+function slideAway(layer: HTMLElement) {
   const ghost = layer.cloneNode(true) as HTMLElement
   // The copy carries attributes, not what was typed: put the fields' text back so nothing blanks out.
   const fields = layer.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea')
@@ -276,14 +267,10 @@ function slideAway(layer: HTMLElement, typing: boolean) {
   const backdrop = ghost.querySelector<HTMLElement>('.sheet-backdrop')
   const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const ease = 'cubic-bezier(0.32, 0.72, 0, 1)'
-  // A sheet that was typed in drops a little and fades as the keyboard goes: its room is changing under it.
-  const quick = still || (typing && !sheet?.style.transform)
   const runs = [
     // From wherever a swipe left it, not from the top.
-    sheet?.animate(still ? [{ opacity: 1 }, { opacity: 0 }]
-      : quick ? [{ transform: 'none', opacity: 1 }, { transform: 'translateY(40px)', opacity: 0 }]
-      : [{ transform: sheet.style.transform || 'none' }, { transform: 'translateY(100%)' }],
-    { duration: quick ? 180 : 300, easing: quick ? 'ease-in' : ease, fill: 'forwards' }),
+    sheet?.animate(still ? [{ opacity: 1 }, { opacity: 0 }] : [{ transform: sheet.style.transform || 'none' }, { transform: 'translateY(100%)' }],
+      { duration: still ? 150 : 300, easing: ease, fill: 'forwards' }),
     backdrop?.animate([{ opacity: backdrop.style.opacity || 1 }, { opacity: 0 }], { duration: still ? 150 : 300, easing: 'ease-out', fill: 'forwards' }),
   ]
   Promise.all(runs.map((a) => a?.finished)).catch(() => {}).finally(() => ghost.remove())

@@ -18,7 +18,13 @@ let rendered = false
 function show(dir: 'forward' | 'back' | null, then: () => void) {
   const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   // A sheet going away plays its own exit; the page under it changes at once.
-  if (!dir || still || !document.startViewTransition || document.querySelector('.sheet-layer')) {
+  if (!dir || still || document.querySelector('.sheet-layer')) {
+    notify()
+    then()
+    return
+  }
+  if (dir === 'back') return slideBack(then)
+  if (!document.startViewTransition) {
     notify()
     then()
     return
@@ -75,6 +81,45 @@ else if (!depth()) history.replaceState({ depth: 0 }, '')
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual'
 
 const rememberScroll = () => history.replaceState({ ...(history.state as NavState), scrollY: window.scrollY }, '')
+
+/**
+ * Back: the screen underneath is drawn as usual, in place and scrolled where it was, and a copy of the
+ * screen being left slides off to the right over it. Sliding the live screen in instead made a phone
+ * draw its parts that weren't on screen yet mid-slide, and they showed black until it caught up.
+ */
+function slideBack(then: () => void) {
+  const main = document.querySelector('main.app')
+  if (!main) {
+    notify()
+    then()
+    return
+  }
+  const leaving = document.createElement('div')
+  leaving.className = 'nav-leaving'
+  leaving.setAttribute('aria-hidden', 'true')
+  leaving.inert = true
+  const copy = main.cloneNode(true) as HTMLElement
+  const fields = main.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea')
+  copy.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea').forEach((el, i) => { el.value = fields[i]?.value ?? '' })
+  copy.style.transform = `translateY(${-window.scrollY}px)`
+  leaving.appendChild(copy)
+  const shade = document.createElement('div')
+  shade.className = 'nav-shade'
+  document.body.append(shade, leaving)
+  flushSync(notify)
+  rendered = true
+  then()
+  rendered = false
+  const ease = 'cubic-bezier(0.32, 0.72, 0, 1)'
+  const runs = [
+    leaving.animate([{ transform: 'none' }, { transform: 'translateX(100%)' }], { duration: 400, easing: ease, fill: 'forwards' }),
+    shade.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, easing: ease, fill: 'forwards' }),
+  ]
+  const done = () => { leaving.remove(); shade.remove() }
+  Promise.all(runs.map((a) => a.finished)).catch(() => {}).finally(done)
+  // Animations wait while the app is in the background; the copy must not outlive its moment.
+  setTimeout(done, 900)
+}
 
 function restoreScroll(y: number) {
   let frames = 0

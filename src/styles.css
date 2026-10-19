@@ -1436,17 +1436,19 @@ button, a, summary, [role='button'], .chip {
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.4s; animation-timing-function: var(--ease-drawer); animation-fill-mode: both; mix-blend-mode: normal; }
 :root[data-nav='forward']::view-transition-old(root) { animation-name: nav-under; }
 :root[data-nav='forward']::view-transition-new(root) { animation-name: nav-in; }
-:root[data-nav='back']::view-transition-old(root) { animation-name: nav-out; z-index: 1; }
-:root[data-nav='back']::view-transition-new(root) { animation-name: nav-from-under; }
 @keyframes nav-in { from { transform: translateX(100%); } }
-@keyframes nav-out { to { transform: translateX(100%); } }
 @keyframes nav-under { to { transform: translateX(-30%); filter: brightness(0.9); } }
-/* The screen coming back is live, not a picture: no filter on it, or a phone redraws it every frame and can show it blank. */
-@keyframes nav-from-under { from { transform: translateX(-30%); } }
+/* Back: a copy of the screen being left slides off to the right over the screen underneath, which is drawn as
+   usual and lifts out of a light shade, so nothing has to be pictured mid-slide. */
+.nav-leaving {
+  position: fixed; inset: 0; z-index: 30; overflow: hidden; pointer-events: none; background: var(--bg);
+  box-shadow: -6px 0 24px rgb(0 0 0 / 0.12);
+}
+.nav-shade { position: fixed; inset: 0; z-index: 29; pointer-events: none; background: rgb(0 0 0 / 0.1); }
 
-/* A sheet that opens straight into typing rises a little and fades in with the keyboard, instead of sliding the whole height. */
-.sheet.typing { animation: sheet-rise 0.25s var(--ease-out); }
-@keyframes sheet-rise { from { transform: translateY(40px); opacity: 0; } }
+/* Under a sheet it's always the sheet, never the page: with the keyboard up, iPhone's floating ↑ ↓ ✓ bar
+   leaves a strip between the sheet and the keyboard, and the page under it used to show through there. */
+.sheet::after { content: ''; position: absolute; top: 100%; left: 0; right: 0; height: 100vh; background: inherit; pointer-events: none; }
 
 /* Asking before unsaved typing is thrown away: an iOS action sheet at the bottom of the screen. */
 .action-sheet {
@@ -1466,6 +1468,5 @@ button, a, summary, [role='button'], .chip {
 .action-sheet-btn.cancel { font-weight: 600; }
 .action-sheet-btn:active { background: color-mix(in srgb, var(--ink) 10%, var(--surface-raised)); transition-duration: 0s; }
 @media (prefers-reduced-motion: reduce) {
-  .sheet.typing { animation: fade 0.2s ease; }
   .action-sheet-group, .action-sheet-btn.cancel { animation: fade 0.2s ease; }
 }
