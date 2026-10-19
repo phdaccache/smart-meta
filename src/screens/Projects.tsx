@@ -107,7 +107,7 @@ function DraftSteps({ steps, onChange }: { steps: DraftStep[]; onChange: (steps:
   const add = (title: string) => onChange([...steps, { key: `s${next.current++}`, title }])
   return (
     <div className="card">
-      <Sortable items={steps} keyOf={(s) => s.key} labelOf={(s) => s.title} onReorder={onChange} className="items"
+      <Sortable items={steps} keyOf={(s) => s.key} labelOf={(s) => s.title} onReorder={onChange} className="items step-list"
         render={(step) => (
           <div className="item kind-step">
             <div className="item-main">
@@ -219,7 +219,7 @@ export function ProjectScreen({ id }: { id: string }) {
 
       <Section title={<span className="title-row">{t('project.steps')}<InfoTip label={t('project.stepDates')}>{t('project.stepDatesInfo')}</InfoTip></span>}>
         <div className="card">
-          <Sortable items={steps} keyOf={(x) => x.id} labelOf={(x) => x.title} onReorder={reorderSteps} className="items"
+          <Sortable items={steps} keyOf={(x) => x.id} labelOf={(x) => x.title} onReorder={reorderSteps} className="items step-list"
             render={(step) => {
               const isDone = doneEntry.has(step.id)
               return (
