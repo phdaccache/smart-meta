@@ -15,12 +15,13 @@ import {
 } from '../lib/intro'
 import { MAINTENANCE_WEEKS } from '../lib/review'
 import { buildDay, type Snapshot } from '../lib/today'
-import type { Commitment, Goal } from '../lib/types'
-import { Badge, CheckButton, Chip, Field, PageText, toast } from '../ui/components'
+import type { Commitment, Goal, Value } from '../lib/types'
+import { CheckButton, Chip, Field, PageText, toast } from '../ui/components'
 import { useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
-import { FlagBR, FlagUS, IconCheck, IconChevronLeft, IconClose } from '../ui/icons'
+import { FlagBR, FlagUS, IconCheck, IconChevronLeft, IconClose, IconPlus } from '../ui/icons'
 import { useInstall, useInstalled } from '../ui/install'
 import { goBack, match, navigate } from '../ui/router'
+import { Tile, ValueTile, valueLook } from '../ui/valueLook'
 import {
   AchieveFields, KindField, MeasureFields, measureFields, PrepFields, PrepHead, SMART, SMART_LINE, SMART_Q, SmartBar, TimeFields, TitleFields, WhyText,
   type SetField, type SmartLetter,
@@ -594,7 +595,6 @@ function GoalPreview({ goal, snap }: { goal: Goal; snap: Snapshot }) {
   const view = buildDay(running, date, { today: date, rolloverHour: settings.rolloverHour })
   const group = view.groups.find((g) => g.goalId === goal.id)
   const value = snap.values.find((v) => v.id === goal.whyValueId)
-  const eyebrow = goal.whyText ? (value ? `${value.name} · ${goal.title}` : goal.title) : value?.name
   const toggle = (k: string) => {
     const next = new Set(ticked)
     if (next.has(k)) next.delete(k)
@@ -605,35 +605,38 @@ function GoalPreview({ goal, snap }: { goal: Goal; snap: Snapshot }) {
   return (
     <div className="card group preview">
       <div className="group-head">
-        <div className="text">
-          {eyebrow && <div className="group-eyebrow">{eyebrow}</div>}
-          <div className="group-why">{goal.whyText || goal.title}</div>
-        </div>
+        <ValueTile value={value} values={snap.values} size="sm" />
+        <div className="text"><div className="group-title">{goal.title}</div></div>
       </div>
       <ul className="items">
-        {group ? group.items.map((i) => (
-          <li key={i.key}>
-            <div className={`item kind-${i.kind} ${ticked.has(i.key) ? 'done' : ''}`}>
-              {i.kind === 'log'
-                ? <span className="check"><span className="check-box log-box">+</span></span>
-                : <CheckButton shape={i.kind === 'commitment' ? 'circle' : 'square'} checked={ticked.has(i.key)} label={i.title} onClick={() => toggle(i.key)} />}
-              <div className="item-main">
-                <div className="item-title">{i.title}</div>
-                {i.detail && <div className="item-detail">{i.detail}</div>}
+        {group ? group.items.map((i) => {
+          const kind = i.kind === 'prep' ? t('common.prep') : null
+          return (
+            <li key={i.key}>
+              <div className={`item kind-${i.kind} ${ticked.has(i.key) ? 'done' : ''}`}>
+                {i.kind === 'log'
+                  ? <span className="check circle"><span className="check-box log-box"><IconPlus width={16} height={16} /></span></span>
+                  : <CheckButton shape={i.kind === 'commitment' || i.kind === 'prep' ? 'circle' : 'square'} checked={ticked.has(i.key)} label={i.title} onClick={() => toggle(i.key)} />}
+                <div className="item-main">
+                  <div className="item-title">{i.title}</div>
+                  {(kind || i.detail) && (
+                    <div className="item-detail">{kind && <span className="item-kind">{kind}</span>}{kind && i.detail ? ' · ' : ''}{i.detail}</div>
+                  )}
+                </div>
               </div>
-              <div className="item-side">
-                <Badge kind={i.kind === 'prep' ? 'prep' : 'goal'}>{t(i.kind === 'prep' ? 'common.prep' : i.kind === 'log' ? 'common.log' : 'common.goal')}</Badge>
-              </div>
-            </div>
-          </li>
-        )) : (
+            </li>
+          )
+        }) : (
           <li>
-            <div className="item">
+            <div className="item kind-commitment">
+              <span className="check circle"><span className="check-box" /></span>
               <div className="item-main">
                 <div className="item-title">{goal.doneWhen ?? goal.title}</div>
-                {goal.targetDate && <div className="item-detail">{t('goal.deadline')} {dayMonth(goal.targetDate)}</div>}
+                <div className="item-detail">
+                  <span className="item-kind">{t('plan.finishLine')}</span>
+                  {goal.targetDate && ` · ${t('goal.deadline')} ${dayMonth(goal.targetDate)}`}
+                </div>
               </div>
-              <div className="item-side"><Badge kind="goal">{t('plan.finishLine')}</Badge></div>
             </div>
           </li>
         )}
@@ -761,9 +764,10 @@ function IntroReview() {
           {/* The goal stays; only its suggestion changes: each one hops, then drops away to show the next. */}
           <div className="card rev-card">
             <div className="group-head">
+              <DemoTile />
               <div className="text">
                 <div key={shown} className="group-eyebrow rev-week">{t('intro.rev.week', { n: cards[shown].week })}</div>
-                <div className="goal-card-title">{title}</div>
+                <div className="group-title">{title}</div>
               </div>
             </div>
             <div className="rev-stack">
@@ -796,6 +800,25 @@ const PIECES: { key: PieceKey; badge: 'task' | 'step' | 'prep' | 'goal'; name: K
   { key: 'prep', badge: 'prep', name: 'common.prep', what: 'intro.pieces.prepWhat' },
   { key: 'habit', badge: 'goal', name: 'intro.pieces.habit', what: 'intro.pieces.habitWhat' },
 ]
+/** A piece as Today shows it: round for habits and preps, square for to-dos, in its kind's color. */
+function PieceMark({ p }: { p: (typeof PIECES)[number] }) {
+  const kind = p.badge === 'goal' ? 'commitment' : p.badge
+  const round = p.badge === 'goal' || p.badge === 'prep'
+  return (
+    <span className={`piece-mark kind-${kind}`}>
+      <span className={`check-box ${round ? 'round' : ''}`} aria-hidden="true" />{tk(p.name)}
+    </span>
+  )
+}
+
+/** The goal the tour is about, with its value's icon (or that of the first area picked). */
+function DemoTile() {
+  const s = useIntro()
+  const name = s.valueName.trim() || (s.areas[0] ? areaInfo(s.areas[0]).value : '')
+  const v: Value | undefined = name ? { id: 'intro', name, description: '', createdAt: '', updatedAt: '' } : undefined
+  return <Tile {...valueLook(v, v ? [v] : [])} size="sm" />
+}
+
 /** The order they leave the row and join the goal. */
 const JOIN: PieceKey[] = ['habit', 'prep', 'project', 'task']
 const JOIN_START = 300
@@ -851,7 +874,7 @@ function IntroPieces() {
   }
 
   const chip = (p: (typeof PIECES)[number]) => (
-    <span key={p.key} ref={chipRef(p.key)} className="piece-chip"><Badge kind={p.badge}>{tk(p.name)}</Badge></span>
+    <span key={p.key} ref={chipRef(p.key)} className="piece-chip"><PieceMark p={p} /></span>
   )
   const piece = PIECES[stage]
   return (
@@ -863,7 +886,7 @@ function IntroPieces() {
         <div className="piece-tray" aria-hidden="true">{stage < 5 && PIECES.slice(0, stage).map(chip)}</div>
         {stage < 4 && (
           <div key={stage} className="card pad piece-card">
-            <Badge kind={piece.badge}>{tk(piece.name)}</Badge>
+            <PieceMark p={piece} />
             <div className="piece-what">{tk(piece.what)}</div>
             <div className="piece-eg">{pieces[piece.key]}</div>
           </div>
@@ -872,10 +895,8 @@ function IntroPieces() {
         {stage === 5 && (
           <div className="card group piece-goal">
             <div className="group-head">
-              <div className="text">
-                <div className="group-eyebrow">{t('common.goal')}</div>
-                <div className="group-why">{goalTitle}</div>
-              </div>
+              <DemoTile />
+              <div className="text"><div className="group-title">{goalTitle}</div></div>
             </div>
             <div className="piece-inside">
               {JOIN.map((k, i) => (

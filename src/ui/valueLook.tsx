@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import { setValueLook } from '../db/repo'
-import { t, tk, type Key } from '../i18n'
+import { inLang, t, tk, type Key } from '../i18n'
+import { AREAS, type Area } from '../lib/intro'
 import type { Value } from '../lib/types'
 import { Sheet } from './components'
 import { IconCheck } from './icons'
@@ -52,14 +53,42 @@ export type ValueColor = (typeof VALUE_COLORS)[number]
 
 export const DEFAULT_ICON = 'star'
 
+/** The values the tutorial suggests start with a fitting icon and color instead of the plain default. */
+const AREA_LOOKS: Record<Area, { icon: string; color: ValueColor }> = {
+  health: { icon: 'heart', color: 'pink' },
+  work: { icon: 'briefcase', color: 'indigo' },
+  study: { icon: 'book', color: 'teal' },
+  money: { icon: 'money', color: 'green' },
+  people: { icon: 'people', color: 'orange' },
+  create: { icon: 'palette', color: 'purple' },
+  mind: { icon: 'leaf', color: 'mint' },
+  home: { icon: 'house', color: 'brown' },
+}
+
+let areaNames: Map<string, Area> | null = null
+/** A value named like one of the tutorial's suggestions, in either language. */
+function areaOf(name: string): Area | undefined {
+  if (!areaNames) {
+    areaNames = new Map()
+    for (const l of ['en', 'pt-BR'] as const) {
+      inLang(l, () => AREAS.forEach((a) => areaNames!.set(a.value.trim().toLowerCase(), a.key)))
+    }
+  }
+  return areaNames.get(name.trim().toLowerCase())
+}
+
 /**
- * A value's icon and color. Without a color picked, it takes one from its place
- * in the list, in the order Insights always used, so charts keep their colors.
+ * A value's icon and color. Without a pick, a value named like one of the
+ * tutorial's suggestions gets that area's look; any other takes the default
+ * icon and a color from its place in the list (the order Insights always used).
  */
 export function valueLook(value: Value | undefined, values: Value[]): { icon: string; color: string } {
   if (!value) return { icon: DEFAULT_ICON, color: 'gray' }
-  const icon = value.icon && VALUE_ICONS[value.icon] ? value.icon : DEFAULT_ICON
+  const area = areaOf(value.name)
+  const fit = area ? AREA_LOOKS[area] : undefined
+  const icon = value.icon && VALUE_ICONS[value.icon] ? value.icon : fit?.icon ?? DEFAULT_ICON
   if (value.color && (VALUE_COLORS as readonly string[]).includes(value.color)) return { icon, color: value.color }
+  if (fit) return { icon, color: fit.color }
   const i = values.findIndex((v) => v.id === value.id)
   return { icon, color: i < 0 ? 'gray' : VALUE_COLORS[i % VALUE_COLORS.length] }
 }

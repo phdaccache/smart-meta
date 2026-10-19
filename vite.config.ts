@@ -19,6 +19,8 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(version),
     __APP_COMMIT__: JSON.stringify(commit),
+    // Vercel preview deployments (branches other than main) show the Developer section to anyone who can open them.
+    __PREVIEW__: JSON.stringify(process.env.VERCEL_ENV === 'preview'),
   },
   plugins: [
     react(),
@@ -35,8 +37,8 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#f5f3ee',
-        theme_color: '#f5f3ee',
+        background_color: '#f2f2f7',
+        theme_color: '#f2f2f7',
         icons: [
           { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },

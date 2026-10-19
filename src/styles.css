@@ -1261,3 +1261,16 @@ button.goal-why:active, .goal-card-foot:active { opacity: 0.6; }
 .group-head > .tile { margin-top: -2px; }
 .group-head > .chev { margin-top: 2px; }
 .group.collapsed .group-head { align-items: center; }
+
+/* Suggestions sit on a solid fill (the tutorial stacks them on top of each other). */
+.suggestion { background: color-mix(in srgb, var(--ink) 6%, var(--surface)); }
+.rev-panel { background: var(--surface-2); border-top-color: var(--accent); }
+.rev-card { --surface: var(--surface-raised); background: var(--surface); }
+@media (prefers-color-scheme: light) { .rev-card { --surface: #ffffff; } }
+
+/* Tutorial pieces: each shown as its checkbox on Today */
+.piece-mark { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+.piece-mark .check-box { width: 20px; height: 20px; border-radius: 6px; flex: none; }
+.piece-mark .check-box.round { border-radius: 50%; }
+.piece-card .piece-mark { font-size: 17px; }
+.piece-card .piece-mark .check-box { width: 24px; height: 24px; }

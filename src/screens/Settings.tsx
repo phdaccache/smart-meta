@@ -293,8 +293,11 @@ function DevSection({ devToday }: { devToday: string | null }) {
   const settings = useSettings()
   const today = useToday(settings.rolloverHour)
   const [busy, setBusy] = useState(false)
+  const { email } = useSyncStatus()
   const load = async () => {
-    if (busy || !confirm('Replace ALL data with sample data? Your current data is erased (including the synced copy).')) return
+    // Signed in, the erase would reach the synced copy and every device using it.
+    if (email) return toast('Sign out of sync first. Sample data then stays on this device only.')
+    if (busy || !confirm('Replace ALL data on this device with sample data? Your current data here is erased.')) return
     setBusy(true)
     try {
       await loadSampleData(today)
@@ -318,7 +321,8 @@ function DevSection({ devToday }: { devToday: string | null }) {
           <input id="dev-today" className="row-date" type="date" value={devToday ?? ''}
             onChange={(e) => setSettings({ devToday: isDateStr(e.target.value) ? e.target.value : null })} />
         </div>
-        <LinkRow title={busy ? 'Loading…' : 'Load sample data…'} sub="Replaces everything with a worked example and months of history." onClick={load} />
+        <LinkRow title={busy ? 'Loading…' : 'Load sample data…'}
+          sub={email ? 'Sign out of sync first, so your real data stays safe.' : 'Replaces everything on this device with a worked example and months of history.'} onClick={load} />
       </div>
     </Section>
   )
