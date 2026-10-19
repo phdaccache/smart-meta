@@ -134,11 +134,13 @@ export function Sheet(props: { open: boolean; onClose: () => void; title: string
       prev?.focus?.({ preventScroll: true })
     }
   }, [props.open])
+  useSwipeToDismiss(ref, props.open, onClose)
   if (!props.open) return null
   return createPortal(
     <div className="sheet-layer" style={view ? { top: view.top, height: view.height, bottom: 'auto' } : undefined}>
       <div className="sheet-backdrop" onClick={props.onClose} />
       <div className="sheet" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={ref}>
+        <div className="sheet-grabber" aria-hidden="true" />
         <div className="sheet-head">
           <h2 id={titleId}>{props.title}</h2>
           <button type="button" className="icon-btn" aria-label={t('nav.close')} onClick={props.onClose}>
@@ -150,6 +152,79 @@ export function Sheet(props: { open: boolean; onClose: () => void; title: string
     </div>,
     document.body,
   )
+}
+
+/**
+ * Pull a sheet down to close it, as on the iPhone: from its top, or from
+ * anywhere once its content is scrolled to the top. It follows the finger;
+ * let go far enough down, or with a flick, and it slides away.
+ */
+function useSwipeToDismiss(ref: React.RefObject<HTMLDivElement | null>, open: boolean, close: React.RefObject<() => void>) {
+  useEffect(() => {
+    const sheet = ref.current
+    if (!open || !sheet) return
+    const backdrop = sheet.previousElementSibling as HTMLElement | null
+    let start: { y: number; t: number } | null = null
+    let dragging = false
+    let last = { y: 0, t: 0, v: 0 }
+    const set = (dy: number, animate: boolean) => {
+      const ease = 'cubic-bezier(0.2, 0.9, 0.3, 1)'
+      sheet.style.transition = animate ? `transform 0.3s ${ease}` : 'none'
+      sheet.style.transform = dy ? `translateY(${dy}px)` : ''
+      if (backdrop) {
+        backdrop.style.transition = animate ? `opacity 0.3s ${ease}` : 'none'
+        backdrop.style.opacity = String(Math.max(0, 1 - dy / sheet.offsetHeight))
+      }
+    }
+    const onStart = (e: TouchEvent) => {
+      const el = e.target as HTMLElement
+      const body = sheet.querySelector('.sheet-body')
+      const atTop = !body || body.scrollTop <= 0 || !body.contains(el)
+      if (e.touches.length !== 1 || !atTop || el.closest('input, textarea, select, .look-icons, .look-colors')) return
+      start = { y: e.touches[0].clientY, t: e.timeStamp }
+      last = { y: start.y, t: e.timeStamp, v: 0 }
+      dragging = false
+    }
+    const onMove = (e: TouchEvent) => {
+      if (!start) return
+      const y = e.touches[0].clientY
+      const dy = y - start.y
+      if (!dragging) {
+        if (dy < -4) { start = null; return } // scrolling the content up
+        if (dy < 8) return
+        dragging = true
+      }
+      if (e.cancelable) e.preventDefault()
+      const dt = Math.max(1, e.timeStamp - last.t)
+      last = { y, t: e.timeStamp, v: (y - last.y) / dt }
+      // Above its resting place it resists, the way iOS rubber-bands.
+      set(dy > 0 ? dy : -Math.sqrt(-dy) * 2, false)
+    }
+    const onEnd = () => {
+      if (!start || !dragging) { start = null; return }
+      const dy = last.y - start.y
+      start = null
+      dragging = false
+      // Where a flick would carry it (Apple's projection), not just where the finger stopped.
+      const projected = dy + (last.v * 0.998) / (1 - 0.998)
+      if (projected > sheet.offsetHeight * 0.45 && last.v > -0.1) {
+        set(sheet.offsetHeight, true)
+        setTimeout(() => close.current(), 220)
+      } else {
+        set(0, true)
+      }
+    }
+    sheet.addEventListener('touchstart', onStart, { passive: true })
+    sheet.addEventListener('touchmove', onMove, { passive: false })
+    sheet.addEventListener('touchend', onEnd)
+    sheet.addEventListener('touchcancel', onEnd)
+    return () => {
+      sheet.removeEventListener('touchstart', onStart)
+      sheet.removeEventListener('touchmove', onMove)
+      sheet.removeEventListener('touchend', onEnd)
+      sheet.removeEventListener('touchcancel', onEnd)
+    }
+  }, [ref, open, close])
 }
 
 // ——— controls ———

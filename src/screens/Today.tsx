@@ -8,7 +8,8 @@ import { formatValue, promptQuestion, reasons } from '../lib/describe'
 import type { MissPrompt, ScoreContext } from '../lib/scoring'
 import { buildDay, type Snapshot, type TodayGroup, type TodayItem } from '../lib/today'
 import type { Commitment, DateStr, ID, MissReason, Task } from '../lib/types'
-import { Badge, CheckButton, Chip, DatePickerButton, Screen, Segmented, toast } from '../ui/components'
+import { CheckButton, Chip, DatePickerButton, Screen, Segmented, toast } from '../ui/components'
+import { ProjectTile, ValueTile } from '../ui/valueLook'
 import { useDisplacements, useSettings, useSnapshot, useSnoozes, useToday, useWeekReviews } from '../ui/hooks'
 import { dismissedMisses, reviewPending } from '../lib/review'
 import { IconCalendar, IconCheck, IconChevronLeft, IconChevronRight, IconNote, IconPlus } from '../ui/icons'
@@ -157,7 +158,7 @@ function Group(props: {
 
   if (group.done && !expanded) {
     return (
-      <div className={`card group collapsed tint-${group.kind}`}>
+      <div className="card group collapsed">
         <button className="group-head" onClick={() => setExpanded(true)} aria-expanded={false}>
           <span className="done-mark"><IconCheck width={15} height={15} /></span>
           <span className="title">{group.kind === 'errands' ? '' : group.title}</span>
@@ -168,21 +169,24 @@ function Group(props: {
   }
 
   const parent = group.goalId ? `/goals/${group.goalId}` : group.projectId ? `/projects/${group.projectId}` : null
+  const goal = group.goalId ? props.snap.goals.find((g) => g.id === group.goalId) : undefined
+  // Just what it is: the goal's or project's name, after its icon. Its why lives on Plan and Review.
   const head = (
     <>
+      {group.kind === 'project'
+        ? <ProjectTile size="sm" />
+        : <ValueTile value={props.snap.values.find((v) => v.id === goal?.whyValueId)} values={props.snap.values} size="sm" />}
       <div className="text">
-        {group.eyebrow && <div className="group-eyebrow">{group.eyebrow}</div>}
-        <div className="group-why">{group.why ?? group.title}</div>
-        {group.kind === 'project' && group.why && <div className="group-sub">{group.title}</div>}
+        <div className="group-title">{group.title}</div>
         {group.due && <span className={`due due-${group.due.tone}`}>{group.due.label}</span>}
       </div>
-      {parent && <IconChevronRight className="chev" width={20} height={20} />}
+      {parent && <IconChevronRight className="chev" width={18} height={18} />}
     </>
   )
 
   return (
-    // Loose tasks need no heading: the card's color says what they are.
-    <div className={`card group tint-${group.kind}`}>
+    // Loose tasks need no heading: their square checkboxes say what they are.
+    <div className={`card group kind-${group.kind}`}>
       {parent ? (
         <button className="group-head" onClick={() => navigate(parent)}>{head}</button>
       ) : group.kind !== 'errands' && (
@@ -211,14 +215,13 @@ function LogRow({ item, onOpen }: { item: TodayItem; onOpen: () => void }) {
   return (
     <li>
       <div className="item kind-log">
-        <button className="check" aria-label={item.title} onClick={onOpen}>
+        <button className="check circle" aria-label={item.title} onClick={onOpen}>
           <span className="check-box log-box"><IconPlus width={16} height={16} /></span>
         </button>
         <button className="item-main" onClick={onOpen}>
           <div className="item-title">{item.title}</div>
           {item.detail && <div className="item-detail">{item.detail}</div>}
         </button>
-        <div className="item-side"><Badge kind="goal">{t('common.log')}</Badge></div>
       </div>
     </li>
   )
@@ -226,7 +229,8 @@ function LogRow({ item, onOpen }: { item: TodayItem; onOpen: () => void }) {
 
 function ItemRow({ item, date, onOpen }: { item: TodayItem; date: DateStr; onOpen: () => void }) {
   const [editing, setEditing] = useState(false)
-  const shape = item.kind === 'commitment' ? 'circle' : 'square'
+  // Round for what keeps a habit going (habits and their preps), square for one-off to-dos.
+  const shape = item.kind === 'commitment' || item.kind === 'prep' ? 'circle' : 'square'
   const valued = !!item.commitment
   const satisfiedElsewhere = item.done && !item.entryId && !valued
 
@@ -236,17 +240,10 @@ function ItemRow({ item, date, onOpen }: { item: TodayItem; date: DateStr; onOpe
     else await check({ subjectType: item.subjectType, subjectId: item.subjectId }, date)
   }
 
-  let badge: React.ReactNode
-  if (item.kind === 'commitment') badge = <Badge kind="goal">{t('common.goal')}</Badge>
-  else if (item.kind === 'prep') badge = <Badge kind="prep">{t('common.prep')}</Badge>
-  else if (item.kind === 'step') {
-    badge = (
-      <Badge kind="step">
-        {item.step!.index}/{item.step!.total}
-      </Badge>
-    )
-  }
-  else badge = <Badge kind="task">{t('common.task')}</Badge>
+  // Preps and steps are less obvious than habits and tasks, so they say what they are, in their color.
+  const kind = item.kind === 'prep' ? t('common.prep')
+    : item.kind === 'step' ? t('today.stepOf', { n: item.step!.index, total: item.step!.total }) : null
+  const detail = [kind && <span key="k" className="item-kind">{kind}</span>, item.detail].filter(Boolean)
 
   const miss = item.valueState === 'miss'
   return (
@@ -259,17 +256,16 @@ function ItemRow({ item, date, onOpen }: { item: TodayItem; date: DateStr; onOpe
             {item.title}
             {item.note && <IconNote className="note-mark" width={15} height={15} role="img" aria-hidden={false} aria-label={t('common.hasNotes')} />}
           </div>
-          {item.detail && <div className="item-detail">{item.detail}</div>}
+          {detail.length > 0 && <div className="item-detail">{detail.flatMap((d, i) => (i ? [' · ', d] : [d]))}</div>}
           {item.due && <span className={`due due-${item.due.tone}`}>{item.due.label}</span>}
         </button>
-        <div className="item-side">
-          {valued && item.value != null && (
+        {valued && item.value != null && (
+          <div className="item-side">
             <button className={`item-value ${miss ? 'miss' : ''}`} onClick={() => setEditing(true)}>
               {formatValue(item.commitment!, item.value)}
             </button>
-          )}
-          {badge}
-        </div>
+          </div>
+        )}
       </div>
       {editing && item.commitment && (
         <ValueEditor item={item} date={date} onDone={() => setEditing(false)} />

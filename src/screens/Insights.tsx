@@ -357,14 +357,14 @@ function BigPictureTab({ p }: { p: Prepared }) {
 
       {active.length > 0 && (
         <Section title={<Tip title={t('ins.projects')}>{t('ins.projectsInfo')}</Tip>}>
-          <div className="card list tint-project">
+          <div className="card list">
             {active.map((b) => <ProjectPace key={b.project.id} b={b} />)}
           </div>
         </Section>
       )}
       {done.length > 0 && (
         <Section title={t('ins.doneProjects')}>
-          <div className="card list tint-project">
+          <div className="card list">
             {done.map((b) => <ProjectPace key={b.project.id} b={b} />)}
           </div>
         </Section>

@@ -10,6 +10,7 @@ import type {
 import { statusFor } from '../lib/scoring'
 import type { DateStr, Goal, Status } from '../lib/types'
 import { navigate } from './router'
+import { valueFill } from './valueLook'
 
 const statusClass = (s: Status | null) => (s ? `st-${s.replace(' ', '-')}` : 'st-none')
 const shortMonth = monthShort
@@ -350,8 +351,6 @@ export function Distribution({ n, format, noun }: { n: NearMiss; format: (v: num
 
 // ——— big picture ———
 
-/** Six value colours in a fixed order; past six, the rest share a grey. */
-export const valueSlot = (i: number, id?: string) => (id === '' ? 'vc-none' : i < 6 ? `vc-${i}` : 'vc-other')
 
 /** Weeks on track per month, stacked by value. Tap a month. */
 export function ValueMonths({ b }: { b: ValueBalance }) {
@@ -379,7 +378,7 @@ export function ValueMonths({ b }: { b: ValueBalance }) {
             aria-label={`${monthName(mo.month)}: ${b.values.map((v, i) => `${v.name} ${mo.counts[i]}`).join(', ')}`}>
             <span className="vm-bar">
               <span className="vm-stack" style={{ height: `${(100 * sums[mi]) / max}%` }}>
-                {mo.counts.map((c, i) => c > 0 && <i key={i} className={valueSlot(i, b.values[i].id)} style={{ flexGrow: c }} />)}
+                {mo.counts.map((c, i) => c > 0 && <i key={i} style={{ flexGrow: c, background: valueFill(b.values, i) }} />)}
               </span>
             </span>
             <span className="vm-label">{shortMonth(mo.month)}</span>
@@ -388,7 +387,7 @@ export function ValueMonths({ b }: { b: ValueBalance }) {
       </div>
       <div className="legend">
         {b.values.map((v, i) => (
-          <span key={v.id} className={b.totals[i] ? '' : 'faded'}><i className={`key-box ${valueSlot(i, v.id)}`} />{v.name} <b>{b.totals[i]}</b></span>
+          <span key={v.id} className={b.totals[i] ? '' : 'faded'}><i className="key-box" style={{ background: valueFill(b.values, i) }} />{v.name} <b>{b.totals[i]}</b></span>
         ))}
       </div>
     </div>

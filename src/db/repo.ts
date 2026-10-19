@@ -78,6 +78,11 @@ export async function saveValues(list: { id?: ID; name: string; description: str
   if (writes.length) await putAll(writes)
 }
 
+/** A value's icon and color, as picked from a goal card or the values list. */
+export async function setValueLook(v: Value, look: { icon?: string; color?: string }) {
+  await put('values', { ...v, ...look })
+}
+
 /** The id of the value with this name, adding it if there's none yet. */
 export async function ensureValue(name: string): Promise<ID> {
   const n = name.trim()

@@ -12,6 +12,10 @@ export interface Base {
 export interface Value extends Base {
   name: string
   description: string
+  /** A key of VALUE_ICONS; missing: the default icon. */
+  icon?: string | null
+  /** A key of VALUE_COLORS; missing: a color from the value's place in the list. */
+  color?: string | null
 }
 
 export type GoalState = 'backlog' | 'active' | 'maintenance' | 'abandoned' | 'completed'

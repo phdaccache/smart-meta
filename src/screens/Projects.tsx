@@ -159,7 +159,7 @@ export function ProjectScreen({ id }: { id: string }) {
       )}
 
       <Section title={t('common.details')} aside={<button className="link-btn" onClick={() => setEditing(!editing)}>{editing ? t('common.doneEditing') : t('common.edit')}</button>}>
-        <div className="card tint-project">
+        <div className="card">
           {goal && (
             <button className="card-head pad list-row" style={{ borderRadius: 0 }} onClick={() => navigate(`/goals/${goal.id}`)}>
               <div className="text">
@@ -190,7 +190,7 @@ export function ProjectScreen({ id }: { id: string }) {
                   <span className="small muted">{t('plan.stepsOf', { done, total: steps.length })}</span>
                   <span className="small muted">{t('today.due', { when: relativeDay(project.targetDate, today) })} · {dayMonth(project.targetDate)}</span>
                 </div>
-                <div className="progress"><i style={{ width: `${steps.length ? (100 * done) / steps.length : 0}%` }} /></div>
+                <div className="progress project"><i style={{ width: `${steps.length ? (100 * done) / steps.length : 0}%` }} /></div>
               </>
             )}
           </div>
@@ -202,9 +202,9 @@ export function ProjectScreen({ id }: { id: string }) {
       </Section>
 
       <Section title={<span className="title-row">{t('project.steps')}<InfoTip label={t('project.stepDates')}>{t('project.stepDatesInfo')}</InfoTip></span>}>
-        <div className="card tint-project">
+        <div className="card">
           <Sortable items={steps} keyOf={(x) => x.id} labelOf={(x) => x.title} onReorder={reorderSteps} className="items"
-            render={(step, grip) => {
+            render={(step) => {
               const isDone = doneEntry.has(step.id)
               return (
                 <div className={`item kind-step ${isDone ? 'done' : ''}`}>
@@ -217,7 +217,6 @@ export function ProjectScreen({ id }: { id: string }) {
                       </div>
                     )}
                   </div>
-                  {grip}
                 </div>
               )
             }} />
@@ -232,7 +231,7 @@ export function ProjectScreen({ id }: { id: string }) {
       </Section>
 
       <Section title={t('project.tasks')}>
-        <div className="card tint-project">
+        <div className="card">
           <ul className="items">
             {tasks.map((task) => {
               const isDone = doneEntry.has(task.id)
@@ -263,19 +262,19 @@ export function ProjectScreen({ id }: { id: string }) {
       </Section>
 
       <Section title={t('common.manage')}>
-        <div className="card pad stack">
+        <div className="card list manage">
           {project.state === 'active' ? (
             <>
-              <button className="btn outline block" onClick={() => updateProject(project, { state: 'done' })}>{t('project.markDoneArchive')}</button>
-              <button className="btn outline block" onClick={() => pauseProject(project, today).then(() => toast(t('project.paused')))}>
+              <button className="list-row" onClick={() => updateProject(project, { state: 'done' })}>{t('project.markDoneArchive')}</button>
+              <button className="list-row" onClick={() => pauseProject(project, today).then(() => toast(t('project.paused')))}>
                 {t('project.pauseToBacklog')}
               </button>
             </>
           ) : project.state !== 'backlog' && (
-            <button className="btn outline block" onClick={() => updateProject(project, { state: 'active' })}>{t('project.reopen')}</button>
+            <button className="list-row" onClick={() => updateProject(project, { state: 'active' })}>{t('project.reopen')}</button>
           )}
-          <details>
-            <summary className="small muted" style={{ cursor: 'pointer', padding: '10px 0' }}>{t('project.delete')}</summary>
+          <details className="manage-delete">
+            <summary className="list-row">{t('project.delete')}</summary>
             <TypeToConfirm phrase={project.title} action={t('project.deleteConfirm')} onConfirm={async () => {
               await deleteProject(project)
               navigate('/goals', { replace: true })

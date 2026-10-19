@@ -5,8 +5,9 @@ import { dayMonth, relativeDay } from '../lib/dates'
 import { cadenceText } from '../lib/describe'
 import { activeEntries, summarizeGoal, type ScoreContext } from '../lib/scoring'
 import { waitsForGoal, type Snapshot } from '../lib/today'
-import type { Goal, Project } from '../lib/types'
+import type { Goal, Project, Value } from '../lib/types'
 import { InfoTip, PageText, Screen, Section, Segmented, Sheet, StatusInfo, StatusWord, toast, WeekBar } from '../ui/components'
+import { ProjectTile, ValueLookSheet, ValueTile, valueLook } from '../ui/valueLook'
 import { useAllGoalReviews, useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconMore, IconPlus } from '../ui/icons'
 import { navigate } from '../ui/router'
@@ -35,6 +36,7 @@ function useStoredView(): [View, (v: View) => void] {
 export function GoalsScreen() {
   const [view, setView] = useStoredView()
   const [acting, setActing] = useState<Goal | null>(null)
+  const [picking, setPicking] = useState<Value | null>(null)
   const settings = useSettings()
   const today = useToday(settings.rolloverHour)
   const snap = useSnapshot()
@@ -74,7 +76,7 @@ export function GoalsScreen() {
             {projects.length === 0 ? (
               <div className="card list-empty">{t('plan.noProjects')} <button className="link-btn" onClick={() => navigate('/projects/new')}>{t('plan.createProject')}</button></div>
             ) : (
-              <div className="card list tint-project">
+              <div className="card list">
                 {projects.map((p) => <ProjectRow key={p.id} project={p} snap={snap} today={today} />)}
               </div>
             )}
@@ -89,7 +91,7 @@ export function GoalsScreen() {
           )}
           {backlogProjects.length > 0 && (
             <Section title={t('plan.backlog')} aside={<span>{backlogProjects.length}</span>}>
-              <div className="card list tint-project">
+              <div className="card list">
                 {backlogProjects.map((p) => (
                   <ProjectRow key={p.id} project={p} snap={snap} today={today} action={
                     <button className="btn" onClick={async () => {
@@ -118,25 +120,26 @@ export function GoalsScreen() {
         ) : (
           <Sortable items={active} keyOf={(g) => g.id} labelOf={(g) => g.title} className="card-stack"
             onReorder={(next) => reorderGoals([...next, ...maintenance, ...backlog])}
-            render={(g, grip) => <GoalCard goal={g} snap={snap} ctx={ctx} grip={grip} onMore={() => setActing(g)} />} />
+            render={(g) => <GoalCard goal={g} snap={snap} ctx={ctx} onMore={() => setActing(g)} onPick={setPicking} />} />
         )}
       </Section>
 
       {maintenance.length > 0 && (
         <Section title={<span className="title-row">{t('plan.maintenance')} <InfoTip label={t('common.about', { topic: t('plan.maintenance').toLowerCase() })}>{t('plan.maintenanceInfo')}</InfoTip></span>}>
           <div className="card-stack">
-            {maintenance.map((g) => <GoalCard key={g.id} goal={g} snap={snap} ctx={ctx} onMore={() => setActing(g)} />)}
+            {maintenance.map((g) => <GoalCard key={g.id} goal={g} snap={snap} ctx={ctx} onMore={() => setActing(g)} onPick={setPicking} />)}
           </div>
         </Section>
       )}
 
       {backlog.length > 0 && (
         <Section title={t('plan.backlog')}>
-          <div className="card tint-goal">
+          <div className="card">
             <Sortable items={backlog} keyOf={(g) => g.id} labelOf={(g) => g.title} className="list"
               onReorder={(next) => reorderGoals([...active, ...maintenance, ...next])}
-              render={(g, grip) => (
-                <div className="list-row">
+              render={(g) => (
+                <div className="list-row has-tile">
+                  <ValueTile value={snap.values.find((v) => v.id === g.whyValueId)} values={snap.values} size="sm" />
                   <button className="text" style={{ textAlign: 'left' }} onClick={() => navigate(`/goals/${g.id}`)}>
                     <div className="title">{g.title}</div>
                     <div className="sub">{g.kind === 'outcome' ? t('plan.finishLine') : habitSummary(g, snap)}</div>
@@ -147,7 +150,6 @@ export function GoalsScreen() {
                       toast(t('common.started'))
                     }}>{t('common.start')}</button>
                   )}
-                  {backlog.length > 1 && grip}
                 </div>
               )} />
           </div>
@@ -180,6 +182,7 @@ export function GoalsScreen() {
       )}
       </>)}
       <GoalStateSheet goal={acting} slotOpen={slotOpen} onClose={() => setActing(null)} />
+      <ValueLookSheet value={picking} values={snap.values} onClose={() => setPicking(null)} />
     </Screen>
   )
 }
@@ -229,47 +232,38 @@ function habitSummary(goal: Goal, snap: Snapshot, today?: string): string {
     .join('  ·  ')
 }
 
-function GoalCard({ goal, snap, ctx, grip, onMore }: { goal: Goal; snap: Snapshot; ctx: ScoreContext; grip?: ReactNode; onMore?: () => void }) {
+/** As on the iPhone's widgets: what it serves, what it is, why, and how it's going. */
+function GoalCard({ goal, snap, ctx, onMore, onPick }: {
+  goal: Goal; snap: Snapshot; ctx: ScoreContext; onMore: () => void; onPick: (v: Value) => void
+}) {
   const s = summarizeGoal(goal, snap.commitments, snap.entries, snap.occurrences, ctx)
   const value = snap.values.find((v) => v.id === goal.whyValueId)
+  const look = valueLook(value, snap.values)
   const hasHabits = snap.commitments.some((c) => c.goalId === goal.id)
-  const projects = snap.projects.filter((p) => p.goalId === goal.id && p.state === 'active')
   const outcome = goal.kind === 'outcome'
   const reviewOn = outcome && s.time ? s.time.graceEnd : goal.targetDate
+  const reviewDue = !!reviewOn && reviewOn <= ctx.today
   const open = () => navigate(`/goals/${goal.id}`)
   return (
-    <div className="card goal-card tint-goal">
-      <div className="goal-card-head">
-        <button className="text" onClick={open}>
-          <div className="group-eyebrow">{value?.name ?? t('common.goal')}{outcome ? t('plan.finishLineTag') : ''}</div>
+    <div className="card goal-card" style={{ '--c': `var(--c-${look.color})` } as React.CSSProperties}>
+      {/* The icon sits beside the name only; the why and the status use the card's full width. */}
+      <div className="goal-card-top">
+        <ValueTile value={value} values={snap.values} onPick={onPick} />
+        <button className="goal-card-open" onClick={open}>
+          <div className="goal-eyebrow">{value?.name ?? t('common.goal')}{outcome ? t('plan.finishLineTag') : ''}</div>
           <div className="goal-card-title">{goal.title}</div>
         </button>
-        {onMore && <button className="icon-btn" aria-label={t('common.change', { name: goal.title })} onClick={onMore}><IconMore /></button>}
-        {grip}
       </div>
-      <button className="goal-card-body" onClick={open}>
-        <div className="row" style={{ justifyContent: 'space-between' }}>
-          <StatusWord status={s.status} />
-          {outcome && goal.targetDate
-            ? <span className="small muted">{t('today.due', { when: `${dayMonth(goal.targetDate)} ${goal.targetDate.slice(0, 4)}` })}</span>
-            : hasHabits && <WeekBar weeks={s.weeks} />}
-        </div>
-        {hasHabits && <div className="small muted" style={{ marginTop: 6 }}>{habitSummary(goal, snap, ctx.today)}</div>}
-        {reviewOn && reviewOn <= ctx.today && <div className="small" style={{ marginTop: 8, color: 'var(--accent)', fontWeight: 600 }}>{t('plan.reviewDue')}</div>}
-      </button>
-      {projects.length > 0 && (
-        <div className="goal-card-projects">
-          {projects.map((p) => {
-            const { done, total } = projectProgress(p, snap)
-            return (
-              <button key={p.id} className="mini-project" onClick={() => navigate(`/projects/${p.id}`)}>
-                <span className="name">{p.title}</span>
-                <span className="small muted">{done}/{total}</span>
-              </button>
-            )
-          })}
-        </div>
+      {goal.whyText && (
+        <button className="goal-why" onClick={open}><span className="quote" aria-hidden="true">“</span><span className="text">{goal.whyText}</span></button>
       )}
+      <button className="goal-card-foot" onClick={open}>
+        {reviewDue ? <span className="review-due">{t('plan.reviewDue')}</span> : <StatusWord status={s.status} />}
+        {outcome && goal.targetDate
+          ? <span className="when">{t('today.due', { when: `${dayMonth(goal.targetDate)} ${goal.targetDate.slice(0, 4)}` })}</span>
+          : hasHabits && <WeekBar weeks={s.weeks} />}
+      </button>
+      <button className="icon-btn more" aria-label={t('common.change', { name: goal.title })} onClick={onMore}><IconMore /></button>
     </div>
   )
 }
@@ -299,19 +293,21 @@ function ProjectRow({ project, snap, today, action }: { project: Project; snap: 
             : project.state === 'archived' ? t('plan.setAside') : t('plan.done')}
           {goal && ` · ${goal.title}`}
         </div>
-        {total > 0 && <div className="progress"><i style={{ width: `${(100 * done) / total}%` }} /></div>}
+        {total > 0 && <div className="progress project"><i style={{ width: `${(100 * done) / total}%` }} /></div>}
     </>
   )
   if (action) {
     return (
-      <div className="list-row">
+      <div className="list-row has-tile">
+        <ProjectTile size="sm" />
         <button className="text" style={{ textAlign: 'left' }} onClick={open}>{text}</button>
         {action}
       </div>
     )
   }
   return (
-    <button className="list-row" onClick={open}>
+    <button className="list-row has-tile" onClick={open}>
+      <ProjectTile size="sm" />
       <div className="text">{text}</div>
       <IconChevronRight className="chev" width={18} />
     </button>

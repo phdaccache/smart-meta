@@ -14,6 +14,8 @@ import { useIsDeveloper } from '../ui/developer'
 import { RELEASES } from '../lib/releases'
 import { ReleaseNotes } from './WhatsNew'
 import { navigate, useLocation } from '../ui/router'
+import { ValueLookSheet, ValueTile } from '../ui/valueLook'
+import type { Value } from '../lib/types'
 import { resetIntro } from './Intro'
 
 export function SettingsScreen() {
@@ -334,6 +336,7 @@ export function ValuesEditor(props: { onSaved?: () => void }) {
   const snap = useSnapshot()
   const [drafts, setDrafts] = useState<ValueDraft[] | null>(null)
   const [tried, setTried] = useState(false)
+  const [picking, setPicking] = useState<Value | null>(null)
   if (snap && !drafts) {
     const existing: ValueDraft[] = snap.values.map((v) => ({ id: v.id, name: v.name, description: v.description }))
     setDrafts(existing.length ? existing : [{ name: '', description: '' }, { name: '', description: '' }, { name: '', description: '' }])
@@ -360,6 +363,7 @@ export function ValuesEditor(props: { onSaved?: () => void }) {
       <div className="card list">
         {drafts.map((d, i) => (
           <div key={d.id ?? `new-${i}`} className="list-row" style={{ alignItems: 'flex-start' }}>
+            <ValueTile value={snap.values.find((v) => v.id === d.id)} values={snap.values} onPick={setPicking} />
             <div className="text stack" style={{ gap: 6 }}>
               <input value={d.name} aria-label={t('set.valueN', { n: i + 1 })}
                 placeholder={tlist('set.valuePlaceholders')[i % 5]}
@@ -381,6 +385,7 @@ export function ValuesEditor(props: { onSaved?: () => void }) {
         </button>
       )}
       {tried && !ok && <p className="field-error" style={{ marginTop: 12 }}>{t('set.writeN', { min, max })}</p>}
+      <ValueLookSheet value={picking} values={snap.values} onClose={() => setPicking(null)} />
       <div className="wizard-nav">
         <button className="btn primary" onClick={save}>{t('common.save')}</button>
       </div>

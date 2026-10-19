@@ -187,7 +187,7 @@ function DraftView({ draft, values, edit }: { draft: TemplateDraft; values: Valu
       <h2 className="template-title">{d.title}</h2>
 
       <Section title={edit && t('common.details')} aside={edit && editLink(edit.editGoal)}>
-        <div className="card tint-goal">
+        <div className="card">
           {d.whyText && <div className="pad card-head"><div className="group-why">{d.whyText}</div></div>}
           <div className="pad">
             <dl className="kv">
@@ -238,7 +238,7 @@ function DraftView({ draft, values, edit }: { draft: TemplateDraft; values: Valu
         <Section title={t('goal.projects')} aside={edit && add(edit.addProject)}>
           <div className="stack">
             {draft.projects.map((p, i) => (
-              <div key={i} className="card pad tint-project">
+              <div key={i} className="card pad">
                 <div className="card-top">
                   <div style={{ fontWeight: 650 }}>{p.title}</div>
                   {edit && editLink(() => edit.editProject(i))}

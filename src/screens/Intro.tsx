@@ -603,7 +603,7 @@ function GoalPreview({ goal, snap }: { goal: Goal; snap: Snapshot }) {
   }
 
   return (
-    <div className="card group tint-goal preview">
+    <div className="card group preview">
       <div className="group-head">
         <div className="text">
           {eyebrow && <div className="group-eyebrow">{eyebrow}</div>}
@@ -759,7 +759,7 @@ function IntroReview() {
       <div className={`rev-panel ${stage === 0 ? 'blurred' : ''}`}>
         <div className="rev-inner">
           {/* The goal stays; only its suggestion changes: each one hops, then drops away to show the next. */}
-          <div className="card tint-goal rev-card">
+          <div className="card rev-card">
             <div className="group-head">
               <div className="text">
                 <div key={shown} className="group-eyebrow rev-week">{t('intro.rev.week', { n: cards[shown].week })}</div>
@@ -870,7 +870,7 @@ function IntroPieces() {
         )}
         {stage >= 4 && <p className="intro-sub pieces-end">{t('intro.pieces.endAlone')} <b>{t('intro.pieces.endJoin')}</b></p>}
         {stage === 5 && (
-          <div className="card group tint-goal piece-goal">
+          <div className="card group piece-goal">
             <div className="group-head">
               <div className="text">
                 <div className="group-eyebrow">{t('common.goal')}</div>

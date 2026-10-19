@@ -8,11 +8,12 @@ import {
   type Suggestion, type SuggestionKind,
 } from '../lib/review'
 import { missKey, type MissPrompt, type ScoreContext } from '../lib/scoring'
-import type { Commitment, Goal, Prep } from '../lib/types'
+import type { Commitment, Goal, Prep, Value } from '../lib/types'
 import { Field, InfoTip, PageText, Screen, Section, Sheet, StatusWord, toast } from '../ui/components'
 import { useAllRevisions, useDisplacements, useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
 import { IconCalendar, IconCheck, IconChevronRight } from '../ui/icons'
 import { navigate, useLocation } from '../ui/router'
+import { ValueTile, valueLook } from '../ui/valueLook'
 import { CommitmentSheet, PrepSheet } from './GoalDetail'
 import { MissPromptCard } from './Today'
 
@@ -126,8 +127,11 @@ export function ReviewScreen() {
               const c = snap.commitments.find((x) => x.id === p.commitmentId)!
               const g = snap.goals.find((x) => x.id === c.goalId)
               return (
-                <div key={p.commitmentId} className="card tint-goal">
-                  <div className="pad" style={{ paddingBottom: 10 }}><div className="group-eyebrow">{g?.title}</div></div>
+                <div key={p.commitmentId} className="card">
+                  <div className="group-head">
+                    <ValueTile value={snap.values.find((v) => v.id === g?.whyValueId)} values={snap.values} size="sm" />
+                    <div className="text"><div className="group-title">{g?.title}</div></div>
+                  </div>
                   <MissPromptCard prompt={p} label={c.label} question={promptQuestion(p, c, today)} today={today}
                     canLog={false} snooze={false}
                     onSkip={() => dismissInReview(r.week.start, missKeys(p)).then(() => toast(t('review.skippedNoAsk')))} />
@@ -142,7 +146,7 @@ export function ReviewScreen() {
         <Section title={r.latest ? t('review.lastWeek') : t('review.thatWeek')}>
           <div className="stack">
             {r.goals.map((card) => (
-              <GoalReviewCard key={card.goal.id} card={card} onAccept={accept}
+              <GoalReviewCard key={card.goal.id} card={card} values={snap.values} onAccept={accept}
                 onDismiss={(s) => dismissInReview(r.week.start, s.key).then(() => toast(t('review.hidden4')))} />
             ))}
           </div>
@@ -151,7 +155,7 @@ export function ReviewScreen() {
 
       {r.dates.length > 0 && (
         <Section title={t('review.dates')}>
-          <div className="card list tint-goal">
+          <div className="card list">
             {r.dates.map((d) => <DateRow key={d.goal.id} note={d} today={today} />)}
           </div>
         </Section>
@@ -159,7 +163,7 @@ export function ReviewScreen() {
 
       {(r.stalled.length > 0 || r.handled.length > 0) && (
         <Section title={t('review.stalled')}>
-          <div className="card list tint-project">
+          <div className="card list">
             {r.stalled.map((s) => <StalledRow key={s.project.id} s={s} today={today} week={r.week.start} />)}
             {r.handled.map((h) => <HandledRow key={h.project.id} h={h} />)}
           </div>
@@ -246,23 +250,31 @@ function reasonText(r: ReasonCount): string {
   return `${reasonLower(r.reason)} ×${r.count}${d ? ` (${d})` : ''}`
 }
 
-function GoalReviewCard(props: { card: GoalCard; onAccept: (s: Suggestion, alt?: boolean) => void; onDismiss: (s: Suggestion) => void }) {
+/** Each goal opens with what it serves and why it matters: the review is where that gets remembered. */
+function GoalReviewCard(props: { card: GoalCard; values: Value[]; onAccept: (s: Suggestion, alt?: boolean) => void; onDismiss: (s: Suggestion) => void }) {
   const { card } = props
   const s = card.suggestion
   const changed = card.before && card.status && card.before !== card.status
+  const value = props.values.find((v) => v.id === card.goal.whyValueId)
+  const look = valueLook(value, props.values)
   return (
-    <div className="card tint-goal">
-      <button className="group-head" onClick={() => navigate(`/goals/${card.goal.id}`)}>
+    <div className="card" style={{ '--c': `var(--c-${look.color})` } as React.CSSProperties}>
+      <button className="review-head" onClick={() => navigate(`/goals/${card.goal.id}`)}>
+        <ValueTile value={value} values={props.values} />
         <div className="text">
+          {value && <div className="goal-eyebrow">{value.name}</div>}
           <div className="goal-card-title">{card.goal.title}</div>
-          <div className="row" style={{ gap: 6, marginTop: 4 }}>
-            {changed && <><StatusWord status={card.before} /><span className="muted">→</span></>}
-            <StatusWord status={card.status} />
-          </div>
+          {card.goal.whyText && (
+            <div className="goal-why full"><span className="quote" aria-hidden="true">“</span><span className="text">{card.goal.whyText}</span></div>
+          )}
         </div>
         <IconChevronRight className="chev" width={18} />
       </button>
       <div className="review-body">
+        <div className="row" style={{ gap: 6, marginBottom: 6 }}>
+          {changed && <><StatusWord status={card.before} /><span className="muted">→</span></>}
+          <StatusWord status={card.status} />
+        </div>
         <ul className="review-lines">
           {card.lines.map((l) => <li key={l.commitment.id}>{l.text}</li>)}
         </ul>

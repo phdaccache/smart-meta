@@ -13,11 +13,12 @@ import {
 import { activeEntries, summarizeGoal, type ScoreContext } from '../lib/scoring'
 import { dueBadge, type Snapshot } from '../lib/today'
 import { stateLabel } from '../lib/revisions'
-import type { Commitment, Goal, GoalReview, Prep } from '../lib/types'
+import type { Commitment, Goal, GoalReview, Prep, Value } from '../lib/types'
 import { Field, InfoTip, PageText, Screen, Section, Sheet, StatusInfo, StatusWord, toast, TypeToConfirm, WeekBar } from '../ui/components'
 import { useGoalReviews, useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconHistory, IconInsights } from '../ui/icons'
 import { goBack, navigate } from '../ui/router'
+import { ValueLookSheet, ValueTile, valueLook } from '../ui/valueLook'
 import { CadenceFields, GraceField, graceLabel, MeasurementFields, PrepEditor, ShapeField, ShapeInfo, SmartHead, ToleranceField, WhyFields } from './GoalForm'
 import { projectProgress } from './Goals'
 import { GoalHistorySheet } from './GoalHistory'
@@ -46,6 +47,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
   const [abandoning, setAbandoning] = useState(false)
   const [editingC, setEditingC] = useState<Commitment | 'new' | null>(null)
   const [history, setHistory] = useState(false)
+  const [picking, setPicking] = useState<Value | null>(null)
   if (!snap) return null
   if (!goal) return <NotFound />
 
@@ -65,7 +67,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
   const ended = goal.state === 'completed' || goal.state === 'abandoned'
 
   return (
-    <Screen back="/goals" eyebrow={[value?.name, stateLabel(goal.state)].filter(Boolean).join(' · ')} title={goal.title}
+    <Screen back="/goals" eyebrow={stateLabel(goal.state)} title={goal.title}
       actions={<>
         {commitments.length > 0 && (
           <button className="icon-btn" aria-label={t('goal.insights')} onClick={() => navigate(`/insights/goals/${goal.id}`)}><IconInsights /></button>
@@ -89,8 +91,16 @@ export function GoalDetailScreen({ id }: { id: string }) {
 
       {/* Each Edit changes what's on its own card: this one the goal, a commitment's that commitment. */}
       <Section title={t('common.details')} aside={<button className="link-btn" onClick={() => navigate(`/goals/${goal.id}/edit`)}>{t('common.edit')}</button>}>
-        <div className="card tint-goal">
-          {goal.whyText && <div className="pad card-head"><div className="group-why">{goal.whyText}</div></div>}
+        <div className="card">
+          <div className="pad card-head detail-why" style={{ '--c': `var(--c-${valueLook(value, snap.values).color})` } as React.CSSProperties}>
+            <ValueTile value={value} values={snap.values} onPick={setPicking} />
+            <div className="text">
+              <div className="goal-eyebrow">{value?.name ?? t('common.goal')}</div>
+              {goal.whyText && (
+                <div className="goal-why full"><span className="quote" aria-hidden="true">“</span><span className="text">{goal.whyText}</span></div>
+              )}
+            </div>
+          </div>
           <div className="pad">
             <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}>
               {/* An ended goal has no live status: how it ended is in Looking back. */}
@@ -139,7 +149,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
         {projects.length === 0 ? (
           <div className="card list-empty">{t('common.noneYet')}</div>
         ) : (
-          <div className="card list tint-project">
+          <div className="card list">
             {projects.map((p) => {
               const { done, total } = projectProgress(p, snap)
               return (
@@ -172,33 +182,33 @@ export function GoalDetailScreen({ id }: { id: string }) {
       )}
 
       <Section title={t('common.manage')}>
-        <div className="card pad stack">
+        <div className="card list manage">
           {goal.state === 'active' && !outcome && (
-            <button className="btn outline block" onClick={() => setGoalState(goal, 'maintenance').then(() => toast(t('move.nowMaintenance')))}>
+            <button className="list-row" onClick={() => setGoalState(goal, 'maintenance').then(() => toast(t('move.nowMaintenance')))}>
               {t('move.toMaintenance')}
             </button>
           )}
           {goal.state === 'maintenance' && (
-            <button className="btn outline block" disabled={full} onClick={() => setGoalState(goal, 'active').then(() => toast(t('move.activeAgain')))}>
+            <button className="list-row" disabled={full} onClick={() => setGoalState(goal, 'active').then(() => toast(t('move.activeAgain')))}>
               {full ? t('move.makeActiveNoSlot') : t('move.makeActive')}
             </button>
           )}
           {live && (
-            <button className="btn outline block" onClick={() => setGoalState(goal, 'backlog').then(() => toast(t('move.paused')))}>
+            <button className="list-row" onClick={() => setGoalState(goal, 'backlog').then(() => toast(t('move.paused')))}>
               {t('move.pauseToBacklog')}
             </button>
           )}
           {goal.state === 'maintenance' && (
-            <button className="btn outline block" onClick={() => setGoalState(goal, 'completed')}>{t('goal.closeItOut')}</button>
+            <button className="list-row" onClick={() => setGoalState(goal, 'completed')}>{t('goal.closeItOut')}</button>
           )}
           {(goal.state === 'abandoned' || goal.state === 'completed') && (
-            <button className="btn outline block" onClick={() => setGoalState(goal, 'backlog')}>{t('goal.restoreToBacklog')}</button>
+            <button className="list-row" onClick={() => setGoalState(goal, 'backlog')}>{t('goal.restoreToBacklog')}</button>
           )}
           {goal.state !== 'abandoned' && goal.state !== 'completed' && (
-            <button className="btn outline block" onClick={() => setAbandoning(true)}>{t('goal.abandonEllipsis')}</button>
+            <button className="list-row danger" onClick={() => setAbandoning(true)}>{t('goal.abandonEllipsis')}</button>
           )}
-          <details>
-            <summary className="small muted" style={{ cursor: 'pointer', padding: '10px 0' }}>{t('goal.deletePermanently')}</summary>
+          <details className="manage-delete">
+            <summary className="list-row">{t('goal.deletePermanently')}</summary>
             <TypeToConfirm phrase={goal.title} action={t('goal.deleteConfirm')} onConfirm={async () => {
               await deleteGoal(goal)
               toast(t('common.deleted'))
@@ -209,6 +219,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
       </Section>
 
       <AbandonSheet goal={abandoning ? goal : null} onClose={() => setAbandoning(false)} />
+      <ValueLookSheet value={picking} values={snap.values} onClose={() => setPicking(null)} />
       <GoalHistorySheet goal={goal} snap={snap} today={today} open={history} onClose={() => setHistory(false)} />
       <CommitmentSheet goal={goal} editing={editingC} today={today} canRemove={outcome || commitments.length > 1} onClose={() => setEditingC(null)} />
     </Screen>
