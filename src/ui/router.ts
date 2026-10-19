@@ -157,10 +157,7 @@ window.addEventListener('popstate', (e: PopStateEvent & { hasUAVisualTransition?
     return
   }
   // Safari's own swipe back already slid the page; sliding it again would play it twice.
-  // Today comes back at its top: it's rebuilt on the way back, and a phone shows a rebuilt page scrolled
-  // far down black for a moment while it draws it.
-  const today = location.pathname === '/' || location.pathname.startsWith('/day/')
-  const y = today ? 0 : (history.state as NavState | null)?.scrollY ?? 0
+  const y = (history.state as NavState | null)?.scrollY ?? 0
   show(e.hasUAVisualTransition ? null : 'back', () => restoreScroll(y))
 })
 
