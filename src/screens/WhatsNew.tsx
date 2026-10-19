@@ -4,6 +4,7 @@ import { RELEASES, unseen, type Release, type ReleaseIcon } from '../lib/release
 import { PageText, Sheet } from '../ui/components'
 import { useSettings, useToday } from '../ui/hooks'
 import { FlagBR, IconSparkle, IconTemplate } from '../ui/icons'
+import { Glyph, VALUE_ICONS } from '../ui/valueLook'
 import { navigate } from '../ui/router'
 
 const STORE = 'seen-release'
@@ -11,6 +12,7 @@ const ICONS: Record<ReleaseIcon, ReactNode> = {
   'flag-br': <FlagBR />,
   template: <IconTemplate width={22} height={22} />,
   tutorial: <IconSparkle width={22} height={22} />,
+  design: <Glyph g={VALUE_ICONS.palette} size={22} />,
 }
 
 function readSeen(): string | null {

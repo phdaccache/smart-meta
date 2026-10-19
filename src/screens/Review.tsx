@@ -259,17 +259,18 @@ function GoalReviewCard(props: { card: GoalCard; values: Value[]; onAccept: (s: 
   const look = valueLook(value, props.values)
   return (
     <div className="card" style={{ '--c': `var(--c-${look.color})` } as React.CSSProperties}>
+      {/* As on Plan: the icon beside the name only; the why and the week use the card's full width. */}
       <button className="review-head" onClick={() => navigate(`/goals/${card.goal.id}`)}>
         <ValueTile value={value} values={props.values} />
         <div className="text">
           {value && <div className="goal-eyebrow">{value.name}</div>}
           <div className="goal-card-title">{card.goal.title}</div>
-          {card.goal.whyText && (
-            <div className="goal-why full"><span className="quote" aria-hidden="true">“</span><span className="text">{card.goal.whyText}</span></div>
-          )}
         </div>
         <IconChevronRight className="chev" width={18} />
       </button>
+      {card.goal.whyText && (
+        <div className="goal-why full review-why"><span className="quote" aria-hidden="true">“</span><span className="text">{card.goal.whyText}</span></div>
+      )}
       <div className="review-body">
         <div className="row" style={{ gap: 6, marginBottom: 6 }}>
           {changed && <><StatusWord status={card.before} /><span className="muted">→</span></>}

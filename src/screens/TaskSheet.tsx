@@ -6,8 +6,9 @@ import type { DateStr, Task } from '../lib/types'
 import { NoteField, Sheet, Switch, toast } from '../ui/components'
 import { InlineCalendar, TimeWheel } from '../ui/pickers'
 import { useSnapshot } from '../ui/hooks'
-import { IconCalendar, IconChevronUpDown, IconClock, IconGoals, IconSteps } from '../ui/icons'
+import { IconCalendar, IconChevronUpDown, IconClock, IconGoals } from '../ui/icons'
 import { navigate } from '../ui/router'
+import { IconTile, ProjectTile, ValueTile } from '../ui/valueLook'
 
 /** "Today", "Tomorrow", or "Saturday, 24 October". */
 function dateText(d: DateStr, today: DateStr): string {
@@ -35,7 +36,7 @@ export function DateTimeRows(props: { date: DateStr | null; time: string; today:
   return (
     <div className="card list settings dt-rows">
       <div className="list-row">
-        <IconCalendar className="row-icon" width={22} height={22} />
+        <IconTile color="red"><IconCalendar width={16} height={16} /></IconTile>
         <button type="button" className="dt-text" disabled={!date} aria-expanded={date ? open === 'date' : undefined}
           onClick={() => show(open === 'date' ? null : 'date')}>
           <span className="title">{t('common.date')}</span>
@@ -52,7 +53,7 @@ export function DateTimeRows(props: { date: DateStr | null; time: string; today:
         </div>
       )}
       <div className="list-row">
-        <IconClock className="row-icon" width={22} height={22} />
+        <IconTile color="blue"><IconClock width={16} height={16} /></IconTile>
         <button type="button" className="dt-text" disabled={!time} aria-expanded={time ? open === 'time' : undefined}
           onClick={() => show(open === 'time' ? null : 'time')}>
           <span className="title">{t('common.time')}</span>
@@ -97,12 +98,13 @@ export function TaskLinks(props: { projectId: string | null; goalId: string | nu
   const goals = (snap?.goals ?? []).filter((g) => g.state === 'active' || g.state === 'maintenance' || g.state === 'backlog' || g.id === props.goalId)
   const projects = (snap?.projects ?? []).filter((p) => p.state === 'active' || p.state === 'backlog' || p.id === props.projectId)
   if (!projects.length && (props.projectId || !goals.length)) return null
+  const goal = goals.find((g) => g.id === props.goalId)
   return (
     <div className="card list settings">
-      <ChoiceRow id="task-project" icon={<IconSteps className="row-icon" width={22} height={22} />} label={t('common.project')}
+      <ChoiceRow id="task-project" icon={<ProjectTile size="sm" />} label={t('common.project')}
         value={props.projectId} options={projects} onChange={props.onProject} />
       {!props.projectId && (
-        <ChoiceRow id="task-goal" icon={<IconGoals className="row-icon" width={22} height={22} />} label={t('common.goal')}
+        <ChoiceRow id="task-goal" icon={goal ? <ValueTile value={snap?.values.find((v) => v.id === goal.whyValueId)} values={snap?.values ?? []} size="sm" /> : <IconTile color="gray"><IconGoals width={16} height={16} /></IconTile>} label={t('common.goal')}
           value={props.goalId} options={goals} onChange={props.onGoal} />
       )}
     </div>

@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { setValueLook } from '../db/repo'
 import { inLang, t, tk, type Key } from '../i18n'
 import { AREAS, type Area } from '../lib/intro'
@@ -133,6 +133,11 @@ export function ValueTile(props: { value: Value | undefined; values: Value[]; si
       onClick={v && props.onPick ? () => props.onPick!(v) : undefined} />
   )
 }
+
+/** A tile around one of the app's own icons, for rows like a sheet's Date and Time (as in iPhone's Reminders). */
+export const IconTile = ({ color, children }: { color: string; children: ReactNode }) => (
+  <span className="tile tile-sm" style={{ '--c': `var(--c-${color})` } as CSSProperties}>{children}</span>
+)
 
 export const ProjectTile = ({ size }: { size?: TileSize }) => <Tile icon="" color="project" folder size={size} />
 

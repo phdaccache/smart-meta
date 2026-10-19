@@ -1336,3 +1336,28 @@ button.goal-why:active, .goal-card-foot:active { opacity: 0.6; }
 .piece-mark .check-box.round { border-radius: 50%; }
 .piece-card .piece-mark { font-size: 17px; }
 .piece-card .piece-mark .check-box { width: 24px; height: 24px; }
+
+/* A row's checkbox lines up with its title (not the middle of title + details), as in Reminders. */
+.item { align-items: flex-start; }
+.item > .check { height: 44px; }
+.item > .item-side { align-self: flex-start; min-height: 44px; }
+.item > .grip { align-self: center; }
+
+/* The line under a group's heading runs edge to edge; the ones between rows start at the text. */
+.group-head + .items > li:first-child > .item::before,
+.prompt + .items > li:first-child > .item::before { left: 0; }
+
+/* Review and Plan cards: name beside the icon, then the why and the results across the full width. */
+.review-head { align-items: center; padding-bottom: 0; }
+.review-head .chev { margin-top: 0; }
+.review-why { margin: 14px 16px 0; }
+.review-body { margin: 14px 16px 0; padding: 12px 0 14px; border-top: 1px solid var(--line); }
+button.goal-why { margin-top: 14px; }
+.goal-card-foot { margin-top: 14px; }
+
+/* Sheets from main, in the new style */
+.switch[aria-checked='true'] { background: var(--c-green); }
+.sheet-head.bar { padding-top: 4px; }
+.sheet-layer.keyboard .sheet::after { background: inherit; }
+.btn.outline { background: var(--surface-2); border: 0; }
+.dt-rows .list-row, .select-row { gap: 12px; }
