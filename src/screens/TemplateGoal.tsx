@@ -11,7 +11,7 @@ import { cadenceOf, type Template, type TemplateHabit, type TemplateProject } fr
 import type { DateStr, Value } from '../lib/types'
 import { Field, PageText, Screen, Section, Sheet, toast } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
-import { goBack, navigate } from '../ui/router'
+import { goBack, navigate, openOver } from '../ui/router'
 import { StepsEditor } from './Projects'
 import { CadenceFields, Compact, graceLabel, MeasurementFields, PrepEditor, ShapeField, ShapeInfo, Wizard, type SetField } from './GoalForm'
 
@@ -81,6 +81,7 @@ async function saveDraft(d: TemplateDraft) {
   for (const p of d.projects) {
     await createProject({ title: p.title, targetDate: addDays(start, p.days), goalId: goal.id, steps: p.steps })
   }
+  return goal
 }
 
 // ——— screens ———
@@ -105,10 +106,11 @@ function TemplateEdit({ draft, values, back }: { draft: TemplateDraft; values: V
   const update = (p: Partial<TemplateDraft>) => setStore({ ...draft, ...p })
   const save = async () => {
     setBusy(true)
-    await saveDraft(draft)
+    const goal = await saveDraft(draft)
     setStore(null)
     toast(draft.habits.length || draft.projects.length ? t('tpl.saved') : t('form.savedBacklog'))
-    navigate('/')
+    // Its page, as a goal made from scratch does; Back from it goes to Plan, not through the template's steps.
+    openOver('/goals', `/goals/${goal.id}`)
   }
   return (
     <Screen back="/goals/new" title={t('form.newGoal')}>

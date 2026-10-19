@@ -249,6 +249,24 @@ export function navigate(to: string, opts: { replace?: boolean } = {}) {
   show(dir)
 }
 
+/**
+ * Leaves a finished flow for what it made: `to`, with only the tab `root` under it, whatever the flow was
+ * opened from, so Back goes to that tab.
+ */
+export function openOver(root: string, to: string) {
+  if (afterOwnMoves(() => openOver(root, to))) return
+  const d = depth()
+  if (d > 0) {
+    dropEntries(d)
+    later.push(() => openOver(root, to))
+    return
+  }
+  history.replaceState({ depth: 0 }, '', root)
+  history.pushState({ depth: 1, under: [root] }, '', to)
+  scrollScreenToTop()
+  show(null)
+}
+
 /** Back within the app when there is somewhere to go, otherwise to a sensible parent. */
 export function goBack(fallback: string) {
   if (afterOwnMoves(() => goBack(fallback))) return
