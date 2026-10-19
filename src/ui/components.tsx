@@ -131,10 +131,18 @@ export function Sheet(props: {
 
   // iOS doesn't shrink the page for the keyboard; it scrolls it, sometimes leaving the field
   // underneath. Pinning the sheet to the visible area keeps it right above the keyboard.
+  const underRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const vv = window.visualViewport
     if (!props.open || !vv) return
-    const update = () => setView({ top: vv.offsetTop, height: vv.height, pageTop: vv.pageTop })
+    const update = () => {
+      // Moved here and now, in the same frame the iPhone moves what's visible: going through a React render
+      // left the sheet a frame behind as the keyboard closed, and the page flashed where the sheet should be.
+      const layer = layerRef.current
+      if (layer) Object.assign(layer.style, { top: `${vv.offsetTop}px`, height: `${vv.height}px`, bottom: 'auto' })
+      if (underRef.current) underRef.current.style.top = `${vv.pageTop + vv.height}px`
+      setView({ top: vv.offsetTop, height: vv.height, pageTop: vv.pageTop })
+    }
     update()
     vv.addEventListener('resize', update)
     vv.addEventListener('scroll', update)
@@ -218,7 +226,7 @@ export function Sheet(props: {
     {/* With the keyboard up, iPhone's floating ↑ ↓ ✓ bar leaves a strip between the sheet and the keyboard where
         the page shows through, and the sheet's own fixed layer doesn't reach it. This sits in the page itself, just
         below what's visible, in the sheet's colour. */}
-    {view && <div className="sheet-underlay" aria-hidden="true" style={{ top: view.pageTop + view.height }} />}
+    {view && <div ref={underRef} className="sheet-underlay" aria-hidden="true" style={{ top: view.pageTop + view.height }} />}
     <div ref={layerRef} className={`sheet-layer ${keyboard ? 'keyboard' : ''}`} style={view ? { top: view.top, height: view.height, bottom: 'auto' } : undefined}>
       <div className="sheet-backdrop" onClick={() => leave.current() && props.onClose()} />
       <div className={`sheet ${props.title || props.done ? '' : 'untitled'} ${props.large ? 'large' : ''}`} role="dialog" aria-modal="true" ref={ref}
