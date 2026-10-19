@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { check, deleteTask, promoteTask, uncheck, updateTask } from '../db/repo'
 import { t } from '../i18n'
-import { capitalize, dayMonth, diffDays, formatTime, nowMinutes, relativeDay, weekdayName } from '../lib/dates'
+import { capitalize, dayMonth, diffDays, formatTime, isDateStr, nowMinutes, relativeDay, weekdayName } from '../lib/dates'
 import { activeEntries } from '../lib/scoring'
 import { dueBadge } from '../lib/today'
 import type { DateStr, Task } from '../lib/types'
-import { CheckButton, NoteField, Sheet, Switch, TitleField, toast } from '../ui/components'
+import { CheckButton, DatePickerButton, DueText, NoteField, Sheet, Switch, TitleField, toast } from '../ui/components'
 import { InlineCalendar, TimeWheel } from '../ui/pickers'
 import { useSnapshot } from '../ui/hooks'
 import { IconCalendar, IconChevronUpDown, IconClock, IconGoals, IconNote } from '../ui/icons'
@@ -190,9 +190,10 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
 
 /**
  * A goal's or a project's own tasks: open ones by when they're due (undated last), then the finished ones.
- * Each is checked off right here, and tapping one opens it to edit.
+ * Each is checked off right here, and tapping one opens it to edit. With `reschedule` (Review's late tasks),
+ * each open one also takes a new date from a button at its side.
  */
-export function TaskList({ tasks, today }: { tasks: Task[]; today: DateStr }) {
+export function TaskList({ tasks, today, reschedule = false }: { tasks: Task[]; today: DateStr; reschedule?: boolean }) {
   const snap = useSnapshot()
   const [openTask, setOpenTask] = useState<Task | null>(null)
   const doneEntry = new Map(
@@ -223,8 +224,20 @@ export function TaskList({ tasks, today }: { tasks: Task[]; today: DateStr }) {
                         {task.title}
                         {task.note?.trim() && <IconNote className="note-mark" width={15} height={15} role="img" aria-hidden={false} aria-label={t('common.hasNotes')} />}
                       </div>
-                      {due && <span className={`due due-${due.tone}`}>{due.label}</span>}
+                      {!isDone && <DueText due={due} movedFrom={task.movedFrom} />}
                     </button>
+                    {reschedule && !isDone && (
+                      <div className="item-side">
+                        <DatePickerButton className="btn new-date" value={task.date ?? today} min={today} label={t('task.newDateFor', { task: task.title })}
+                          onPick={async (d) => {
+                            if (!isDateStr(d)) return
+                            await updateTask(task, { date: d })
+                            toast(t('task.movedTo', { date: dayMonth(d) }))
+                          }}>
+                          <span className="row" style={{ gap: 4 }}><IconCalendar width={15} height={15} />{t('task.newDate')}</span>
+                        </DatePickerButton>
+                      </div>
+                    )}
                   </div>
                 </li>
               )

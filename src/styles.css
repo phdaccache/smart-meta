@@ -531,6 +531,12 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .due-red { --due: var(--at-risk); }
 .due-yellow { --due: var(--behind); }
 .due-green { --due: var(--ink-2); }
+/* The dates a task was put off from, struck through in red ahead of its due date. */
+.due-line { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; margin-top: 1px; }
+.due-line .due { margin-top: 0; }
+.due-line .moved { display: inline-flex; flex-wrap: wrap; gap: 6px; font-size: 14px; color: var(--at-risk); opacity: 0.75; }
+.btn.new-date { min-height: 34px; padding: 0 10px; font-size: 14px; border-radius: 9px; }
+.due-line .moved s { text-decoration-thickness: 1.5px; }
 .danger-zone summary { list-style: none; }
 .danger-zone summary::-webkit-details-marker { display: none; }
 
@@ -1179,6 +1185,15 @@ textarea.note-field { min-height: 88px; line-height: 1.45; }
   background: color-mix(in srgb, var(--c) var(--tile-mix), var(--surface));
   color: color-mix(in srgb, var(--c) var(--glyph-mix), var(--glyph-ink));
 }
+/* A tile with a remove badge on its corner, as on the iPhone's home screen while editing. */
+.tile-removable { position: relative; flex: none; }
+.tile-remove {
+  position: absolute; top: -7px; left: -7px; width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--ink-3); color: var(--surface);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+/* A finger-sized target around the small badge. */
+.tile-remove::after { content: ''; position: absolute; inset: -11px; }
 .tile-sm { width: 26px; height: 26px; border-radius: 7px; }
 .tile-md { width: 44px; height: 44px; border-radius: 11px; }
 .tile-lg { width: 72px; height: 72px; border-radius: 18px; }

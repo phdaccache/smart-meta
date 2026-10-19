@@ -552,6 +552,10 @@ export const ptBR: Messages = {
   'project.stepEndClear': 'Usar o prazo automático',
   'task.nowProject': 'Agora é um projeto.',
   'task.toProject': 'Transformar em projeto',
+  'task.wasDue': 'Era para {dates}',
+  'task.newDate': 'Nova data',
+  'task.newDateFor': 'Nova data para {task}',
+  'task.movedTo': 'Movida para {date}',
   'task.delete': 'Excluir tarefa',
 
   // Weekly review
@@ -572,6 +576,7 @@ export const ptBR: Messages = {
   'review.skippedNoAsk': 'Pulado. Não vai perguntar de novo.',
   'review.thatWeek': 'Aquela semana',
   'review.hidden4': 'Oculto por 4 semanas.',
+  'review.lateTasks': 'Tarefas atrasadas',
   'review.dates': 'Datas',
   'review.stalled': 'Projetos parados',
   'review.openSlot': 'Vaga livre',

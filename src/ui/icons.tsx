@@ -27,6 +27,9 @@ export const IconSettings = (p: P) => (
     <circle cx="12" cy="12" r="3" />
   </Svg>
 )
+export const IconMinus = (p: P) => (
+  <Svg {...p}><path d="M5 12h14" /></Svg>
+)
 export const IconPlus = (p: P) => (
   <Svg {...p}><path d="M12 5v14M5 12h14" /></Svg>
 )

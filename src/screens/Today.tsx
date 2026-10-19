@@ -8,7 +8,7 @@ import { formatValue, promptQuestion, reasons } from '../lib/describe'
 import type { MissPrompt, ScoreContext } from '../lib/scoring'
 import { buildDay, type Snapshot, type TodayGroup, type TodayItem } from '../lib/today'
 import type { Commitment, DateStr, ID, MissReason, Task } from '../lib/types'
-import { CheckButton, Chip, DatePickerButton, Screen, Segmented, toast } from '../ui/components'
+import { CheckButton, Chip, DatePickerButton, DueText, Screen, Segmented, toast } from '../ui/components'
 import { ProjectTile, ValueTile } from '../ui/valueLook'
 import { useDisplacements, useSettings, useSnapshot, useSnoozes, useToday, useWeekReviews } from '../ui/hooks'
 import { dismissedMisses, reviewPending } from '../lib/review'
@@ -257,7 +257,7 @@ function ItemRow({ item, date, onOpen }: { item: TodayItem; date: DateStr; onOpe
             {item.note && <IconNote className="note-mark" width={15} height={15} role="img" aria-hidden={false} aria-label={t('common.hasNotes')} />}
           </div>
           {detail.length > 0 && <div className="item-detail">{detail.flatMap((d, i) => (i ? [' · ', d] : [d]))}</div>}
-          {item.due && <span className={`due due-${item.due.tone}`}>{item.due.label}</span>}
+          <DueText due={item.due} movedFrom={item.movedFrom} />
         </button>
         {valued && item.value != null && (
           <div className="item-side">

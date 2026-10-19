@@ -50,6 +50,8 @@ export interface TodayItem {
   forProject?: boolean
   /** Open tasks with a date: red when due today or late, yellow tomorrow, green later. */
   due?: { label: string; tone: 'red' | 'yellow' | 'green' }
+  /** Open tasks: the dates it was due before, struck through by its due date. */
+  movedFrom?: DateStr[] | null
   target: ItemTarget
 }
 
@@ -192,6 +194,7 @@ export function buildDay(
     return {
       key: `task:${t.id}`, kind: 'task', title: t.title, done: !!done, note: !!t.note?.trim(),
       due: !done && t.date && isToday ? dueBadge(t.date, date, t.time) : undefined,
+      movedFrom: !done && isToday ? t.movedFrom : undefined,
       subjectType: 'task', subjectId: t.id, entryId: done?.id, target, sortDate: sortKey(t),
     }
   }

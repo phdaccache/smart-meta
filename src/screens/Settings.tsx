@@ -9,7 +9,7 @@ import { loadWorstCaseData } from '../dev/worst'
 import { eraseAllData, signIn, signOut, syncNow, useSyncStatus } from '../sync/controller'
 import { Field, InfoTip, Screen, Section, Sheet, Stepper, Switch, toast, TypeToConfirm } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
-import { IconChevronRight, IconChevronUpDown, IconClose } from '../ui/icons'
+import { IconChevronRight, IconChevronUpDown, IconMinus } from '../ui/icons'
 import { useInstall } from '../ui/install'
 import { useIsDeveloper } from '../ui/developer'
 import { RELEASES } from '../lib/releases'
@@ -392,7 +392,15 @@ export function ValuesEditor(props: { onSaved?: () => void }) {
       <div className="card list">
         {drafts.map((d, i) => (
           <div key={d.id ?? `new-${i}`} className="list-row" style={{ alignItems: 'flex-start' }}>
-            <ValueTile value={snap.values.find((v) => v.id === d.id)} values={snap.values} onPick={setPicking} />
+            {/* Removed from a badge on its tile, as an app is from the iPhone's home screen: the fields keep the row's width. */}
+            <div className="tile-removable">
+              <ValueTile value={snap.values.find((v) => v.id === d.id)} values={snap.values} onPick={setPicking} />
+              {drafts.length > 1 && (
+                <button className="tile-remove" aria-label={t('set.removeValueN', { n: i + 1 })} onClick={() => setDrafts(drafts.filter((_, j) => j !== i))}>
+                  <IconMinus width={12} height={12} strokeWidth={3} />
+                </button>
+              )}
+            </div>
             <div className="text stack" style={{ gap: 6 }}>
               <input value={d.name} aria-label={t('set.valueN', { n: i + 1 })}
                 placeholder={tlist('set.valuePlaceholders')[i % 5]}
@@ -400,11 +408,6 @@ export function ValuesEditor(props: { onSaved?: () => void }) {
               <input value={d.description} aria-label={t('set.valueMeansN', { n: i + 1 })} placeholder={t('set.valueMeans')}
                 style={{ minHeight: 38, fontSize: 14 }} onChange={(e) => update(i, { description: e.target.value })} />
             </div>
-            {drafts.length > 1 && (
-              <button className="icon-btn" aria-label={t('set.removeValueN', { n: i + 1 })} onClick={() => setDrafts(drafts.filter((_, j) => j !== i))}>
-                <IconClose width={18} height={18} />
-              </button>
-            )}
           </div>
         ))}
       </div>

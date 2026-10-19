@@ -1,8 +1,9 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { t, tk, tlist, type Key } from '../i18n'
+import { dayMonthShort } from '../lib/dates'
 import { statusLabel } from '../lib/describe'
-import type { Status } from '../lib/types'
+import type { DateStr, Status } from '../lib/types'
 import { IconCheck, IconChevronLeft, IconClose, IconGoals, IconInfo, IconInsights, IconReview, IconSettings, IconToday } from './icons'
 import { goBack, navigate, pushLayer } from './router'
 
@@ -614,6 +615,27 @@ export function DatePickerButton(props: {
           setPicks((n) => n + 1)
           props.onPick(e.target.value)
         }} />
+    </span>
+  )
+}
+
+/**
+ * When a task is due, after the dates it was due before, struck through: putting a task off
+ * again should feel like it. A finished task shows neither.
+ */
+export function DueText({ due, movedFrom }: { due?: { label: string; tone: string } | null; movedFrom?: DateStr[] | null }) {
+  const moved = movedFrom ?? []
+  if (!due && !moved.length) return null
+  const shown = moved.slice(0, 3)
+  return (
+    <span className="due-line">
+      {moved.length > 0 && (
+        <span className="moved" role="img" aria-label={t('task.wasDue', { dates: moved.map(dayMonthShort).join(', ') })}>
+          {shown.map((d, i) => <s key={i}>{dayMonthShort(d)}</s>)}
+          {moved.length > shown.length && <span>+{moved.length - shown.length}</span>}
+        </span>
+      )}
+      {due && <span className={`due due-${due.tone}`}>{due.label}</span>}
     </span>
   )
 }

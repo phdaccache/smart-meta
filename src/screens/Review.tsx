@@ -7,7 +7,7 @@ import {
   buildReview, projectKey, reviewableWeeks, type DateNote, type GoalCard, type HandledProject, type ReasonCount, type StalledProject,
   type Suggestion, type SuggestionKind,
 } from '../lib/review'
-import { missKey, type MissPrompt, type ScoreContext } from '../lib/scoring'
+import { activeEntries, missKey, type MissPrompt, type ScoreContext } from '../lib/scoring'
 import type { Commitment, Goal, Prep, Value } from '../lib/types'
 import { Field, InfoTip, PageText, Screen, Section, Sheet, StatusWord, toast } from '../ui/components'
 import { useAllRevisions, useDisplacements, useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
@@ -15,6 +15,7 @@ import { IconCalendar, IconCheck, IconChevronRight } from '../ui/icons'
 import { navigate, useLocation } from '../ui/router'
 import { ValueTile, valueLook } from '../ui/valueLook'
 import { CommitmentSheet, PrepSheet } from './GoalDetail'
+import { TaskList } from './TaskSheet'
 import { MissPromptCard } from './Today'
 
 const QUESTION: Record<SuggestionKind, Key> = {
@@ -116,7 +117,11 @@ export function ReviewScreen() {
     </>
   )
 
-  const nothing = !r.loose.length && !r.goals.length && !r.dates.length && !r.stalled.length && !r.next
+  // Open tasks past their date, put off again from here: each new date leaves the old one struck through.
+  const finished = new Set(activeEntries(snap.entries).filter((e) => e.subjectType === 'task' && e.outcome === 'hit').map((e) => e.subjectId))
+  const late = r.latest ? snap.tasks.filter((x) => !x.projectId && x.date && x.date < today && !finished.has(x.id)) : []
+
+  const nothing = !late.length && !r.loose.length && !r.goals.length && !r.dates.length && !r.stalled.length && !r.next
 
   return (
     <Screen eyebrow={`${t('review.weekOf', { date: dayMonth(r.week.start) })}${r.reviewed ? t('review.reviewedTag') : ''}`} title={title} actions={actions} settings>
@@ -139,6 +144,12 @@ export function ReviewScreen() {
               )
             })}
           </div>
+        </Section>
+      )}
+
+      {late.length > 0 && (
+        <Section title={t('review.lateTasks')}>
+          <TaskList tasks={late} today={today} reschedule />
         </Section>
       )}
 

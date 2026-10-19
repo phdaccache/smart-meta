@@ -557,6 +557,10 @@ export const en = {
   'project.stepEndClear': 'Use the automatic date',
   'task.nowProject': 'Now a project.',
   'task.toProject': 'Turn into project',
+  'task.wasDue': 'Was due {dates}',
+  'task.newDate': 'New date',
+  'task.newDateFor': 'New date for {task}',
+  'task.movedTo': 'Moved to {date}',
   'task.delete': 'Delete task',
 
   // Weekly review
@@ -577,6 +581,7 @@ export const en = {
   'review.skippedNoAsk': 'Skipped. It won’t ask again.',
   'review.thatWeek': 'That week',
   'review.hidden4': 'Hidden for 4 weeks.',
+  'review.lateTasks': 'Late tasks',
   'review.dates': 'Dates',
   'review.stalled': 'Stalled projects',
   'review.openSlot': 'Open slot',

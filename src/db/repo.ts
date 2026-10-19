@@ -419,6 +419,11 @@ export async function createTask(fields: {
 }
 
 export async function updateTask(t: Task, changes: Partial<Fields<Task>>) {
+  // A task's date put off (later, or taken off) keeps the old one, shown struck through from then on.
+  const cur = (await db.tasks.get(t.id)) ?? t
+  if ('date' in changes && cur.date && !cur.projectId && (!changes.date || changes.date > cur.date)) {
+    changes = { ...changes, movedFrom: [...(cur.movedFrom ?? []), cur.date] }
+  }
   return patch('tasks', t.id, changes)
 }
 
