@@ -671,28 +671,31 @@ export function burnup(p: Prepared, project: Project): Burnup {
     .sort()
   const { status, start, projected } = projectPace(project, steps.length, done, p.ctx.today)
   let text: string
+  const target = project.targetDate
   if (status === 'done') {
     const end = done.at(-1) ?? dayOf(project.updatedAt)
-    const d = diffDays(end, project.targetDate)
-    const when = d === 0 ? t('ins.pace.onTheDay') : d > 0 ? t('ins.pace.early', { time: spanText(d) }) : t('ins.pace.late', { time: spanText(d) })
-    text = t('ins.pace.done', { date: dayMonth(end), when })
+    const d = target ? diffDays(end, target) : null
+    const when = d === null ? null : d === 0 ? t('ins.pace.onTheDay') : d > 0 ? t('ins.pace.early', { time: spanText(d) }) : t('ins.pace.late', { time: spanText(d) })
+    text = when ? t('ins.pace.done', { date: dayMonth(end), when }) : t('ins.pace.doneOn', { date: dayMonth(end) })
   } else if (status === 'all_done') {
     text = t('ins.pace.allDone')
   } else {
-    const due = t(project.targetDate < p.ctx.today ? 'ins.pace.wasDue' : 'ins.pace.due', { date: dayMonth(project.targetDate) })
+    const due = target ? t(target < p.ctx.today ? 'ins.pace.wasDue' : 'ins.pace.due', { date: dayMonth(target) }) : t('project.noDate')
     text = projected ? t('ins.pace.atYourPace', { due, date: dayMonth(projected) }) : due
   }
-  const timeUsed = diffDays(start, p.ctx.today) / Math.max(1, diffDays(start, project.targetDate))
+  const timeUsed = target ? diffDays(start, p.ctx.today) / Math.max(1, diffDays(start, target)) : 0
   return { project, total: steps.length, done, start, projected, status, timeUsed, text }
 }
 
 export function burnups(p: Prepared): Burnup[] {
   const since = addDays(p.ctx.today, -183)
   return live(p.snap.projects)
+    // Its chart measures the steps against the time to its date: a project with none has no chart.
+    .filter((pr) => !!pr.targetDate)
     .filter((pr) => pr.state === 'done' || (pr.state === 'active' && !waitsForGoal(pr, p.snap.goals, p.ctx.today)))
     .map((pr) => burnup(p, pr))
     .filter((b) => b.total > 0 && (b.project.state === 'active' || (b.done.at(-1) ?? '') >= since))
-    .sort((a, b) => (a.project.state === b.project.state ? a.project.targetDate.localeCompare(b.project.targetDate) : a.project.state === 'active' ? -1 : 1))
+    .sort((a, b) => (a.project.state === b.project.state ? (a.project.targetDate ?? '').localeCompare(b.project.targetDate ?? '') : a.project.state === 'active' ? -1 : 1))
 }
 
 // ——— year in review ———

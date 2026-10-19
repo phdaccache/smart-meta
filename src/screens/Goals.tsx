@@ -279,7 +279,8 @@ export function projectProgress(p: Project, snap: Snapshot) {
 function ProjectRow({ project, snap, today, action }: { project: Project; snap: Snapshot; today: string; action?: ReactNode }) {
   const { done, total } = projectProgress(project, snap)
   const goal = project.goalId ? snap.goals.find((g) => g.id === project.goalId) : undefined
-  const overdue = project.state === 'active' && project.targetDate < today
+  const due = project.targetDate
+  const overdue = project.state === 'active' && !!due && due < today
   const open = () => navigate(`/projects/${project.id}`)
   const text = (
     <>
@@ -289,7 +290,7 @@ function ProjectRow({ project, snap, today, action }: { project: Project; snap: 
           {project.state === 'backlog' || (project.state === 'active' && waitsForGoal(project, snap.goals, today))
             ? null
             : project.state === 'active'
-            ? <> · <span style={overdue ? { color: 'var(--at-risk)' } : undefined}>{t('today.due', { when: relativeDay(project.targetDate, today) })}</span></>
+            ? due && <> · <span style={overdue ? { color: 'var(--at-risk)' } : undefined}>{t('today.due', { when: relativeDay(due, today) })}</span></>
             : project.state === 'archived' ? t('plan.setAside') : t('plan.done')}
           {goal && ` · ${goal.title}`}
         </div>

@@ -345,11 +345,12 @@ function DateRow({ note, today }: { note: DateNote; today: string }) {
 
 function StalledRow({ s, today, week }: { s: StalledProject; today: string; week: string }) {
   const steps = tn('review.stepsLeft', s.remaining)
-  const why = s.why === 'overdue'
-    ? t('review.pastDate', { date: dayMonth(s.project.targetDate) })
+  const due = s.project.targetDate
+  const why = s.why === 'overdue' && due
+    ? t('review.pastDate', { date: dayMonth(due) })
     : s.lastDone ? t('review.noStepSince', { date: dayMonth(s.lastDone) }) : t('review.noStepYet')
   const [moving, setMoving] = useState(false)
-  const [date, setDate] = useState(s.project.targetDate > today ? s.project.targetDate : today)
+  const [date, setDate] = useState(due && due > today ? due : today)
   const save = async () => {
     if (!isDateStr(date)) return
     await updateProject(s.project, { targetDate: date })
@@ -388,7 +389,7 @@ function StalledRow({ s, today, week }: { s: StalledProject; today: string; week
 
 /** A stalled project already dealt with in this review: what happened to it. */
 function HandledRow({ h }: { h: HandledProject }) {
-  const text = h.action === 'moved' ? t('review.newDate', { date: dayMonth(h.project.targetDate) })
+  const text = h.action === 'moved' && h.project.targetDate ? t('review.newDate', { date: dayMonth(h.project.targetDate) })
     : h.action === 'put_down' ? t('review.putDownDone')
     : t('review.dismissed4')
   return (

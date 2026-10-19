@@ -89,7 +89,8 @@ export interface Project extends Base {
   title: string
   /** Free text kept with it. */
   note?: string | null
-  targetDate: DateStr
+  /** When it should be finished. Missing: no due date, so no pace, and its steps are due only on dates of their own. */
+  targetDate?: DateStr | null
   goalId?: ID | null
   state: ProjectState
   /** The day its clock started (moved on by any time spent back in the backlog); missing: createdAt. */

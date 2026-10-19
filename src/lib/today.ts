@@ -60,7 +60,7 @@ export type ProjectPace = 'done' | 'all_done' | 'not_started' | 'on_pace' | 'beh
 /**
  * Whether a project will make its date: overdue past it; otherwise behind when
  * the steps done so far, kept at the same speed, would finish after it.
- * `doneDates` is the day each finished step was done.
+ * With no date it can be neither. `doneDates` is the day each finished step was done.
  */
 export function projectPace(project: Project, total: number, doneDates: DateStr[], today: DateStr): { status: ProjectPace; start: DateStr; projected: DateStr | null } {
   const done = [...doneDates].sort()
@@ -74,7 +74,8 @@ export function projectPace(project: Project, total: number, doneDates: DateStr[
     const pace = done.length / Math.max(7, diffDays(start, today))
     projected = addDays(today, Math.ceil(remaining / pace))
   }
-  const status: ProjectPace = project.targetDate < today ? 'overdue' : !projected ? 'not_started' : projected > project.targetDate ? 'behind' : 'on_pace'
+  const due = project.targetDate
+  const status: ProjectPace = due && due < today ? 'overdue' : !projected ? 'not_started' : due && projected > due ? 'behind' : 'on_pace'
   return { status, start, projected }
 }
 
@@ -85,15 +86,19 @@ export const projectStart = (p: Project): DateStr => p.startDate ?? p.createdAt.
  * Each step's end date. A date the person set is kept; the steps between two
  * set dates (or the project's start, or its target date for the last step)
  * share that stretch equally: 4 steps in a month get about a week each.
+ * With no target date, the steps after the last set date have none (null).
  * `steps` in order.
  */
-export function stepDeadlines(project: Project, steps: Task[]): DateStr[] {
-  const out: DateStr[] = []
+export function stepDeadlines(project: Project, steps: Task[]): (DateStr | null)[] {
+  const out: (DateStr | null)[] = steps.map(() => null)
   let prevIndex = -1
-  let prevDate = minDate(projectStart(project), project.targetDate)
+  const start = projectStart(project)
+  let prevDate = project.targetDate ? minDate(start, project.targetDate) : start
   const anchors: [number, DateStr][] = steps.flatMap((s, i) => (s.date ? [[i, s.date] as [number, DateStr]] : []))
   const last = steps.length - 1
-  if (last >= 0 && !steps[last].date) anchors.push([last, maxDate(project.targetDate, anchors.at(-1)?.[1] ?? project.targetDate)])
+  if (last >= 0 && !steps[last].date && project.targetDate) {
+    anchors.push([last, maxDate(project.targetDate, anchors.at(-1)?.[1] ?? project.targetDate)])
+  }
   for (const [i, d] of anchors) {
     const span = Math.max(0, diffDays(prevDate, d))
     for (let k = prevIndex + 1; k < i; k++) out[k] = addDays(prevDate, Math.round(((k - prevIndex) * span) / (i - prevIndex)))
@@ -218,9 +223,10 @@ export function buildDay(
         out.push({ ...base, key: `task:${step.id}`, done: true, entryId: done.id })
       } else if (!done && !currentShown) {
         currentShown = true
+        const end = deadlines[i]
         if (isToday) {
           out.push({
-            ...base, key: `task:${step.id}`, done: false, due: dueBadge(deadlines[i], date),
+            ...base, key: `task:${step.id}`, done: false, due: end ? dueBadge(end, date) : undefined,
             detail: inGoal ? p.title : undefined,
           })
         }
@@ -359,7 +365,7 @@ export function buildDay(
     const goal = p.goalId ? s.goals.find((g) => g.id === p.goalId) : undefined
     groups.push({
       key: `project:${p.id}`, kind: 'project', projectId: p.id,
-      eyebrow: '', title: p.title, why: goal?.whyText || undefined, due: isToday ? dueBadge(p.targetDate, date) : undefined,
+      eyebrow: '', title: p.title, why: goal?.whyText || undefined, due: isToday && p.targetDate ? dueBadge(p.targetDate, date) : undefined,
       items, prompts: [], done: items.every((i) => i.done),
     })
   }

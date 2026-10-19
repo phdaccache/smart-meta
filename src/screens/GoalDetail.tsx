@@ -155,7 +155,10 @@ export function GoalDetailScreen({ id }: { id: string }) {
                 <button key={p.id} className="list-row" onClick={() => navigate(`/projects/${p.id}`)}>
                   <div className="text">
                     <div className="title">{p.title}</div>
-                    <div className="sub">{t('plan.stepsOf', { done, total })} · {p.state === 'backlog' ? t('plan.backlog') : t('today.due', { when: relativeDay(p.targetDate, today) })}</div>
+                    <div className="sub">
+                      {t('plan.stepsOf', { done, total })}
+                      {p.state === 'backlog' ? ` · ${t('plan.backlog')}` : p.targetDate ? ` · ${t('today.due', { when: relativeDay(p.targetDate, today) })}` : null}
+                    </div>
                   </div>
                   <IconChevronRight className="chev" width={18} />
                 </button>

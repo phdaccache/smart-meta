@@ -21,9 +21,14 @@ function dateText(d: DateStr, today: DateStr): string {
  * Date and time as two switches, as in iPhone's Reminders: switching one on picks today (or the
  * next hour) and opens a calendar (or clock) right under it; tapping the row opens or closes it again.
  * A time needs a date, so switching the time on also switches the date on, and the date off takes the time with it.
+ * Without `time`, just the date (a project's); switching it on picks `firstDate` (default today).
  */
-export function DateTimeRows(props: { date: DateStr | null; time: string; today: DateStr; onChange: (date: DateStr | null, time: string) => void }) {
-  const { date, time, today, onChange } = props
+export function DateTimeRows(props: {
+  date: DateStr | null; time?: string; today: DateStr; onChange: (date: DateStr | null, time: string) => void
+  firstDate?: DateStr
+}) {
+  const { date, today, onChange } = props
+  const time = props.time ?? ''
   const [open, setOpen] = useState<'date' | 'time' | null>(null)
   const pickerRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -45,7 +50,7 @@ export function DateTimeRows(props: { date: DateStr | null; time: string; today:
           {date && <span className="dt-value">{dateText(date, today)}</span>}
         </button>
         <Switch checked={!!date} label={t('common.date')} onChange={(on) => {
-          onChange(on ? today : null, '')
+          onChange(on ? props.firstDate ?? today : null, '')
           show(on ? 'date' : null)
         }} />
       </div>
@@ -54,7 +59,7 @@ export function DateTimeRows(props: { date: DateStr | null; time: string; today:
           <InlineCalendar value={date} min={date < today ? date : today} today={today} onPick={(d) => onChange(d, time)} />
         </div>
       )}
-      <div className="list-row">
+      {props.time !== undefined && <div className="list-row">
         <IconTile color="blue"><IconClock width={16} height={16} /></IconTile>
         <button type="button" className="dt-text" disabled={!time} aria-expanded={time ? open === 'time' : undefined}
           onClick={() => show(open === 'time' ? null : 'time')}>
@@ -65,7 +70,7 @@ export function DateTimeRows(props: { date: DateStr | null; time: string; today:
           onChange(on ? date ?? today : date, on ? nextHour() : '')
           show(on ? 'time' : open === 'time' ? null : open)
         }} />
-      </div>
+      </div>}
       {time && open === 'time' && (
         <div className="dt-picker" ref={pickerRef}>
           <TimeWheel value={time} onChange={(tm) => onChange(date ?? today, tm)} />
@@ -169,7 +174,7 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
       <div className="stack" style={{ marginTop: 16 }}>
         {!projectId && (
           <button className="btn outline block" onClick={async () => {
-            const p = await promoteTask({ ...task, title: title.trim() || task.title, date, goalId, note }, today)
+            const p = await promoteTask({ ...task, title: title.trim() || task.title, date, goalId, note })
             onClose()
             toast(t('task.nowProject'))
             navigate(`/projects/${p.id}`)

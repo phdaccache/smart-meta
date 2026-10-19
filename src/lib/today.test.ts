@@ -197,6 +197,19 @@ describe('Step end dates', () => {
     expect(v.groups[0].items[0].due).toEqual({ label: 'due tomorrow', tone: 'yellow' })
   })
 
+  it('with no project date, gives a date only to steps up to the last one set', () => {
+    const open = { ...pr, targetDate: null }
+    expect(stepDeadlines(open, steps([null, null, null]))).toEqual([null, null, null])
+    expect(stepDeadlines(open, steps([null, '2026-10-05', null]))).toEqual(['2026-10-03', '2026-10-05', null])
+  })
+
+  it('shows no badge for a project with no date, or its step with none', () => {
+    const s = snapshot({ projects: [{ ...pr, targetDate: null }], tasks: steps([null, null]) })
+    const v = buildDay(s, '2026-10-07', { ...ctx, today: '2026-10-07' })
+    expect(v.groups[0].due).toBeUndefined()
+    expect(v.groups[0].items[0].due).toBeUndefined()
+  })
+
   it('shows a task’s time in its badge', () => {
     const s = snapshot({ tasks: [task({ title: 'Call mom', date: today, time: '21:00' })] })
     expect(buildDay(s, today, ctx).groups[0].items[0].due?.label).toBe('due today at 21:00')

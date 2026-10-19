@@ -158,6 +158,12 @@ describe('Review — the rest', () => {
     ])
   })
 
+  it('never calls a project with no date overdue', () => {
+    const open = project({ title: 'Garden', targetDate: null, createdAt: '2026-09-25T00:00:00.000Z' })
+    const r = buildReview(input({ projects: [open], tasks: [task({ projectId: open.id })] }))
+    expect(r.stalled).toEqual([])
+  })
+
   it('a stalled project dealt with in this review shows what happened, then stays away', () => {
     const idle = project({ title: 'CV', createdAt: '2026-08-01T00:00:00.000Z' })
     const steps = [task({ projectId: idle.id })]

@@ -12,7 +12,7 @@ import { IconCalendar, IconChevronRight, IconClose } from '../ui/icons'
 import { Sortable } from '../ui/Sortable'
 import { navigate } from '../ui/router'
 import { openQuickAddFor } from './QuickAdd'
-import { GoalSelect, TaskList } from './TaskSheet'
+import { DateTimeRows, GoalSelect, TaskList } from './TaskSheet'
 
 /**
  * The step list of a project being written. Adding a step moves the cursor to
@@ -60,14 +60,15 @@ export function NewProjectScreen({ goalId: presetGoal }: { goalId?: string | nul
   const settings = useSettings()
   const today = useToday(settings.rolloverHour)
   const [title, setTitle] = useState('')
-  const [targetDate, setTargetDate] = useState(() => addDays(today, 30))
+  // A month to start with; switched off, it has no due date.
+  const [targetDate, setTargetDate] = useState<DateStr | null>(() => addDays(today, 30))
   const [goalId, setGoalId] = useState<string | null>(presetGoal ?? null)
   const [steps, setSteps] = useState<string[]>([''])
   const [tried, setTried] = useState(false)
 
   const errors = {
     title: title.trim() ? undefined : t('project.nameOutcome'),
-    targetDate: isDateStr(targetDate) && targetDate >= today ? undefined : t('project.dateFromToday'),
+    targetDate: !targetDate || (isDateStr(targetDate) && targetDate >= today) ? undefined : t('project.dateFromToday'),
   }
   const save = async () => {
     if (errors.title || errors.targetDate) return setTried(true)
@@ -81,8 +82,8 @@ export function NewProjectScreen({ goalId: presetGoal }: { goalId?: string | nul
       <Field label={t('project.outcome')} htmlFor="p-title" error={tried ? errors.title : undefined}>
         <input id="p-title" value={title} placeholder={t('project.phOutcome')} onChange={(e) => setTitle(e.target.value)} />
       </Field>
-      <Field label={t('project.targetDate')} htmlFor="p-date" error={tried ? errors.targetDate : undefined}>
-        <input id="p-date" type="date" min={today} value={targetDate} onChange={(e) => setTargetDate(e.target.value)} />
+      <Field label={t('project.targetDate')} error={tried ? errors.targetDate : undefined}>
+        <DateTimeRows date={targetDate} today={today} firstDate={addDays(today, 30)} onChange={(d) => setTargetDate(d)} />
       </Field>
       <Field label={t('common.goal')} htmlFor="p-goal">
         <GoalSelect id="p-goal" value={goalId} onChange={setGoalId} />
@@ -165,9 +166,9 @@ export function ProjectScreen({ id }: { id: string }) {
                   <input id="pe-title" defaultValue={project.title}
                     onBlur={(e) => e.target.value.trim() && updateProject(project, { title: e.target.value.trim() })} />
                 </Field>
-                <Field label={t('project.targetDate')} htmlFor="pe-date">
-                  <input id="pe-date" type="date" defaultValue={project.targetDate}
-                    onChange={(e) => isDateStr(e.target.value) && updateProject(project, { targetDate: e.target.value })} />
+                <Field label={t('project.targetDate')}>
+                  <DateTimeRows date={project.targetDate ?? null} today={today} firstDate={addDays(today, 30)}
+                    onChange={(targetDate) => updateProject(project, { targetDate })} />
                 </Field>
                 <Field label={t('common.goal')} htmlFor="pe-goal">
                   <GoalSelect id="pe-goal" value={project.goalId ?? null} onChange={(goalId) => updateProject(project, { goalId })} />
@@ -177,7 +178,9 @@ export function ProjectScreen({ id }: { id: string }) {
               <>
                 <div className="row" style={{ justifyContent: 'space-between' }}>
                   <span className="small muted">{t('plan.stepsOf', { done, total: steps.length })}</span>
-                  <span className="small muted">{t('today.due', { when: relativeDay(project.targetDate, today) })} · {dayMonth(project.targetDate)}</span>
+                  <span className="small muted">
+                    {project.targetDate ? `${t('today.due', { when: relativeDay(project.targetDate, today) })} · ${dayMonth(project.targetDate)}` : t('project.noDate')}
+                  </span>
                 </div>
                 <div className="progress project"><i style={{ width: `${steps.length ? (100 * done) / steps.length : 0}%` }} /></div>
               </>
@@ -292,14 +295,15 @@ function StepTitle({ task }: { task: Task }) {
 }
 
 /** A step's end date: spread from the project's dates until one is picked, then kept (× goes back to spread). */
-function StepEnd({ task, end }: { task: Task; end: DateStr }) {
+/** A step's end date; with none (a project with no date), a button to give it one. */
+function StepEnd({ task, end }: { task: Task; end: DateStr | null }) {
   const set = !!task.date
   return (
     <span className={`step-end ${set ? 'set' : ''}`}>
-      <DatePickerButton className="step-end-hit" value={end} label={t('project.stepEndLabel', { step: task.title })}
+      <DatePickerButton className="step-end-hit" value={end ?? ''} label={t('project.stepEndLabel', { step: task.title })}
         onPick={(d) => isDateStr(d) && updateTask(task, { date: d })}>
         <IconCalendar width={14} height={14} />
-        <span>{t('project.stepUntil', { date: dayMonthShort(end) })}</span>
+        <span>{end ? t('project.stepUntil', { date: dayMonthShort(end) }) : t('project.stepNoEnd')}</span>
       </DatePickerButton>
       {set && (
         <button type="button" className="step-end-clear" aria-label={t('project.stepEndClear')} onClick={() => updateTask(task, { date: null })}>

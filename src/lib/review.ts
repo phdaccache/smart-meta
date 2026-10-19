@@ -389,7 +389,7 @@ function stalledProjects(snap: Snapshot, entries: Entry[], today: DateStr): Stal
     const remaining = steps.filter((s) => !done.some((e) => e.subjectId === s.id)).length
     if (remaining === 0) continue
     const lastDone = done.map((e) => e.date).sort().at(-1) ?? null
-    if (p.targetDate < today) {
+    if (p.targetDate && p.targetDate < today) {
       out.push({ project: p, why: 'overdue', lastDone, remaining })
     } else if (diffDays(lastDone ?? dayOf(p.createdAt), today) >= STALL_DAYS) {
       out.push({ project: p, why: 'idle', lastDone, remaining })

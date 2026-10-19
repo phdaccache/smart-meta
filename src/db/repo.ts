@@ -234,7 +234,7 @@ async function shiftWaitingProjects(goal: Goal) {
     const ids = steps.map((x) => x.id)
     const touched = (await db.entries.toArray()).some((e) => !e.deletedAt && ids.includes(e.subjectId))
     if (touched) continue
-    writes.push({ c: 'projects', r: { ...p, startDate: today, targetDate: addDays(p.targetDate, waited) } as Project })
+    writes.push({ c: 'projects', r: { ...p, startDate: today, targetDate: p.targetDate && addDays(p.targetDate, waited) } as Project })
     for (const x of steps) if (x.date) writes.push({ c: 'tasks', r: { ...x, date: addDays(x.date, waited) } as Task })
   }
   if (writes.length) await putAll(writes)
@@ -432,7 +432,7 @@ export async function deleteTask(t: Task) {
 }
 
 /** Projects made on their own wait in the backlog (`state: 'backlog'`); a template's start with their goal. */
-export async function createProject(fields: { title: string; targetDate: DateStr; goalId?: ID | null; steps: string[]; state?: ProjectState }) {
+export async function createProject(fields: { title: string; targetDate: DateStr | null; goalId?: ID | null; steps: string[]; state?: ProjectState }) {
   const project = make<'projects'>({
     title: fields.title.trim(), targetDate: fields.targetDate, goalId: fields.goalId ?? null, state: fields.state ?? 'active',
   })
@@ -460,7 +460,7 @@ export async function startProject(p: Project, today: DateStr) {
   await putAll([
     {
       c: 'projects',
-      r: { ...p, state: 'active', backlogSince: null, startDate: addDays(start, waited), targetDate: addDays(p.targetDate, waited) } as Project,
+      r: { ...p, state: 'active', backlogSince: null, startDate: addDays(start, waited), targetDate: p.targetDate && addDays(p.targetDate, waited) } as Project,
     },
     ...steps.map((x) => ({ c: 'tasks' as const, r: { ...x, date: addDays(x.date!, waited) } })),
   ])
@@ -482,10 +482,10 @@ export async function reorderSteps(steps: Task[]) {
   await putAll(steps.map((t, i) => ({ c: 'tasks' as const, r: { ...t, order: i } })))
 }
 
-/** A task that turned out to need steps becomes a project, keeping its link, date and notes. */
-export async function promoteTask(t: Task, fallbackTargetDate: DateStr) {
+/** A task that turned out to need steps becomes a project, keeping its link, date (or none) and notes. */
+export async function promoteTask(t: Task) {
   const project = make<'projects'>({
-    title: t.title, note: t.note?.trim() || null, targetDate: t.date && t.date > fallbackTargetDate ? t.date : addDays(fallbackTargetDate, 14),
+    title: t.title, note: t.note?.trim() || null, targetDate: t.date ?? null,
     goalId: t.goalId ?? null, state: 'active',
   })
   await putAll([{ c: 'projects', r: project }, { c: 'tasks', r: { ...t, deletedAt: now() } }])
