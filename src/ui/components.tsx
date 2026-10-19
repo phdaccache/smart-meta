@@ -160,9 +160,27 @@ export function Sheet(props: {
     }
   }, [props.open])
   useSwipeToDismiss(ref, props.open, onClose)
-  if (!props.open) return null
   // The visible area shrinks by the keyboard's height; a small change is just the browser's own bars.
   const keyboard = !!view && view.height < window.innerHeight - 150
+  // When the keyboard goes away the sheet stays where the keyboard pushed it, as on the iPhone, instead
+  // of dropping back down: it remembers how high its top got and grows to keep it there.
+  const keptTop = useRef<number | null>(null)
+  useLayoutEffect(() => {
+    const sheet = ref.current
+    const layer = layerRef.current
+    if (!props.open || !sheet || !layer || !view) {
+      keptTop.current = null
+      return
+    }
+    if (keyboard) {
+      sheet.style.minHeight = ''
+      const top = sheet.getBoundingClientRect().top - layer.getBoundingClientRect().top
+      keptTop.current = Math.min(keptTop.current ?? top, top)
+    } else if (keptTop.current != null) {
+      sheet.style.minHeight = `${Math.max(0, view.height - keptTop.current)}px`
+    }
+  }, [props.open, view, keyboard])
+  if (!props.open) return null
   return createPortal(
     <div ref={layerRef} className={`sheet-layer ${keyboard ? 'keyboard' : ''}`} style={view ? { top: view.top, height: view.height, bottom: 'auto' } : undefined}>
       <div className="sheet-backdrop" onClick={props.onClose} />

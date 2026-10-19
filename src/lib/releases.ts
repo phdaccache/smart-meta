@@ -10,7 +10,7 @@ import type { DateStr } from './types'
  * showing FRESH_DAYS after their date (set it to the day it ships).
  */
 
-export type ReleaseIcon = 'flag-br' | 'template' | 'tutorial' | 'design'
+export type ReleaseIcon = 'design'
 
 export interface ReleaseItem {
   icon?: ReleaseIcon
@@ -38,27 +38,7 @@ export const RELEASES: Release[] = [
     id: '2026-10-new-look',
     // Set to the day it reaches main.
     date: '2026-10-19',
-    items: [{ icon: 'design', title: 'news.lookTitle', text: 'news.lookText', action: { label: 'news.lookAction', to: '/goals' } }],
-  },
-  {
-    id: '2026-10-tutorial',
-    date: '2026-10-02',
-    aboutIntro: true,
-    items: [
-      { icon: 'tutorial', title: 'news.tutorialTitle', text: 'news.tutorialText', action: { label: 'news.tutorialAction', to: '/welcome' } },
-    ],
-  },
-  {
-    id: '2026-10-templates',
-    date: '2026-10-02',
-    items: [
-      { icon: 'template', title: 'news.tplTitle', text: 'news.tplText', action: { label: 'news.tplAction', to: '/goals/new' } },
-    ],
-  },
-  {
-    id: '2026-10-portuguese',
-    date: '2026-10-01',
-    items: [{ icon: 'flag-br', title: 'news.ptTitle', text: 'news.ptText', action: { label: 'news.ptAction', to: '/settings' } }],
+    items: [{ icon: 'design', title: 'news.lookTitle', text: 'news.lookText' }],
   },
 ]
 
