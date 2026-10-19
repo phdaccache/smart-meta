@@ -1429,3 +1429,16 @@ button, a, summary, [role='button'], .chip {
 }
 .detail-why .goal-eyebrow { white-space: normal; }
 .settings .list-row .sub { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ——— screens slide as on the iPhone ———
+   Deeper: the new screen comes in from the right over the old one, which drifts a little left and dims.
+   Back: the reverse, the top screen leaving to the right. Tab switches don't slide. */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.4s; animation-timing-function: var(--ease-drawer); animation-fill-mode: both; mix-blend-mode: normal; }
+:root[data-nav='forward']::view-transition-old(root) { animation-name: nav-under; }
+:root[data-nav='forward']::view-transition-new(root) { animation-name: nav-in; }
+:root[data-nav='back']::view-transition-old(root) { animation-name: nav-out; z-index: 1; }
+:root[data-nav='back']::view-transition-new(root) { animation-name: nav-from-under; }
+@keyframes nav-in { from { transform: translateX(100%); } }
+@keyframes nav-out { to { transform: translateX(100%); } }
+@keyframes nav-under { to { transform: translateX(-30%); filter: brightness(0.9); } }
+@keyframes nav-from-under { from { transform: translateX(-30%); filter: brightness(0.9); } }

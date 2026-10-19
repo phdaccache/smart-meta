@@ -1,7 +1,41 @@
 import { useSyncExternalStore } from 'react'
+import { flushSync } from 'react-dom'
 
 const listeners = new Set<() => void>()
 const notify = () => listeners.forEach((l) => l())
+
+/** Each slide's own number, so one that ends late doesn't clear the next one's direction. */
+let slides = 0
+/** True while a slide pictures the new screen: it has already rendered, so its scroll can be set at once. */
+let rendered = false
+
+/**
+ * Shows the new screen. Going deeper it slides in from the right over the old one, and Back slides it
+ * away to the right again, as on the iPhone; switching tabs, replacing a screen, or with less motion
+ * asked for, it just changes. `then` places the scroll before the new screen is pictured, so it
+ * doesn't jump when the slide ends.
+ */
+function show(dir: 'forward' | 'back' | null, then: () => void) {
+  const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  // A sheet going away plays its own exit; the page under it changes at once.
+  if (!dir || still || !document.startViewTransition || document.querySelector('.sheet-layer')) {
+    notify()
+    then()
+    return
+  }
+  const n = ++slides
+  const root = document.documentElement
+  root.dataset.nav = dir
+  const slide = document.startViewTransition(() => {
+    flushSync(notify)
+    rendered = true
+    then()
+    rendered = false
+  })
+  slide.finished.finally(() => {
+    if (n === slides) delete root.dataset.nav
+  })
+}
 
 /** Tab screens. Reaching one resets the history stack, so back can't go behind it. */
 export const ROOTS = ['/', '/goals', '/review', '/insights']
@@ -49,13 +83,15 @@ function restoreScroll(y: number) {
     if (room >= y || ++frames > 60) window.scrollTo(0, Math.min(y, Math.max(0, room)))
     else requestAnimationFrame(attempt)
   }
-  requestAnimationFrame(attempt)
+  // Inside a slide the new screen is already there; otherwise wait for it to render.
+  if (rendered) attempt()
+  else requestAnimationFrame(attempt)
 }
 
 /** Set while unwinding the stack to a tab: where to land once the browser gets there. */
 let pendingRoot: string | null = null
 
-window.addEventListener('popstate', () => {
+window.addEventListener('popstate', (e: PopStateEvent & { hasUAVisualTransition?: boolean }) => {
   if (ownMoves > 0) {
     if (--ownMoves === 0) later.splice(0).forEach((run) => run())
     return
@@ -68,12 +104,12 @@ window.addEventListener('popstate', () => {
   if (pendingRoot != null) {
     history.replaceState({ depth: 0 }, '', pendingRoot)
     pendingRoot = null
-    notify()
-    window.scrollTo(0, 0)
+    show(null, () => window.scrollTo(0, 0))
     return
   }
-  notify()
-  restoreScroll((history.state as NavState | null)?.scrollY ?? 0)
+  // Safari's own swipe back already slid the page; sliding it again would play it twice.
+  const y = (history.state as NavState | null)?.scrollY ?? 0
+  show(e.hasUAVisualTransition ? null : 'back', () => restoreScroll(y))
 })
 
 /** Takes `n` of our own entries off the history. */
@@ -121,6 +157,7 @@ export function pushLayer(close: () => void): () => void {
 
 export function navigate(to: string, opts: { replace?: boolean } = {}) {
   if (afterOwnMoves(() => navigate(to, opts))) return
+  let dir: 'forward' | null = null
   if (isRoot(to)) {
     const d = depth()
     if (d > 0) {
@@ -135,9 +172,9 @@ export function navigate(to: string, opts: { replace?: boolean } = {}) {
   } else {
     rememberScroll()
     history.pushState({ depth: depth() + 1 }, '', to)
+    dir = 'forward'
   }
-  notify()
-  window.scrollTo(0, 0)
+  show(dir, () => window.scrollTo(0, 0))
 }
 
 /** Back within the app when there is somewhere to go, otherwise to a sensible parent. */
