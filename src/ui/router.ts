@@ -104,8 +104,10 @@ if (layer() > 0) {
 // Entries made before this app ran (or by a reload) count as the bottom of the stack.
 else if (!depth()) history.replaceState({ depth: 0 }, '')
 
-// Screens keep their own scroll (see screensUnder); the page itself doesn't scroll.
-if ('scrollRestoration' in history) history.scrollRestoration = 'manual'
+// Screens keep their own scroll (see screensUnder) and the page itself never scrolls, so the browser restoring
+// the page's scroll on Back changes nothing, and it stays on: after a swipe back, the iPhone keeps its picture
+// of the screen over the app, untouchable, until it has seen the scroll put back, or for a long while otherwise.
+if ('scrollRestoration' in history) history.scrollRestoration = 'auto'
 
 /** The screens last shown, bottom first. */
 let shown = stack()
