@@ -110,15 +110,19 @@ function slideBack(then: () => void) {
   rendered = true
   then()
   rendered = false
-  const ease = 'cubic-bezier(0.32, 0.72, 0, 1)'
-  const runs = [
-    leaving.animate([{ transform: 'none' }, { transform: 'translateX(100%)' }], { duration: 400, easing: ease, fill: 'forwards' }),
-    shade.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, easing: ease, fill: 'forwards' }),
-  ]
   const done = () => { leaving.remove(); shade.remove() }
-  Promise.all(runs.map((a) => a.finished)).catch(() => {}).finally(done)
   // Animations wait while the app is in the background; the copy must not outlive its moment.
-  setTimeout(done, 900)
+  setTimeout(done, 1000)
+  // The copy holds still for two frames while the screen underneath is drawn at its scroll, so the
+  // phone has drawn it by the time it shows.
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const ease = 'cubic-bezier(0.32, 0.72, 0, 1)'
+    const runs = [
+      leaving.animate([{ transform: 'none' }, { transform: 'translateX(100%)' }], { duration: 400, easing: ease, fill: 'forwards' }),
+      shade.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, easing: ease, fill: 'forwards' }),
+    ]
+    Promise.all(runs.map((a) => a.finished)).catch(() => {}).finally(done)
+  }))
 }
 
 function restoreScroll(y: number) {
