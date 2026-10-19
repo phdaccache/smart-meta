@@ -5,6 +5,7 @@ import { setSettings } from '../db/settings'
 import { langSetting, setLangSetting, t, tlist, tn, type LangSetting } from '../i18n'
 import { formatTime, isDateStr } from '../lib/dates'
 import { loadSampleData } from '../dev/sample'
+import { loadWorstCaseData } from '../dev/worst'
 import { eraseAllData, signIn, signOut, syncNow, useSyncStatus } from '../sync/controller'
 import { Field, InfoTip, Screen, Section, Sheet, Stepper, toast, TypeToConfirm } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
@@ -294,13 +295,13 @@ function DevSection({ devToday }: { devToday: string | null }) {
   const today = useToday(settings.rolloverHour)
   const [busy, setBusy] = useState(false)
   const { email } = useSyncStatus()
-  const load = async () => {
+  const load = async (fill: (today: string) => Promise<void>) => {
     // Signed in, the erase would reach the synced copy and every device using it.
     if (email) return toast('Sign out of sync first. Sample data then stays on this device only.')
     if (busy || !confirm('Replace ALL data on this device with sample data? Your current data here is erased.')) return
     setBusy(true)
     try {
-      await loadSampleData(today)
+      await fill(today)
       window.location.replace('/')
     } catch (e) {
       toast((e as Error).message)
@@ -322,7 +323,9 @@ function DevSection({ devToday }: { devToday: string | null }) {
             onChange={(e) => setSettings({ devToday: isDateStr(e.target.value) ? e.target.value : null })} />
         </div>
         <LinkRow title={busy ? 'Loading…' : 'Load sample data…'}
-          sub={email ? 'Sign out of sync first, so your real data stays safe.' : 'Replaces everything on this device with a worked example and months of history.'} onClick={load} />
+          sub={email ? 'Sign out of sync first, so your real data stays safe.' : 'Replaces everything on this device with a worked example and months of history.'} onClick={() => load(loadSampleData)} />
+        <LinkRow title={busy ? 'Loading…' : 'Load worst-case data…'}
+          sub={email ? 'Sign out of sync first, so your real data stays safe.' : 'Long names, a one-letter value, emoji, links and counts of 1, for checking layouts.'} onClick={() => load(loadWorstCaseData)} />
       </div>
     </Section>
   )

@@ -3,7 +3,7 @@ import { deleteTask, promoteTask, updateTask } from '../db/repo'
 import { t } from '../i18n'
 import { capitalize, dayMonth, diffDays, formatTime, nowMinutes, relativeDay, weekdayName } from '../lib/dates'
 import type { DateStr, Task } from '../lib/types'
-import { NoteField, Sheet, Switch, toast } from '../ui/components'
+import { NoteField, Sheet, Switch, TitleField, toast } from '../ui/components'
 import { InlineCalendar, TimeWheel } from '../ui/pickers'
 import { useSnapshot } from '../ui/hooks'
 import { IconCalendar, IconChevronUpDown, IconClock, IconGoals } from '../ui/icons'
@@ -156,8 +156,7 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
     <Sheet open={!!task} large onClose={onClose} title={t('common.task')} done={{ label: t('common.save'), disabled: !title.trim(), onClick: save }}>
       <form className="task-form" onSubmit={(e) => { e.preventDefault(); save() }}>
         <div className="card task-text">
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('qa.placeholder')} aria-label={t('common.task')}
-            enterKeyHint="done" onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); save() } }} />
+          <TitleField value={title} onChange={setTitle} onEnter={save} placeholder={t('qa.placeholder')} label={t('common.task')} />
           <NoteField compact value={note} onChange={setNote} label={t('common.notes')} />
         </div>
         <DateTimeRows date={date} time={time} today={today} onChange={(d, tm) => { setDate(d); setTime(tm) }} />

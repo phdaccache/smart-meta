@@ -2,7 +2,7 @@ import { useState, useSyncExternalStore } from 'react'
 import { createTask } from '../db/repo'
 import { t } from '../i18n'
 import type { DateStr } from '../lib/types'
-import { NoteField, Sheet, toast } from '../ui/components'
+import { NoteField, Sheet, TitleField, toast } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { DateTimeRows, TaskLinks } from './TaskSheet'
 
@@ -63,8 +63,7 @@ function TaskForm({ today, onDone }: { today: DateStr; onDone: () => void }) {
     <Sheet open large onClose={onDone} label={t('qa.title')} done={{ label: t('common.add'), disabled: !title.trim(), onClick: save }}>
       <form className="task-form" onSubmit={(e) => { e.preventDefault(); save() }}>
         <div className="card task-text">
-          <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('qa.placeholder')} aria-label={t('common.task')}
-            enterKeyHint="done" onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); save() } }} />
+          <TitleField autoFocus value={title} onChange={setTitle} onEnter={save} placeholder={t('qa.placeholder')} label={t('common.task')} />
           <NoteField compact value={note} onChange={setNote} label={t('common.notes')} />
         </div>
         <DateTimeRows date={date} time={time} today={today} onChange={(d, tm) => { setDate(d); setTime(tm) }} />

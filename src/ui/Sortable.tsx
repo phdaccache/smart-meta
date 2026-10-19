@@ -17,12 +17,15 @@ type Drag = {
   pitch: number
 }
 
-type View = { from: number; to: number; dy: number; phase: 'lifted' | 'dropping' }
+type Phase = { from: number; kind: 'lifted' | 'dropping' }
 
 /**
  * A vertical list reordered the iPhone way: press and hold anywhere on a row
  * until it lifts, then drag it. A tap still opens the row, a quick swipe still
  * scrolls. Alt + arrow keys move the focused row for the keyboard.
+ *
+ * While a row moves, the rows are moved by writing their transforms directly, not through React state:
+ * re-rendering the whole list on every finger move drops frames on a phone once the cards are rich.
  */
 export function Sortable<T>(props: {
   items: T[]
@@ -35,9 +38,8 @@ export function Sortable<T>(props: {
   const list = useRef<HTMLUListElement>(null)
   const rows = useRef<(HTMLLIElement | null)[]>([])
   const drag = useRef<Drag | null>(null)
-  const [view, setView] = useState<View | null>(null)
+  const [phase, setPhase] = useState<Phase | null>(null)
   const [held, setHeld] = useState<number | null>(null)
-  const [settling, setSettling] = useState(false)
   const latest = useRef(props)
   latest.current = props
 
@@ -68,11 +70,22 @@ export function Sortable<T>(props: {
       return to
     }
 
+    // The held row follows the finger; the rows it passes step aside by its height.
+    const paint = (d: Drag, to: number, dy: number) => {
+      rows.current.slice(0, latest.current.items.length).forEach((el, j) => {
+        if (!el) return
+        const shift = j === d.from ? dy
+          : d.from < to && j > d.from && j <= to ? -d.pitch
+          : d.from > to && j < d.from && j >= to ? d.pitch : 0
+        el.style.transform = shift ? `translateY(${shift}px)` : ''
+      })
+    }
+
     const update = () => {
       const d = drag.current
       if (!d) return
       const dy = d.y - d.startY
-      setView({ from: d.from, to: targetIndex(dy, d), dy, phase: 'lifted' })
+      paint(d, targetIndex(dy, d), dy)
     }
 
     // Near the top or bottom of the screen the page scrolls on its own, carrying the row.
@@ -105,6 +118,7 @@ export function Sortable<T>(props: {
       }
       lastClientY = start.y
       setHeld(null)
+      setPhase({ from: i, kind: 'lifted' })
       haptic()
       update()
       frame = requestAnimationFrame(autoscroll)
@@ -151,14 +165,22 @@ export function Sortable<T>(props: {
       const to = targetIndex(d.y - d.startY, d)
       // Glide into the slot, then reorder underneath without a visible jump.
       const land = to > d.from ? d.bottoms[to] - d.bottoms[d.from] : to < d.from ? d.tops[to] - d.tops[d.from] : 0
-      setView({ from: d.from, to, dy: land, phase: 'dropping' })
+      const els = rows.current.slice(0, latest.current.items.length)
+      const mine = els[d.from]
+      if (mine) mine.style.transition = 'transform 0.3s var(--ease-out)'
+      paint(d, to, land)
+      setPhase({ from: d.from, kind: 'dropping' })
       haptic()
       setTimeout(() => {
-        setSettling(true)
-        setView(null)
+        for (const el of els) {
+          if (!el) continue
+          el.style.transition = 'none'
+          el.style.transform = ''
+        }
+        setPhase(null)
         move(d.from, to)
-        requestAnimationFrame(() => requestAnimationFrame(() => setSettling(false)))
-      }, 280)
+        requestAnimationFrame(() => requestAnimationFrame(() => els.forEach((el) => el && (el.style.transition = ''))))
+      }, 300)
     }
 
     const onTouchStart = (e: TouchEvent) => {
@@ -215,26 +237,14 @@ export function Sortable<T>(props: {
     }
   }, [])
 
-  const shift = (j: number): number => {
-    if (!view || j === view.from) return 0
-    const pitch = drag.current?.pitch ?? (rows.current[view.from]?.offsetHeight ?? 0)
-    if (view.from < view.to && j > view.from && j <= view.to) return -pitch
-    if (view.from > view.to && j < view.from && j >= view.to) return pitch
-    return 0
-  }
-
   return (
-    <ul ref={list} className={`sortable ${view ? 'lifting' : ''} ${props.className ?? ''}`}>
+    <ul ref={list} className={`sortable ${phase ? 'lifting' : ''} ${props.className ?? ''}`}>
       {props.items.map((item, i) => {
-        const mine = view?.from === i
+        const mine = phase?.from === i
         return (
           <li key={props.keyOf(item)} ref={(el) => { rows.current[i] = el }}
-            className={mine ? view!.phase : held === i ? 'held' : ''}
+            className={mine ? phase!.kind : held === i ? 'held' : ''}
             aria-grabbed={mine || undefined}
-            style={{
-              transform: mine ? `translateY(${view!.dy}px)` : shift(i) ? `translateY(${shift(i)}px)` : undefined,
-              transition: settling ? 'none' : undefined,
-            }}
             onKeyDown={(e) => {
               if (!e.altKey) return
               if (e.key === 'ArrowUp' && i > 0) { e.preventDefault(); move(i, i - 1) }

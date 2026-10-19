@@ -27,6 +27,9 @@
   --lift-shadow: 0 12px 32px rgb(0 0 0 / 0.16), 0 2px 6px rgb(0 0 0 / 0.08);
   --radius: 18px;
   --radius-sm: 12px;
+  /* Motion: a strong ease-out for things appearing or answering a touch, and iOS's sheet curve. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   --tabbar-h: 58px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -201,16 +204,7 @@ a { color: var(--accent); }
 .kind-task { --kc: var(--ink-3); }
 .kind-task .check.on .check-box { background: var(--ink-2); border-color: var(--ink-2); }
 
-.badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 7px; border: 1px solid; white-space: nowrap;
-}
-.badge-goal { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
-.badge-prep { color: var(--prep); border-color: color-mix(in srgb, var(--prep) 45%, transparent); }
-.badge-step, .badge-task { color: var(--ink-2); border-color: var(--line-strong); }
 
-/* Loose tasks have no heading, so their first row needs no divider. */
-.group.tint-errands > .items > li:first-child > .item { border-top: 0; }
 .group-head .due { margin-top: 6px; }
 
 /* ——— quantity logging inline ——— */
@@ -447,8 +441,10 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .sheet {
   position: relative; width: 100%; max-width: 560px; max-height: 92%; display: flex; flex-direction: column;
   background: var(--bg); border-radius: 22px 22px 0 0; padding-bottom: var(--safe-bottom);
-  animation: rise 0.24s cubic-bezier(0.2, 0.9, 0.3, 1);
+  /* Up from the bottom edge, as on the iPhone, and back down the same way when it closes (see Sheet). */
+  animation: sheet-in 0.42s var(--ease-drawer);
 }
+@keyframes sheet-in { from { transform: translateY(100%); } }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 2px 8px 4px 20px; }
 .sheet-head h2 { font-size: 18px; font-weight: 700; }
 .sheet-body { overflow-y: auto; overscroll-behavior: contain; padding: 8px 20px 20px; -webkit-overflow-scrolling: touch; }
@@ -458,7 +454,6 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .sheet-layer.keyboard .sheet::after { content: ''; position: absolute; top: 100%; left: 0; right: 0; height: 100vh; background: var(--bg); }
 .sheet-actions { display: flex; gap: 10px; margin-top: 20px; }
 .sheet-actions .btn { flex: 1; }
-@keyframes rise { from { transform: translateY(40px); opacity: 0; } }
 @keyframes fade { from { opacity: 0; } }
 
 /* ——— wizard ——— */
@@ -494,8 +489,12 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 }
 .toast {
   background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 500;
-  max-width: calc(100vw - 32px); animation: rise 0.2s ease; text-align: center;
+  max-width: calc(100vw - 32px); text-align: center;
+  /* A transition, not keyframes: a toast that comes back while leaving turns around from where it is. */
+  opacity: 0; transform: translateY(8px) scale(0.96); visibility: hidden;
+  transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out), visibility 0s 0.2s;
 }
+.toast.on { opacity: 1; transform: none; visibility: visible; transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out); }
 
 .steps-editor { list-style: none; margin: 0; padding: 0; }
 .steps-editor li { display: flex; gap: 6px; align-items: center; }
@@ -505,9 +504,6 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 
 .hidden-date { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
-}
 .inline-fields > .field { margin-top: 0; }
 .date-overlay { position: relative; display: inline-grid; place-items: center; overflow: hidden; }
 .date-overlay input {
@@ -655,18 +651,11 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 
 .sortable { list-style: none; margin: 0; padding: 0; }
 .sortable > li { position: relative; background: inherit; }
-.sortable > li.dragging { z-index: 2; box-shadow: 0 6px 20px rgb(0 0 0 / 0.14); border-radius: 12px; background: var(--surface); }
-.grip {
-  width: 36px; height: 44px; display: grid; place-items: center; color: var(--ink-3); flex: none;
-  touch-action: none; cursor: grab;
-}
-.grip:active { cursor: grabbing; color: var(--ink); }
 .kind-grid.three { grid-template-columns: repeat(3, 1fr); }
 .sortable > li:first-child > .item { border-top: 0; }
 .check-box.log-box { border-style: dashed; color: var(--kc); }
 .card-head { border-bottom: 1px solid var(--line); }
 
-.badge-step { color: color-mix(in srgb, var(--tint-project) 85%, var(--ink)); border-color: color-mix(in srgb, var(--tint-project) 40%, transparent); }
 
 /* ——— history timeline ——— */
 
@@ -715,7 +704,6 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 /* Preps sit inside their commitment's card, set apart: support, not the habit itself. */
 .prep-block { border-top: 1px solid var(--line); background: color-mix(in srgb, var(--prep) 6%, var(--surface)); }
 .prep-block-head { padding: 10px 16px 0; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--prep); }
-.prep-block .list-row { padding-left: 16px; border-left: 3px solid color-mix(in srgb, var(--prep) 55%, transparent); margin-left: 12px; }
 .prep-block .list-row + .list-row { border-top: 0; }
 .list-row.handled .title { color: var(--ink-2); }
 .list-row.handled .done-mark {
@@ -1064,10 +1052,8 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .piece-tray { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; min-height: 30px; margin-bottom: 20px; }
 .piece-chip { display: inline-flex; position: relative; z-index: 1; animation: piece-shrink 0.45s ease both; }
 @keyframes piece-shrink { from { transform: translateY(80px) scale(1.8); opacity: 0; } }
-.piece-chip .badge { font-size: 14px; padding: 5px 10px; }
 .intro .piece-card { text-align: center; padding: 30px 20px; animation: piece-in 0.45s ease both; }
 @keyframes piece-in { from { transform: scale(0.9); opacity: 0; } }
-.piece-card .badge { font-size: 15px; padding: 5px 12px; border-radius: 9px; }
 .piece-what { font: 700 22px/1.2 var(--font-display); margin-top: 16px; }
 .piece-eg { color: var(--ink-2); margin-top: 6px; }
 .intro .pieces-end { margin: 28px auto; font-size: 20px; text-align: center; animation: fade 0.4s ease both; }
@@ -1301,7 +1287,7 @@ button.goal-why { width: 100%; text-align: left; margin-top: 12px; }
 /* Goal page: the section already says what these are, so their labels stay quiet. */
 .commitment-kind { color: var(--ink-2); font-weight: 600; }
 .prep-block { background: none; }
-.prep-block .list-row { border-left: 0; margin-left: 0; padding-left: 16px; }
+.prep-block .list-row { padding-left: 16px; }
 .prep-block .list-row + .list-row::before { left: 16px; }
 
 /* Settings: iOS-style group titles, small grey capitals over each list. */
@@ -1341,7 +1327,6 @@ button.goal-why:active, .goal-card-foot:active { opacity: 0.6; }
 .item { align-items: flex-start; }
 .item > .check { height: 44px; }
 .item > .item-side { align-self: flex-start; min-height: 44px; }
-.item > .grip { align-self: center; }
 
 /* The line under a group's heading runs edge to edge; the ones between rows start at the text. */
 .group-head + .items > li:first-child > .item::before,
@@ -1366,3 +1351,81 @@ button.goal-why { margin-top: 14px; }
 .sheet.large { height: calc(100% - var(--safe-top) - 10px); max-height: none; }
 .sheet-layer.keyboard .sheet.large { height: calc(100% - var(--safe-top) - 10px); }
 .weekdays button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+/* Long words and pasted links wrap instead of widening the page: a grid track or flex item never grows past its column. */
+body { overflow-wrap: break-word; }
+.item-title, .item-detail, .group-title, .group-why, .goal-why, .list-row .title, .list-row .sub, .prompt-q, .suggestion-q,
+.review-lines, .marker-row .title, .news-text, .h-text, .piece-what, .detail-why { overflow-wrap: anywhere; }
+.card-stack, .stack { grid-template-columns: minmax(0, 1fr); }
+
+/* ——— UI audit ——— */
+
+/* Under a Back, the screen's buttons share its row, as in an iOS navigation bar; the title below gets the full width. */
+.nav-row { display: flex; align-items: center; gap: 8px; min-height: 44px; margin-bottom: 6px; }
+.nav-row .back { margin: 0 0 0 -6px; }
+.nav-row .head-actions { margin: 0 -10px 0 auto; }
+/* Long words break where the language allows ("Profissio-nal"), not at any letter. */
+.large-title, .goal-card-title, .group-title { -webkit-hyphens: auto; hyphens: auto; }
+
+/* Plan cards: the value stays one line, a long title stops at three (the goal's page shows it all). */
+.goal-eyebrow { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.goal-card-title { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Controls are touched, not read: no double-tap zoom wait, no text selection or callout on a long press. */
+button, a, summary, [role='button'], .chip {
+  touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+
+/* Press feedback answers the touch at once and lets go gently, as iOS does. */
+.btn, .link-btn, .chip, .choice, .round-btn, .look-icon, .cal-day, .weekdays button, .stepper button, .range-row button,
+.tabbar a, .back, .quiet-link, .gs-row, .year-tile, .info-btn, .icon-btn, .goal-card-open, button.goal-why, .goal-card-foot, .review-head,
+.list-row, button.group-head, .item-main, .mini-project {
+  transition: opacity 0.2s ease-out, background-color 0.25s ease-out;
+}
+.btn:active, .link-btn:active, .chip:active, .choice:active, .round-btn:active, .look-icon:active, .cal-day:active, .weekdays button:active,
+.stepper button:active, .range-row button:active, .tabbar a:active, .back:active, .quiet-link:active, .gs-row:active, .year-tile:active,
+.info-btn:active, .icon-btn:active, .goal-card-open:active, button.goal-why:active, .goal-card-foot:active, .review-head:active,
+.list-row:active, button.group-head:active, .item-main:active, .mini-project:active { transition-duration: 0s; }
+.chip:active, .choice:active, .round-btn:active:not(:disabled), .look-icon:active, .cal-day:active:not(:disabled), .weekdays button:active,
+.range-row button:active, .tabbar a:active, .back:active, .quiet-link:active, .gs-row:active, .year-tile:active:not(:disabled), .info-btn:active {
+  opacity: 0.6;
+}
+.stepper button:active:not(:disabled) { background: var(--pressed); }
+/* The (i) is drawn small but takes a 44pt touch. */
+.info-btn { position: relative; }
+.info-btn::after { content: ''; position: absolute; inset: -6px; }
+
+/* Segmented control: one thumb slides to the choice. */
+.segmented.slides { position: relative; isolation: isolate; }
+.segmented.slides button { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.segmented.slides button.on { background: none; box-shadow: none; }
+.seg-thumb {
+  position: absolute; z-index: -1; top: 2px; bottom: 2px; left: 2px; width: calc((100% - 4px) / var(--n)); border-radius: 7px;
+  background: var(--seg-on); box-shadow: 0 3px 8px rgb(0 0 0 / 0.12), 0 1px 1px rgb(0 0 0 / 0.04);
+  transform: translateX(calc(var(--i) * 100%)); transition: transform 0.3s var(--ease-out);
+}
+
+/* A stepper as in iOS: a grey pill, no outline. */
+.stepper { border: 0; background: var(--surface-2); border-radius: 9px; }
+
+/* Ticking something off: the check pops in (only when it changes, not when a list appears). */
+.check.pop .check-box svg { animation: check-pop 0.25s var(--ease-out); }
+@keyframes check-pop { from { transform: scale(0.4); opacity: 0; } }
+
+/* Hints and quiet links are read: secondary grey, not the faint one. */
+.readout-hint, .quiet-link { color: var(--ink-2); }
+
+/* The copy that plays a sheet's way out starts where it is, not with the way in. */
+.sheet-layer.closing { pointer-events: none; }
+.sheet-layer.closing .sheet, .sheet-layer.closing .sheet-backdrop { animation: none; }
+
+/* Less motion: things fade instead of sliding, and still show what changed. */
+@media (prefers-reduced-motion: reduce) {
+  .sheet { animation: fade 0.2s ease; }
+  .toast, .toast.on { transform: none; }
+  .seg-thumb, .sortable > li { transition: none; }
+  .check.pop .check-box svg { animation: none; }
+  .check:active .check-box, .fab:active, button.tile:active, .swatch:active { transform: none; }
+}
+.detail-why .goal-eyebrow { white-space: normal; }
+.settings .list-row .sub { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }

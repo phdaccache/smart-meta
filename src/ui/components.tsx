@@ -18,28 +18,38 @@ export function Screen(props: {
   settings?: boolean
   children: ReactNode
 }) {
+  const actions = (props.actions || props.settings) && (
+    <div className="head-actions">
+      {props.actions}
+      {props.settings && (
+        <button type="button" className="icon-btn" aria-label={t('nav.settings')} onClick={() => navigate('/settings')}>
+          <IconSettings />
+        </button>
+      )}
+    </div>
+  )
+  // Under a Back, the buttons sit up in its row, as in an iOS navigation bar, and the title gets the full width.
+  const nav = !!(props.top || props.back)
   return (
     <div className="screen">
       <header className="screen-head">
-        {props.top}
-        {props.back && (
-          <button type="button" className="back" onClick={() => goBack(props.back!)}>
-            <IconChevronLeft width={20} height={20} /> {t('nav.back')}
-          </button>
-        )}
+        {nav ? (
+          <div className="nav-row">
+            {props.top}
+            {props.back && (
+              <button type="button" className="back" onClick={() => goBack(props.back!)}>
+                <IconChevronLeft width={20} height={20} /> {t('nav.back')}
+              </button>
+            )}
+            {actions}
+          </div>
+        ) : null}
         <div className="head-row">
           <div className="head-text">
             {props.eyebrow && <div className="eyebrow">{props.eyebrow}</div>}
             <h1 className="large-title">{props.title}</h1>
           </div>
-          <div className="head-actions">
-            {props.actions}
-            {props.settings && (
-              <button type="button" className="icon-btn" aria-label={t('nav.settings')} onClick={() => navigate('/settings')}>
-                <IconSettings />
-              </button>
-            )}
-          </div>
+          {!nav && actions}
         </div>
       </header>
       {props.children}
@@ -163,6 +173,13 @@ export function Sheet(props: {
   }, [props.open])
   // A sheet with ✕ and ✓ holds unsaved typing: only ✕ throws it away, never a stray swipe.
   useSwipeToDismiss(ref, props.open && !props.done, onClose)
+  // Closing, it slides back down the way it came, as on the iPhone. React lets go of the sheet at once
+  // (often its parent goes too), so a still copy plays the way out while the page is already usable.
+  useLayoutEffect(() => {
+    const layer = layerRef.current
+    if (!props.open || !layer) return
+    return () => slideAway(layer)
+  }, [props.open])
   // The visible area shrinks by the keyboard's height; a small change is just the browser's own bars.
   const keyboard = !!view && view.height < window.innerHeight - 150
   // When the keyboard goes away the sheet stays where the keyboard pushed it, as on the iPhone, instead
@@ -213,6 +230,28 @@ export function Sheet(props: {
     </div>,
     document.body,
   )
+}
+
+function slideAway(layer: HTMLElement) {
+  const ghost = layer.cloneNode(true) as HTMLElement
+  // The copy carries attributes, not what was typed: put the fields' text back so nothing blanks out.
+  const fields = layer.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea')
+  ghost.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea').forEach((el, i) => { el.value = fields[i]?.value ?? '' })
+  ghost.classList.add('closing')
+  ghost.setAttribute('aria-hidden', 'true')
+  ghost.inert = true
+  document.body.appendChild(ghost)
+  const sheet = ghost.querySelector<HTMLElement>('.sheet')
+  const backdrop = ghost.querySelector<HTMLElement>('.sheet-backdrop')
+  const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const ease = 'cubic-bezier(0.32, 0.72, 0, 1)'
+  const runs = [
+    // From wherever a swipe left it, not from the top.
+    sheet?.animate(still ? [{ opacity: 1 }, { opacity: 0 }] : [{ transform: sheet.style.transform || 'none' }, { transform: 'translateY(100%)' }],
+      { duration: still ? 150 : 300, easing: ease, fill: 'forwards' }),
+    backdrop?.animate([{ opacity: backdrop.style.opacity || 1 }, { opacity: 0 }], { duration: still ? 150 : 300, easing: 'ease-out', fill: 'forwards' }),
+  ]
+  Promise.all(runs.map((a) => a?.finished)).catch(() => {}).finally(() => ghost.remove())
 }
 
 /**
@@ -270,7 +309,7 @@ function useSwipeToDismiss(ref: React.RefObject<HTMLDivElement | null>, open: bo
       const projected = dy + (last.v * 0.998) / (1 - 0.998)
       if (projected > sheet.offsetHeight * 0.45 && last.v > -0.1) {
         set(sheet.offsetHeight, true)
-        setTimeout(() => close.current(), 220)
+        setTimeout(() => close.current(), 300)
       } else {
         set(0, true)
       }
@@ -297,9 +336,13 @@ export function CheckButton(props: {
   label: string
   onClick: () => void
 }) {
+  // The tick pops in only when it's just been ticked, not on every check already done when the list shows.
+  const was = useRef(props.checked)
+  const pop = props.checked && !was.current
+  useEffect(() => { was.current = props.checked }, [props.checked])
   return (
     <button
-      className={`check ${props.shape} ${props.checked ? 'on' : ''} ${props.tone ?? ''}`}
+      className={`check ${props.shape} ${props.checked ? 'on' : ''} ${pop ? 'pop' : ''} ${props.tone ?? ''}`}
       role="checkbox"
       aria-checked={props.checked}
       aria-label={props.label}
@@ -308,10 +351,6 @@ export function CheckButton(props: {
       <span className="check-box">{props.checked && <IconCheck width={16} height={16} />}</span>
     </button>
   )
-}
-
-export function Badge(props: { kind: 'goal' | 'prep' | 'step' | 'task'; children: ReactNode }) {
-  return <span className={`badge badge-${props.kind}`}>{props.children}</span>
 }
 
 export function StatusWord({ status }: { status: Status | null }) {
@@ -411,8 +450,11 @@ export function Segmented<T extends string>(props: {
   onChange: (v: T) => void
   label: string
 }) {
+  const i = props.options.findIndex((o) => o.value === props.value)
   return (
-    <div className="segmented" role="radiogroup" aria-label={props.label}>
+    <div className="segmented slides" role="radiogroup" aria-label={props.label}>
+      {/* One white thumb that slides to the choice, as in iOS, instead of each button lighting up. */}
+      {i >= 0 && <span className="seg-thumb" aria-hidden="true" style={{ '--i': i, '--n': props.options.length } as React.CSSProperties} />}
       {props.options.map((o) => (
         <button type="button" key={o.value} role="radio" aria-checked={props.value === o.value}
           className={props.value === o.value ? 'on' : ''} onClick={() => props.onChange(o.value)}>
@@ -535,6 +577,31 @@ export function NoteField(props: {
   )
 }
 
+/** A task's title: one line that grows to show all of it, as in Reminders. Return saves instead of starting a new line. */
+export function TitleField(props: {
+  value: string; onChange: (v: string) => void; onEnter: () => void; placeholder: string; label: string; autoFocus?: boolean
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null)
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight + el.offsetHeight - el.clientHeight}px`
+  }, [props.value])
+  return (
+    <textarea ref={ref} rows={1} className="growing title-field" autoFocus={props.autoFocus} value={props.value}
+      placeholder={props.placeholder} aria-label={props.label} enterKeyHint="done"
+      // A pasted title with line breaks stays one title.
+      onChange={(e) => props.onChange(e.target.value.replace(/\s*\n\s*/g, ' '))}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+          e.preventDefault()
+          props.onEnter()
+        }
+      }} />
+  )
+}
+
 // ——— toast ———
 
 let toastMsg: string | null = null
@@ -559,9 +626,12 @@ export function Toaster() {
     },
     () => toastMsg,
   )
+  // The last message stays in place while it fades, so a toast leaves as smoothly as it came.
+  const last = useRef(msg)
+  if (msg) last.current = msg
   return (
     <div className="toast-region" aria-live="polite">
-      {msg && <div className="toast">{msg}</div>}
+      <div className={`toast ${msg ? 'on' : ''}`} aria-hidden={!msg}>{msg ?? last.current}</div>
     </div>
   )
 }

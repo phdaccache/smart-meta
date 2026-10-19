@@ -744,7 +744,8 @@ export function yearReview(p: Prepared): YearReview {
   for (const [m, pcts] of byMonth) {
     if (pcts.length < 3) continue
     const v = mean(pcts)!
-    if (!bestMonth || v > bestMonth.pct) bestMonth = { month: `${m}-01`, pct: v }
+    // A month where nothing was kept isn't anyone's best.
+    if (v > 0 && (!bestMonth || v > bestMonth.pct)) bestMonth = { month: `${m}-01`, pct: v }
   }
 
   const counts = new Map<string, number>()
