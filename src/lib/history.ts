@@ -1,5 +1,5 @@
 import { num, t } from '../i18n'
-import { addDays, diffDays, inSpan, maxDate, periodsBetween, spanDays, type Span } from './dates'
+import { diffDays, inSpan, maxDate, periodsBetween, spanDays, type Span } from './dates'
 import { formatValue, reasonLower } from './describe'
 import { activeEntries, evaluateThreshold, meetsTarget, thresholdAggregate, type ScoreContext } from './scoring'
 import type { Commitment, DateStr, Displacement, Entry, Occurrence } from './types'
@@ -134,7 +134,3 @@ export function commitmentHistory(
 export const byNewest = (a: { date: DateStr; at: string }, b: { date: DateStr; at: string }) =>
   b.date.localeCompare(a.date) || b.at.localeCompare(a.at)
 
-/** The last few rows for one commitment, for its card on the goal page. */
-export function recentHistory(rows: HistoryRow[], today: DateStr, n = 4): HistoryRow[] {
-  return rows.filter((r) => r.date <= today && r.date >= addDays(today, -60)).sort(byNewest).slice(0, n)
-}

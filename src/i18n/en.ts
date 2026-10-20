@@ -418,8 +418,6 @@ export const en = {
   'history.totalWeek': '{name}: {total} that week, target {target}',
   'history.totalMonth': '{name}: {total} that month, target {target}',
   'history.arrivedFor': '{actual}, agreed {agreed}',
-  'history.recent': 'Recently',
-  'history.seeAll': 'See all',
   'history.added': 'Added {what}',
   'history.removed': 'Removed {what}',
   'history.review': 'Review · {result} · {outcome}',

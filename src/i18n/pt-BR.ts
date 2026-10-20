@@ -413,8 +413,6 @@ export const ptBR: Messages = {
   'history.totalWeek': '{name}: {total} na semana, meta {target}',
   'history.totalMonth': '{name}: {total} no mês, meta {target}',
   'history.arrivedFor': '{actual}, combinado {agreed}',
-  'history.recent': 'Recentes',
-  'history.seeAll': 'Ver tudo',
   'history.added': 'Adicionado: {what}',
   'history.removed': 'Removido: {what}',
   'history.review': 'Revisão · {result} · {outcome}',

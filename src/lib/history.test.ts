@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { byNewest, commitmentHistory, recentHistory } from './history'
+import { byNewest, commitmentHistory } from './history'
 import { commitment, goal, hit, miss, occurrence } from './testkit'
 import type { Commitment, Displacement, Entry, Occurrence } from './types'
 
@@ -109,11 +109,5 @@ describe('History — every check-in type', () => {
       '2026-09-29 hit punctuality · 13:55, agreed 14:00',
       '2026-09-28 miss punctuality · Team standup · 09:20, agreed 09:00 · no time',
     ])
-  })
-
-  it('the card shows the last few, newest first', () => {
-    const gym = commitment(g, { label: 'gym', startDate: '2026-09-21' })
-    const rows = commitmentHistory(gym, [hit(gym, '2026-09-22'), hit(gym, '2026-09-23'), hit(gym, '2026-09-29')], [], ctx, [])
-    expect(recentHistory(rows, today, 2).map((r) => `${r.date} ${r.text}`)).toEqual(['2026-09-29 gym', '2026-09-27 gym: 2 of 3 that week'])
   })
 })
