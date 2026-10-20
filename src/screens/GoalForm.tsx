@@ -162,7 +162,7 @@ export function CadenceFields({ d, set, e, showErrors }: {
           <div className="inline-fields times-per">
             <Stepper label={t('form.times')} value={d.times} min={1} max={31} onChange={(times) => set({ times })} />
             <span className="muted">{t('form.timesPer')}</span>
-            {/* The phone's own list, as for picking a goal: it fills the rest of the line, its choice at the right. */}
+            {/* The phone's own list, as for picking a goal. */}
             <span className="period-pick">
               {periodWord(d.period)} <IconChevronUpDown width={16} height={16} />
               <select aria-label={t('form.period')} value={d.period} onChange={(ev) => set({ period: ev.target.value as Period })}>

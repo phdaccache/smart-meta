@@ -313,13 +313,21 @@ input::placeholder, textarea::placeholder { color: var(--ink-3); }
 .inline-fields.wrap { flex-wrap: wrap; }
 .inline-fields.wrap > .segmented { flex: 1 0 100%; }
 .inline-fields.times-per > * { flex: none; }
-/* Boxed like the stepper beside it, stretching to the edge with the choice at the right. */
+/*
+ * Reads as a sentence, "[3] times per [week]": the two values are fields of the same
+ * look, each as wide as what it holds, joined by plain words.
+ */
+.inline-fields.times-per { gap: 10px; }
+.inline-fields.times-per > .muted { font-size: 17px; }
+.inline-fields.times-per .stepper output { font-size: 17px; }
 .inline-fields.times-per > .period-pick {
-  flex: 1; position: relative; display: flex; align-items: center; justify-content: flex-end; gap: 6px;
-  height: 44px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 12px; font-size: 17px;
+  position: relative; display: inline-flex; align-items: center; gap: 6px;
+  height: 44px; padding: 0 10px 0 14px; border-radius: 9px; background: var(--surface-2); /* as .stepper */
+  font-size: 17px; font-weight: 650; color: var(--ink);
 }
 .period-pick svg { color: var(--ink-3); }
-.period-pick:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.period-pick:active { background: var(--pressed); }
+.period-pick:focus-within { box-shadow: 0 0 0 3px var(--accent-soft); }
 .period-pick select { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; opacity: 0; cursor: pointer; font-size: 16px; }
 .inline-fields.wrap .narrow { flex: 1 1 0; }
 
