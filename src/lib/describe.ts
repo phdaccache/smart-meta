@@ -43,9 +43,17 @@ export function cadenceText(c: Commitment): string {
   return `${every(c.cadence.period)} · ${cmp} ${formatValue(c, c.targetValue)}`
 }
 
+/** Asked right after a daily value misses its line: "Sleep: 6 h, under your 8 h. What happened?" */
+export function valueMissQuestion(c: Commitment, value: number): string {
+  const key = c.checkinType === 'timestamp' ? (c.comparator === 'lte' ? 'miss.later' : 'miss.earlier') : 'miss.under'
+  return capitalize(t(key, { name: c.label, value: formatValue(c, value), target: formatValue(c, c.targetValue) }))
+}
+
 export function promptQuestion(p: MissPrompt, c: Commitment, today: DateStr): string {
   const dates = p.slots.map((s) => s.date)
-  const name = c.label
+  // One occurrence of a rule: say which, by what it was or when.
+  const which = p.occurrence?.title || p.occurrence?.time
+  const name = which ? `${c.label} (${which})` : c.label
   // Weekday names only while they're unambiguous; older days get a date.
   const recent = (d: DateStr) => diffDays(d, today) < 7
   if (p.period === 'day') {
@@ -61,5 +69,7 @@ export function promptQuestion(p: MissPrompt, c: Commitment, today: DateStr): st
   const last = dates[dates.length - 1]
   const when = p.period === 'month' ? monthName(last)
     : diffDays(last, today) <= 7 ? t('dates.lastWeek') : t('dates.weekOf', { date: dayMonth(addDays(last, -6)) })
+  // A weekly or monthly amount has no count of times to report.
+  if (c.shape === 'threshold') return capitalize(t('miss.periodTarget', { when, name }))
   return capitalize(t('miss.period', { when, hits: p.hits ?? 0, target: p.target ?? c.cadence.times, name }))
 }

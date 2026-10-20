@@ -7,7 +7,7 @@ import {
   buildReview, projectKey, reviewableWeeks, type DateNote, type GoalCard, type HandledProject, type ReasonCount, type StalledProject,
   type Suggestion, type SuggestionKind,
 } from '../lib/review'
-import { activeEntries, missKey, type MissPrompt, type ScoreContext } from '../lib/scoring'
+import { activeEntries, promptKeys, type ScoreContext } from '../lib/scoring'
 import type { Commitment, Goal, Prep, Value } from '../lib/types'
 import { Field, InfoTip, PageText, Screen, Section, Sheet, StatusWord, toast } from '../ui/components'
 import { useAllRevisions, useDisplacements, useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
@@ -92,11 +92,10 @@ export function ReviewScreen() {
     }
   }
 
-  const missKeys = (p: MissPrompt) => p.slots.map((s) => missKey(p.commitmentId, s.date))
   const done = async () => {
     const open = [
       ...r.goals.map((g) => g.suggestion?.key).filter((k): k is string => !!k),
-      ...r.loose.flatMap(missKeys),
+      ...r.loose.flatMap(promptKeys),
       ...r.stalled.map((s) => projectKey(s.project.id, 'dismissed')),
     ]
     await markWeekReviewed(r.week.start, open)
@@ -132,14 +131,13 @@ export function ReviewScreen() {
               const c = snap.commitments.find((x) => x.id === p.commitmentId)!
               const g = snap.goals.find((x) => x.id === c.goalId)
               return (
-                <div key={p.commitmentId} className="card">
+                <div key={p.occurrence?.id ?? p.commitmentId} className="card">
                   <div className="group-head">
                     <ValueTile value={snap.values.find((v) => v.id === g?.whyValueId)} values={snap.values} size="sm" />
                     <div className="text"><div className="group-title">{g?.title}</div></div>
                   </div>
-                  <MissPromptCard prompt={p} label={c.label} question={promptQuestion(p, c, today)} today={today}
-                    canLog={false} snooze={false}
-                    onSkip={() => dismissInReview(r.week.start, missKeys(p)).then(() => toast(t('review.skippedNoAsk')))} />
+                  <MissPromptCard prompt={p} question={promptQuestion(p, c, today)} today={today} canLog={false}
+                    onSkip={() => dismissInReview(r.week.start, promptKeys(p)).then(() => toast(t('review.skippedNoAsk')))} />
                 </div>
               )
             })}

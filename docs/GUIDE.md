@@ -66,7 +66,16 @@ Rule-type habits (like "be on time") have nothing to tick. Their goal shows a **
 
 ## When you miss
 
-After a week closes you see "Last week: 2 of 4 LeetCode. What happened?". Tap **Chose something else**, then add what took its place, e.g. "gaming". Next time it's one tap.
+The app asks *What happened?* once it knows you missed. Tap **Chose something else**, then add what took its place, e.g. "gaming". Next time it's one tap.
+
+- **A number or a time you just logged** (slept 6 h of 8, in bed at 23:40 instead of 23:00): it asks right away.
+- **A daily tick you didn't do**, or a daily "at most" number that went over: it asks the next day, on Today.
+- **A weekly or monthly target** ("Last week: 2 of 4 LeetCode"): it asks once the week or month is over, in Review.
+- **A rule-type habit** (like "be on time"): it asks when you log it. Give it a name ("Team standup") so you know which one it was later.
+
+**Not now** asks again the next day. Say Not now a second time and it waits for Review, where **Skip** stops it for good.
+
+Numbers that add up over a week or month (km run, money spent) have a dashed circle with a plus. Each value you enter adds to the total.
 
 **Forgot to log?** Tap 📅 at the top of Today, pick the day, and tick things there. A goal's full history is behind the 🕘 icon at the top right of its page (✓ done, ✕ missed, ↺ corrected, ✎ edited).
 

@@ -4,7 +4,7 @@ import { reasonLower } from './describe'
 import { MAX_PREPS } from './draft'
 import { isTargetChange } from './revisions'
 import {
-  activeEntries, goalPct, missPrompt, outcomeTime, scoreCommitment, statusFor, withoutDismissed, type MissPrompt,
+  activeEntries, goalPct, missPrompt, occurrenceMisses, outcomeTime, scoreCommitment, statusFor, withoutDismissed, type MissPrompt,
   type ScoreContext,
 } from './scoring'
 import { waitsForGoal, type Snapshot } from './today'
@@ -168,9 +168,15 @@ export function buildReview(input: ReviewInput, weekStart?: DateStr): ReviewData
   // The latest review also sweeps up this week's misses so far; an older one
   // is judged as if seen the day after it ended.
   const promptCtx = latest ? ctx : { ...ctx, today: addDays(week.end, 1) }
+  // Rules' occurrences logged as missed without a reason come back here too, one by one.
+  const skipped = dismissedMisses(input.weekReviews)
   const loose = liveGoals
     .flatMap(commitmentsOf)
-    .map((c) => withoutDismissed(missPrompt(c, snap.entries, promptCtx, diffDays(week.start, promptCtx.today)), dismissedMisses(input.weekReviews)))
+    .flatMap((c) => [
+      missPrompt(c, snap.entries, promptCtx, diffDays(week.start, promptCtx.today)),
+      ...occurrenceMisses(c, snap.entries, snap.occurrences, week.start, addDays(promptCtx.today, -1)),
+    ])
+    .map((p) => withoutDismissed(p, skipped))
     .filter((p): p is MissPrompt => !!p)
 
   const cards: GoalCard[] = []

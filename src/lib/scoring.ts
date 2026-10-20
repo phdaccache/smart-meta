@@ -227,14 +227,47 @@ export function summarizeGoal(
 
 // ——— miss prompts ———
 
-/** One missed slot that a review chose to leave unexplained. */
-export const missKey = (commitmentId: string, date: DateStr) => `miss:${commitmentId}:${date}`
+/** One missed slot that a review chose to leave unexplained. A rule's slot is one occurrence. */
+export const missKey = (commitmentId: string, date: DateStr, occurrenceId?: string) =>
+  occurrenceId ? `miss:${commitmentId}:${date}:${occurrenceId}` : `miss:${commitmentId}:${date}`
+
+/** The keys of every slot a prompt asks about. */
+export const promptKeys = (p: MissPrompt) => p.slots.map((s) => missKey(p.commitmentId, s.date, p.occurrence?.id))
 
 /** Drops the slots dismissed in a review; null when none are left. */
 export function withoutDismissed(p: MissPrompt | null, dismissed: Set<string>): MissPrompt | null {
   if (!p) return null
-  const slots = p.slots.filter((s) => !dismissed.has(missKey(p.commitmentId, s.date)))
+  const slots = p.slots.filter((s) => !dismissed.has(missKey(p.commitmentId, s.date, p.occurrence?.id)))
   return slots.length ? { ...p, slots } : null
+}
+
+/**
+ * How many times each missed slot (see missKey) was put off with "Not now",
+ * and the last day it was. Kept on this device only.
+ */
+export type MissAsks = Record<string, { n: number; last: DateStr }>
+
+/** Put off this many times, a miss stops asking on Today and waits for the weekly review. */
+export const TODAY_ASKS = 2
+
+/** The slots Today still asks about: put off fewer than TODAY_ASKS times, and not already today. */
+export function stillAsking(p: MissPrompt | null, asks: MissAsks, today: DateStr): MissPrompt | null {
+  if (!p) return null
+  const slots = p.slots.filter((s) => {
+    const a = asks[missKey(p.commitmentId, s.date)]
+    return !a || (a.n < TODAY_ASKS && a.last !== today)
+  })
+  return slots.length ? { ...p, slots } : null
+}
+
+/**
+ * Whether a value logged for this day should ask why at once: a daily amount
+ * under its "at least" line, or a daily time past its line. An "at most"
+ * amount waits for the next day.
+ */
+export function asksWhyAtOnce(c: Commitment): boolean {
+  if (c.shape !== 'threshold' || c.cadence.period !== 'day' || c.targetValue == null) return false
+  return c.checkinType === 'timestamp' || (c.checkinType === 'quantity' && c.comparator !== 'lte')
 }
 
 export interface MissSlot {
@@ -250,6 +283,8 @@ export interface MissPrompt {
   /** Rhythm only: what was done and what was expected in the period. */
   hits?: number
   target?: number
+  /** Rules only: the one occurrence missed, whose entry the reason is added to. */
+  occurrence?: { id: string; entryId: string; title?: string | null; time?: string }
 }
 
 /**
@@ -292,4 +327,31 @@ export function missPrompt(
   }
   if (slots.length === 0) return null
   return { commitmentId: c.id, period: c.cadence.period, slots, hits, target }
+}
+
+/**
+ * A rule's occurrences in [from, to] logged as missed with no reason given:
+ * one prompt each, for the weekly review.
+ */
+export function occurrenceMisses(
+  c: Commitment,
+  entries: Entry[],
+  occurrences: Occurrence[],
+  from: DateStr,
+  to: DateStr,
+): MissPrompt[] {
+  if (c.shape !== 'standard' || c.deletedAt) return []
+  const mine = activeEntries(entries).filter((e) => e.subjectType === 'commitment' && e.subjectId === c.id)
+  return occurrences
+    .filter((o) => !o.deletedAt && o.commitmentId === c.id && o.date >= from && o.date <= to)
+    .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt))
+    .flatMap((o) => {
+      const e = mine.find((x) => x.occurrenceId === o.id)
+      if (!e || e.outcome !== 'miss' || e.missReason) return []
+      const time = o.scheduledAt.slice(11, 16)
+      return [{
+        commitmentId: c.id, period: 'day' as const, slots: [{ date: o.date, count: 1 }],
+        occurrence: { id: o.id, entryId: e.id, title: o.title, time: time && time !== '00:00' ? time : undefined },
+      }]
+    })
 }

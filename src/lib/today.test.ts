@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { measurementProblem, emptyGoalDraft, validateGoal } from './draft'
 import { commitment, goal, hit, miss, prep, project, snapshot, task, value } from './testkit'
 import { buildDay, stepDeadlines } from './today'
+import { asksWhyAtOnce, missKey, type MissAsks } from './scoring'
 import { addDays } from './dates'
 
 const today = '2026-09-30' // Wednesday
@@ -30,18 +31,55 @@ describe('Today — Gym (rhythm)', () => {
 
   it('shows progress through the week and collapses once everything is done', () => {
     const done = { ...s, entries: [hit(c, '2026-09-28'), hit(c, today), hit(p, today, { subjectType: 'prep' })] }
-    const v = buildDay(done, today, ctx, { [c.id]: today }) // last week's prompt snoozed
+    const v = buildDay(done, today, ctx) // last week's miss waits for the review
     expect(v.groups[0].items[0].detail).toBe('2 of 3 this week')
     expect(v.groups[0].done).toBe(true)
     expect(v.open).toBe(0)
   })
 
-  it('attaches last week’s miss prompt to the goal, and “Not now” hides it for today', () => {
+  it('leaves a weekly rhythm’s miss to the review, never Today', () => {
     const lastWeek = { ...s, entries: [hit(c, '2026-09-21'), hit(c, '2026-09-23')] }
-    expect(buildDay(lastWeek, today, ctx).groups[0].prompts).toHaveLength(1)
-    expect(buildDay(lastWeek, today, ctx, { [c.id]: today }).groups[0].prompts).toHaveLength(0)
-    const explained = { ...lastWeek, entries: [...lastWeek.entries, miss(c, '2026-09-27', { missReason: 'forgot' })] }
-    expect(buildDay(explained, today, ctx).groups[0].prompts).toHaveLength(0)
+    expect(buildDay(lastWeek, today, ctx).groups[0].prompts).toHaveLength(0)
+  })
+})
+
+describe('Today — asking why', () => {
+  const g = goal()
+  const sleep = commitment(g, {
+    shape: 'threshold', checkinType: 'quantity', label: 'sleep', cadence: { period: 'day', times: 1 },
+    targetValue: 8, comparator: 'gte', unit: 'h', startDate: '2026-09-29',
+  })
+  const s = snapshot({ goals: [g], commitments: [sleep], entries: [miss(sleep, '2026-09-29', { value: 6 })] })
+  const key = missKey(sleep.id, '2026-09-29')
+  const prompts = (asks: MissAsks) => buildDay(s, today, ctx, asks).groups[0].prompts
+
+  it('asks the next day, and “Not now” hides it for today', () => {
+    expect(prompts({})).toHaveLength(1)
+    expect(prompts({ [key]: { n: 1, last: today } })).toHaveLength(0)
+  })
+
+  it('put off once, asks again the next day; twice, it waits for the review', () => {
+    expect(prompts({ [key]: { n: 1, last: '2026-09-29' } })).toHaveLength(1)
+    expect(prompts({ [key]: { n: 2, last: '2026-09-29' } })).toHaveLength(0)
+  })
+
+  it('asks at once only for daily amounts under an “at least” line and daily times', () => {
+    expect(asksWhyAtOnce(sleep)).toBe(true)
+    expect(asksWhyAtOnce({ ...sleep, comparator: 'lte' })).toBe(false)
+    expect(asksWhyAtOnce({ ...sleep, cadence: { period: 'week', times: 1 } })).toBe(false)
+    expect(asksWhyAtOnce({ ...sleep, checkinType: 'timestamp', comparator: 'lte' })).toBe(true)
+    expect(asksWhyAtOnce({ ...sleep, checkinType: 'binary' })).toBe(false)
+  })
+
+  it('a weekly amount adds up: not a to-do, done once an “at least” total is reached', () => {
+    const run = { ...sleep, label: 'run', unit: 'km', targetValue: 20, cadence: { period: 'week' as const, times: 1 } }
+    const some = snapshot({ goals: [g], commitments: [run], entries: [hit(run, '2026-09-28', { value: 5 })] })
+    const row = buildDay(some, today, ctx).groups[0].items[0]
+    expect(row.adds).toBe(true)
+    expect(row.done).toBe(false)
+    expect(buildDay(some, today, ctx).total).toBe(0)
+    const enough = { ...some, entries: [...some.entries, hit(run, today, { value: 16 })] }
+    expect(buildDay(enough, today, ctx).groups[0].items[0].done).toBe(true)
   })
 })
 

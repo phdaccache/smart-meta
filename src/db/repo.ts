@@ -1,7 +1,7 @@
 import { addDays, diffDays, formatTime, logicalDate, parseTime } from '../lib/dates'
 import { commitmentRevision } from '../lib/revisions'
 import type { CommitmentDraft, GoalDraft, PrepDraft } from '../lib/draft'
-import { meetsTarget, type MissPrompt } from '../lib/scoring'
+import { activeEntries, meetsTarget, missKey, type MissAsks, type MissPrompt } from '../lib/scoring'
 import type {
   Base, Commitment, DateStr, Entry, Goal, GoalReview, GoalState, ID, MissReason, Occurrence, Prep, Project, ProjectState,
   Task, Value, WeekReview,
@@ -307,16 +307,24 @@ export async function uncheck(entryId: ID) {
  * Logs a quantity or time. `replacing` lists the day's earlier values: the new
  * one corrects them (the old entries stay in history, superseded). Without it,
  * the value adds to the period, as for weekly or monthly sums.
+ *
+ * A corrected value that now meets the line takes back the reason given for
+ * missing it. Says whether the value missed, and whether a reason is already in.
  */
 export async function logValue(c: Commitment, date: DateStr, value: number, replacing: ID[] = []) {
   const { rolloverHour } = await getSettings()
   const outcome = meetsTarget(c, value, rolloverHour) ? 'hit' : 'miss'
   const subject = { subjectType: 'commitment' as const, subjectId: c.id }
+  const day = activeEntries(await db.entries.where('[subjectType+subjectId]').equals(['commitment', c.id]).toArray())
+    .filter((e) => e.date === date && e.outcome === 'miss' && e.missReason)
+  const takenBack = replacing.length && outcome === 'hit' ? day : []
   const [last, ...rest] = [...replacing].reverse()
   await putAll([
     ...rest.map((id) => ({ c: 'entries' as const, r: entry(subject, date, { outcome: 'void', supersedes: id }) })),
+    ...takenBack.map((e) => ({ c: 'entries' as const, r: entry(subject, date, { outcome: 'void', supersedes: e.id }) })),
     { c: 'entries', r: entry(subject, date, { value, outcome, supersedes: last ?? null }) },
   ])
+  return { missed: outcome === 'miss', explained: day.length > 0 }
 }
 
 /** A binary threshold day that was not kept. */
@@ -330,8 +338,21 @@ export interface MissAnswer {
   note?: string
 }
 
-/** One miss entry per missed slot, all carrying the reason. */
+/**
+ * One miss entry per missed slot, all carrying the reason. A rule's
+ * occurrence instead gets its own entry again, now with the reason.
+ */
 export async function explainMiss(prompt: MissPrompt, a: MissAnswer) {
+  if (prompt.occurrence) {
+    const old = await db.entries.get(prompt.occurrence.entryId)
+    if (!old) return
+    const { id: _id, createdAt: _c, updatedAt: _u, ...fields } = old
+    await put('entries', entry(old, old.date, {
+      ...fields, recordedAt: now(), supersedes: old.id,
+      missReason: a.reason, displacementId: a.displacementId ?? null, note: a.note?.trim() || old.note || null,
+    }))
+    return
+  }
   const records = prompt.slots.flatMap((slot) =>
     Array.from({ length: slot.count }, () => ({
       c: 'entries' as const,
@@ -343,12 +364,16 @@ export async function explainMiss(prompt: MissPrompt, a: MissAnswer) {
   await putAll(records)
 }
 
-export async function snoozePrompt(commitmentId: ID, today: DateStr) {
-  const s = await getMeta<Record<ID, DateStr>>('snoozes', {})
-  // Keep only today's snoozes; older ones have expired.
-  const next = Object.fromEntries(Object.entries(s).filter(([, d]) => d === today))
-  next[commitmentId] = today
-  await setMeta('snoozes', next)
+/** "Not now": hides the prompt's misses for today, and counts toward moving them to the review. */
+export async function putOffMiss(prompt: MissPrompt, today: DateStr) {
+  const asks = await getMeta<MissAsks>('missAsks', {})
+  // Past the lookback a miss no longer asks on Today, so its count can go.
+  const next = Object.fromEntries(Object.entries(asks).filter(([, a]) => a.last >= addDays(today, -14)))
+  for (const s of prompt.slots) {
+    const k = missKey(prompt.commitmentId, s.date)
+    next[k] = { n: (next[k]?.n ?? 0) + 1, last: today }
+  }
+  await setMeta('missAsks', next)
 }
 
 export async function addDisplacement(label: string) {
@@ -369,12 +394,15 @@ export interface OccurrenceLog {
   actualTime?: string
   /** Binary check-in. */
   kept?: boolean
+  /** What it was, optional. */
+  title?: string
   miss?: MissAnswer
 }
 
 export async function logOccurrence(c: Commitment, log: OccurrenceLog) {
   const occ = make<'occurrences'>({
     commitmentId: c.id, scheduledAt: `${log.date}T${log.scheduledTime}`, date: log.date, source: 'manual',
+    title: log.title?.trim() || null,
   })
   let value: number | null = null
   let hit: boolean

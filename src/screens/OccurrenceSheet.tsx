@@ -24,6 +24,7 @@ export function OccurrenceSheet(props: { commitment: Commitment | null; date: Da
 function OccurrenceForm({ c, date: initialDate, today, onDone }: { c: Commitment; date: DateStr; today: DateStr; onDone: () => void }) {
   const displacements = useDisplacements()
   const [date, setDate] = useState<DateStr>(initialDate)
+  const [title, setTitle] = useState('')
   const [scheduled, setScheduled] = useState('')
   const [actual, setActual] = useState(() => formatTime(nowMinutes(new Date())))
   const [kept, setKept] = useState<boolean | null>(null)
@@ -43,7 +44,7 @@ function OccurrenceForm({ c, date: initialDate, today, onDone }: { c: Commitment
     let dId = displacementId
     if (reason === 'chose_other' && !dId && newLabel.trim()) dId = (await addDisplacement(newLabel)).id
     await logOccurrence(c, {
-      date, scheduledTime: scheduled || '00:00', actualTime: actual, kept: kept ?? false,
+      date, scheduledTime: scheduled || '00:00', actualTime: actual, kept: kept ?? false, title,
       miss: !hit && reason ? { reason, displacementId: reason === 'chose_other' ? dId : null, note } : undefined,
     })
     toast(t('common.logged'))
@@ -56,6 +57,11 @@ function OccurrenceForm({ c, date: initialDate, today, onDone }: { c: Commitment
       <Field label={t('common.day')} htmlFor="occ-date">
         <input id="occ-date" type="date" value={date} max={today} onChange={(e) => isDateStr(e.target.value) && setDate(e.target.value)} />
       </Field>
+      <div style={{ marginTop: 18 }}>
+        <Field label={t('occ.whatWasIt')} htmlFor="occ-title">
+          <input id="occ-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('occ.whatWasItPlaceholder')} />
+        </Field>
+      </div>
       {timed ? (
         <div className="inline-fields" style={{ marginTop: 18 }}>
           <Field label={t('occ.agreedTime')} htmlFor="occ-s">

@@ -1,16 +1,16 @@
 import { useMemo, useState } from 'react'
 import { exportData, shareOrDownload } from '../db/backup'
-import { addDisplacement, check, explainMiss, logValue, snoozePrompt, uncheck } from '../db/repo'
+import { addDisplacement, check, explainMiss, logValue, putOffMiss, uncheck } from '../db/repo'
 import { setSettings } from '../db/settings'
 import { num, t, tn } from '../i18n'
 import { addDays, dayMonth, diffDays, formatTime, isDateStr, parseTime, weekdayInSentence, weekdayName } from '../lib/dates'
-import { formatValue, promptQuestion, reasons } from '../lib/describe'
-import type { MissPrompt, ScoreContext } from '../lib/scoring'
+import { formatValue, promptQuestion, reasons, valueMissQuestion } from '../lib/describe'
+import { asksWhyAtOnce, type MissPrompt, type ScoreContext } from '../lib/scoring'
 import { buildDay, type Snapshot, type TodayGroup, type TodayItem } from '../lib/today'
 import type { Commitment, DateStr, ID, MissReason, Task } from '../lib/types'
-import { CheckButton, Chip, DatePickerButton, DueText, Screen, Segmented, toast } from '../ui/components'
+import { CheckButton, Chip, DatePickerButton, DueText, Screen, Segmented, Sheet, toast } from '../ui/components'
 import { ProjectTile, ValueTile } from '../ui/valueLook'
-import { useDisplacements, useSettings, useSnapshot, useSnoozes, useToday, useWeekReviews } from '../ui/hooks'
+import { useDisplacements, useMissAsks, useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
 import { dismissedMisses, reviewPending } from '../lib/review'
 import { IconCalendar, IconCheck, IconChevronLeft, IconChevronRight, IconNote, IconPlus } from '../ui/icons'
 import { navigate } from '../ui/router'
@@ -39,7 +39,7 @@ function applyFilter(groups: TodayGroup[], f: Filter): TodayGroup[] {
     .map((g) => {
       const items = g.items.filter((i) => keep(f, g, i))
       const prompts = f === 'goals' ? g.prompts : []
-      const todos = items.filter((i) => i.kind !== 'log')
+      const todos = items.filter((i) => i.kind !== 'log' && !i.adds)
       return { ...g, items, prompts, done: prompts.length === 0 && todos.length > 0 && todos.every((i) => i.done) }
     })
     .filter((g) => g.items.length > 0 || g.prompts.length > 0)
@@ -67,7 +67,7 @@ export function TodayScreen({ date }: { date?: DateStr }) {
   const settings = useSettings()
   const today = useToday(settings.rolloverHour)
   const snap = useSnapshot()
-  const snoozes = useSnoozes()
+  const asks = useMissAsks()
   const [openTask, setOpenTask] = useState<Task | null>(null)
   const [logFor, setLogFor] = useState<Commitment | null>(null)
   const [filter, setFilter] = useStoredFilter()
@@ -75,7 +75,7 @@ export function TodayScreen({ date }: { date?: DateStr }) {
   const ctx: ScoreContext = useMemo(() => ({ today, rolloverHour: settings.rolloverHour }), [today, settings.rolloverHour])
   const weekReviews = useWeekReviews()
   const dismissed = useMemo(() => dismissedMisses(weekReviews ?? []), [weekReviews])
-  const view = useMemo(() => (snap ? buildDay(snap, viewDate, ctx, snoozes, dismissed) : null), [snap, viewDate, ctx, snoozes, dismissed])
+  const view = useMemo(() => (snap ? buildDay(snap, viewDate, ctx, asks, dismissed) : null), [snap, viewDate, ctx, asks, dismissed])
   const isPast = viewDate !== today
 
   if (!snap || !view) return null
@@ -194,14 +194,15 @@ function Group(props: {
       )}
       {group.prompts.map((p) => {
         const c = props.snap.commitments.find((x) => x.id === p.commitmentId)
-        return c ? <MissPromptCard key={p.commitmentId} prompt={p} label={c.label} question={promptQuestion(p, c, props.today)}
-          today={props.today} canLog={c.shape === 'threshold' && p.slots.length === 1} /> : null
+        return c ? <MissPromptCard key={p.commitmentId} prompt={p} question={promptQuestion(p, c, props.today)}
+          today={props.today} canLog={c.shape === 'threshold' && p.slots.length === 1}
+          onNotNow={() => putOffMiss(p, props.today)} /> : null
       })}
       <ul className="items">
         {group.items.map((i) => (
           i.kind === 'log'
             ? <LogRow key={i.key} item={i} onOpen={() => props.onOpen(i)} />
-            : <ItemRow key={i.key} item={i} date={props.date} onOpen={() => props.onOpen(i)} />
+            : <ItemRow key={i.key} item={i} date={props.date} today={props.today} onOpen={() => props.onOpen(i)} />
         ))}
       </ul>
     </div>
@@ -227,8 +228,10 @@ function LogRow({ item, onOpen }: { item: TodayItem; onOpen: () => void }) {
   )
 }
 
-function ItemRow({ item, date, onOpen }: { item: TodayItem; date: DateStr; onOpen: () => void }) {
+function ItemRow({ item, date, today, onOpen }: { item: TodayItem; date: DateStr; today: DateStr; onOpen: () => void }) {
   const [editing, setEditing] = useState(false)
+  /** Set right after a daily value misses its line: the sheet asking why. */
+  const [why, setWhy] = useState<{ prompt: MissPrompt; question: string } | null>(null)
   // Round for what keeps a habit going (habits and their preps), square for one-off to-dos.
   const shape = item.kind === 'commitment' || item.kind === 'prep' ? 'circle' : 'square'
   const valued = !!item.commitment
@@ -250,6 +253,7 @@ function ItemRow({ item, date, onOpen }: { item: TodayItem; date: DateStr; onOpe
     <li>
       <div className={`item kind-${item.kind} ${item.done ? 'done' : ''}`}>
         <CheckButton shape={shape} checked={item.done} tone={miss ? 'miss' : satisfiedElsewhere ? 'muted' : undefined}
+          variant={valued ? (item.adds ? 'adds' : 'value') : undefined}
           label={valued ? t('today.logItem', { name: item.title }) : item.title} onClick={toggle} />
         <button className="item-main" onClick={onOpen}>
           <div className="item-title">
@@ -268,13 +272,23 @@ function ItemRow({ item, date, onOpen }: { item: TodayItem; date: DateStr; onOpe
         )}
       </div>
       {editing && item.commitment && (
-        <ValueEditor item={item} date={date} onDone={() => setEditing(false)} />
+        <ValueEditor item={item} date={date} onDone={(asked) => { setEditing(false); if (asked) setWhy(asked) }} />
+      )}
+      {why && (
+        <Sheet open onClose={() => { putOffMiss(why.prompt, today); setWhy(null) }} label={why.question}>
+          <MissPromptCard prompt={why.prompt} question={why.question} today={today} canLog={false} sheet
+            onNotNow={() => { putOffMiss(why.prompt, today); setWhy(null) }} onSaved={() => setWhy(null)} />
+        </Sheet>
       )}
     </li>
   )
 }
 
-function ValueEditor({ item, date, onDone }: { item: TodayItem; date: DateStr; onDone: () => void }) {
+function ValueEditor({ item, date, onDone }: {
+  item: TodayItem; date: DateStr
+  /** With the question to ask, when the value just missed its line and nothing explains it yet. */
+  onDone: (asked?: { prompt: MissPrompt; question: string }) => void
+}) {
   const c = item.commitment!
   const time = c.checkinType === 'timestamp'
   const daily = c.cadence.period === 'day'
@@ -286,8 +300,10 @@ function ValueEditor({ item, date, onDone }: { item: TodayItem; date: DateStr; o
   const ok = parsed != null && Number.isFinite(parsed) && parsed >= 0
   const save = async () => {
     if (!ok) return
-    await logValue(c, date, parsed!, daily ? item.entryIds ?? [] : [])
-    onDone()
+    const r = await logValue(c, date, parsed!, daily ? item.entryIds ?? [] : [])
+    if (r.missed && !r.explained && asksWhyAtOnce(c)) {
+      onDone({ prompt: { commitmentId: c.id, period: 'day', slots: [{ date, count: 1 }] }, question: valueMissQuestion(c, parsed!) })
+    } else onDone()
   }
   return (
     <form className="log-inline" onSubmit={(e) => { e.preventDefault(); save() }}>
@@ -299,7 +315,7 @@ function ValueEditor({ item, date, onDone }: { item: TodayItem; date: DateStr; o
       )}
       {!time && c.unit && <span className="unit">{c.unit}</span>}
       <span className="spacer" />
-      <button type="button" className="btn ghost" onClick={onDone}>{t('common.cancel')}</button>
+      <button type="button" className="btn ghost" onClick={() => onDone()}>{t('common.cancel')}</button>
       <button type="submit" className="btn primary" disabled={!ok}>{daily ? t('common.save') : t('common.add')}</button>
     </form>
   )
@@ -308,11 +324,14 @@ function ValueEditor({ item, date, onDone }: { item: TodayItem; date: DateStr; o
 // ——— miss prompt ———
 
 export function MissPromptCard(props: {
-  prompt: MissPrompt; label: string; question: string; today: DateStr; canLog: boolean
-  /** Today only: "Not now" hides the prompt until tomorrow. */
-  snooze?: boolean
+  prompt: MissPrompt; question: string; today: DateStr; canLog: boolean
+  /** Today and the sheet: "Not now" asks again the next day, then leaves it to the review. */
+  onNotNow?: () => void
   /** Review only: leave these misses unexplained for good. */
   onSkip?: () => void
+  onSaved?: () => void
+  /** Inside a sheet: the question is its heading. */
+  sheet?: boolean
 }) {
   const displacements = useDisplacements()
   const [reason, setReason] = useState<MissReason | null>(null)
@@ -333,11 +352,12 @@ export function MissPromptCard(props: {
     if (reason === 'chose_other' && !dId && newLabel.trim()) dId = (await addDisplacement(newLabel)).id
     await explainMiss(props.prompt, { reason, displacementId: reason === 'chose_other' ? dId : null, note })
     toast(t('common.logged'))
+    props.onSaved?.()
   }
 
   return (
-    <div className="prompt" role="group" aria-label={props.question}>
-      <div className="prompt-q">{props.question}</div>
+    <div className={`prompt ${props.sheet ? 'in-sheet' : ''}`} role="group" aria-label={props.question}>
+      {props.sheet ? <h2 className="prompt-q">{props.question}</h2> : <div className="prompt-q">{props.question}</div>}
       <div className="chips">
         {reasons().map((r) => (
           <Chip key={r.value} selected={reason === r.value} wide={r.value === 'chose_other'}
@@ -374,9 +394,7 @@ export function MissPromptCard(props: {
 
       <div className="actions">
         <div className="row">
-          {props.snooze !== false && (
-            <button className="link-btn" onClick={() => snoozePrompt(props.prompt.commitmentId, props.today)}>{t('miss.notNow')}</button>
-          )}
+          {props.onNotNow && <button className="link-btn" onClick={props.onNotNow}>{t('miss.notNow')}</button>}
           {props.onSkip && <button className="link-btn" onClick={props.onSkip}>{t('common.skip')}</button>}
           {props.canLog && (
             <button className="link-btn" onClick={() => navigate(`/day/${props.prompt.slots[0].date}`)}>{t('miss.logInstead')}</button>

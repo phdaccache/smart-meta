@@ -12,20 +12,20 @@ Open Today and tick a gym session and a prep.
 - **Expect:** the header count drops. The gym item shows "1 of 3 this week" → "2 of 3". A goal with everything ticked collapses to one line; tap it to reopen.
 
 **2. Log a number**
-Tap the circle next to *Slept at least 7.5 hours* and enter `7`.
-- **Expect:** "7 h" appears in amber. Change it to `8` and it turns normal. History (🕘 on the goal page) shows the 7 crossed out (↺) and the 8 with a ✓.
+Tap the dashed circle next to *Slept at least 7.5 hours* and enter `7`.
+- **Expect:** "7 h" appears in amber and a sheet asks "Sleep: 7 h, under your 7.5 h. What happened?". Pick **Too tired**, then **Save**. Change the value to `8` and it turns normal; the reason is taken back. History (🕘 on the goal page) shows the 7 crossed out (↺) and the 8 with a ✓.
 
 **3. Answer a miss**
-On a "Last week: … What happened?" card, tap **Chose something else**, type `gaming`, then **Save**.
+In **Review → Loose ends**, on a "Last week: … What happened?" card, tap **Chose something else**, type `gaming`, then **Save**.
 - **Expect:** the card disappears. Next time, "gaming" is a one-tap option. History shows ✕ with "gaming" in amber.
 
 **4. Not now**
-Tap **Not now** on a miss card.
-- **Expect:** it's gone for today. Pretend it's tomorrow and it's back.
+Tap **Not now** on a miss card on Today.
+- **Expect:** it's gone for today. Pretend it's tomorrow and it's back. Tap **Not now** again: it no longer shows on Today, only in Review.
 
 **5. Log an appointment**
-In *Be on time*, tap **Log punctuality**. Enter agreed `09:00` and arrived `09:10`, pick a reason, then save.
-- **Expect:** "1 logged this week" under the row. The goal's status may drop.
+In *Be on time*, tap **Log punctuality**. Name it `Team standup`, enter agreed `09:00` and arrived `09:10`, and save without a reason.
+- **Expect:** "1 logged this week" under the row. The goal's status may drop. Next week's Review asks "You missed …’s punctuality (Team standup). What happened?".
 
 **6. Quick task with a due date**
 Tap **+**, type `Pay Ana back`, use 📅 to pick tomorrow, then **Add**.

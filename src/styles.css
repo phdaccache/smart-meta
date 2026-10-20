@@ -199,6 +199,9 @@ a { color: var(--accent); }
 .check.miss .check-box { border-color: var(--behind); }
 .check.on.miss .check-box { background: var(--behind); border-color: var(--behind); }
 .check:active .check-box { transform: scale(0.88); }
+/* Takes a number or a time rather than a tap: dashed, like a rule's log row, until it's logged. */
+.check.takes-value:not(.on) .check-box { border-style: dashed; color: var(--kc); }
+.check.takes-value.miss:not(.on) .check-box { color: var(--behind); }
 /* Kinds: round for habits, square for to-dos; habits blue, preps teal, project steps amber, tasks grey. */
 .kind-commitment, .kind-log { --kc: var(--accent); }
 .kind-prep { --kc: var(--prep); }
@@ -221,6 +224,9 @@ a { color: var(--accent); }
   margin: 0 12px 12px; padding: 14px; border-radius: var(--radius-sm); background: var(--surface-2);
 }
 .prompt-q { font-size: 16px; font-weight: 650; margin-bottom: 12px; line-height: 1.3; }
+/* Asked right after logging: the sheet is the card, and the question its heading. */
+.prompt.in-sheet { margin: 0; padding: 0; background: none; }
+.prompt.in-sheet .prompt-q { font-size: 20px; font-weight: 700; margin: 0 0 16px; }
 .prompt-sub { font-size: 13px; font-weight: 600; margin: 14px 0 8px; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {

@@ -176,6 +176,8 @@ export interface Occurrence extends Base {
   scheduledAt: string
   date: DateStr
   source: 'manual' | 'calendar'
+  /** What it was ("Team standup"), so a review can tell one from another. */
+  title?: string | null
   externalRef?: string | null
   entryId?: ID | null
 }

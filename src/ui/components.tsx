@@ -4,7 +4,7 @@ import { t, tk, tlist, type Key } from '../i18n'
 import { dayMonthShort } from '../lib/dates'
 import { statusLabel } from '../lib/describe'
 import type { DateStr, Status } from '../lib/types'
-import { IconCheck, IconChevronLeft, IconClose, IconGoals, IconInfo, IconInsights, IconReview, IconSettings, IconToday } from './icons'
+import { IconCheck, IconChevronLeft, IconClose, IconGoals, IconInfo, IconInsights, IconPlus, IconReview, IconSettings, IconToday } from './icons'
 import { goBack, navigate, pushLayer } from './router'
 
 // ——— screen chrome ———
@@ -393,6 +393,11 @@ export function CheckButton(props: {
   shape: 'circle' | 'square'
   checked: boolean
   tone?: 'miss' | 'muted'
+  /**
+   * value: takes a number or a time, dashed until one is logged.
+   * adds: each value adds to a weekly or monthly total, dashed with a plus until it's reached.
+   */
+  variant?: 'value' | 'adds'
   label: string
   onClick: () => void
 }) {
@@ -402,13 +407,15 @@ export function CheckButton(props: {
   useEffect(() => { was.current = props.checked }, [props.checked])
   return (
     <button
-      className={`check ${props.shape} ${props.checked ? 'on' : ''} ${pop ? 'pop' : ''} ${props.tone ?? ''}`}
+      className={`check ${props.shape} ${props.checked ? 'on' : ''} ${pop ? 'pop' : ''} ${props.tone ?? ''} ${props.variant ? 'takes-value' : ''}`}
       role="checkbox"
       aria-checked={props.checked}
       aria-label={props.label}
       onClick={props.onClick}
     >
-      <span className="check-box">{props.checked && <IconCheck width={16} height={16} />}</span>
+      <span className="check-box">
+        {props.checked ? <IconCheck width={16} height={16} /> : props.variant === 'adds' && <IconPlus width={16} height={16} />}
+      </span>
     </button>
   )
 }

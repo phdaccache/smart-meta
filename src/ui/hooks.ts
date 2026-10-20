@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { db } from '../db/db'
 import { DEFAULT_SETTINGS, getMeta, getSettings, type Settings } from '../db/settings'
 import { logicalDate } from '../lib/dates'
+import type { MissAsks } from '../lib/scoring'
 import type { Snapshot } from '../lib/today'
 import type { DateStr, Displacement, GoalReview, ID, Revision, WeekReview } from '../lib/types'
 
@@ -42,8 +43,8 @@ export function useSettingsLoaded(): Settings | undefined {
   return useLiveQuery(getSettings, [])
 }
 
-export function useSnoozes(): Record<ID, DateStr> {
-  return useLiveQuery(() => getMeta<Record<ID, DateStr>>('snoozes', {}), []) ?? {}
+export function useMissAsks(): MissAsks {
+  return useLiveQuery(() => getMeta<MissAsks>('missAsks', {}), []) ?? {}
 }
 
 export function useDisplacements(): Displacement[] {

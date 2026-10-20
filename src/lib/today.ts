@@ -1,8 +1,8 @@
 import { num, t, tn } from '../i18n'
 import { addDays, diffDays, inSpan, isoWeekday, maxDate, minDate, periodOf, relativeDay } from './dates'
 import {
-  activeEntries, evaluateThreshold, meetsTarget, missPrompt, thresholdAggregate, withoutDismissed, type MissPrompt, type PeriodEval,
-  type ScoreContext,
+  activeEntries, evaluateThreshold, meetsTarget, missPrompt, stillAsking, thresholdAggregate, withoutDismissed, type MissAsks, type MissPrompt,
+  type PeriodEval, type ScoreContext,
 } from './scoring'
 import type {
   Commitment, DateStr, Entry, Goal, ID, Occurrence, Prep, Project, SubjectType, Task, Value,
@@ -22,7 +22,7 @@ export interface Snapshot {
 /** 'log' is an action row for rule-type commitments, not a to-do: it never counts as open. */
 export type ItemKind = 'commitment' | 'prep' | 'step' | 'task' | 'log'
 
-const isTodo = (i: TodayItem) => i.kind !== 'log'
+const isTodo = (i: TodayItem) => i.kind !== 'log' && !i.adds
 
 export type ItemTarget = { kind: 'goal'; id: ID } | { kind: 'project'; id: ID } | { kind: 'task'; id: ID }
 
@@ -40,6 +40,11 @@ export interface TodayItem {
   entryIds?: ID[]
   /** Set for quantity/timestamp thresholds, which take a value rather than a tap. */
   commitment?: Commitment
+  /**
+   * Weekly or monthly amounts: each value adds to the period's total, so the
+   * row is a place to add to it, not a to-do. Done once an "at least" total is reached.
+   */
+  adds?: boolean
   /** Logged on this date (quantity or time). */
   value?: number | null
   valueState?: PeriodEval
@@ -163,7 +168,8 @@ export function buildDay(
   s: Snapshot,
   date: DateStr,
   ctx: ScoreContext,
-  snoozes: Record<ID, DateStr> = {},
+  /** Misses put off with "Not now" (see MissAsks). */
+  asks: MissAsks = {},
   /** Missed slots a weekly review dismissed (see missKey): never asked about again. */
   dismissed: Set<string> = new Set(),
 ): DayView {
@@ -302,13 +308,14 @@ export function buildDay(
         } else {
           const logged = onDate.filter((e) => e.value != null)
           const agg = logged.length ? thresholdAggregate(c, logged) : null
+          const adds = c.cadence.period !== 'day'
           // Scoring waits for the period to close; the row shows at once whether the value meets the line.
           const shown: PeriodEval = c.cadence.period === 'day' && agg != null
             ? (meetsTarget(c, agg, ctx.rolloverHour) ? 'hit' : 'miss')
             : ev
           items.push({
             key: `commitment:${c.id}`, kind: 'commitment', title: c.measurementDefinition,
-            done: logged.length > 0, subjectType: 'commitment', subjectId: c.id,
+            done: adds ? ev === 'hit' : logged.length > 0, adds: adds || undefined, subjectType: 'commitment', subjectId: c.id,
             entryId: latest(logged)?.id, entryIds: logged.map((e) => e.id), commitment: c,
             value: agg,
             valueState: shown,
@@ -327,8 +334,9 @@ export function buildDay(
         })
       }
 
-      if (isToday && snoozes[c.id] !== ctx.today) {
-        const prompt = withoutDismissed(missPrompt(c, s.entries, ctx), dismissed)
+      // A weekly or monthly rhythm is asked about in the weekly review only.
+      if (isToday && !(c.shape === 'rhythm' && c.cadence.period !== 'day')) {
+        const prompt = stillAsking(withoutDismissed(missPrompt(c, s.entries, ctx), dismissed), asks, ctx.today)
         if (prompt) prompts.push(prompt)
       }
     }

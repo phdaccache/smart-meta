@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { addDays } from './dates'
 import { buildReview, projectKey, reviewPending, reviewWeek, type ReviewInput } from './review'
 import { missKey } from './scoring'
-import { commitment, goal, hit, miss, prep, project, snapshot, task, weeklyHits } from './testkit'
+import { commitment, goal, hit, miss, occurrence, prep, project, snapshot, task, weeklyHits } from './testkit'
 import type { Displacement, Revision, WeekReview } from './types'
 
 const today = '2026-10-01' // Thursday; the week under review is Mon 21 – Sun 27 Sep
@@ -186,6 +186,23 @@ describe('Review — the rest', () => {
     const skipped = weekReview('2026-09-21', { dismissed: [missKey(sleep.id, '2026-09-21')] })
     const r = buildReview(input({ commitments: [sleep], entries }, { weekReviews: [skipped] }))
     expect(r.loose.flatMap((p) => p.slots.map((s) => s.date))).toEqual(['2026-09-22'])
+  })
+
+  it('brings back a rule’s occurrence missed without a reason, by what it was, until explained or skipped', () => {
+    const late = commitment(g, { label: 'punctuality', shape: 'standard', checkinType: 'timestamp' })
+    const o1 = { ...occurrence(late, '2026-09-23', '09:00'), title: 'Team standup' }
+    const o2 = occurrence(late, '2026-09-24', '10:00')
+    const o3 = occurrence(late, '2026-09-25')
+    const entries = [
+      miss(late, o1.date, { occurrenceId: o1.id, value: 550 }),
+      miss(late, o2.date, { occurrenceId: o2.id, value: 615, missReason: 'no_time' }),
+      hit(late, o3.date, { occurrenceId: o3.id, value: 530 }),
+    ]
+    const r = buildReview(input({ commitments: [late], entries, occurrences: [o1, o2, o3] }))
+    expect(r.loose).toHaveLength(1)
+    expect(r.loose[0].occurrence).toMatchObject({ id: o1.id, title: 'Team standup', time: '09:00' })
+    const skipped = weekReview('2026-09-21', { dismissed: [missKey(late.id, o1.date, o1.id)] })
+    expect(buildReview(input({ commitments: [late], entries, occurrences: [o1, o2, o3] }, { weekReviews: [skipped] })).loose).toEqual([])
   })
 
   it('offers the top backlog goal when a slot is free', () => {
