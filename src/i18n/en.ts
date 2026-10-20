@@ -1134,8 +1134,6 @@ export const en = {
   'set.eraseButton': 'Erase all data',
   'set.valueN': 'Value {n}',
   'set.valuePlaceholders': 'Health Family Craft Kindness Freedom',
-  'set.valueMeansN': 'What value {n} means',
-  'set.valueMeans': 'What it means (optional)',
   'set.removeUsedValueQ.one': '{name} is the value behind 1 goal. Remove it anyway? The goal keeps going without a value.',
   'set.removeUsedValueQ.other': '{name} is the value behind {n} goals. Remove it anyway? Those goals keep going without a value.',
   'set.removeValueN': 'Remove value {n}',

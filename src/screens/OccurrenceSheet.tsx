@@ -1,29 +1,52 @@
 import { useState } from 'react'
-import { addDisplacement, logOccurrence } from '../db/repo'
-import { formatTime, isDateStr, nowMinutes, parseTime } from '../lib/dates'
+import { logOccurrence, putOffMiss } from '../db/repo'
+import { capitalize, formatTime, isDateStr, nowMinutes, parseTime } from '../lib/dates'
 import { t } from '../i18n'
-import { reasons } from '../lib/describe'
-import type { Commitment, DateStr, ID, MissReason, Occurrence } from '../lib/types'
+import type { MissPrompt } from '../lib/scoring'
+import type { Commitment, DateStr, ID, Occurrence } from '../lib/types'
 import { Chip, Field, Sheet, toast } from '../ui/components'
-import { useDisplacements, useSnapshot } from '../ui/hooks'
+import { useSnapshot } from '../ui/hooks'
 import { IconChevronUpDown } from '../ui/icons'
+import { MissPromptCard } from './Today'
 
 /**
  * Logs one occurrence of a rule-type (standard) commitment: "I had a meeting
  * at 09:00 and arrived at 09:10". Opened from the goal's card on Today or the
- * goal's page.
+ * goal's page. Once a missed one is logged, the same sheet asks why, as after
+ * a daily value under its line; not now leaves the question for Today.
  */
 export function OccurrenceSheet(props: { commitment: Commitment | null; date: DateStr; today: DateStr; onClose: () => void }) {
-  if (!props.commitment) return null
+  const [why, setWhy] = useState<{ prompt: MissPrompt; question: string } | null>(null)
+  const c = props.commitment
+  if (!c) return null
+  const close = () => {
+    setWhy(null)
+    props.onClose()
+  }
+  const putOff = () => {
+    if (why) putOffMiss(why.prompt, props.today)
+    close()
+  }
+  if (why) {
+    return (
+      <Sheet open onClose={putOff} label={why.question}>
+        <MissPromptCard prompt={why.prompt} question={why.question} today={props.today} canLog={false} sheet
+          onNotNow={putOff} onSaved={close} />
+      </Sheet>
+    )
+  }
   return (
-    <Sheet open onClose={props.onClose} title={t('today.logItem', { name: props.commitment.label })}>
-      <OccurrenceForm key={props.commitment.id} c={props.commitment} date={props.date} today={props.today} onDone={props.onClose} />
+    <Sheet open onClose={close} title={t('today.logItem', { name: c.label })}>
+      <OccurrenceForm key={c.id} c={c} date={props.date} today={props.today} onDone={close} onMissed={setWhy} />
     </Sheet>
   )
 }
 
-function OccurrenceForm({ c, date: initialDate, today, onDone }: { c: Commitment; date: DateStr; today: DateStr; onDone: () => void }) {
-  const displacements = useDisplacements()
+function OccurrenceForm({ c, date: initialDate, today, onDone, onMissed }: {
+  c: Commitment; date: DateStr; today: DateStr; onDone: () => void
+  /** Logged as missed: the question to ask next. */
+  onMissed: (why: { prompt: MissPrompt; question: string }) => void
+}) {
   const snap = useSnapshot()
   const names = earlierNames(snap?.occurrences ?? [], c.id)
   const [date, setDate] = useState<DateStr>(initialDate)
@@ -31,10 +54,6 @@ function OccurrenceForm({ c, date: initialDate, today, onDone }: { c: Commitment
   const [scheduled, setScheduled] = useState('')
   const [actual, setActual] = useState(() => formatTime(nowMinutes(new Date())))
   const [kept, setKept] = useState<boolean | null>(null)
-  const [reason, setReason] = useState<MissReason | null>(null)
-  const [displacementId, setDisplacementId] = useState<ID | null>(null)
-  const [newLabel, setNewLabel] = useState('')
-  const [note, setNote] = useState('')
 
   const timed = c.checkinType === 'timestamp'
   const sched = parseTime(scheduled)
@@ -42,16 +61,22 @@ function OccurrenceForm({ c, date: initialDate, today, onDone }: { c: Commitment
   const hit = timed ? sched != null && act != null && act <= sched : kept
   const decided = timed ? sched != null && act != null : kept != null
 
+  // Logged first, then asked why: the question waits for the button, not for the second time typed.
   const save = async () => {
     if (!decided) return
-    let dId = displacementId
-    if (reason === 'chose_other' && !dId && newLabel.trim()) dId = (await addDisplacement(newLabel)).id
-    await logOccurrence(c, {
-      date, scheduledTime: scheduled || '00:00', actualTime: actual, kept: kept ?? false, title,
-      miss: !hit && reason ? { reason, displacementId: reason === 'chose_other' ? dId : null, note } : undefined,
+    const r = await logOccurrence(c, { date, scheduledTime: scheduled || '00:00', actualTime: actual, kept: kept ?? false, title })
+    if (r.hit) {
+      toast(t('common.logged'))
+      return onDone()
+    }
+    const name = title.trim() || c.label
+    onMissed({
+      prompt: {
+        commitmentId: c.id, period: 'day', slots: [{ date, count: 1 }],
+        occurrence: { id: r.occurrence.id, entryId: r.entry.id, title: r.occurrence.title, time: scheduled || undefined },
+      },
+      question: timed ? capitalize(t('miss.later', { name, value: actual, target: scheduled })) : t('occ.whatHappened'),
     })
-    toast(t('common.logged'))
-    onDone()
   }
 
   return (
@@ -93,32 +118,6 @@ function OccurrenceForm({ c, date: initialDate, today, onDone }: { c: Commitment
             <Chip selected={kept === false} onClick={() => setKept(false)}>{t('common.no')}</Chip>
           </div>
         </Field>
-      )}
-
-      {decided && !hit && (
-        <div className="prompt" style={{ margin: '18px 0 0' }}>
-          <div className="prompt-q">{t('occ.whatHappened')}</div>
-          <div className="chips">
-            {reasons().map((r) => (
-              <Chip key={r.value} selected={reason === r.value} wide={r.value === 'chose_other'}
-                onClick={() => setReason(reason === r.value ? null : r.value)}>{r.label}</Chip>
-            ))}
-          </div>
-          {reason === 'chose_other' && (
-            <>
-              <div className="prompt-sub">{t('miss.tookItsPlace')}</div>
-              <div className="chips">
-                {displacements.map((d) => (
-                  <Chip key={d.id} selected={displacementId === d.id}
-                    onClick={() => setDisplacementId(displacementId === d.id ? null : d.id)}>{d.label}</Chip>
-                ))}
-              </div>
-              <input style={{ marginTop: 8 }} value={newLabel} onChange={(e) => { setNewLabel(e.target.value); setDisplacementId(null) }}
-                placeholder={t('miss.addAnother')} aria-label={t('miss.tookItsPlaceLabel')} />
-            </>
-          )}
-          <input style={{ marginTop: 10 }} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t('miss.noteOptional')} aria-label={t('miss.note')} />
-        </div>
       )}
 
       <div className="sheet-actions">

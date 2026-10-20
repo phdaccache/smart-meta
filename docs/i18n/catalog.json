@@ -896,8 +896,6 @@
 {"key": "set.eraseButton", "group": "Settings", "en": "Erase all data", "pt": "Apagar todos os dados", "note": ""},
 {"key": "set.valueN", "group": "Settings", "en": "Value {n}", "pt": "Valor {n}", "note": "Screen reader label."},
 {"key": "set.valuePlaceholders", "group": "Settings", "en": "Health Family Craft Kindness Freedom", "pt": "Saúde Família Ofício Gentileza Liberdade", "note": "Placeholders for the value fields, in order."},
-{"key": "set.valueMeansN", "group": "Settings", "en": "What value {n} means", "pt": "O que o valor {n} significa", "note": "Screen reader label."},
-{"key": "set.valueMeans", "group": "Settings", "en": "What it means (optional)", "pt": "O que significa (opcional)", "note": ""},
 {"key": "set.removeValueN", "group": "Settings", "en": "Remove value {n}", "pt": "Remover valor {n}", "note": "Screen reader label."},
 {"key": "set.addValue", "group": "Settings", "en": "+ Add value", "pt": "+ Adicionar valor", "note": ""},
 {"key": "set.writeN", "group": "Settings", "en": "Write {min} to {max}.", "pt": "Escreva de {min} a {max}.", "note": ""},

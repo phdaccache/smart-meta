@@ -9,8 +9,9 @@ import { loadWorstCaseData } from '../dev/worst'
 import { eraseAllData, signIn, signOut, syncNow, useSyncStatus } from '../sync/controller'
 import { Field, InfoTip, Screen, Section, Sheet, Stepper, Switch, toast, TypeToConfirm } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
-import { IconChevronRight, IconChevronUpDown, IconMinus } from '../ui/icons'
+import { IconChevronRight, IconChevronUpDown } from '../ui/icons'
 import { useInstall } from '../ui/install'
+import { SwipeToDelete } from '../ui/SwipeToDelete'
 import { useIsDeveloper } from '../ui/developer'
 import { RELEASES } from '../lib/releases'
 import { ReleaseNotes } from './WhatsNew'
@@ -345,10 +346,16 @@ function DevSection({ devToday }: { devToday: string | null }) {
 // ——— values ———
 
 interface ValueDraft {
+  /** Keeps a row's place while rows above it are removed. */
+  key: string
   id?: string
   name: string
+  /** No longer written here; one written before is kept. */
   description: string
 }
+
+let draftKeys = 0
+const blankValue = (): ValueDraft => ({ key: `new-${draftKeys++}`, name: '', description: '' })
 
 export function ValuesEditor(props: { onSaved?: () => void }) {
   const snap = useSnapshot()
@@ -356,8 +363,8 @@ export function ValuesEditor(props: { onSaved?: () => void }) {
   const [tried, setTried] = useState(false)
   const [picking, setPicking] = useState<Value | null>(null)
   if (snap && !drafts) {
-    const existing: ValueDraft[] = snap.values.map((v) => ({ id: v.id, name: v.name, description: v.description }))
-    setDrafts(existing.length ? existing : [{ name: '', description: '' }, { name: '', description: '' }, { name: '', description: '' }])
+    const existing: ValueDraft[] = snap.values.map((v) => ({ key: v.id, id: v.id, name: v.name, description: v.description }))
+    setDrafts(existing.length ? existing : [blankValue(), blankValue(), blankValue()])
   }
   if (!snap || !drafts) return null
 
@@ -391,28 +398,20 @@ export function ValuesEditor(props: { onSaved?: () => void }) {
     <div>
       <div className="card list">
         {drafts.map((d, i) => (
-          <div key={d.id ?? `new-${i}`} className="list-row" style={{ alignItems: 'flex-start' }}>
-            {/* Removed from a badge on its tile, as an app is from the iPhone's home screen: the fields keep the row's width. */}
-            <div className="tile-removable">
-              <ValueTile value={snap.values.find((v) => v.id === d.id)} values={snap.values} onPick={setPicking} />
-              {drafts.length > 1 && (
-                <button className="tile-remove" aria-label={t('set.removeValueN', { n: i + 1 })} onClick={() => setDrafts(drafts.filter((_, j) => j !== i))}>
-                  <IconMinus width={12} height={12} strokeWidth={3} />
-                </button>
-              )}
-            </div>
-            <div className="text stack" style={{ gap: 6 }}>
+          // Removed by swiping it left, as in the iPhone's lists; the last one stays.
+          <SwipeToDelete key={d.key} className="list-row has-tile" label={t('set.removeValueN', { n: i + 1 })}
+            disabled={drafts.length < 2} onDelete={() => setDrafts((all) => all && all.filter((x) => x.key !== d.key))}>
+            <ValueTile value={snap.values.find((v) => v.id === d.id)} values={snap.values} onPick={setPicking} />
+            <div className="text">
               <input value={d.name} aria-label={t('set.valueN', { n: i + 1 })}
                 placeholder={tlist('set.valuePlaceholders')[i % 5]}
                 onChange={(e) => update(i, { name: e.target.value })} />
-              <input value={d.description} aria-label={t('set.valueMeansN', { n: i + 1 })} placeholder={t('set.valueMeans')}
-                style={{ minHeight: 38, fontSize: 14 }} onChange={(e) => update(i, { description: e.target.value })} />
             </div>
-          </div>
+          </SwipeToDelete>
         ))}
       </div>
       {drafts.length < max && (
-        <button className="link-btn" style={{ marginTop: 6 }} onClick={() => setDrafts([...drafts, { name: '', description: '' }])}>
+        <button className="link-btn" style={{ marginTop: 6 }} onClick={() => setDrafts([...drafts, blankValue()])}>
           {t('set.addValue')}
         </button>
       )}

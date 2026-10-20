@@ -51,6 +51,9 @@ export const IconCalendar = (p: P) => (
 export const IconClose = (p: P) => (
   <Svg {...p}><path d="M6 6l12 12M18 6 6 18" /></Svg>
 )
+export const IconTrash = (p: P) => (
+  <Svg {...p}><path d="M4 7h16M10 3h4M6 7l1 13h10l1-13M10 11v5M14 11v5" /></Svg>
+)
 export const IconCloud = (p: P) => (
   <Svg {...p}><path d="M7 18a4 4 0 0 1-.6-7.95A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9H7z" /></Svg>
 )

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { check, createProject, createTask, deleteProject, pauseProject, reorderSteps, startProject, uncheck, updateProject, updateTask } from '../db/repo'
+import { check, createProject, createTask, deleteProject, deleteTask, pauseProject, reorderSteps, startProject, uncheck, updateProject, updateTask } from '../db/repo'
 import { marked, t } from '../i18n'
 import { addDays, dayMonth, dayMonthShort, diffDays, isDateStr, relativeDay } from '../lib/dates'
 import { activeEntries } from '../lib/scoring'
@@ -10,6 +10,7 @@ import { CheckButton, DatePickerButton, InfoTip, NoteField, PageText, Screen, Se
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconCalendar, IconClose } from '../ui/icons'
 import { Sortable } from '../ui/Sortable'
+import { SwipeToDelete } from '../ui/SwipeToDelete'
 import { navigate } from '../ui/router'
 import { openQuickAddFor } from './QuickAdd'
 import { DateTimeRows, GoalChoice, linkableGoals, TaskList } from './TaskSheet'
@@ -19,6 +20,7 @@ import { DateTimeRows, GoalChoice, linkableGoals, TaskList } from './TaskSheet'
  * it straight away, while the keyboard is still up: the new field is rendered
  * and focused within the same tap (iOS only opens the keyboard for a focus
  * made during one), and the "+" button never takes focus from the field.
+ * A step is removed by swiping it left, as in the iPhone's lists; the last one stays.
  */
 export function StepsEditor({ steps, onChange }: { steps: string[]; onChange: (steps: string[]) => void }) {
   const fields = useRef<(HTMLInputElement | null)[]>([])
@@ -32,22 +34,19 @@ export function StepsEditor({ steps, onChange }: { steps: string[]; onChange: (s
       <ol className="steps-editor">
         {steps.map((s, i) => (
           <li key={i}>
-            <span className="num">{i + 1}</span>
-            <input ref={(el) => { fields.current[i] = el }} value={s} aria-label={t('project.stepN', { n: i + 1 })}
-              placeholder={i === 0 ? t('project.phStep') : ''} enterKeyHint="next"
-              onChange={(e) => onChange(steps.map((x, j) => (j === i ? e.target.value : x)))}
-              onKeyDown={(e) => {
-                if (e.key !== 'Enter') return
-                e.preventDefault()
-                if (i === steps.length - 1) addStep()
-                else focusStep(i + 1)
-              }} />
-            {steps.length > 1 && (
-              <button type="button" className="icon-btn step-remove" aria-label={t('project.removeStepN', { n: i + 1 })}
-                onClick={() => onChange(steps.filter((_, j) => j !== i))}>
-                <IconClose width={16} height={16} />
-              </button>
-            )}
+            <SwipeToDelete className="steps-editor-row" label={t('project.removeStepN', { n: i + 1 })} disabled={steps.length < 2}
+              onDelete={() => onChange(steps.filter((_, j) => j !== i))}>
+              <span className="num">{i + 1}</span>
+              <input ref={(el) => { fields.current[i] = el }} value={s} aria-label={t('project.stepN', { n: i + 1 })}
+                placeholder={i === 0 ? t('project.phStep') : ''} enterKeyHint="next"
+                onChange={(e) => onChange(steps.map((x, j) => (j === i ? e.target.value : x)))}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter') return
+                  e.preventDefault()
+                  if (i === steps.length - 1) addStep()
+                  else focusStep(i + 1)
+                }} />
+            </SwipeToDelete>
           </li>
         ))}
       </ol>
@@ -109,15 +108,12 @@ function DraftSteps({ steps, onChange }: { steps: DraftStep[]; onChange: (steps:
     <div className="card">
       <Sortable items={steps} keyOf={(s) => s.key} labelOf={(s) => s.title} onReorder={onChange} className="items step-list"
         render={(step) => (
-          <div className="item kind-step">
+          <SwipeToDelete className="item kind-step" label={t('project.removeStep', { step: step.title })}
+            onDelete={() => onChange(steps.filter((s) => s.key !== step.key))}>
             <div className="item-main">
               <StepTitle title={step.title} onSave={(title) => onChange(steps.map((s) => (s.key === step.key ? { ...s, title } : s)))} />
             </div>
-            <button type="button" className="icon-btn step-remove" aria-label={t('project.removeStep', { step: step.title })}
-              onClick={() => onChange(steps.filter((s) => s.key !== step.key))}>
-              <IconClose width={16} height={16} />
-            </button>
-          </div>
+          </SwipeToDelete>
         )} />
       <AddStep first={!steps.length} onAdd={add} />
     </div>
@@ -223,7 +219,8 @@ export function ProjectScreen({ id }: { id: string }) {
             render={(step) => {
               const isDone = doneEntry.has(step.id)
               return (
-                <div className={`item kind-step ${isDone ? 'done' : ''}`}>
+                <SwipeToDelete className={`item kind-step ${isDone ? 'done' : ''}`} label={t('project.removeStep', { step: step.title })}
+                  onDelete={() => deleteTask(step)}>
                   <CheckButton shape="square" checked={isDone} label={step.title} onClick={() => toggle(step)} />
                   <div className="item-main">
                     <StepTitle title={step.title} onSave={(title) => updateTask(step, { title })} />
@@ -233,7 +230,7 @@ export function ProjectScreen({ id }: { id: string }) {
                       </div>
                     )}
                   </div>
-                </div>
+                </SwipeToDelete>
               )
             }} />
           <AddStep first={!steps.length} onAdd={(title) => createTask({ title, projectId: id })} />

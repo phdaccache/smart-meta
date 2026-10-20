@@ -1129,8 +1129,6 @@ export const ptBR: Messages = {
   'set.eraseButton': 'Apagar todos os dados',
   'set.valueN': 'Valor {n}',
   'set.valuePlaceholders': 'Saúde Família Ofício Gentileza Liberdade',
-  'set.valueMeansN': 'O que o valor {n} significa',
-  'set.valueMeans': 'O que significa (opcional)',
   'set.removeUsedValueQ.one': '{name} é o valor por trás de 1 meta. Remover mesmo assim? A meta continua, sem valor.',
   'set.removeUsedValueQ.other': '{name} é o valor por trás de {n} metas. Remover mesmo assim? Essas metas continuam, sem valor.',
   'set.removeValueN': 'Remover valor {n}',

@@ -525,9 +525,10 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .toast.on { opacity: 1; transform: none; visibility: visible; transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out); }
 
 .steps-editor { list-style: none; margin: 0; padding: 0; }
-.steps-editor li { display: flex; gap: 6px; align-items: center; }
+.steps-editor-row { display: flex; gap: 6px; align-items: center; position: relative; }
 .steps-editor li + li { margin-top: 8px; }
-.steps-editor .step-remove, .item .step-remove { flex: none; width: 36px; height: 36px; color: var(--ink-3); }
+/* A field's own corners, on the bin that slides in beside it. */
+.steps-editor .swipe-delete { border-radius: 0 12px 12px 0; }
 .steps-editor .num { width: 22px; color: var(--ink-3); font-size: 14px; text-align: right; flex: none; }
 
 .hidden-date { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
@@ -1210,15 +1211,6 @@ textarea.note-field { min-height: 88px; line-height: 1.45; }
   background: color-mix(in srgb, var(--c) var(--tile-mix), var(--surface));
   color: color-mix(in srgb, var(--c) var(--glyph-mix), var(--glyph-ink));
 }
-/* A tile with a remove badge on its corner, as on the iPhone's home screen while editing. */
-.tile-removable { position: relative; flex: none; }
-.tile-remove {
-  position: absolute; top: -7px; left: -7px; width: 22px; height: 22px; border-radius: 50%;
-  display: grid; place-items: center; background: var(--ink-3); color: var(--surface);
-  box-shadow: 0 0 0 2px var(--surface);
-}
-/* A finger-sized target around the small badge. */
-.tile-remove::after { content: ''; position: absolute; inset: -11px; }
 .tile-sm { width: 26px; height: 26px; border-radius: 7px; }
 .tile-md { width: 44px; height: 44px; border-radius: 11px; }
 .tile-lg { width: 72px; height: 72px; border-radius: 18px; }
@@ -1277,6 +1269,25 @@ button.goal-why { width: 100%; text-align: left; margin-top: 12px; }
 /* ——— long press to reorder ——— */
 
 .sortable > li { transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1); }
+/* ——— swipe to delete ——— */
+
+/* The row slides left over a red bin past its end; the browser keeps up-and-down scrolling. */
+.swipeable { touch-action: pan-y; transition: transform 0.3s var(--ease-out); }
+.swipeable.swiping { transition: none; }
+/* Deleted, it fades and its place closes up; the clip keeps the bin beside it but not what spills below. */
+.swipeable.removing {
+  clip-path: inset(0 -100vw 0 0); transition-property: height, min-height, padding, opacity; transition-duration: 0.24s;
+  transition-timing-function: var(--ease-out);
+}
+li:has(> .swipeable.open), li:has(> .swipeable.swiping), li:has(> .swipeable.removing),
+.card:has(> .swipeable.open), .card:has(> .swipeable.swiping) { overflow: hidden; }
+.swipe-delete {
+  position: absolute; top: 0; bottom: 0; left: 100%; width: 76px; display: grid; place-items: center;
+  background: var(--danger); color: #fff;
+}
+/* Stretched past the bin, the red runs on under the finger. */
+.swipe-delete::after { content: ''; position: absolute; top: 0; bottom: 0; left: 100%; width: 100vw; background: inherit; }
+
 .sortable.lifting > li { touch-action: none; }
 .sortable > li.held > * { transform: scale(0.98); transition: transform 0.4s ease-out; }
 .sortable > li.lifted { z-index: 3; transition: none; }
