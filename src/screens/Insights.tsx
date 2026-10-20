@@ -10,7 +10,7 @@ import { stateLabel } from '../lib/revisions'
 import { statusFor, type ScoreContext } from '../lib/scoring'
 import type { Goal } from '../lib/types'
 import {
-  Distribution, GoalChips, ProjectPace, ReasonBars, Sparkline, TimelineChart, ToleranceChart, TrendChart, useTapOutside,
+  Distribution, GoalChips, ProjectPace, ReasonBars, Sparkline, TimelineChart, TrendChart, useTapOutside,
   ValueMonths, WeekdayGrid,
 } from '../ui/charts'
 import { InfoTip, PageText, Reveal, Screen, Section, Segmented } from '../ui/components'
@@ -67,7 +67,8 @@ function usePrepared(): Prepared | null {
     () => prepare({ snap, revisions, weekReviews, displacements, ctx }))
 }
 
-const pct = (n: number | null) => (n == null ? '—' : `${Math.round(n)}%`)
+/** Nothing at all when there's no number: a dash would only stand in for it. */
+const pct = (n: number | null) => (n == null ? '' : `${Math.round(n)}%`)
 const pctClass = (n: number | null, tol: number) => `st-text-${(statusFor(n, tol) ?? 'none').replace(' ', '-')}`
 
 function Tip({ title, children }: { title: string; children: ReactNode }) {
@@ -140,12 +141,6 @@ function GoalsTab({ p, range }: { p: Prepared; range: Range }) {
         </Section>
       )}
 
-      {v.tolerance.rows.length > 0 && (
-        <Section title={<Tip title={t('ins.tolerance')}>{t('ins.toleranceInfo')}</Tip>}>
-          <div className="card pad"><ToleranceChart rows={v.tolerance.rows} /></div>
-        </Section>
-      )}
-
       {v.ended.length > 0 && (
         <Section title={t('ins.ended')}>
           <div className="card list">
@@ -155,9 +150,9 @@ function GoalsTab({ p, range }: { p: Prepared; range: Range }) {
                 <button key={x.goal.id} className="list-row" onClick={() => navigate(`/insights/goals/${x.goal.id}`)}>
                   <div className="text">
                     <div className="title" style={{ fontSize: 15 }}>{x.goal.title}</div>
-                    <div className="meta">
-                      {end && <span className={`pill end-${end.state}`}>{endLabel(end.state)}</span>}
-                      <span className="small muted">{end ? `${dayMonth(end.date)} · ` : ''}{t('ins.averaged', { pct: pct(x.recent) })}</span>
+                    <div className="sub">
+                      {end && <><span className={`end-text end-${end.state}`}>{endLabel(end.state)}</span> · {dayMonth(end.date)}</>}
+                      {x.recent != null && <>{end ? ' · ' : ''}{t('ins.averaged', { pct: pct(x.recent) })}</>}
                     </div>
                   </div>
                   <IconChevronRight className="chev" width={18} />
@@ -177,7 +172,11 @@ function TrendRow({ t: trend }: { t: GoalTrend }) {
       <div className="text">
         <div className="trend-head">
           <span className="title">{trend.goal.title}</span>
-          <span className={`trend-pct ${pctClass(trend.recent, trend.goal.tolerancePct)}`}>{pct(trend.recent)}</span>
+          {/* The tolerance beside the average, so its color reads against the line it's judged by. */}
+          <span className="trend-pct">
+            <span className={pctClass(trend.recent, trend.goal.tolerancePct)}>{pct(trend.recent)}</span>
+            <span className="trend-tol" aria-label={t('ins.toleranceN', { n: trend.goal.tolerancePct })}> / {trend.goal.tolerancePct}%</span>
+          </span>
         </div>
         <Sparkline points={trend.points} tolerance={trend.goal.tolerancePct} markers={trend.markers} />
         <div className="sub trend-takeaway">{trend.takeaway}</div>
@@ -204,15 +203,16 @@ function PatternSections({ p, data, empty }: { p: Prepared; data: PatternsView; 
       </div>
     ) : null
   }
+  // What works comes first; what gets in the way after it.
   return (
     <>
+      {data.preps.length > 0 && <PrepsSection effects={data.preps} />}
       {data.obstacles.total > 0 && (
         <Section title={<Tip title={t('ins.inTheWay')}>{t('ins.inTheWayInfo')}</Tip>}
           aside={<span>{t('ins.misses', { n: data.obstacles.total })}</span>}>
           <div className="card pad"><ReasonBars o={data.obstacles} /></div>
         </Section>
       )}
-      {data.preps.length > 0 && <PrepsSection effects={data.preps} />}
       {data.weekdays.length > 0 && (
         <Section title={<Tip title={t('ins.weekdays')}>{t('ins.weekdaysInfo')}</Tip>}>
           <div className="card pad"><WeekdayGrid rows={data.weekdays} /></div>
@@ -243,8 +243,8 @@ function PrepsSection({ effects }: { effects: PrepEffect[] }) {
             <div className="text">
               <div className="title">{e.prep.title}</div>
               <div className="meta">
-                <span className={`pill verdict-${e.verdict}`}>{tk(VERDICT[e.verdict])}</span>
-                <span className="small muted">{t('ins.for', { name: e.commitment.label })}</span>
+                <span className={`verdict verdict-${e.verdict}`}>{tk(VERDICT[e.verdict])}</span>
+                <span className="small muted">· {t('ins.for', { name: e.commitment.label })}</span>
               </div>
               <div className="bars">
                 <Bar label={t('ins.done')} n={e.done.n} rate={e.done.rate} tone="prep" />
@@ -309,6 +309,7 @@ function BigPictureTab({ p }: { p: Prepared }) {
       onClick={() => setList(list === key ? null : key)}>
       <span className="year-num">{n}</span>
       <span className="year-label">{label}</span>
+      {n > 0 && <IconChevronRight className="year-chev" width={14} height={14} />}
     </button>
   )
   const active = data.burnups.filter((b) => b.project.state === 'active')
@@ -326,31 +327,36 @@ function BigPictureTab({ p }: { p: Prepared }) {
             <Reveal open={!!list}>{list && <GoalChips goals={lists[list]} />}</Reveal>
           </div>
           <dl className="year-facts">
-            <dt>{t('ins.bestMonth')}</dt>
-            <dd>{y.bestMonth ? <>{capitalize(monthName(y.bestMonth.month))} <span className="muted">{pct(y.bestMonth.pct)}</span></> : '—'}</dd>
-            <dt>{t('ins.mostKept')}</dt>
-            <dd>{y.mostKept ? <>{y.mostKept.goal.title} <span className="muted">{t('ins.wk', { n: y.mostKept.onTrack, total: y.mostKept.weeks })}</span></> : '—'}</dd>
-            <dt>{t('ins.inWayMost')}</dt>
-            <dd>{y.topDisplacement ? <>{y.topDisplacement.label} <span className="muted">×{y.topDisplacement.count}</span></> : '—'}</dd>
+            {y.bestMonth && <>
+              <dt>{t('ins.bestMonth')}</dt>
+              <dd>{capitalize(monthName(y.bestMonth.month))} <span className="muted">{pct(y.bestMonth.pct)}</span></dd>
+            </>}
+            {y.mostKept && <>
+              <dt>{t('ins.mostKept')}</dt>
+              <dd>{y.mostKept.goal.title} <span className="muted">{t('ins.wk', { n: y.mostKept.onTrack, total: y.mostKept.weeks })}</span></dd>
+            </>}
+            {y.topDisplacement && <>
+              <dt>{t('ins.inWayMost')}</dt>
+              <dd>{y.topDisplacement.label} <span className="muted">×{y.topDisplacement.count}</span></dd>
+            </>}
             <dt>{t('ins.weeksReviewed')}</dt>
             <dd>{y.reviews} <span className="muted">{t('ins.ofN', { n: y.reviewable })}</span></dd>
             <dt>{t('ins.planChanges')}</dt><dd>{y.planChanges}</dd>
-            <dt>{t('ins.projectsDone')}</dt><dd>{y.projectsDone}</dd>
           </dl>
         </div>
       </Section>
 
       {data.balance.values.length > 0 && (
-        <Section title={<Tip title={t('ins.valueBalance')}>{t('ins.valueBalanceInfo')}</Tip>}>
+        <Section title={<Tip title={t('ins.valueBalance')}>{t('ins.valueBalanceInfo')}</Tip>} aside={<span>{t('ins.range6m')}</span>}>
           <div className="card pad">
             <p className="takeaway">{data.balance.takeaway}</p>
-            <ValueMonths b={data.balance} />
+            <ValueMonths b={data.balance} all={p.snap.values} />
           </div>
         </Section>
       )}
 
       {data.timeline.rows.length > 0 && (
-        <Section title={<Tip title={t('ins.timeline')}>{t('ins.timelineInfo')}</Tip>}>
+        <Section title={<Tip title={t('ins.timeline')}>{t('ins.timelineInfo')}</Tip>} aside={<span>{t('ins.range1y')}</span>}>
           <div className="card pad"><TimelineChart t={data.timeline} /></div>
         </Section>
       )}

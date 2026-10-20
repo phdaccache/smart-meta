@@ -93,11 +93,14 @@ export function valueLook(value: Value | undefined, values: Value[]): { icon: st
   return { icon, color: i < 0 ? 'gray' : VALUE_COLORS[i % VALUE_COLORS.length] }
 }
 
-/** For charts: the CSS color of the value at this index ('' id: no value, greyed). */
-export function valueFill(values: Value[], i: number): string {
+/**
+ * For charts: the CSS color of the value at this index ('' id: no value, greyed). `all` is every value, in the
+ * order the rest of the app has them, so a value with no color picked gets the same one here as everywhere else.
+ */
+export function valueFill(values: Value[], i: number, all: Value[] = values): string {
   const v = values[i]
   if (!v || v.id === '') return 'var(--line-strong)'
-  return `var(--c-${valueLook(v, values).color})`
+  return `var(--c-${valueLook(v, all).color})`
 }
 
 export function Glyph({ g, size }: { g: Glyph; size: number }) {

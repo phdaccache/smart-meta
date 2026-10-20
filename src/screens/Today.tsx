@@ -231,6 +231,9 @@ export function TodayScreen({ date }: { date?: DateStr }) {
 
 // ——— groups ———
 
+/** When something on Today was last ticked or logged, so a group folds only after a tick of its own. */
+let tickedAt = 0
+
 function Group(props: {
   group: TodayGroup
   snap: Snapshot
@@ -242,11 +245,12 @@ function Group(props: {
   const [expanded, setExpanded] = useState(false)
   // Ticking the last thing leaves the card open a moment, so the tick is seen, then it folds into one line.
   // That holds every time, even after it was opened again from that line and something was unticked and ticked.
+  // Only a tick does it: a day still loading, coming back to Today, can't look finished a moment later and fold again.
   const [wasDone, setWasDone] = useState(group.done)
   const [settling, setSettling] = useState(false)
   if (group.done !== wasDone) {
     setWasDone(group.done)
-    setSettling(group.done)
+    setSettling(group.done && Date.now() - tickedAt < 3000)
   }
   const card = useRef<HTMLDivElement>(null)
   const from = useRef<number | null>(null)
@@ -360,7 +364,10 @@ function ItemRow({ item, date, today, onOpen }: { item: TodayItem; date: DateStr
   const toggle = async () => {
     if (valued) return setEditing((e) => !e)
     if (item.done && item.entryId) await uncheck(item.entryId)
-    else await check({ subjectType: item.subjectType, subjectId: item.subjectId }, date)
+    else {
+      tickedAt = Date.now()
+      await check({ subjectType: item.subjectType, subjectId: item.subjectId }, date)
+    }
   }
 
   // Preps and steps are less obvious than habits and tasks, so they say what they are, in their color.
@@ -430,6 +437,7 @@ function ValueEditor({ item, date, onDone }: {
   const ok = parsed != null && Number.isFinite(parsed) && parsed >= 0
   const save = async () => {
     if (!ok) return
+    tickedAt = Date.now()
     const r = await logValue(c, date, parsed!, daily ? item.entryIds ?? [] : [])
     if (r.missed && !r.explained && asksWhyAtOnce(c)) {
       onDone({ prompt: { commitmentId: c.id, period: 'day', slots: [{ date, count: 1 }] }, question: valueMissQuestion(c, parsed!) })
