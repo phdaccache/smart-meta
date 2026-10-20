@@ -95,6 +95,11 @@ export async function deleteValue(v: Value) {
   await tombstone('values', [v.id])
 }
 
+/** Undo for a value just deleted: it comes back, and so does it for the goals behind it. */
+export async function restoreValue(id: ID) {
+  await patch('values', id, { deletedAt: null })
+}
+
 // ——— goals ———
 
 export function commitmentFields(d: CommitmentDraft): Omit<Fields<Commitment>, 'goalId' | 'startDate'> {

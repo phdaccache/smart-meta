@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { exportData, importData, parseBackup, shareOrDownload } from '../db/backup'
-import { deleteValue, saveValues, setValueLook } from '../db/repo'
+import { deleteValue, restoreValue, saveValues, setValueLook } from '../db/repo'
 import { setSettings } from '../db/settings'
 import { langSetting, setLangSetting, t, tlist, tn, type LangSetting } from '../i18n'
 import { formatTime, isDateStr } from '../lib/dates'
@@ -375,6 +375,35 @@ export function ValuesEditor(props: { onSaved?: () => void }) {
   const uses = (id: string) => snap.goals.filter((g) => g.whyValueId === id).length
   const update = (i: number, p: Partial<ValueDraft>) => setDrafts(drafts.map((x, j) => (j === i ? { ...x, ...p } : x)))
 
+  // A color left unpicked comes from the value's place in the list: the ones after a removed value keep theirs.
+  const keepColors = async (removed: Value[]) => {
+    const kept = snap.values.filter((v) => !removed.includes(v))
+    for (const v of kept) {
+      const color = valueLook(v, snap.values).color
+      if (removed.length && valueLook(v, kept).color !== color) await setValueLook(v, { color })
+    }
+  }
+
+  // A saved value goes as soon as it's swiped away, as anything deleted on the iPhone does; Undo brings it back.
+  // One not saved yet only leaves the list.
+  const remove = async (d: ValueDraft, at: number) => {
+    setDrafts((all) => all && all.filter((x) => x.key !== d.key))
+    const saved = d.id ? snap.values.find((v) => v.id === d.id) : undefined
+    if (saved) {
+      await keepColors([saved])
+      await deleteValue(saved)
+    }
+    deletedToast(() => {
+      if (saved) restoreValue(saved.id)
+      setDrafts((all) => all && putBack(all, at, d))
+    })
+  }
+  // A goal whose value goes keeps going without one, like a goal that skipped it.
+  const confirmUsed = (d: ValueDraft) => {
+    const goals = d.id ? uses(d.id) : 0
+    return !goals || confirm(tn('set.removeUsedValueQ', goals, { name: d.name.trim() || snap.values.find((v) => v.id === d.id)?.name || '' }))
+  }
+
   const save = async () => {
     if (!ok) return setTried(true)
     const removed = snap.values.filter((v) => !filled.some((d) => d.id === v.id))
@@ -383,12 +412,7 @@ export function ValuesEditor(props: { onSaved?: () => void }) {
       const goals = uses(v.id)
       if (goals && !confirm(tn('set.removeUsedValueQ', goals, { name: v.name }))) return
     }
-    // A color left unpicked comes from the value's place in the list: the ones after a removed value keep theirs.
-    const kept = snap.values.filter((v) => !removed.includes(v))
-    for (const v of kept) {
-      const color = valueLook(v, snap.values).color
-      if (removed.length && valueLook(v, kept).color !== color) await setValueLook(v, { color })
-    }
+    await keepColors(removed)
     await saveValues(filled.map((d) => ({ id: d.id, name: d.name.trim(), description: d.description.trim() })))
     for (const v of removed) await deleteValue(v)
     props.onSaved?.()
@@ -400,11 +424,7 @@ export function ValuesEditor(props: { onSaved?: () => void }) {
         {drafts.map((d, i) => (
           // Removed by swiping it left, as in the iPhone's lists; the last one stays.
           <SwipeToDelete key={d.key} className="list-row has-tile" label={t('set.removeValueN', { n: i + 1 })}
-            disabled={drafts.length < 2} onDelete={() => {
-              // Nothing is saved until Save, so Undo just puts the row back.
-              setDrafts((all) => all && all.filter((x) => x.key !== d.key))
-              deletedToast(() => setDrafts((all) => all && putBack(all, i, d)))
-            }}>
+            disabled={drafts.length < 2} confirm={() => confirmUsed(d)} onDelete={() => remove(d, i)}>
             <ValueTile value={snap.values.find((v) => v.id === d.id)} values={snap.values} onPick={setPicking} />
             <div className="text">
               <input value={d.name} aria-label={t('set.valueN', { n: i + 1 })}

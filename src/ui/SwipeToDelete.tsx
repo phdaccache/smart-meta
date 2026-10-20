@@ -44,6 +44,8 @@ export function SwipeToDelete(props: {
   /** What the bin says to a screen reader, e.g. "Remove step 2". */
   label: string
   onDelete: () => void
+  /** Asked before the row goes (a value goals still use); false sends it back. */
+  confirm?: () => boolean
   /** The last row of a list that can't be empty. */
   disabled?: boolean
   children: ReactNode
@@ -124,6 +126,10 @@ export function SwipeToDelete(props: {
     /** `tapped`: from the bin itself, so it's quicker than a swipe let go, and the haptic was the tap. */
     const remove = (velocity = 0, tapped = false) => {
       if (removing) return
+      if (latest.current.confirm && !latest.current.confirm()) {
+        arm(false)
+        return close()
+      }
       removing = true
       if (closeOpen === close) closeOpen = null
       if (matchMedia('(prefers-reduced-motion: reduce)').matches) return latest.current.onDelete()
