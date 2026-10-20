@@ -11,7 +11,7 @@ import { useSnapshot } from '../ui/hooks'
 import { IconCalendar, IconChevronUpDown, IconClock, IconGoals, IconNote } from '../ui/icons'
 import { navigate } from '../ui/router'
 import { IconTile, ProjectTile, ValueTile } from '../ui/valueLook'
-import { SwipeToDelete } from '../ui/SwipeToDelete'
+import { deletedToast, SwipeToDelete } from '../ui/SwipeToDelete'
 
 /** "Today", "Tomorrow", or "Saturday, 24 October". */
 function dateText(d: DateStr, today: DateStr): string {
@@ -197,7 +197,7 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
 /** Deleted by a swipe: gone at once, with an Undo on the toast in case it was a slip. */
 export async function deleteWithUndo(id: string) {
   await deleteTask({ id })
-  toast(t('common.deleted'), { label: t('common.undo'), run: () => restoreTask(id) })
+  deletedToast(() => restoreTask(id))
 }
 
 /**

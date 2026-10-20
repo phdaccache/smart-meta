@@ -69,10 +69,10 @@ const useStoredFilter = () => useStored<Filter>('today-filter', 'all')
 /** When tasks are due, from the filter button: anything but "all" shows only tasks and steps due then. */
 type When = 'today' | 'tomorrow' | 'week' | 'all'
 const WHENS: { value: When; label: () => string }[] = [
+  { value: 'all', label: () => t('common.all') },
   { value: 'today', label: () => t('today.whenToday') },
   { value: 'tomorrow', label: () => t('today.whenTomorrow') },
   { value: 'week', label: () => t('today.whenWeek') },
-  { value: 'all', label: () => t('common.all') },
 ]
 
 function dueThen(i: TodayItem, when: Exclude<When, 'all'>, today: DateStr): boolean {
@@ -100,7 +100,17 @@ function applyWhen(groups: TodayGroup[], when: When, today: DateStr): TodayGroup
  * the choice is ticked, and a tap anywhere else closes it. The button fills while a filter is on.
  */
 function WhenMenu({ value, onChange }: { value: When; onChange: (w: When) => void }) {
-  const [open, setOpen] = useState(false)
+  // Closing keeps it shown a moment, while it shrinks back into the button.
+  const [phase, setPhase] = useState<'closed' | 'open' | 'closing'>('closed')
+  const open = phase === 'open'
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const setOpen = (on: boolean) => {
+    clearTimeout(timer.current)
+    if (on) return setPhase('open')
+    setPhase((p) => (p === 'closed' ? p : 'closing'))
+    timer.current = setTimeout(() => setPhase('closed'), 200)
+  }
+  useEffect(() => () => clearTimeout(timer.current), [])
   const wrap = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!open) return
@@ -120,8 +130,8 @@ function WhenMenu({ value, onChange }: { value: When; onChange: (w: When) => voi
         aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
         <IconFilter />
       </button>
-      {open && (
-        <div className="menu" role="menu" aria-label={t('today.when')}>
+      {phase !== 'closed' && (
+        <div className={`menu ${phase === 'closing' ? 'closing' : ''}`} role="menu" aria-label={t('today.when')}>
           <div className="menu-title">{t('today.when')}</div>
           {WHENS.map((w) => (
             <button key={w.value} type="button" role="menuitemradio" aria-checked={value === w.value} className="menu-item"

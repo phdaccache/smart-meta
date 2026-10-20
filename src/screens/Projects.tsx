@@ -10,7 +10,7 @@ import { CheckButton, DatePickerButton, InfoTip, NoteField, PageText, Screen, Se
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconCalendar, IconClose } from '../ui/icons'
 import { Sortable } from '../ui/Sortable'
-import { SwipeToDelete } from '../ui/SwipeToDelete'
+import { deletedToast, putBack, SwipeToDelete } from '../ui/SwipeToDelete'
 import { navigate } from '../ui/router'
 import { openQuickAddFor } from './QuickAdd'
 import { DateTimeRows, deleteWithUndo, GoalChoice, linkableGoals, TaskList } from './TaskSheet'
@@ -24,6 +24,9 @@ import { DateTimeRows, deleteWithUndo, GoalChoice, linkableGoals, TaskList } fro
  */
 export function StepsEditor({ steps, onChange }: { steps: string[]; onChange: (steps: string[]) => void }) {
   const fields = useRef<(HTMLInputElement | null)[]>([])
+  // Undo comes after the list has changed again: it puts the step back into the latest one.
+  const latest = useRef(steps)
+  latest.current = steps
   const focusStep = (i: number) => fields.current[i]?.focus()
   const addStep = () => {
     flushSync(() => onChange([...steps, '']))
@@ -35,7 +38,10 @@ export function StepsEditor({ steps, onChange }: { steps: string[]; onChange: (s
         {steps.map((s, i) => (
           <li key={i}>
             <SwipeToDelete className="steps-editor-row" label={t('project.removeStepN', { n: i + 1 })} disabled={steps.length < 2}
-              onDelete={() => onChange(steps.filter((_, j) => j !== i))}>
+              onDelete={() => {
+                onChange(steps.filter((_, j) => j !== i))
+                deletedToast(() => onChange(putBack(latest.current, i, s)))
+              }}>
               <span className="num">{i + 1}</span>
               <input ref={(el) => { fields.current[i] = el }} value={s} aria-label={t('project.stepN', { n: i + 1 })}
                 placeholder={i === 0 ? t('project.phStep') : ''} enterKeyHint="next"
@@ -103,13 +109,19 @@ interface DraftStep { key: string; title: string }
 /** The steps of a project not saved yet, kept and changed as on a project's page (without ticking them off). */
 function DraftSteps({ steps, onChange }: { steps: DraftStep[]; onChange: (steps: DraftStep[]) => void }) {
   const next = useRef(0)
+  const latest = useRef(steps)
+  latest.current = steps
   const add = (title: string) => onChange([...steps, { key: `s${next.current++}`, title }])
   return (
     <div className="card">
       <Sortable items={steps} keyOf={(s) => s.key} labelOf={(s) => s.title} onReorder={onChange} className="items step-list"
         render={(step) => (
           <SwipeToDelete className="item kind-step" label={t('project.removeStep', { step: step.title })}
-            onDelete={() => onChange(steps.filter((s) => s.key !== step.key))}>
+            onDelete={() => {
+              const at = steps.indexOf(step)
+              onChange(steps.filter((s) => s.key !== step.key))
+              deletedToast(() => onChange(putBack(latest.current, at, step)))
+            }}>
             <div className="item-main">
               <StepTitle title={step.title} onSave={(title) => onChange(steps.map((s) => (s.key === step.key ? { ...s, title } : s)))} />
             </div>

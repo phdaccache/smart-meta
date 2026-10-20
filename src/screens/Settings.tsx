@@ -11,7 +11,7 @@ import { Field, InfoTip, Screen, Section, Sheet, Stepper, Switch, toast, TypeToC
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconChevronUpDown } from '../ui/icons'
 import { useInstall } from '../ui/install'
-import { SwipeToDelete } from '../ui/SwipeToDelete'
+import { deletedToast, putBack, SwipeToDelete } from '../ui/SwipeToDelete'
 import { useIsDeveloper } from '../ui/developer'
 import { RELEASES } from '../lib/releases'
 import { ReleaseNotes } from './WhatsNew'
@@ -400,7 +400,11 @@ export function ValuesEditor(props: { onSaved?: () => void }) {
         {drafts.map((d, i) => (
           // Removed by swiping it left, as in the iPhone's lists; the last one stays.
           <SwipeToDelete key={d.key} className="list-row has-tile" label={t('set.removeValueN', { n: i + 1 })}
-            disabled={drafts.length < 2} onDelete={() => setDrafts((all) => all && all.filter((x) => x.key !== d.key))}>
+            disabled={drafts.length < 2} onDelete={() => {
+              // Nothing is saved until Save, so Undo just puts the row back.
+              setDrafts((all) => all && all.filter((x) => x.key !== d.key))
+              deletedToast(() => setDrafts((all) => all && putBack(all, i, d)))
+            }}>
             <ValueTile value={snap.values.find((v) => v.id === d.id)} values={snap.values} onPick={setPicking} />
             <div className="text">
               <input value={d.name} aria-label={t('set.valueN', { n: i + 1 })}

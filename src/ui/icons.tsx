@@ -81,9 +81,9 @@ export const IconClock = (p: P) => (
 export const IconHistory = (p: P) => (
   <Svg {...p}><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6" /><path d="M3 4v4h4" /><path d="M12 8v4.5l3 2" /></Svg>
 )
-/** Like the iPhone's line.3.horizontal.decrease.circle: filled while a filter is on (see .filter-btn.on). */
+/** Like the iPhone's line.3.horizontal.decrease. */
 export const IconFilter = (p: P) => (
-  <Svg {...p}><circle cx="12" cy="12" r="9.5" /><path d="M7.5 9h9M9.5 12.5h5M11 16h2" /></Svg>
+  <Svg strokeWidth="2" {...p}><path d="M4 6.5h16M7 12h10M10 17.5h4" /></Svg>
 )
 export const IconMore = (p: P) => (
   <Svg {...p}><circle cx="6" cy="12" r="1.3" fill="currentColor" /><circle cx="12" cy="12" r="1.3" fill="currentColor" /><circle cx="18" cy="12" r="1.3" fill="currentColor" /></Svg>

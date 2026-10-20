@@ -686,15 +686,26 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .when { position: relative; }
 .filter-btn { color: var(--ink); }
 .filter-btn.on { color: var(--accent); }
-.filter-btn.on circle { fill: var(--accent); }
-.filter-btn.on path { stroke: #fff; }
+/*
+ * The menu grows out of the button on a spring with a little overshoot, sharpening from a blur
+ * as it comes, and its rows fade in just behind; closing, it shrinks back into the button.
+ * The curve is a sampled spring (damping 0.72, response 0.42), as iOS menus use.
+ */
 .menu {
+  --spring: cubic-bezier(0.2, 0.9, 0.3, 1.1);
+  --spring: linear(0, 0.033, 0.115, 0.225, 0.347, 0.469, 0.584, 0.688, 0.777, 0.85, 0.909, 0.954, 0.988, 1.011, 1.026, 1.034, 1.038, 1.038, 1.036, 1.032, 1.027, 1.023, 1.018, 1.014, 1.01, 1.007, 1.005, 1.003, 1.001, 1);
   position: absolute; top: calc(100% + 4px); right: 0; z-index: 30; min-width: 232px; padding: 6px 0; border-radius: 14px;
   background: color-mix(in srgb, var(--surface-raised) 86%, transparent);
   -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
-  box-shadow: var(--lift-shadow); transform-origin: top right; animation: menu-in 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.05);
+  box-shadow: var(--lift-shadow); transform-origin: calc(100% - 22px) -26px;
+  animation: menu-grow 0.55s var(--spring) both, menu-show 0.22s ease-out both;
 }
-@keyframes menu-in { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: none; } }
+.menu > * { animation: menu-show 0.24s ease-out 0.06s both; }
+.menu.closing { animation: menu-shrink 0.2s cubic-bezier(0.4, 0, 1, 1) both; pointer-events: none; }
+.menu.closing > * { animation: none; }
+@keyframes menu-grow { from { transform: scale(0.15); } to { transform: none; } }
+@keyframes menu-show { from { opacity: 0; filter: blur(6px); } to { opacity: 1; filter: none; } }
+@keyframes menu-shrink { to { opacity: 0; transform: scale(0.15); filter: blur(4px); } }
 .menu-title { font-size: 13px; color: var(--ink-2); padding: 6px 16px 8px; border-bottom: 1px solid var(--line); }
 .menu-item {
   display: flex; align-items: center; gap: 6px; width: 100%; min-height: 44px; padding: 0 16px 0 10px;
@@ -703,7 +714,7 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .menu-item + .menu-item { border-top: 1px solid var(--line); }
 .menu-item:active, .menu-item:focus-visible { background: var(--surface-2); outline: none; }
 .menu-check { width: 22px; display: grid; place-items: center; color: var(--ink); flex: none; }
-@media (prefers-reduced-motion: reduce) { .menu { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .menu, .menu > * { animation: menu-show 0.15s ease-out both; } .menu.closing { animation: none; opacity: 0; } }
 @media (prefers-reduced-transparency: reduce) { .menu { background: var(--surface-raised); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 .today-filter .segmented button { min-height: 34px; font-size: 13px; }
 
@@ -1325,6 +1336,8 @@ li:has(> .swipeable[data-swipe]), .card:has(> .swipeable[data-swipe]) { overflow
 /* Past the point of no return the pill stretches across, its bin at the row's edge, and the label goes. */
 .swipeable[data-armed] .swipe-delete { width: 100%; justify-items: start; padding-left: 20px; }
 .swipeable[data-armed] .swipe-label { opacity: 0; }
+/* Tapped rather than swiped across, the stretch is quick: the choice is already made. */
+.swipeable[data-quick] .swipe-delete { transition-duration: 0.12s; }
 .swipeable[data-swipe="removing"] {
   transition: height 0.26s var(--ease-out), min-height 0.26s var(--ease-out), padding 0.26s var(--ease-out), opacity 0.2s ease;
 }

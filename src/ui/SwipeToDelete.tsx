@@ -1,5 +1,6 @@
 import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import { t } from '../i18n'
+import { toast } from './components'
 import { haptic } from './haptics'
 import { IconTrash } from './icons'
 
@@ -9,6 +10,14 @@ const OPEN = 84
 const SLOP = 8
 /** Dragged past this share of the row's width, letting go deletes it (Notes' full swipe). */
 const FULL = 0.55
+
+/** "Deleted." with an Undo, after any swipe delete: a full swipe is easy to make by mistake. */
+export function deletedToast(undo: () => void) {
+  toast(t('common.deleted'), { label: t('common.undo'), run: undo })
+}
+
+/** A list with `item` put back where it was. */
+export const putBack = <T,>(list: T[], at: number, item: T) => [...list.slice(0, at), item, ...list.slice(at)]
 
 /** Only one row is swiped open at a time, as in the iPhone's lists: opening one closes the last. */
 let closeOpen: (() => void) | null = null
@@ -112,15 +121,21 @@ export function SwipeToDelete(props: {
       springTo(0, 0)
     }
 
-    const remove = (velocity = 0) => {
+    /** `tapped`: from the bin itself, so it's quicker than a swipe let go, and the haptic was the tap. */
+    const remove = (velocity = 0, tapped = false) => {
       if (removing) return
       removing = true
       if (closeOpen === close) closeOpen = null
       if (matchMedia('(prefers-reduced-motion: reduce)').matches) return latest.current.onDelete()
-      if (!armed) arm(true)
+      width = el.offsetWidth || width
+      if (tapped) {
+        el.dataset.quick = ''
+        armed = true
+        el.dataset.armed = ''
+      } else if (!armed) arm(true)
       el.dataset.swipe = 'removing'
       // The row goes off to the left with the red behind it, then its place closes up.
-      springTo(-width, Math.min(velocity, 0), 1, 0.3, () => {
+      springTo(-width, Math.min(velocity, 0), 1, tapped ? 0.2 : 0.3, () => {
         el.style.height = `${el.offsetHeight}px`
         requestAnimationFrame(() => {
           Object.assign(el.style, { height: '0px', minHeight: '0px', paddingTop: '0px', paddingBottom: '0px', opacity: '0' })
@@ -132,13 +147,14 @@ export function SwipeToDelete(props: {
           open = false
           armed = false
           delete el.dataset.armed
+          delete el.dataset.quick
           place(0)
           delete el.dataset.swipe
           latest.current.onDelete()
         }, 260)
       })
     }
-    removeRef.current = () => remove()
+    removeRef.current = () => remove(0, true)
 
     const onPointerDown = (e: PointerEvent) => {
       if (latest.current.disabled || removing || (e.pointerType === 'mouse' && e.button !== 0)) return
