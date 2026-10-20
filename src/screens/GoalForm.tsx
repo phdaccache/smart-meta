@@ -7,11 +7,12 @@ import {
   type CommitmentDraft, type Errors, type GoalDraft, type PrepDraft,
 } from '../lib/draft'
 import { addMonths, OBSTACLE_PREPS, toleranceLine } from '../lib/intro'
+import { capitalize } from '../lib/dates'
 import { periodWord } from '../lib/describe'
 import type { Period, Shape } from '../lib/types'
 import { templateByKey, templatesFor, type Template } from '../lib/templates'
 import { startTemplate, TemplateGoalScreen } from './TemplateGoal'
-import { Chip, Field, InfoTip, PageText, Screen, Segmented, Sheet, Stepper, toast, WeekdayPicker } from '../ui/components'
+import { Chip, Field, InfoTip, PageText, Screen, Sheet, toast, WeekdayPicker } from '../ui/components'
 import { IconChevronRight, IconChevronUpDown, IconClose } from '../ui/icons'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { goBack, navigate, screensUnder, scrollScreenToTop, useLocation } from '../ui/router'
@@ -38,12 +39,6 @@ export function ShapeInfo() {
   )
 }
 
-
-const periods = (): { value: Period; label: string }[] => [
-  { value: 'day', label: t('common.day') },
-  { value: 'week', label: t('common.week') },
-  { value: 'month', label: t('common.month') },
-]
 
 export type SetField = <K extends keyof GoalDraft>(k: K, v: GoalDraft[K]) => void
 
@@ -149,75 +144,144 @@ export function MeasurementFields({ d, set, e, showErrors, placeholders, withLab
   )
 }
 
+/**
+ * How a habit is counted, as Reminders sets a repeat: one card of rows (what
+ * it is on the left, its value on the right), and under it, in words, what it adds up to.
+ */
 export function CadenceFields({ d, set, e, showErrors }: {
   d: CommitmentDraft; set: (p: Partial<CommitmentDraft>) => void; e: Errors<CommitmentDraft>; showErrors: boolean
 }) {
   const types = CHECKIN_TYPES[d.shape]
   const typeLabel = { binary: 'form.checkYesNo', quantity: 'form.checkNumber', timestamp: 'form.checkTime' } as const
-  const PERIODS = periods()
+  const freq = (p: Period) => ({ value: p, label: capitalize(t(p === 'day' ? 'cadence.daily' : p === 'week' ? 'cadence.weekly' : 'cadence.monthly')) })
+  const timed = d.checkinType === 'timestamp'
+  const error = showErrors ? e.times ?? e.checkinType ?? e.targetValue ?? e.targetTime : undefined
   return (
-    <>
-      {d.shape === 'rhythm' && (
-        <Field label={t('form.target')} error={showErrors ? e.times : undefined}>
-          <div className="inline-fields times-per">
-            <Stepper label={t('form.times')} value={d.times} min={1} max={31} onChange={(times) => set({ times })} />
-            <span className="muted">{t('form.timesPer')}</span>
-            {/* The phone's own list, as for picking a goal. */}
-            <span className="period-pick">
-              {periodWord(d.period)} <IconChevronUpDown width={16} height={16} />
-              <select aria-label={t('form.period')} value={d.period} onChange={(ev) => set({ period: ev.target.value as Period })}>
-                {PERIODS.map((p) => <option key={p.value} value={p.value}>{periodWord(p.value)}</option>)}
-              </select>
-            </span>
-          </div>
-          {d.period === 'week' && d.times === 7 && (
-            <p className="field-hint after">
-              {t('form.sevenIsDaily')} <button type="button" className="link-btn" onClick={() => set({ period: 'day', times: 1 })}>{t('form.useDaily')}</button>
-            </p>
-          )}
-        </Field>
-      )}
-
-      {types.length > 1 && (
-        <Field label={t('form.checkInWith')} error={showErrors ? e.checkinType : undefined}>
-          <Segmented label={t('form.checkInType')} value={d.checkinType} onChange={(checkinType) => set({ checkinType })}
+    <Field label={t('form.target')} error={error}>
+      <div className="card list form-list">
+        {types.length > 1 && (
+          <PickRow label={t('form.checkInWith')} value={d.checkinType}
+            // "At most" and "by" are both lte, but they don't carry over: each kind starts on its usual direction, and a time on its day.
+            onChange={(checkinType) => set(d.shape !== 'threshold' ? { checkinType }
+              : checkinType === 'timestamp' ? { checkinType, period: 'day', comparator: 'lte' } : { checkinType, comparator: 'gte' })}
             options={types.map((x) => ({ value: x, label: t(typeLabel[x]) }))} />
-        </Field>
-      )}
-
-      {d.shape === 'threshold' && (
-        <>
-          <Field label={t('form.judgedPer')}>
-            <Segmented label={t('form.period')} value={d.period} options={d.checkinType === 'timestamp' ? PERIODS.slice(0, 1) : PERIODS} onChange={(period) => set({ period })} />
-          </Field>
-          {d.checkinType === 'quantity' && (
-            <Field label={t('form.theLimit')} error={showErrors ? e.targetValue : undefined}
-              info={d.period === 'day' ? undefined : t(d.period === 'week' ? 'form.limitInfo.week' : 'form.limitInfo.month')}>
-              <div className="inline-fields wrap">
-                <Segmented label={t('form.direction')} value={d.comparator} onChange={(comparator) => set({ comparator })}
-                  options={[{ value: 'gte', label: t('form.atLeast') }, { value: 'lte', label: t('form.atMost') }]} />
-                <input className="narrow" inputMode="decimal" value={d.targetValue} placeholder="8" aria-label={t('form.limit')}
-                  onChange={(ev) => set({ targetValue: ev.target.value })} />
-                <input className="narrow" value={d.unit} placeholder={t('form.phUnit')} aria-label={t('form.unit')} autoCapitalize="off"
-                  onChange={(ev) => set({ unit: ev.target.value })} />
-              </div>
-            </Field>
-          )}
-          {d.checkinType === 'timestamp' && (
-            <Field label={t('form.theTime')} error={showErrors ? e.targetTime : undefined}>
-              <div className="inline-fields wrap">
-                <Segmented label={t('form.direction')} value={d.comparator} onChange={(comparator) => set({ comparator })}
-                  options={[{ value: 'lte', label: t('form.by') }, { value: 'gte', label: t('form.notBefore') }]} />
-                <input type="time" className="narrow" style={{ flexBasis: 120 }} value={d.targetTime} aria-label={t('common.time')}
-                  onChange={(ev) => set({ targetTime: ev.target.value })} />
-              </div>
-            </Field>
-          )}
-        </>
-      )}
-
-    </>
+        )}
+        {d.shape !== 'standard' && (
+          <PickRow label={t('form.frequency')} value={d.period} onChange={(period) => set({ period })}
+            // A time is judged each day.
+            options={d.shape === 'threshold' && timed ? [freq('day')] : (['day', 'week', 'month'] as const).map(freq)} />
+        )}
+        {d.shape === 'rhythm' && <TimesRow value={d.times} onChange={(times) => set({ times })} />}
+        {d.shape === 'threshold' && (
+          <>
+            <PickRow label={t('form.direction')} value={d.comparator} onChange={(comparator) => set({ comparator })}
+              options={timed
+                ? [{ value: 'lte', label: t('form.by') }, { value: 'gte', label: t('form.notBefore') }]
+                : [{ value: 'gte', label: t('form.atLeast') }, { value: 'lte', label: t('form.atMost') }]} />
+            {timed ? (
+              <InputRow id="c-time" label={t('common.time')}>
+                <input id="c-time" type="time" className="row-input" value={d.targetTime} onChange={(ev) => set({ targetTime: ev.target.value })} />
+              </InputRow>
+            ) : (
+              <>
+                <InputRow id="c-limit" label={t('form.limit')}>
+                  <input id="c-limit" className="row-input" inputMode="decimal" value={d.targetValue} placeholder="8"
+                    onChange={(ev) => set({ targetValue: ev.target.value })} />
+                </InputRow>
+                <InputRow id="c-unit" label={t('form.unit')}>
+                  <input id="c-unit" className="row-input" value={d.unit} placeholder={t('form.phUnit')} autoCapitalize="off"
+                    onChange={(ev) => set({ unit: ev.target.value })} />
+                </InputRow>
+              </>
+            )}
+          </>
+        )}
+      </div>
+      <CadenceSummary d={d} set={set} />
+    </Field>
   )
+}
+
+/** One choice from a short list, with the phone's own picker, as for picking a goal. One option: just shown. */
+function PickRow<T extends string>(props: { label: string; value: T; options: { value: T; label: string }[]; onChange: (v: T) => void }) {
+  const current = props.options.find((o) => o.value === props.value)?.label
+  if (props.options.length < 2) {
+    return (
+      <div className="list-row form-row">
+        <div className="text"><span className="title">{props.label}</span></div>
+        <span className="row-value">{current}</span>
+      </div>
+    )
+  }
+  return (
+    <div className="list-row select-row form-row">
+      <div className="text"><span className="title">{props.label}</span></div>
+      <span className="row-value">{current}</span>
+      <IconChevronUpDown className="chev" width={16} height={16} />
+      <select aria-label={props.label} value={props.value} onChange={(ev) => props.onChange(ev.target.value as T)}>
+        {props.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+    </div>
+  )
+}
+
+function InputRow(props: { id: string; label: string; children: ReactNode }) {
+  return (
+    <div className="list-row form-row">
+      <label className="title" htmlFor={props.id}>{props.label}</label>
+      {props.children}
+    </div>
+  )
+}
+
+/** How many times, typed on the number pad; an empty or out-of-range entry waits for a valid one. */
+function TimesRow({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+  const [text, setText] = useState(String(value))
+  const [shown, setShown] = useState(value)
+  if (value !== shown) {
+    setShown(value)
+    setText(String(value))
+  }
+  return (
+    <InputRow id="c-times" label={t('form.times')}>
+      <input id="c-times" className="row-input" inputMode="numeric" pattern="[0-9]*" value={text}
+        onChange={(ev) => {
+          const v = ev.target.value.replace(/\D/g, '').slice(0, 2)
+          setText(v)
+          const n = Number(v)
+          if (v && n >= 1 && n <= 31) {
+            setShown(n)
+            onChange(n)
+          }
+        }}
+        onBlur={() => setText(String(value))} />
+    </InputRow>
+  )
+}
+
+/** What the rows add up to, in a sentence: "4 times per week." */
+function CadenceSummary({ d, set }: { d: CommitmentDraft; set: (p: Partial<CommitmentDraft>) => void }) {
+  const per = t(d.period === 'day' ? 'form.sumPer.day' : d.period === 'week' ? 'form.sumPer.week' : 'form.sumPer.month')
+  let text: string | null = null
+  let extra: ReactNode = null
+  if (d.shape === 'standard') {
+    text = t(d.checkinType === 'timestamp' ? 'form.sumStandardTimed' : 'form.sumStandard')
+  } else if (d.shape === 'rhythm') {
+    const period = periodWord(d.period)
+    text = d.times === 1 ? (d.period === 'day' ? t('form.sumEveryDay') : t('form.sumOnce', { period })) : t('form.sumTimes', { n: d.times, period })
+    if (d.period === 'week' && d.times === 7) {
+      extra = <> {t('form.sevenIsDaily')} <button type="button" className="link-btn" onClick={() => set({ period: 'day', times: 1 })}>{t('form.useDaily')}</button></>
+    }
+  } else if (d.checkinType === 'timestamp') {
+    if (d.targetTime) text = `${capitalize(`${t(d.comparator === 'gte' ? 'form.notBefore' : 'form.by').toLowerCase()} ${d.targetTime} ${per}`)}.`
+  } else if (d.targetValue.trim()) {
+    const cmp = t(d.comparator === 'lte' ? 'form.atMost' : 'form.atLeast').toLowerCase()
+    text = `${capitalize(`${cmp} ${d.targetValue.trim()} ${d.unit.trim()}`.trim())} ${per}.`
+    // Weekly and monthly amounts add up: say so.
+    if (d.period !== 'day') extra = <> {t(d.period === 'week' ? 'form.limitInfo.week' : 'form.limitInfo.month')}</>
+  }
+  if (!text) return null
+  return <p className="field-hint after form-summary">{text}{extra}</p>
 }
 
 /** One line of text that wraps onto more lines instead of cutting off (a suggested prep can be long). */

@@ -312,24 +312,16 @@ input::placeholder, textarea::placeholder { color: var(--ink-3); }
 /* A choice above its inputs, so longer words (Portuguese) never squeeze them. */
 .inline-fields.wrap { flex-wrap: wrap; }
 .inline-fields.wrap > .segmented { flex: 1 0 100%; }
-.inline-fields.times-per > * { flex: none; }
-/*
- * Reads as a sentence, "[3] times per [week]": the two values are fields of the same
- * look, each as wide as what it holds, joined by plain words.
- */
-/* Number at the left edge, period at the right edge (lined up with the fields and buttons below), words between. */
-.inline-fields.times-per { gap: 10px; justify-content: space-between; }
-.inline-fields.times-per > .muted { font-size: 17px; }
-.inline-fields.times-per .stepper output { font-size: 17px; }
-.inline-fields.times-per > .period-pick {
-  position: relative; display: inline-flex; align-items: center; gap: 6px;
-  height: 44px; padding: 0 10px 0 14px; border-radius: 9px; background: var(--surface-2); /* as .stepper */
-  font-size: 17px; font-weight: 650; color: var(--ink);
+/* A habit's count, as Reminders sets a repeat: label left, value right, in one card. */
+.form-list .form-row { min-height: 48px; padding-top: 0; padding-bottom: 0; gap: 12px; }
+.form-list .form-row > .title { flex: none; }
+.form-list .row-input {
+  flex: 1; min-width: 0; width: auto; min-height: 46px; padding: 0; border: 0; background: none; box-shadow: none;
+  text-align: right; font-size: 17px; color: var(--ink-2);
 }
-.period-pick svg { color: var(--ink-3); }
-.period-pick:active { background: var(--pressed); }
-.period-pick:focus-within { box-shadow: 0 0 0 3px var(--accent-soft); }
-.period-pick select { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; opacity: 0; cursor: pointer; font-size: 16px; }
+.form-list .row-input:focus { color: var(--ink); box-shadow: none; }
+.form-list input[type='time'].row-input { flex: none; margin-left: auto; }
+.form-summary { margin: 8px 16px 0; }
 .inline-fields.wrap .narrow { flex: 1 1 0; }
 
 input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
