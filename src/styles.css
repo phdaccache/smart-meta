@@ -317,7 +317,8 @@ input::placeholder, textarea::placeholder { color: var(--ink-3); }
  * Reads as a sentence, "[3] times per [week]": the two values are fields of the same
  * look, each as wide as what it holds, joined by plain words.
  */
-.inline-fields.times-per { gap: 10px; }
+/* Number at the left edge, period at the right edge (lined up with the fields and buttons below), words between. */
+.inline-fields.times-per { gap: 10px; justify-content: space-between; }
 .inline-fields.times-per > .muted { font-size: 17px; }
 .inline-fields.times-per .stepper output { font-size: 17px; }
 .inline-fields.times-per > .period-pick {
