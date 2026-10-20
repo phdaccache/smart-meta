@@ -1,10 +1,12 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { t, tk, tlist, type Key } from '../i18n'
 import { dayMonthShort } from '../lib/dates'
 import { statusLabel } from '../lib/describe'
 import type { DateStr, Status } from '../lib/types'
 import { IconCheck, IconChevronLeft, IconClose, IconGoals, IconInfo, IconInsights, IconPlus, IconReview, IconSettings, IconToday } from './icons'
+import { useSettings, useToday } from './hooks'
+import { InlineCalendar } from './pickers'
 import { goBack, navigate, pushLayer } from './router'
 
 // ——— screen chrome ———
@@ -593,36 +595,151 @@ export function TypeToConfirm(props: { phrase: string; action: string; onConfirm
   )
 }
 
+/** Open, or closing a moment while it shrinks away, then gone. */
+function usePopPhase(closeMs = 200) {
+  const [phase, setPhase] = useState<'closed' | 'open' | 'closing'>('closed')
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  useEffect(() => () => clearTimeout(timer.current), [])
+  const set = (on: boolean) => {
+    clearTimeout(timer.current)
+    if (on) return setPhase('open')
+    setPhase((p) => (p === 'closed' ? p : 'closing'))
+    timer.current = setTimeout(() => setPhase('closed'), closeMs)
+  }
+  return { phase, open: phase === 'open', set }
+}
+
+interface DateLimits {
+  /** The day picked, or '' for none yet. */
+  value: DateStr | ''
+  min?: DateStr
+  max?: DateStr
+}
+
 /**
- * A native date picker behind a custom button. The input sits invisibly on top
- * of the button so a tap opens the picker directly, which iOS requires.
+ * The app's calendar in a card that grows out of what was tapped and shrinks back into it, as iPhone's compact
+ * date picker does. It sits below the button, or above it when there's no room. A tap anywhere else closes it,
+ * and doesn't reach what's underneath.
  */
-export function DatePickerButton(props: {
-  value: string
-  min?: string
-  max?: string
-  label: string
+function DatePop(props: DateLimits & { anchor: HTMLElement; closing: boolean; label: string; onPick: (d: DateStr) => void; onClose: () => void }) {
+  const settings = useSettings()
+  const today = useToday(settings.rolloverHour)
+  const pop = useRef<HTMLDivElement>(null)
+  const width = Math.min(340, window.innerWidth - 32)
+  const [place, setPlace] = useState<CSSProperties | null>(null)
+  const onClose = useRef(props.onClose)
+  onClose.current = props.onClose
+  useLayoutEffect(() => {
+    const el = pop.current
+    if (!el) return
+    const r = props.anchor.getBoundingClientRect()
+    const vh = window.visualViewport?.height ?? window.innerHeight
+    const height = el.offsetHeight
+    const left = Math.max(16, Math.min(r.left + r.width / 2 - width / 2, window.innerWidth - 16 - width))
+    const x = `${r.left + r.width / 2 - left}px`
+    // Above, it's pinned by its bottom edge, so a month with an extra week grows away from the button.
+    if (r.bottom + 8 + height <= vh - 16) setPlace({ left, width, top: r.bottom + 8, transformOrigin: `${x} ${-8 - r.height / 2}px` })
+    else if (r.top - 8 - height >= 16) setPlace({ left, width, bottom: vh - r.top + 8, transformOrigin: `${x} calc(100% + ${8 + r.height / 2}px)` })
+    else {
+      const top = Math.max(16, (vh - height) / 2)
+      setPlace({ left, width, top, transformOrigin: `${x} ${r.top + r.height / 2 - top}px` })
+    }
+    el.querySelector<HTMLElement>('.cal-day[aria-pressed="true"], .cal-day.today:not(:disabled)')?.focus({ preventScroll: true })
+    const anchor = props.anchor
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      // Escape closes the calendar, not the sheet it was opened from.
+      e.stopPropagation()
+      onClose.current()
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => {
+      window.removeEventListener('keydown', onKey, true)
+      if (document.activeElement === document.body || el.contains(document.activeElement)) anchor.focus({ preventScroll: true })
+    }
+  }, [])
+  return createPortal(
+    <div className={`date-pop-layer ${props.closing ? 'closing' : ''}`}>
+      <div className="date-pop-catch" onPointerDown={(e) => { e.preventDefault(); props.onClose() }} />
+      <div ref={pop} role="dialog" aria-label={props.label} className={`date-pop ${props.closing ? 'closing' : ''}`}
+        style={place ?? { width, visibility: 'hidden' }}>
+        <InlineCalendar value={props.value} min={props.min} max={props.max} today={today} onPick={props.onPick} />
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
+/**
+ * A button that opens the app's calendar (see DatePop). Picking a day closes it and hands the day over.
+ * Without `label`, the button is named by a <label> pointing at its `id`, as a form's field is.
+ */
+export function DatePickerButton(props: DateLimits & {
+  id?: string
+  label?: string
   className?: string
   children: ReactNode
-  onPick: (date: string) => void
+  onPick: (date: DateStr) => void
 }) {
-  const [picks, setPicks] = useState(0)
-  const focusedAt = useRef(0)
+  const btn = useRef<HTMLButtonElement>(null)
+  const pop = usePopPhase()
   return (
-    <span className={`date-overlay ${props.className ?? ''}`}>
-      {props.children}
-      {/* iPhone's calendar stays open after a day is picked, even one that's refused: a fresh field closes it. */}
-      <input key={picks} type="date" value={props.value} min={props.min} max={props.max} aria-label={props.label}
-        onFocus={() => { focusedAt.current = Date.now() }}
-        onChange={(e) => {
-          if (!e.target.value) return
-          // An empty field gets today filled in by iPhone as its calendar opens: that's not a pick, so it stays open.
-          if (!props.value && Date.now() - focusedAt.current < 600) return
-          e.target.blur()
-          setPicks((n) => n + 1)
-          props.onPick(e.target.value)
-        }} />
-    </span>
+    <>
+      <button type="button" ref={btn} id={props.id} className={`date-btn ${props.className ?? ''}`} aria-label={props.label}
+        aria-haspopup="dialog" aria-expanded={pop.open} onClick={() => {
+          // The keyboard would cover the calendar.
+          (document.activeElement as HTMLElement | null)?.blur?.()
+          pop.set(!pop.open)
+        }}>
+        {props.children}
+      </button>
+      {pop.phase !== 'closed' && btn.current && (
+        <DatePop value={props.value} min={props.min} max={props.max} anchor={btn.current} label={props.label ?? t('common.date')}
+          closing={pop.phase === 'closing'} onClose={() => pop.set(false)}
+          onPick={(d) => { pop.set(false); props.onPick(d) }} />
+      )}
+    </>
+  )
+}
+
+/** A form's date, written out as the field's text ("20 Oct 2026"); tapping it opens the calendar. */
+export function DateField(props: DateLimits & { id: string; className?: string; placeholder?: string; onChange: (d: DateStr) => void }) {
+  const { value } = props
+  return (
+    <DatePickerButton id={props.id} value={value} min={props.min} max={props.max} className={`date-field ${props.className ?? ''}`}
+      onPick={props.onChange}>
+      {value ? <span>{dayMonthShort(value)} {value.slice(0, 4)}</span> : <span className="date-field-empty">{props.placeholder ?? t('common.none')}</span>}
+    </DatePickerButton>
+  )
+}
+
+/**
+ * What opens in place under a row, as a picker does in Reminders: it unfolds, pushing what's below down with it,
+ * and folds back up when closed. What it held stays drawn while it folds, even once the row has let go of it.
+ */
+export function Reveal({ open, children }: { open: boolean; children: ReactNode }) {
+  const [held, setHeld] = useState(open)
+  if (open && !held) setHeld(true)
+  const last = useRef<ReactNode>(children)
+  if (open) last.current = children
+  const box = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) {
+      const id = setTimeout(() => setHeld(false), 400)
+      return () => clearTimeout(id)
+    }
+    // Keeps what opens in view while it grows, as a list scrolls along with a row opening at its bottom.
+    const end = performance.now() + 420
+    let frame = requestAnimationFrame(function follow() {
+      box.current?.scrollIntoView({ block: 'nearest' })
+      if (performance.now() < end) frame = requestAnimationFrame(follow)
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [open])
+  return (
+    <div ref={box} className={`reveal ${open ? 'open' : ''}`} inert={!open}>
+      <div className="reveal-inner">{held && (open ? children : last.current)}</div>
+    </div>
   )
 }
 

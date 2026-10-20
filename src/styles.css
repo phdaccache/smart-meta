@@ -170,7 +170,7 @@ a { color: var(--accent); }
   display: flex; align-items: center; gap: 2px; padding: 2px 14px 2px 6px; min-height: 52px; position: relative;
 }
 /* Separators start at the text, as in iOS lists. */
-.item::before, .list-row + .list-row::before {
+.item::before, .list-row + .list-row::before, .reveal + .list-row::before {
   content: ''; position: absolute; top: 0; right: 0; left: 54px; border-top: 1px solid var(--line); pointer-events: none;
 }
 .items > li:first-child > .item::before { display: none; }
@@ -235,7 +235,6 @@ a { color: var(--accent); }
   justify-content: center;
 }
 .chip.wide { flex-basis: 100%; }
-.chip.date-overlay { display: inline-flex; }
 .chip.on { background: var(--accent); color: var(--accent-ink); }
 .prompt .actions { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; gap: 8px; }
 .add-inline { display: flex; gap: 8px; margin-top: 8px; }
@@ -306,7 +305,6 @@ input::placeholder, textarea::placeholder { color: var(--ink-3); }
 
 .inline-fields { display: flex; gap: 8px; align-items: center; }
 .inline-fields > * { flex: 1; min-width: 0; }
-.inline-fields input[type="date"] { min-width: 0; }
 .inline-fields .narrow { flex: 0 0 96px; }
 .inline-fields.top { align-items: flex-start; }
 /* A choice above its inputs, so longer words (Portuguese) never squeeze them. */
@@ -353,7 +351,7 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
   display: flex; align-items: center; gap: 12px; padding: 12px 14px 12px 16px; width: 100%; text-align: left;
   min-height: 52px; position: relative;
 }
-.list-row + .list-row::before { left: 16px; }
+.list-row + .list-row::before, .reveal + .list-row::before { left: 16px; }
 .list-row.has-tile + .list-row.has-tile::before, .sortable > li + li > .list-row.has-tile::before { left: 58px; }
 .list-row .text { flex: 1; min-width: 0; }
 .list-row .title { font-weight: 400; font-size: 17px; }
@@ -377,7 +375,7 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .list-row.danger .title { color: var(--at-risk); }
 .list-row:disabled .title { opacity: 0.5; }
 .settings .stepper button { width: 38px; height: 36px; }
-.settings .row-date { width: auto; flex: none; min-height: 38px; font-size: 15px; }
+.settings .date-btn.row-date { width: auto; flex: none; min-height: 38px; font-size: 15px; }
 .settings-note { font-size: 13px; color: var(--ink-2); margin: 10px 16px 0; line-height: 1.4; }
 .list-empty { padding: 18px 16px; color: var(--ink-2); font-size: 14px; }
 
@@ -535,11 +533,41 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .hidden-date { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
 
 .inline-fields > .field { margin-top: 0; }
-.date-overlay { position: relative; display: inline-grid; place-items: center; overflow: hidden; }
-.date-overlay input {
-  position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; min-height: 0; padding: 0; border: 0; cursor: pointer;
-  font-size: 16px;
+.date-btn { position: relative; display: inline-grid; place-items: center; }
+/* A form's date: the day as text in what looks like the other fields. */
+.date-btn.date-field {
+  display: flex; align-items: center; justify-content: flex-start; width: 100%; min-height: 46px; padding: 10px 12px;
+  border-radius: 12px; border: 1px solid var(--line-strong); background: var(--surface); font-size: 16px; color: var(--ink);
+  text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.date-field[aria-expanded='true'] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.date-field-empty { color: var(--ink-3); }
+.has-error .date-field { border-color: var(--at-risk); }
+
+/* The calendar's card, grown out of the button that opened it (see DatePop), on the menus' spring. */
+.date-pop-layer { position: fixed; inset: 0; z-index: 80; }
+.date-pop-layer.closing { pointer-events: none; }
+.date-pop-catch { position: absolute; inset: 0; }
+.date-pop {
+  position: fixed; padding: 10px 10px 8px; border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-raised) 90%, transparent);
+  -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: var(--lift-shadow);
+  animation: menu-grow 0.5s var(--spring) both, menu-show 0.2s ease-out both;
+}
+.date-pop > * { animation: menu-show 0.22s ease-out 0.05s both; }
+.date-pop.closing { animation: menu-shrink 0.2s cubic-bezier(0.4, 0, 1, 1) both; }
+.date-pop.closing > * { animation: none; }
+@media (prefers-reduced-motion: reduce) { .date-pop, .date-pop > * { animation: menu-show 0.15s ease-out both; } .date-pop.closing { animation: none; opacity: 0; } }
+@media (prefers-reduced-transparency: reduce) { .date-pop { background: var(--surface-raised); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+
+/* Opens in place under its row, pushing what's below down on the sheets' curve; what's inside fades in just behind. */
+.reveal { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.38s var(--ease-drawer); }
+.reveal.open { grid-template-rows: 1fr; }
+.reveal-inner { min-height: 0; overflow: hidden; }
+.reveal-inner > * { opacity: 0; transition: opacity 0.15s ease-out; }
+.reveal.open .reveal-inner > * { opacity: 1; transition: opacity 0.25s ease-out 0.06s; }
+@media (prefers-reduced-motion: reduce) { .reveal { transition: none; } }
 
 .field-label-row { display: flex; align-items: center; gap: 2px; min-height: 22px; }
 .info-btn {
@@ -566,10 +594,6 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .danger-zone summary { list-style: none; }
 .danger-zone summary::-webkit-details-marker { display: none; }
 
-.date-overlay select {
-  position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; min-height: 0; padding: 0; border: 0; cursor: pointer;
-  font-size: 16px; background: none;
-}
 /* A task's fields, as in iPhone's Reminders: title and notes in one card, date and time as switches. */
 .task-form { display: grid; gap: 12px; }
 .task-text { overflow: hidden; }
@@ -635,7 +659,7 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 }
 .switch::after {
   content: ''; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%;
-  background: #fff; box-shadow: 0 2px 4px rgb(0 0 0 / 0.2); transition: transform 0.2s ease;
+  background: #fff; box-shadow: 0 2px 4px rgb(0 0 0 / 0.2); transition: transform 0.3s var(--ease-drawer);
 }
 .switch[aria-checked='true'] { background: var(--accent); }
 .switch[aria-checked='true']::after { transform: translateX(20px); }
@@ -691,9 +715,11 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
  * as it comes, and its rows fade in just behind; closing, it shrinks back into the button.
  * The curve is a sampled spring (damping 0.72, response 0.42), as iOS menus use.
  */
-.menu {
+.menu, .date-pop {
   --spring: cubic-bezier(0.2, 0.9, 0.3, 1.1);
   --spring: linear(0, 0.033, 0.115, 0.225, 0.347, 0.469, 0.584, 0.688, 0.777, 0.85, 0.909, 0.954, 0.988, 1.011, 1.026, 1.034, 1.038, 1.038, 1.036, 1.032, 1.027, 1.023, 1.018, 1.014, 1.01, 1.007, 1.005, 1.003, 1.001, 1);
+}
+.menu {
   position: absolute; top: calc(100% + 4px); right: 0; z-index: 30; min-width: 232px; padding: 6px 0; border-radius: 14px;
   background: color-mix(in srgb, var(--surface-raised) 86%, transparent);
   -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
@@ -1399,7 +1425,7 @@ li:has(> .swipeable[data-swipe]), .card:has(> .swipeable[data-swipe]) { overflow
 .commitment-kind { color: var(--ink-2); font-weight: 600; }
 .prep-block { background: none; }
 .prep-block .list-row { padding-left: 16px; }
-.prep-block .list-row + .list-row::before { left: 16px; }
+.prep-block .list-row + .list-row::before, .reveal + .list-row::before { left: 16px; }
 
 /* Settings: iOS-style group titles, small grey capitals over each list. */
 .section:has(> .card.settings) { margin-top: 26px; }

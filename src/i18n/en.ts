@@ -165,7 +165,6 @@ export const en = {
   'today.loggedThisWeek.one': '{n} logged this week',
   'today.loggedThisWeek.other': '{n} logged this week',
   'today.prepFor': '{time} · for {name}',
-  'today.noFutureDays': 'Future days can’t be opened, only today and past days.',
   'today.due': 'due {when}',
   'today.dueAt': 'due {when} at {time}',
   'today.overdue': 'overdue · {when}',

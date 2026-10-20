@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { check, deleteTask, promoteTask, restoreTask, uncheck, updateTask } from '../db/repo'
 import { t } from '../i18n'
-import { capitalize, dayMonth, diffDays, formatTime, isDateStr, nowMinutes, relativeDay, weekdayName } from '../lib/dates'
+import { capitalize, dayMonth, diffDays, formatTime, nowMinutes, relativeDay, weekdayName } from '../lib/dates'
 import { activeEntries } from '../lib/scoring'
 import { dueBadge, type Snapshot } from '../lib/today'
 import type { DateStr, Task } from '../lib/types'
-import { CheckButton, DatePickerButton, DueText, NoteField, Sheet, Switch, TitleField, toast } from '../ui/components'
+import { CheckButton, DatePickerButton, DueText, NoteField, Reveal, Sheet, Switch, TitleField, toast } from '../ui/components'
 import { InlineCalendar, TimeWheel } from '../ui/pickers'
 import { useSnapshot } from '../ui/hooks'
 import { IconCalendar, IconChevronUpDown, IconClock, IconGoals, IconNote } from '../ui/icons'
@@ -31,10 +31,6 @@ export function DateTimeRows(props: {
   const { date, today, onChange } = props
   const time = props.time ?? ''
   const [open, setOpen] = useState<'date' | 'time' | null>(null)
-  const pickerRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    pickerRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-  }, [open])
   const show = (which: 'date' | 'time' | null) => {
     // The keyboard would cover what opens.
     if (which) (document.activeElement as HTMLElement | null)?.blur?.()
@@ -55,11 +51,11 @@ export function DateTimeRows(props: {
           show(on ? 'date' : null)
         }} />
       </div>
-      {date && open === 'date' && (
-        <div className="dt-picker" ref={pickerRef}>
+      <Reveal open={!!date && open === 'date'}>
+        {date && <div className="dt-picker">
           <InlineCalendar value={date} min={date < today ? date : today} today={today} onPick={(d) => onChange(d, time)} />
-        </div>
-      )}
+        </div>}
+      </Reveal>
       {props.time !== undefined && <div className="list-row">
         <IconTile color="blue"><IconClock width={16} height={16} /></IconTile>
         <button type="button" className="dt-text" disabled={!time} aria-expanded={time ? open === 'time' : undefined}
@@ -72,11 +68,11 @@ export function DateTimeRows(props: {
           show(on ? 'time' : open === 'time' ? null : open)
         }} />
       </div>}
-      {time && open === 'time' && (
-        <div className="dt-picker" ref={pickerRef}>
+      {props.time !== undefined && <Reveal open={!!time && open === 'time'}>
+        {time && <div className="dt-picker">
           <TimeWheel value={time} onChange={(tm) => onChange(date ?? today, tm)} />
-        </div>
-      )}
+        </div>}
+      </Reveal>}
     </div>
   )
 }
@@ -243,7 +239,6 @@ export function TaskList({ tasks, today, reschedule = false }: { tasks: Task[]; 
                       <div className="item-side">
                         <DatePickerButton className="btn new-date" value={task.date ?? today} min={today} label={t('task.newDateFor', { task: task.title })}
                           onPick={async (d) => {
-                            if (!isDateStr(d)) return
                             await updateTask(task, { date: d })
                             toast(t('task.movedTo', { date: dayMonth(d) }))
                           }}>

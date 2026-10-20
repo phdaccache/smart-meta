@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { t } from '../i18n'
-import { addDays, isDateStr, monthShort, weekdayAbbr } from '../lib/dates'
+import { addDays, monthShort, weekdayAbbr } from '../lib/dates'
 import { byNewest, commitmentHistory, type HistoryRow } from '../lib/history'
 import { revisionField, revisionValue, stateLabel } from '../lib/revisions'
 import type { Snapshot } from '../lib/today'
@@ -84,10 +84,8 @@ export function GoalHistorySheet(props: { goal: Goal; snap: Snapshot; today: Dat
 
   return (
     <Sheet open onClose={props.onClose} title={t('goal.history')}>
-      <DatePickerButton className="btn outline block backfill-btn" value={today} max={today} label={t('history.fillPastDay')}
+      <DatePickerButton className="btn outline block backfill-btn" value="" max={addDays(today, -1)} label={t('history.fillPastDay')}
         onPick={(d) => {
-          // Opening an iOS date picker reports today's date before anything is picked: ignore it.
-          if (!isDateStr(d) || d >= today) return
           props.onClose()
           navigate(`/day/${d}`)
         }}>

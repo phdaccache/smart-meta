@@ -3,11 +3,11 @@ import { exportData, importData, parseBackup, shareOrDownload } from '../db/back
 import { deleteValue, restoreValue, saveValues, setValueLook } from '../db/repo'
 import { setSettings } from '../db/settings'
 import { langSetting, setLangSetting, t, tlist, tn, type LangSetting } from '../i18n'
-import { formatTime, isDateStr } from '../lib/dates'
+import { formatTime } from '../lib/dates'
 import { loadSampleData } from '../dev/sample'
 import { loadWorstCaseData } from '../dev/worst'
 import { eraseAllData, signIn, signOut, syncNow, useSyncStatus } from '../sync/controller'
-import { Field, InfoTip, Screen, Section, Sheet, Stepper, Switch, toast, TypeToConfirm } from '../ui/components'
+import { DateField, Field, InfoTip, Screen, Section, Sheet, Stepper, Switch, toast, TypeToConfirm } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconChevronUpDown } from '../ui/icons'
 import { useInstall } from '../ui/install'
@@ -321,8 +321,7 @@ function DevSection({ devToday }: { devToday: string | null }) {
             </span>
             {devToday && <button className="link-btn" style={{ minHeight: 0, padding: 0 }} onClick={() => setSettings({ devToday: null })}>Real date</button>}
           </div>
-          <input id="dev-today" className="row-date" type="date" value={devToday ?? ''}
-            onChange={(e) => setSettings({ devToday: isDateStr(e.target.value) ? e.target.value : null })} />
+          <DateField id="dev-today" className="row-date" value={devToday ?? ''} onChange={(v) => setSettings({ devToday: v })} />
         </div>
         <div className="list-row">
           <div className="text">

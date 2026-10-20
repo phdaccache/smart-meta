@@ -160,7 +160,6 @@ export const ptBR: Messages = {
   'today.loggedThisWeek.one': '{n} registrado nesta semana',
   'today.loggedThisWeek.other': '{n} registrados nesta semana',
   'today.prepFor': '{time} · para {name}',
-  'today.noFutureDays': 'Não dá para abrir dias futuros, só hoje e dias passados.',
   'today.due': 'vence {when}',
   'today.dueAt': 'vence {when} às {time}',
   'today.overdue': 'atrasada · {when}',

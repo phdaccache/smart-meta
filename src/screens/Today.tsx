@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { exportData, shareOrDownload } from '../db/backup'
 import { addDisplacement, check, explainMiss, logValue, putOffMiss, uncheck } from '../db/repo'
 import { setSettings } from '../db/settings'
@@ -197,12 +197,7 @@ export function TodayScreen({ date }: { date?: DateStr }) {
       actions={<>
         {!isPast && view.groups.length > 0 && <WhenMenu value={when} onChange={setWhen} />}
         <DatePickerButton className="icon-btn" value={viewDate} max={today} label={t('today.goToPastDay')}
-          onPick={(d) => {
-            if (!isDateStr(d)) return
-            // Phones' pickers can't grey out days after `max`, so say why nothing opened.
-            if (d > today) return toast(t('today.noFutureDays'))
-            navigate(d === today ? '/' : `/day/${d}`)
-          }}>
+          onPick={(d) => navigate(d === today ? '/' : `/day/${d}`)}>
           <IconCalendar />
         </DatePickerButton>
       </>}
@@ -245,11 +240,46 @@ function Group(props: {
 }) {
   const { group } = props
   const [expanded, setExpanded] = useState(false)
+  // Ticking the last thing leaves the card open a moment, so the tick is seen, then it folds into one line.
+  // That holds every time, even after it was opened again from that line and something was unticked and ticked.
+  const [wasDone, setWasDone] = useState(group.done)
+  const [settling, setSettling] = useState(false)
+  if (group.done !== wasDone) {
+    setWasDone(group.done)
+    setSettling(group.done)
+  }
+  const card = useRef<HTMLDivElement>(null)
+  const from = useRef<number | null>(null)
+  const fold = (open: boolean) => {
+    from.current = card.current?.offsetHeight ?? null
+    setExpanded(open)
+  }
+  useEffect(() => {
+    if (!settling) return
+    const id = setTimeout(() => {
+      from.current = card.current?.offsetHeight ?? null
+      setSettling(false)
+      setExpanded(false)
+    }, 700)
+    return () => clearTimeout(id)
+  }, [settling])
+  const open = !group.done || expanded || settling
+  // Folding or unfolding, the card's height eases from what it was to what it is, and what's in it fades in.
+  useLayoutEffect(() => {
+    const el = card.current
+    const h = from.current
+    from.current = null
+    if (!el || h == null || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const to = el.offsetHeight
+    if (to === h) return
+    el.animate([{ height: `${h}px` }, { height: `${to}px` }], { duration: 380, easing: 'cubic-bezier(0.32, 0.72, 0, 1)' })
+    for (const child of el.children) child.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 240, easing: 'ease-out' })
+  }, [open])
 
-  if (group.done && !expanded) {
+  if (!open) {
     return (
-      <div className="card group collapsed">
-        <button className="group-head" onClick={() => setExpanded(true)} aria-expanded={false}>
+      <div className="card group collapsed" ref={card}>
+        <button className="group-head" onClick={() => fold(true)} aria-expanded={false}>
           <span className="done-mark"><IconCheck width={15} height={15} /></span>
           <span className="title">{group.kind === 'errands' ? '' : group.title}</span>
           <span className="count">{t('today.nDone', { n: group.items.filter((i) => i.kind !== 'log').length })}</span>
@@ -276,7 +306,7 @@ function Group(props: {
 
   return (
     // Loose tasks need no heading: their square checkboxes say what they are.
-    <div className={`card group kind-${group.kind}`}>
+    <div className={`card group kind-${group.kind}`} ref={card}>
       {parent ? (
         <button className="group-head" onClick={() => navigate(parent)}>{head}</button>
       ) : group.kind !== 'errands' && (

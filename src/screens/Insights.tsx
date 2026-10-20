@@ -13,7 +13,7 @@ import {
   Distribution, GoalChips, ProjectPace, ReasonBars, Sparkline, TimelineChart, ToleranceChart, TrendChart, useTapOutside,
   ValueMonths, WeekdayGrid,
 } from '../ui/charts'
-import { InfoTip, PageText, Screen, Section, Segmented } from '../ui/components'
+import { InfoTip, PageText, Reveal, Screen, Section, Segmented } from '../ui/components'
 import { useAllRevisions, useDisplacements, useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
 import { IconChevronRight } from '../ui/icons'
 import { navigate } from '../ui/router'
@@ -323,7 +323,7 @@ function BigPictureTab({ p }: { p: Prepared }) {
               {tile('finished', y.finished.length, tn('ins.finished', y.finished.length))}
               {tile('habits', y.toMaintenance.length, t(y.toMaintenance.length === 1 ? 'ins.newHabit' : 'ins.newHabits'))}
             </div>
-            {list && <GoalChips goals={lists[list]} />}
+            <Reveal open={!!list}>{list && <GoalChips goals={lists[list]} />}</Reveal>
           </div>
           <dl className="year-facts">
             <dt>{t('ins.bestMonth')}</dt>

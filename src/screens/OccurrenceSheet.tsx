@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { logOccurrence, putOffMiss } from '../db/repo'
-import { capitalize, formatTime, isDateStr, nowMinutes, parseTime } from '../lib/dates'
+import { capitalize, formatTime, nowMinutes, parseTime } from '../lib/dates'
 import { t } from '../i18n'
 import type { MissPrompt } from '../lib/scoring'
 import type { Commitment, DateStr, ID, Occurrence } from '../lib/types'
-import { Chip, Field, Sheet, toast } from '../ui/components'
+import { Chip, DateField, Field, Sheet, toast } from '../ui/components'
 import { useSnapshot } from '../ui/hooks'
 import { IconChevronUpDown } from '../ui/icons'
 import { MissPromptCard } from './Today'
@@ -83,7 +83,7 @@ function OccurrenceForm({ c, date: initialDate, today, onDone, onMissed }: {
     <form onSubmit={(e) => { e.preventDefault(); save() }}>
       <p className="muted small" style={{ margin: '0 0 14px' }}>{c.measurementDefinition}</p>
       <Field label={t('common.day')} htmlFor="occ-date">
-        <input id="occ-date" type="date" value={date} max={today} onChange={(e) => isDateStr(e.target.value) && setDate(e.target.value)} />
+        <DateField id="occ-date" value={date} max={today} onChange={setDate} />
       </Field>
       <div style={{ marginTop: 18 }}>
         <Field label={t('occ.whatWasIt')} htmlFor="occ-title">

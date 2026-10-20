@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { check, createProject, createTask, deleteProject, pauseProject, reorderSteps, startProject, uncheck, updateProject, updateTask } from '../db/repo'
 import { marked, t } from '../i18n'
-import { addDays, dayMonth, dayMonthShort, diffDays, isDateStr, relativeDay } from '../lib/dates'
+import { addDays, dayMonth, dayMonthShort, diffDays, relativeDay } from '../lib/dates'
 import { activeEntries } from '../lib/scoring'
 import { stepDeadlines } from '../lib/today'
 import type { DateStr, Project, Task } from '../lib/types'
@@ -357,7 +357,7 @@ function StepEnd({ task, end }: { task: Task; end: DateStr | null }) {
   return (
     <span className={`step-end ${set ? 'set' : ''}`}>
       <DatePickerButton className="step-end-hit" value={end ?? ''} label={t('project.stepEndLabel', { step: task.title })}
-        onPick={(d) => isDateStr(d) && updateTask(task, { date: d })}>
+        onPick={(d) => updateTask(task, { date: d })}>
         <IconCalendar width={14} height={14} />
         <span>{end ? t('project.stepUntil', { date: dayMonthShort(end) }) : t('project.stepNoEnd')}</span>
       </DatePickerButton>

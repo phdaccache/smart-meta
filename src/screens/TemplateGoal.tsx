@@ -9,7 +9,7 @@ import {
 } from '../lib/draft'
 import { cadenceOf, type Template, type TemplateHabit, type TemplateProject } from '../lib/templates'
 import type { DateStr, Value } from '../lib/types'
-import { Field, PageText, Screen, Section, Sheet, toast } from '../ui/components'
+import { DateField, Field, PageText, Screen, Section, Sheet, toast } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { goBack, navigate, openOver } from '../ui/router'
 import { StepsEditor } from './Projects'
@@ -312,7 +312,7 @@ function HabitSheet({ editing, draft, onSave, onRemove, onClose }: {
       <MeasurementFields d={d} set={patch} e={e} showErrors={tried} />
       <div style={{ marginTop: 18 }}><CadenceFields d={d} set={patch} e={e} showErrors={tried} /></div>
       <Field label={t('goal.starts')} htmlFor="h-start" info={<PageText text={marked('goal.startsInfo')} />}>
-        <input id="h-start" type="date" min={start} value={from} onChange={(ev) => setFrom(ev.target.value)} />
+        <DateField id="h-start" min={start} value={from} onChange={setFrom} />
       </Field>
       <Field label={t('ins.preps')}>
         <PrepEditor preps={preps} onChange={setPreps} showErrors={tried} />
@@ -358,7 +358,7 @@ function ProjectSheet({ editing, draft, onSave, onRemove, onClose }: {
         <input id="tp-title" value={title} placeholder={t('project.phOutcome')} onChange={(e) => setTitle(e.target.value)} />
       </Field>
       <Field label={t('project.targetDate')} htmlFor="tp-date" error={tried ? errors.date : undefined}>
-        <input id="tp-date" type="date" min={start} value={date} onChange={(e) => setDate(e.target.value)} />
+        <DateField id="tp-date" min={start} value={date} onChange={setDate} />
       </Field>
       <Field label={t('project.steps')}>
         <StepsEditor steps={steps} onChange={setSteps} />

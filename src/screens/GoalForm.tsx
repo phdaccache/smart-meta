@@ -12,7 +12,7 @@ import { periodWord } from '../lib/describe'
 import type { Period, Shape } from '../lib/types'
 import { templateByKey, templatesFor, type Template } from '../lib/templates'
 import { startTemplate, TemplateGoalScreen } from './TemplateGoal'
-import { Chip, Field, InfoTip, PageText, Screen, Sheet, toast, WeekdayPicker } from '../ui/components'
+import { Chip, DateField, Field, InfoTip, PageText, Reveal, Screen, Sheet, toast, WeekdayPicker } from '../ui/components'
 import { IconChevronRight, IconChevronUpDown, IconClose } from '../ui/icons'
 import { TimeWheel } from '../ui/pickers'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
@@ -236,10 +236,6 @@ function InputRow(props: { id: string; label: string; children: ReactNode }) {
 /** A time, set on the same wheels as a task's: the row opens them under it, as in Reminders. */
 function TimeRow({ value, onChange }: { value: string; onChange: (hhmm: string) => void }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  useLayoutEffect(() => {
-    if (open) ref.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-  }, [open])
   return (
     <>
       <button type="button" className="list-row form-row" aria-expanded={open} onClick={() => {
@@ -251,11 +247,11 @@ function TimeRow({ value, onChange }: { value: string; onChange: (hhmm: string) 
         <span className="title">{t('common.time')}</span>
         <span className={`row-value ${open ? 'on' : ''}`}>{value || '—'}</span>
       </button>
-      {open && (
-        <div className="dt-picker" ref={ref}>
+      <Reveal open={open}>
+        <div className="dt-picker">
           <TimeWheel value={value || '23:00'} onChange={onChange} />
         </div>
-      )}
+      </Reveal>
     </>
   )
 }
@@ -807,10 +803,10 @@ export function DateFields({ d, set, err }: { d: GoalDraft; set: SetField; err: 
   return (
     <div className="inline-fields top">
       <Field label={t('form.start')} htmlFor="start" error={err('startDate')}>
-        <input id="start" type="date" value={d.startDate} onChange={(e) => set('startDate', e.target.value)} />
+        <DateField id="start" value={d.startDate} onChange={(v) => set('startDate', v)} />
       </Field>
       <Field label={outcome ? t('form.deadline') : t('form.reviewOn')} htmlFor="target" error={err('targetDate')}>
-        <input id="target" type="date" value={d.targetDate} min={d.startDate} onChange={(e) => set('targetDate', e.target.value)} />
+        <DateField id="target" value={d.targetDate} min={d.startDate || undefined} onChange={(v) => set('targetDate', v)} />
       </Field>
     </div>
   )

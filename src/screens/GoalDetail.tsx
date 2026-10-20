@@ -14,7 +14,7 @@ import { summarizeGoal, type ScoreContext } from '../lib/scoring'
 import type { Snapshot } from '../lib/today'
 import { stateLabel } from '../lib/revisions'
 import type { Commitment, Goal, GoalReview, Prep, Value } from '../lib/types'
-import { Field, InfoTip, PageText, Screen, Section, Sheet, StatusInfo, StatusWord, toast, TypeToConfirm, WeekBar } from '../ui/components'
+import { DateField, Field, InfoTip, PageText, Screen, Section, Sheet, StatusInfo, StatusWord, toast, TypeToConfirm, WeekBar } from '../ui/components'
 import { useGoalReviews, useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconHistory, IconInsights } from '../ui/icons'
 import { goBack, navigate } from '../ui/router'
@@ -328,7 +328,7 @@ export function CommitmentSheet({ goal, editing, today, canRemove = false, onClo
       <div style={{ marginTop: 18 }}><CadenceFields d={d} set={patch} e={e} showErrors={tried} /></div>
       {editing === 'new' && (
         <Field label={t('goal.starts')} htmlFor="c-start" info={<PageText text={marked('goal.startsInfo')} />}>
-          <input id="c-start" type="date" value={start} onChange={(ev) => setStart(ev.target.value)} />
+          <DateField id="c-start" value={start} onChange={setStart} />
         </Field>
       )}
       <div className="sheet-actions">
@@ -432,10 +432,10 @@ export function GoalEditScreen({ id }: { id: string }) {
         <SmartHead k="T" />
         <div className="inline-fields top">
           <Field label={t('form.start')} htmlFor="start">
-            <input id="start" type="date" value={d.startDate} onChange={(e) => isDateStr(e.target.value) && setD({ ...d, startDate: e.target.value })} />
+            <DateField id="start" value={d.startDate} onChange={(v) => setD({ ...d, startDate: v })} />
           </Field>
           <Field label={outcome ? t('form.deadline') : t('form.reviewOn')} htmlFor="target" error={tried ? errors.targetDate : undefined}>
-            <input id="target" type="date" value={d.targetDate ?? ''} onChange={(e) => setD({ ...d, targetDate: e.target.value || null })} />
+            <DateField id="target" value={d.targetDate ?? ''} onChange={(v) => setD({ ...d, targetDate: v })} />
           </Field>
         </div>
       </section>
@@ -530,7 +530,7 @@ export function GoalReviewScreen({ id, presetHit }: { id: string; presetHit?: bo
         </div>
         {outcome === 'renewed' && (
           <Field label={finishLine ? t('goalReview.newDeadline') : t('goalReview.newReviewDate')} htmlFor="renew">
-            <input id="renew" type="date" min={today} value={renewDate} onChange={(e) => setRenewDate(e.target.value)} />
+            <DateField id="renew" min={today} value={renewDate} onChange={setRenewDate} />
           </Field>
         )}
       </div>

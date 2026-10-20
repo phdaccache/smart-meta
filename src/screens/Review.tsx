@@ -9,7 +9,7 @@ import {
 } from '../lib/review'
 import { activeEntries, promptKeys, type ScoreContext } from '../lib/scoring'
 import type { Commitment, Goal, Prep, Value } from '../lib/types'
-import { Field, InfoTip, PageText, Screen, Section, Sheet, StatusWord, toast } from '../ui/components'
+import { DateField, Field, InfoTip, PageText, Screen, Section, Sheet, StatusWord, toast } from '../ui/components'
 import { useAllRevisions, useDisplacements, useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
 import { IconCalendar, IconCheck, IconChevronRight } from '../ui/icons'
 import { navigate, useLocation } from '../ui/router'
@@ -371,10 +371,9 @@ function StalledRow({ s, today, week }: { s: StalledProject; today: string; week
         <span className="spacer" />
         <button className="link-btn" onClick={() => dismissInReview(week, projectKey(s.project.id, 'dismissed'))}>{t('common.dismiss')}</button>
       </div>
-      {/* A sheet with Save, not an instant picker: iOS reports a date while you're still scrolling. */}
       <Sheet open={moving} onClose={() => setMoving(false)} title={t('review.newDateFor', { name: s.project.title })}>
         <Field label={t('project.targetDate')} htmlFor={`move-${s.project.id}`}>
-          <input id={`move-${s.project.id}`} type="date" value={date} min={today} onChange={(e) => setDate(e.target.value)} />
+          <DateField id={`move-${s.project.id}`} value={date} min={today} onChange={setDate} />
         </Field>
         <div className="sheet-actions">
           <button className="btn" onClick={() => setMoving(false)}>{t('common.cancel')}</button>

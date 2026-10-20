@@ -10,30 +10,60 @@ function shiftMonth(first: DateStr, n: number): DateStr {
   return toDateStr(d)
 }
 
-/** A month to pick a day from, opened in place as in iPhone's Reminders. Weeks start on Monday, as everywhere in the app. */
-export function InlineCalendar(props: { value: DateStr; min?: DateStr; today: DateStr; onPick: (d: DateStr) => void }) {
-  const [month, setMonth] = useState(firstOfMonth(props.value))
-  useEffect(() => setMonth(firstOfMonth(props.value)), [props.value])
+/** Slides the month in from the side it was asked for, as iPhone's calendar does; with less motion, it only fades. */
+function slideMonth(grid: HTMLElement | null, dir: number) {
+  const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  grid?.animate(still ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: `translateX(${dir * 8}%)` }, { opacity: 1, transform: 'none' }],
+    { duration: 260, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' })
+}
+
+/**
+ * A month to pick a day from, opened in place as in iPhone's Reminders. Weeks start on Monday, as everywhere in the app.
+ * Days before `min` or after `max` are greyed out. With no `value` yet, it opens on today's month (or the nearest one allowed).
+ */
+export function InlineCalendar(props: { value: DateStr | ''; min?: DateStr; max?: DateStr; today: DateStr; onPick: (d: DateStr) => void }) {
+  const { min, max } = props
+  const start = props.value || (max && props.today > max ? max : min && props.today < min ? min : props.today)
+  const [month, setMonth] = useState(firstOfMonth(start))
+  useEffect(() => setMonth(firstOfMonth(start)), [start])
+  const grid = useRef<HTMLDivElement>(null)
+  const canBack = !min || shiftMonth(month, -1) >= firstOfMonth(min)
+  const canOn = !max || shiftMonth(month, 1) <= max
+  const step = (n: number) => {
+    if (n < 0 ? !canBack : !canOn) return
+    setMonth(shiftMonth(month, n))
+    slideMonth(grid.current, n)
+  }
+  // A sideways swipe turns the month, too.
+  const touch = useRef<{ x: number; y: number } | null>(null)
   const lead = isoWeekday(month) - 1
   const days: DateStr[] = []
   for (let d = month; d.slice(0, 7) === month.slice(0, 7); d = addDays(d, 1)) days.push(d)
   return (
-    <div className="cal">
+    <div className="cal"
+      onTouchStart={(e) => { touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY } }}
+      onTouchEnd={(e) => {
+        const from = touch.current
+        touch.current = null
+        if (!from) return
+        const dx = e.changedTouches[0].clientX - from.x
+        const dy = e.changedTouches[0].clientY - from.y
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) step(dx < 0 ? 1 : -1)
+      }}>
       <div className="cal-head">
         <span className="cal-title">{capitalize(monthName(month))} {month.slice(0, 4)}</span>
-        <button type="button" className="icon-btn" aria-label={t('qa.prevMonth')} onClick={() => setMonth(shiftMonth(month, -1))}
-          disabled={!!props.min && shiftMonth(month, -1) < firstOfMonth(props.min)}>
+        <button type="button" className="icon-btn" aria-label={t('qa.prevMonth')} onClick={() => step(-1)} disabled={!canBack}>
           <IconChevronLeft width={20} height={20} />
         </button>
-        <button type="button" className="icon-btn" aria-label={t('qa.nextMonth')} onClick={() => setMonth(shiftMonth(month, 1))}>
+        <button type="button" className="icon-btn" aria-label={t('qa.nextMonth')} onClick={() => step(1)} disabled={!canOn}>
           <IconChevronRight width={20} height={20} />
         </button>
       </div>
-      <div className="cal-grid" role="grid">
+      <div className="cal-grid" role="grid" ref={grid}>
         {[1, 2, 3, 4, 5, 6, 7].map((w) => <span key={w} className="cal-wd">{weekdayShort(w)}</span>)}
         {Array.from({ length: lead }, (_, i) => <span key={`x${i}`} />)}
         {days.map((d) => (
-          <button type="button" key={d} disabled={!!props.min && d < props.min} aria-pressed={d === props.value}
+          <button type="button" key={d} disabled={(!!min && d < min) || (!!max && d > max)} aria-pressed={d === props.value}
             className={`cal-day ${d === props.value ? 'on' : ''} ${d === props.today ? 'today' : ''}`} onClick={() => props.onPick(d)}>
             {Number(d.slice(8, 10))}
           </button>
