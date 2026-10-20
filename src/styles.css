@@ -523,12 +523,13 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
   transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out), visibility 0s 0.2s;
 }
 .toast.on { opacity: 1; transform: none; visibility: visible; transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out); }
+.toast.has-action { display: flex; align-items: center; gap: 14px; padding-right: 6px; }
+.toast.on .toast-action { pointer-events: auto; }
+.toast-action { color: var(--accent); font-weight: 600; font-size: 14px; padding: 4px 10px; min-height: 32px; }
 
 .steps-editor { list-style: none; margin: 0; padding: 0; }
 .steps-editor-row { display: flex; gap: 6px; align-items: center; position: relative; }
 .steps-editor li + li { margin-top: 8px; }
-/* A field's own corners, on the bin that slides in beside it. */
-.steps-editor .swipe-delete { border-radius: 0 12px 12px 0; }
 .steps-editor .num { width: 22px; color: var(--ink-3); font-size: 14px; text-align: right; flex: none; }
 
 .hidden-date { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
@@ -680,6 +681,30 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .smart-l.small-l { flex: none; width: 26px; height: 26px; font-size: 13px; border-radius: 7px; }
 
 .today-filter { margin: -4px 0 14px; }
+
+/* Today's date filter: a button that fills while on, and a menu that grows out of it (iOS pull-down menu). */
+.when { position: relative; }
+.filter-btn { color: var(--ink); }
+.filter-btn.on { color: var(--accent); }
+.filter-btn.on circle { fill: var(--accent); }
+.filter-btn.on path { stroke: #fff; }
+.menu {
+  position: absolute; top: calc(100% + 4px); right: 0; z-index: 30; min-width: 232px; padding: 6px 0; border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-raised) 86%, transparent);
+  -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: var(--lift-shadow); transform-origin: top right; animation: menu-in 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.05);
+}
+@keyframes menu-in { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: none; } }
+.menu-title { font-size: 13px; color: var(--ink-2); padding: 6px 16px 8px; border-bottom: 1px solid var(--line); }
+.menu-item {
+  display: flex; align-items: center; gap: 6px; width: 100%; min-height: 44px; padding: 0 16px 0 10px;
+  font-size: 17px; color: var(--ink); text-align: left;
+}
+.menu-item + .menu-item { border-top: 1px solid var(--line); }
+.menu-item:active, .menu-item:focus-visible { background: var(--surface-2); outline: none; }
+.menu-check { width: 22px; display: grid; place-items: center; color: var(--ink); flex: none; }
+@media (prefers-reduced-motion: reduce) { .menu { animation: none; } }
+@media (prefers-reduced-transparency: reduce) { .menu { background: var(--surface-raised); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 .today-filter .segmented button { min-height: 34px; font-size: 13px; }
 
 /* ——— drag to reorder ——— */
@@ -1271,22 +1296,40 @@ button.goal-why { width: 100%; text-align: left; margin-top: 12px; }
 .sortable > li { transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1); }
 /* ——— swipe to delete ——— */
 
-/* The row slides left over a red bin past its end; the browser keeps up-and-down scrolling. */
-.swipeable { touch-action: pan-y; transition: transform 0.3s var(--ease-out); }
-.swipeable.swiping { transition: none; }
-/* Deleted, it fades and its place closes up; the clip keeps the bin beside it but not what spills below. */
-.swipeable.removing {
-  clip-path: inset(0 -100vw 0 0); transition-property: height, min-height, padding, opacity; transition-duration: 0.24s;
-  transition-timing-function: var(--ease-out);
+/*
+ * As in iOS Notes: swiped, the row comes away from its list as a rounded row on the page's ground,
+ * with a red pill and its label in the space it uncovers. The row's state is in data-swipe; the
+ * script sets --reveal (how much is uncovered), --swipe-r (its corners) and --bin (the pill's growth).
+ * The shadow paints the ground around the row; the clip keeps it to the row's own height.
+ */
+.swipeable { touch-action: pan-y; }
+.swipeable[data-swipe] {
+  z-index: 1; background: var(--surface); border-radius: var(--swipe-r, 0);
+  box-shadow: 0 0 0 100vw var(--bg); clip-path: inset(0 -100vw);
 }
-li:has(> .swipeable.open), li:has(> .swipeable.swiping), li:has(> .swipeable.removing),
-.card:has(> .swipeable.open), .card:has(> .swipeable.swiping) { overflow: hidden; }
+.swipeable[data-swipe]::before { opacity: 0; }
+li:has(> .swipeable[data-swipe]), .card:has(> .swipeable[data-swipe]) { overflow: hidden; }
+.swipe-actions {
+  display: none; position: absolute; top: 0; bottom: 0; left: 100%; width: var(--reveal, 0px);
+  flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 0 10px;
+}
+.swipeable[data-swipe] > .swipe-actions { display: flex; }
 .swipe-delete {
-  position: absolute; top: 0; bottom: 0; left: 100%; width: 76px; display: grid; place-items: center;
-  background: var(--danger); color: #fff;
+  flex: none; width: 60px; height: 34px; border-radius: 17px; display: grid; place-items: center;
+  background: var(--danger); color: #fff; transform: scale(var(--bin, 1)); transition: width 0.25s var(--ease-out);
 }
-/* Stretched past the bin, the red runs on under the finger. */
-.swipe-delete::after { content: ''; position: absolute; top: 0; bottom: 0; left: 100%; width: 100vw; background: inherit; }
+.swipe-label {
+  font-size: 12px; color: var(--ink-2); line-height: 1; white-space: nowrap;
+  opacity: var(--bin, 1); transform: scale(var(--bin, 1)); transition: opacity 0.15s ease;
+}
+/* Past the point of no return the pill stretches across, its bin at the row's edge, and the label goes. */
+.swipeable[data-armed] .swipe-delete { width: 100%; justify-items: start; padding-left: 20px; }
+.swipeable[data-armed] .swipe-label { opacity: 0; }
+.swipeable[data-swipe="removing"] {
+  transition: height 0.26s var(--ease-out), min-height 0.26s var(--ease-out), padding 0.26s var(--ease-out), opacity 0.2s ease;
+}
+/* A field's row in a sheet keeps its own look; only the pill comes in beside it. */
+.steps-editor .swipeable[data-swipe] { background: none; box-shadow: none; border-radius: 0; }
 
 .sortable.lifting > li { touch-action: none; }
 .sortable > li.held > * { transform: scale(0.98); transition: transform 0.4s ease-out; }

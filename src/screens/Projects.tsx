@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { check, createProject, createTask, deleteProject, deleteTask, pauseProject, reorderSteps, startProject, uncheck, updateProject, updateTask } from '../db/repo'
+import { check, createProject, createTask, deleteProject, pauseProject, reorderSteps, startProject, uncheck, updateProject, updateTask } from '../db/repo'
 import { marked, t } from '../i18n'
 import { addDays, dayMonth, dayMonthShort, diffDays, isDateStr, relativeDay } from '../lib/dates'
 import { activeEntries } from '../lib/scoring'
@@ -13,7 +13,7 @@ import { Sortable } from '../ui/Sortable'
 import { SwipeToDelete } from '../ui/SwipeToDelete'
 import { navigate } from '../ui/router'
 import { openQuickAddFor } from './QuickAdd'
-import { DateTimeRows, GoalChoice, linkableGoals, TaskList } from './TaskSheet'
+import { DateTimeRows, deleteWithUndo, GoalChoice, linkableGoals, TaskList } from './TaskSheet'
 
 /**
  * The step list of a project being written. Adding a step moves the cursor to
@@ -220,7 +220,7 @@ export function ProjectScreen({ id }: { id: string }) {
               const isDone = doneEntry.has(step.id)
               return (
                 <SwipeToDelete className={`item kind-step ${isDone ? 'done' : ''}`} label={t('project.removeStep', { step: step.title })}
-                  onDelete={() => deleteTask(step)}>
+                  onDelete={() => deleteWithUndo(step.id)}>
                   <CheckButton shape="square" checked={isDone} label={step.title} onClick={() => toggle(step)} />
                   <div className="item-main">
                     <StepTitle title={step.title} onSave={(title) => updateTask(step, { title })} />

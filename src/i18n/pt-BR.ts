@@ -29,6 +29,7 @@ export const ptBR: Messages = {
   'common.doneEditing': 'Pronto',
   'common.delete': 'Excluir',
   'common.deleted': 'Excluído.',
+  'common.undo': 'Desfazer',
   'common.remove': 'Remover',
   'common.next': 'Avançar',
   'common.continue': 'Continuar',
@@ -145,6 +146,11 @@ export const ptBR: Messages = {
   'today.filterProjects': 'Projetos',
   'today.filterTasks': 'Tarefas',
   'today.nothingHere': 'Nada por aqui hoje.',
+  'today.when': 'Mostrar tarefas para',
+  'today.whenToday': 'Hoje e atrasadas',
+  'today.whenTomorrow': 'Amanhã',
+  'today.whenWeek': 'Esta semana',
+  'today.whenNothing': 'Nada para esse período.',
   'today.errands': 'Tarefas avulsas',
   'today.logItem': 'Registrar {name}',
   'today.addPlaceholder': 'somar',
@@ -588,6 +594,7 @@ export const ptBR: Messages = {
   'task.newDateFor': 'Nova data para {task}',
   'task.movedTo': 'Movida para {date}',
   'task.delete': 'Excluir tarefa',
+  'task.deleteNamed': 'Excluir {task}',
 
   // Weekly review
   'review.title': 'Revisão',

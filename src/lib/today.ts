@@ -55,6 +55,8 @@ export interface TodayItem {
   forProject?: boolean
   /** Open tasks with a date: red when due today or late, yellow tomorrow, green later. */
   due?: { label: string; tone: 'red' | 'yellow' | 'green' }
+  /** Tasks and steps: the day it's due (a step's end), for Today's date filter. */
+  dueDate?: DateStr | null
   /** Open tasks: the dates it was due before, struck through by its due date. */
   movedFrom?: DateStr[] | null
   target: ItemTarget
@@ -203,7 +205,7 @@ export function buildDay(
     else visible = isToday || t.date === date
     if (!visible) return null
     return {
-      key: `task:${t.id}`, kind: 'task', title: t.title, done: !!done, note: !!t.note?.trim(),
+      key: `task:${t.id}`, kind: 'task', title: t.title, done: !!done, note: !!t.note?.trim(), dueDate: t.date ?? null,
       due: !done && t.date && isToday ? dueBadge(t.date, date, t.time) : undefined,
       movedFrom: !done && isToday ? t.movedFrom : undefined,
       subjectType: 'task', subjectId: t.id, entryId: done?.id, target, sortDate: sortKey(t),
@@ -226,13 +228,13 @@ export function buildDay(
         step: { index: i + 1, total: steps.length }, target: { kind: 'project' as const, id: p.id },
       }
       if (done && done.date === date) {
-        out.push({ ...base, key: `task:${step.id}`, done: true, entryId: done.id })
+        out.push({ ...base, key: `task:${step.id}`, done: true, entryId: done.id, dueDate: deadlines[i] })
       } else if (!done && !currentShown) {
         currentShown = true
         const end = deadlines[i]
         if (isToday) {
           out.push({
-            ...base, key: `task:${step.id}`, done: false, due: end ? dueBadge(end, date) : undefined,
+            ...base, key: `task:${step.id}`, done: false, due: end ? dueBadge(end, date) : undefined, dueDate: end,
             detail: inGoal ? p.title : undefined,
           })
         }

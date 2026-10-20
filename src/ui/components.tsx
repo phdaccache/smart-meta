@@ -693,18 +693,20 @@ export function TitleField(props: {
 
 // ——— toast ———
 
-let toastMsg: string | null = null
+type ToastAction = { label: string; run: () => void }
+let toastMsg: { text: string; action?: ToastAction } | null = null
 let toastTimer: ReturnType<typeof setTimeout> | undefined
 const toastListeners = new Set<() => void>()
 
-export function toast(msg: string) {
-  toastMsg = msg
+/** With an action (an Undo), the toast stays a little longer and takes a tap. */
+export function toast(msg: string, action?: ToastAction) {
+  toastMsg = { text: msg, action }
   toastListeners.forEach((l) => l())
   clearTimeout(toastTimer)
   toastTimer = setTimeout(() => {
     toastMsg = null
     toastListeners.forEach((l) => l())
-  }, 3200)
+  }, action ? 5000 : 3200)
 }
 
 export function Toaster() {
@@ -718,9 +720,20 @@ export function Toaster() {
   // The last message stays in place while it fades, so a toast leaves as smoothly as it came.
   const last = useRef(msg)
   if (msg) last.current = msg
+  const shown = msg ?? last.current
   return (
     <div className="toast-region" aria-live="polite">
-      <div className={`toast ${msg ? 'on' : ''}`} aria-hidden={!msg}>{msg ?? last.current}</div>
+      <div className={`toast ${msg ? 'on' : ''} ${shown?.action ? 'has-action' : ''}`} aria-hidden={!msg}>
+        {shown?.text}
+        {shown?.action && (
+          <button type="button" className="toast-action" tabIndex={msg ? 0 : -1} onClick={() => {
+            shown.action!.run()
+            clearTimeout(toastTimer)
+            toastMsg = null
+            toastListeners.forEach((l) => l())
+          }}>{shown.action.label}</button>
+        )}
+      </div>
     </div>
   )
 }

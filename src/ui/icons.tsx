@@ -51,8 +51,11 @@ export const IconCalendar = (p: P) => (
 export const IconClose = (p: P) => (
   <Svg {...p}><path d="M6 6l12 12M18 6 6 18" /></Svg>
 )
+/** Filled, like the iPhone's trash.fill on a swiped row's red pill. */
 export const IconTrash = (p: P) => (
-  <Svg {...p}><path d="M4 7h16M10 3h4M6 7l1 13h10l1-13M10 11v5M14 11v5" /></Svg>
+  <Svg stroke="none" fill="currentColor" {...p}>
+    <path fillRule="evenodd" d="M9.5 2.5h5a1.5 1.5 0 0 1 1.5 1.5v.5h3.75a1 1 0 1 1 0 2H4.25a1 1 0 0 1 0-2H8V4a1.5 1.5 0 0 1 1.5-1.5zM5.6 8h12.8l-.85 11.6A2.6 2.6 0 0 1 14.96 22H9.04a2.6 2.6 0 0 1-2.59-2.4zM9.6 10.5a.85.85 0 0 0-.85.9l.4 7a.85.85 0 0 0 1.7-.1l-.4-7a.85.85 0 0 0-.85-.8zm4.8 0a.85.85 0 0 0-.85.8l-.4 7a.85.85 0 0 0 1.7.1l.4-7a.85.85 0 0 0-.85-.9z" />
+  </Svg>
 )
 export const IconCloud = (p: P) => (
   <Svg {...p}><path d="M7 18a4 4 0 0 1-.6-7.95A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9H7z" /></Svg>
@@ -77,6 +80,10 @@ export const IconClock = (p: P) => (
 )
 export const IconHistory = (p: P) => (
   <Svg {...p}><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6" /><path d="M3 4v4h4" /><path d="M12 8v4.5l3 2" /></Svg>
+)
+/** Like the iPhone's line.3.horizontal.decrease.circle: filled while a filter is on (see .filter-btn.on). */
+export const IconFilter = (p: P) => (
+  <Svg {...p}><circle cx="12" cy="12" r="9.5" /><path d="M7.5 9h9M9.5 12.5h5M11 16h2" /></Svg>
 )
 export const IconMore = (p: P) => (
   <Svg {...p}><circle cx="6" cy="12" r="1.3" fill="currentColor" /><circle cx="12" cy="12" r="1.3" fill="currentColor" /><circle cx="18" cy="12" r="1.3" fill="currentColor" /></Svg>

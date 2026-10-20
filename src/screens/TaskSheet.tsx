@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { check, deleteTask, promoteTask, uncheck, updateTask } from '../db/repo'
+import { check, deleteTask, promoteTask, restoreTask, uncheck, updateTask } from '../db/repo'
 import { t } from '../i18n'
 import { capitalize, dayMonth, diffDays, formatTime, isDateStr, nowMinutes, relativeDay, weekdayName } from '../lib/dates'
 import { activeEntries } from '../lib/scoring'
@@ -11,6 +11,7 @@ import { useSnapshot } from '../ui/hooks'
 import { IconCalendar, IconChevronUpDown, IconClock, IconGoals, IconNote } from '../ui/icons'
 import { navigate } from '../ui/router'
 import { IconTile, ProjectTile, ValueTile } from '../ui/valueLook'
+import { SwipeToDelete } from '../ui/SwipeToDelete'
 
 /** "Today", "Tomorrow", or "Saturday, 24 October". */
 function dateText(d: DateStr, today: DateStr): string {
@@ -193,6 +194,12 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
   )
 }
 
+/** Deleted by a swipe: gone at once, with an Undo on the toast in case it was a slip. */
+export async function deleteWithUndo(id: string) {
+  await deleteTask({ id })
+  toast(t('common.deleted'), { label: t('common.undo'), run: () => restoreTask(id) })
+}
+
 /**
  * A goal's or a project's own tasks: open ones by when they're due (undated last), then the finished ones.
  * Each is checked off right here, and tapping one opens it to edit. With `reschedule` (Review's late tasks),
@@ -222,7 +229,8 @@ export function TaskList({ tasks, today, reschedule = false }: { tasks: Task[]; 
               const due = !isDone && task.date ? dueBadge(task.date, today, task.time) : null
               return (
                 <li key={task.id}>
-                  <div className={`item kind-task ${isDone ? 'done' : ''}`}>
+                  <SwipeToDelete className={`item kind-task ${isDone ? 'done' : ''}`} label={t('task.deleteNamed', { task: task.title })}
+                    onDelete={() => deleteWithUndo(task.id)}>
                     <CheckButton shape="square" checked={isDone} label={task.title} onClick={() => toggle(task)} />
                     <button className="item-main" onClick={() => setOpenTask(task)}>
                       <div className="item-title">
@@ -243,7 +251,7 @@ export function TaskList({ tasks, today, reschedule = false }: { tasks: Task[]; 
                         </DatePickerButton>
                       </div>
                     )}
-                  </div>
+                  </SwipeToDelete>
                 </li>
               )
             })}

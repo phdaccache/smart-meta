@@ -455,8 +455,13 @@ export async function updateTask(t: Task, changes: Partial<Fields<Task>>) {
   return patch('tasks', t.id, changes)
 }
 
-export async function deleteTask(t: Task) {
+export async function deleteTask(t: Pick<Task, 'id'>) {
   await tombstone('tasks', [t.id])
+}
+
+/** Undo for a task just deleted: it comes back as it was. */
+export async function restoreTask(id: ID) {
+  await patch('tasks', id, { deletedAt: null })
 }
 
 /** Projects made on their own wait in the backlog (`state: 'backlog'`); a template's start with their goal. */

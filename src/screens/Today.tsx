@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { exportData, shareOrDownload } from '../db/backup'
 import { addDisplacement, check, explainMiss, logValue, putOffMiss, uncheck } from '../db/repo'
 import { setSettings } from '../db/settings'
 import { num, t, tn } from '../i18n'
-import { addDays, dayMonth, diffDays, formatTime, isDateStr, parseTime, weekdayInSentence, weekdayName } from '../lib/dates'
+import { addDays, dayMonth, diffDays, formatTime, isDateStr, parseTime, periodOf, weekdayInSentence, weekdayName } from '../lib/dates'
 import { formatValue, promptQuestion, reasons, valueMissQuestion } from '../lib/describe'
 import { asksWhyAtOnce, type MissPrompt, type ScoreContext } from '../lib/scoring'
 import { buildDay, type Snapshot, type TodayGroup, type TodayItem } from '../lib/today'
@@ -12,13 +12,14 @@ import { CheckButton, Chip, DatePickerButton, DueText, Screen, Segmented, Sheet,
 import { ProjectTile, ValueTile } from '../ui/valueLook'
 import { useDisplacements, useMissAsks, useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
 import { dismissedMisses, reviewPending } from '../lib/review'
-import { IconCalendar, IconCheck, IconChevronLeft, IconChevronRight, IconNote, IconPlus } from '../ui/icons'
+import { IconCalendar, IconCheck, IconChevronLeft, IconChevronRight, IconFilter, IconNote, IconPlus } from '../ui/icons'
 import { navigate } from '../ui/router'
+import { SwipeToDelete } from '../ui/SwipeToDelete'
 import { openQuickAdd } from './QuickAdd'
 import { OccurrenceSheet } from './OccurrenceSheet'
 import { useSyncStatus } from '../sync/controller'
 import { dashboardUrl } from '../sync/supabase'
-import { TaskSheet } from './TaskSheet'
+import { deleteWithUndo, TaskSheet } from './TaskSheet'
 import { GettingStarted } from './Intro'
 
 type Filter = 'all' | 'goals' | 'projects' | 'tasks'
@@ -45,22 +46,94 @@ function applyFilter(groups: TodayGroup[], f: Filter): TodayGroup[] {
     .filter((g) => g.items.length > 0 || g.prompts.length > 0)
 }
 
-function useStoredFilter(): [Filter, (f: Filter) => void] {
-  const [f, setF] = useState<Filter>(() => {
+function useStored<T extends string>(key: string, initial: T): [T, (v: T) => void] {
+  const [v, setV] = useState<T>(() => {
     try {
-      return (localStorage.getItem('today-filter') as Filter | null) ?? 'all'
+      return (localStorage.getItem(key) as T | null) ?? initial
     } catch {
-      return 'all'
+      return initial
     }
   })
-  return [f, (next) => {
-    setF(next)
+  return [v, (next) => {
+    setV(next)
     try {
-      localStorage.setItem('today-filter', next)
+      localStorage.setItem(key, next)
     } catch {
       // private mode: the filter just won't be remembered
     }
   }]
+}
+
+const useStoredFilter = () => useStored<Filter>('today-filter', 'all')
+
+/** When tasks are due, from the filter button: anything but "all" shows only tasks and steps due then. */
+type When = 'today' | 'tomorrow' | 'week' | 'all'
+const WHENS: { value: When; label: () => string }[] = [
+  { value: 'today', label: () => t('today.whenToday') },
+  { value: 'tomorrow', label: () => t('today.whenTomorrow') },
+  { value: 'week', label: () => t('today.whenWeek') },
+  { value: 'all', label: () => t('common.all') },
+]
+
+function dueThen(i: TodayItem, when: Exclude<When, 'all'>, today: DateStr): boolean {
+  if (i.kind !== 'task' && i.kind !== 'step') return false
+  const d = i.dueDate
+  if (!d) return false
+  if (when === 'today') return d <= today
+  if (when === 'tomorrow') return d === addDays(today, 1)
+  // This week: everything due by Sunday, the late ones included.
+  return d <= periodOf(today, 'week').end
+}
+
+function applyWhen(groups: TodayGroup[], when: When, today: DateStr): TodayGroup[] {
+  if (when === 'all') return groups
+  return groups
+    .map((g) => {
+      const items = g.items.filter((i) => dueThen(i, when, today))
+      return { ...g, items, prompts: [], done: items.length > 0 && items.every((i) => i.done) }
+    })
+    .filter((g) => g.items.length > 0)
+}
+
+/**
+ * The filter button and the menu it opens, as on the iPhone: the menu grows out of the button,
+ * the choice is ticked, and a tap anywhere else closes it. The button fills while a filter is on.
+ */
+function WhenMenu({ value, onChange }: { value: When; onChange: (w: When) => void }) {
+  const [open, setOpen] = useState(false)
+  const wrap = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const away = (e: PointerEvent) => !wrap.current?.contains(e.target as Node) && setOpen(false)
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('pointerdown', away, true)
+    document.addEventListener('keydown', esc)
+    wrap.current?.querySelector<HTMLElement>('[aria-checked="true"]')?.focus()
+    return () => {
+      document.removeEventListener('pointerdown', away, true)
+      document.removeEventListener('keydown', esc)
+    }
+  }, [open])
+  return (
+    <div className="when" ref={wrap}>
+      <button type="button" className={`icon-btn filter-btn ${value !== 'all' ? 'on' : ''}`} aria-label={t('today.when')}
+        aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <IconFilter />
+      </button>
+      {open && (
+        <div className="menu" role="menu" aria-label={t('today.when')}>
+          <div className="menu-title">{t('today.when')}</div>
+          {WHENS.map((w) => (
+            <button key={w.value} type="button" role="menuitemradio" aria-checked={value === w.value} className="menu-item"
+              onClick={() => { onChange(w.value); setOpen(false) }}>
+              <span className="menu-check">{value === w.value && <IconCheck width={16} height={16} strokeWidth={2.4} />}</span>
+              {w.label()}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export function TodayScreen({ date }: { date?: DateStr }) {
@@ -71,6 +144,7 @@ export function TodayScreen({ date }: { date?: DateStr }) {
   const [openTask, setOpenTask] = useState<Task | null>(null)
   const [logFor, setLogFor] = useState<Commitment | null>(null)
   const [filter, setFilter] = useStoredFilter()
+  const [when, setWhen] = useStored<When>('today-when', 'all')
   const viewDate = date && isDateStr(date) && date <= today ? date : today
   const ctx: ScoreContext = useMemo(() => ({ today, rolloverHour: settings.rolloverHour }), [today, settings.rolloverHour])
   const weekReviews = useWeekReviews()
@@ -79,6 +153,9 @@ export function TodayScreen({ date }: { date?: DateStr }) {
   const isPast = viewDate !== today
 
   if (!snap || !view) return null
+  // Past days show what was done; the date filter is for what's ahead.
+  const whenOn = !isPast && when !== 'all'
+  const shown = applyWhen(applyFilter(view.groups, filter), isPast ? 'all' : when, today)
 
   let count = ''
   if (view.total > 0) {
@@ -96,7 +173,9 @@ export function TodayScreen({ date }: { date?: DateStr }) {
 
   return (
     <Screen
-      eyebrow={isPast ? t('today.pastDay', { date: dayMonth(viewDate) }) : [dayMonth(viewDate), count].filter(Boolean).join(' · ')}
+      // With a date filter on, the line under the date says which, so a short list is never a surprise.
+      eyebrow={isPast ? t('today.pastDay', { date: dayMonth(viewDate) })
+        : [dayMonth(viewDate), whenOn ? WHENS.find((w) => w.value === when)!.label() : count].filter(Boolean).join(' · ')}
       title={isPast && diffDays(viewDate, today) === 1 ? t('dates.Yesterday') : weekdayName(viewDate)}
       settings
       // Top-left, not beside the title: a long day name ("Wednesday") keeps one line.
@@ -106,6 +185,7 @@ export function TodayScreen({ date }: { date?: DateStr }) {
         </button>
       )}
       actions={<>
+        {!isPast && view.groups.length > 0 && <WhenMenu value={when} onChange={setWhen} />}
         <DatePickerButton className="icon-btn" value={viewDate} max={today} label={t('today.goToPastDay')}
           onPick={(d) => {
             if (!isDateStr(d)) return
@@ -128,10 +208,10 @@ export function TodayScreen({ date }: { date?: DateStr }) {
               { value: 'projects', label: t('today.filterProjects') }, { value: 'tasks', label: t('today.filterTasks') },
             ]} />
           </div>
-          {applyFilter(view.groups, filter).map((g) => (
+          {shown.map((g) => (
             <Group key={g.key} group={g} snap={snap} date={viewDate} today={today} onOpen={onOpen} />
           ))}
-          {applyFilter(view.groups, filter).length === 0 && <p className="muted" style={{ padding: '24px 4px' }}>{t('today.nothingHere')}</p>}
+          {shown.length === 0 && <p className="muted" style={{ padding: '24px 4px' }}>{t(whenOn ? 'today.whenNothing' : 'today.nothingHere')}</p>}
         </>
       )}
 
@@ -249,9 +329,11 @@ function ItemRow({ item, date, today, onOpen }: { item: TodayItem; date: DateStr
   const detail = [kind && <span key="k" className="item-kind">{kind}</span>, item.detail].filter(Boolean)
 
   const miss = item.valueState === 'miss'
-  return (
-    <li>
-      <div className={`item kind-${item.kind} ${item.done ? 'done' : ''}`}>
+  // Tasks and project steps can be swiped away; habits and preps are changed on their goal.
+  const deletable = item.kind === 'task' || item.kind === 'step'
+  const rowClass = `item kind-${item.kind} ${item.done ? 'done' : ''}`
+  const content = (
+    <>
         <CheckButton shape={shape} checked={item.done} tone={miss ? 'miss' : satisfiedElsewhere ? 'muted' : undefined}
           variant={valued ? (item.adds ? 'adds' : 'value') : undefined}
           label={valued ? t('today.logItem', { name: item.title }) : item.title} onClick={toggle} />
@@ -270,7 +352,15 @@ function ItemRow({ item, date, today, onOpen }: { item: TodayItem; date: DateStr
             </button>
           </div>
         )}
-      </div>
+    </>
+  )
+  return (
+    <li>
+      {deletable ? (
+        <SwipeToDelete className={rowClass} label={t('task.deleteNamed', { task: item.title })} onDelete={() => deleteWithUndo(item.subjectId)}>
+          {content}
+        </SwipeToDelete>
+      ) : <div className={rowClass}>{content}</div>}
       {editing && item.commitment && (
         <ValueEditor item={item} date={date} onDone={(asked) => { setEditing(false); if (asked) setWhy(asked) }} />
       )}

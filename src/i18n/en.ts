@@ -34,6 +34,7 @@ export const en = {
   'common.doneEditing': 'Done',
   'common.delete': 'Delete',
   'common.deleted': 'Deleted.',
+  'common.undo': 'Undo',
   'common.remove': 'Remove',
   'common.next': 'Next',
   'common.continue': 'Continue',
@@ -150,6 +151,11 @@ export const en = {
   'today.filterProjects': 'Projects',
   'today.filterTasks': 'Tasks',
   'today.nothingHere': 'Nothing here today.',
+  'today.when': 'Show tasks due',
+  'today.whenToday': 'Today and late',
+  'today.whenTomorrow': 'Tomorrow',
+  'today.whenWeek': 'This week',
+  'today.whenNothing': 'Nothing due then.',
   'today.errands': 'Other tasks',
   'today.logItem': 'Log {name}',
   'today.addPlaceholder': 'add',
@@ -593,6 +599,7 @@ export const en = {
   'task.newDateFor': 'New date for {task}',
   'task.movedTo': 'Moved to {date}',
   'task.delete': 'Delete task',
+  'task.deleteNamed': 'Delete {task}',
 
   // Weekly review
   'review.title': 'Review',
