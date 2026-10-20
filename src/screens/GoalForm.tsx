@@ -7,11 +7,12 @@ import {
   type CommitmentDraft, type Errors, type GoalDraft, type PrepDraft,
 } from '../lib/draft'
 import { addMonths, OBSTACLE_PREPS, toleranceLine } from '../lib/intro'
+import { periodWord } from '../lib/describe'
 import type { Period, Shape } from '../lib/types'
 import { templateByKey, templatesFor, type Template } from '../lib/templates'
 import { startTemplate, TemplateGoalScreen } from './TemplateGoal'
 import { Chip, Field, InfoTip, PageText, Screen, Segmented, Sheet, Stepper, toast, WeekdayPicker } from '../ui/components'
-import { IconChevronRight, IconClose } from '../ui/icons'
+import { IconChevronRight, IconChevronUpDown, IconClose } from '../ui/icons'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { goBack, navigate, screensUnder, scrollScreenToTop, useLocation } from '../ui/router'
 
@@ -158,11 +159,16 @@ export function CadenceFields({ d, set, e, showErrors }: {
     <>
       {d.shape === 'rhythm' && (
         <Field label={t('form.target')} error={showErrors ? e.times : undefined}>
-          {/* Day, week and month don't fit beside the stepper on a phone: they take their own line. */}
-          <div className="inline-fields wrap">
+          <div className="inline-fields times-per">
             <Stepper label={t('form.times')} value={d.times} min={1} max={31} onChange={(times) => set({ times })} />
-            <span className="muted" style={{ flex: 'none' }}>{t('form.timesPer')}</span>
-            <Segmented label={t('form.period')} value={d.period} options={PERIODS} onChange={(period) => set({ period })} />
+            <span className="muted">{t('form.timesPer')}</span>
+            {/* The phone's own list, as for picking a goal: keeps it all on one line. */}
+            <span className="btn pick-btn">
+              {periodWord(d.period)} <IconChevronUpDown width={14} height={14} />
+              <select aria-label={t('form.period')} value={d.period} onChange={(ev) => set({ period: ev.target.value as Period })}>
+                {PERIODS.map((p) => <option key={p.value} value={p.value}>{periodWord(p.value)}</option>)}
+              </select>
+            </span>
           </div>
           {d.period === 'week' && d.times === 7 && (
             <p className="field-hint after">
