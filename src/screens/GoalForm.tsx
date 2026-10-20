@@ -14,6 +14,7 @@ import { templateByKey, templatesFor, type Template } from '../lib/templates'
 import { startTemplate, TemplateGoalScreen } from './TemplateGoal'
 import { Chip, Field, InfoTip, PageText, Screen, Sheet, toast, WeekdayPicker } from '../ui/components'
 import { IconChevronRight, IconChevronUpDown, IconClose } from '../ui/icons'
+import { TimeWheel } from '../ui/pickers'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { goBack, navigate, screensUnder, scrollScreenToTop, useLocation } from '../ui/router'
 
@@ -179,9 +180,7 @@ export function CadenceFields({ d, set, e, showErrors }: {
                 ? [{ value: 'lte', label: t('form.by') }, { value: 'gte', label: t('form.notBefore') }]
                 : [{ value: 'gte', label: t('form.atLeast') }, { value: 'lte', label: t('form.atMost') }]} />
             {timed ? (
-              <InputRow id="c-time" label={t('common.time')}>
-                <input id="c-time" type="time" className="row-input" value={d.targetTime} onChange={(ev) => set({ targetTime: ev.target.value })} />
-              </InputRow>
+              <TimeRow value={d.targetTime} onChange={(targetTime) => set({ targetTime })} />
             ) : (
               <>
                 <InputRow id="c-limit" label={t('form.limit')}>
@@ -231,6 +230,33 @@ function InputRow(props: { id: string; label: string; children: ReactNode }) {
       <label className="title" htmlFor={props.id}>{props.label}</label>
       {props.children}
     </div>
+  )
+}
+
+/** A time, set on the same wheels as a task's: the row opens them under it, as in Reminders. */
+function TimeRow({ value, onChange }: { value: string; onChange: (hhmm: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    if (open) ref.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [open])
+  return (
+    <>
+      <button type="button" className="list-row form-row" aria-expanded={open} onClick={() => {
+        // The keyboard would cover the wheels.
+        (document.activeElement as HTMLElement | null)?.blur?.()
+        if (!value) onChange('23:00')
+        setOpen(!open)
+      }}>
+        <span className="title">{t('common.time')}</span>
+        <span className={`row-value ${open ? 'on' : ''}`}>{value || '—'}</span>
+      </button>
+      {open && (
+        <div className="dt-picker" ref={ref}>
+          <TimeWheel value={value || '23:00'} onChange={onChange} />
+        </div>
+      )}
+    </>
   )
 }
 

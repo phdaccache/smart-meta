@@ -313,14 +313,19 @@ input::placeholder, textarea::placeholder { color: var(--ink-3); }
 .inline-fields.wrap { flex-wrap: wrap; }
 .inline-fields.wrap > .segmented { flex: 1 0 100%; }
 /* A habit's count, as Reminders sets a repeat: label left, value right, in one card. */
+/* A filled block with the corners of the fields around it, so it stands out on a sheet and inside a card alike. */
+.card.form-list { background: var(--surface-2); border-radius: var(--radius-sm); }
 .form-list .form-row { min-height: 48px; padding-top: 0; padding-bottom: 0; gap: 12px; }
+button.form-row { width: 100%; text-align: left; }
+.form-list .form-row > .text { flex: none; }
+.form-list .form-row > .row-value { flex: 1 1 auto; text-align: right; }
+.form-list .row-value.on { color: var(--accent); }
 .form-list .form-row > .title { flex: none; }
 .form-list .row-input {
   flex: 1; min-width: 0; width: auto; min-height: 46px; padding: 0; border: 0; background: none; box-shadow: none;
   text-align: right; font-size: 17px; color: var(--ink-2);
 }
 .form-list .row-input:focus { color: var(--ink); box-shadow: none; }
-.form-list input[type='time'].row-input { flex: none; margin-left: auto; }
 .form-summary { margin: 8px 16px 0; }
 .inline-fields.wrap .narrow { flex: 1 1 0; }
 
