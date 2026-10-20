@@ -16,6 +16,17 @@ const MIGRATIONS: Record<number, Step> = {
   // 2: (collection, data) => (collection === 'goals' ? { ...data, newField: null } : data),
 }
 
+/**
+ * A yes/no threshold is the same as a rhythm once per period (one tick in the
+ * period is a hit), so it's stored as one. Older versions still write them;
+ * they're converted wherever records come in. Scores don't change.
+ */
+export function asRhythm<T extends Record<string, unknown>>(collection: string, data: T): T {
+  if (collection !== 'commitments' || data.shape !== 'threshold' || data.checkinType !== 'binary') return data
+  const cadence = data.cadence as { period: string; times: number } | undefined
+  return { ...data, shape: 'rhythm', cadence: { period: cadence?.period ?? 'day', times: 1 }, targetValue: null, comparator: null }
+}
+
 export function migrateRecord<T>(collection: string, data: Record<string, unknown>, fromVersion: number): T {
   if (fromVersion > DATA_VERSION) {
     throw new Error(t('err.newerVersion', { n: fromVersion }))
@@ -25,5 +36,5 @@ export function migrateRecord<T>(collection: string, data: Record<string, unknow
     const step = MIGRATIONS[v]
     if (step) out = step(collection, out)
   }
-  return out as T
+  return asRhythm(collection, out) as T
 }

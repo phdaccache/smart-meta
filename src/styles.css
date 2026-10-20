@@ -283,6 +283,7 @@ input::placeholder, textarea::placeholder { color: var(--ink-3); }
 .field-hint { font-size: 13px; color: var(--ink-2); line-height: 1.4; }
 .field-hint.after { margin-top: 10px; }
 .field > .field-hint.after { margin-top: 0; }
+.field-hint .link-btn { min-height: 0; padding: 0; font-size: inherit; }
 .intro-examples + .field { margin-top: 18px; }
 .field-error { font-size: 13px; color: var(--danger); line-height: 1.4; }
 .field.has-error input, .field.has-error textarea, .field.has-error select { border-color: var(--danger); }
@@ -311,6 +312,7 @@ input::placeholder, textarea::placeholder { color: var(--ink-3); }
 /* A choice above its inputs, so longer words (Portuguese) never squeeze them. */
 .inline-fields.wrap { flex-wrap: wrap; }
 .inline-fields.wrap > .segmented { flex: 1 0 100%; }
+.inline-fields.wrap > .stepper { flex: none; }
 .inline-fields.wrap .narrow { flex: 1 1 0; }
 
 input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }

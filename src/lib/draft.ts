@@ -98,7 +98,8 @@ export function emptyGoalDraft(today: DateStr): GoalDraft {
 /** Check-in types that make sense for each shape. */
 export const CHECKIN_TYPES: Record<Shape, CheckinType[]> = {
   rhythm: ['binary'],
-  threshold: ['quantity', 'timestamp', 'binary'],
+  // A yes/no line is a rhythm once per period: see asRhythm.
+  threshold: ['quantity', 'timestamp'],
   standard: ['timestamp', 'binary'],
 }
 

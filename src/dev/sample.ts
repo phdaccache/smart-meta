@@ -131,7 +131,7 @@ export async function loadSampleData(today: DateStr): Promise<void> {
   // A journal that never stuck: abandoned after six weeks.
   const journal = await goal({
     title: 'Journal every evening', whyValueId: v('Growth'), whyText: 'To notice what my days are actually made of.',
-    shape: 'threshold', label: 'journal', measurementDefinition: 'Wrote at least three lines before bed', checkinType: 'binary',
+    shape: 'rhythm', times: 1, label: 'journal', measurementDefinition: 'Wrote at least three lines before bed', checkinType: 'binary',
     period: 'day', tolerancePct: 80, startDate: weeksAgo(26),
   }, true)
   const [journalC] = await commitmentsOf(journal)
@@ -177,7 +177,7 @@ export async function loadSampleData(today: DateStr): Promise<void> {
   }, true)
   const sugar = await goal({
     title: '30 days without sugar', whyValueId: v('Health'), whyText: 'To prove to myself cravings pass.',
-    shape: 'threshold', label: 'no sugar', measurementDefinition: 'No added sugar all day', checkinType: 'binary',
+    shape: 'rhythm', times: 1, label: 'no sugar', measurementDefinition: 'No added sugar all day', checkinType: 'binary',
     period: 'day', tolerancePct: 90, startDate: addDays(today, -33), targetDate: addDays(today, -3),
     preps: [prep('Buy fruit for the week', [7], '18:00')],
   }, true)
@@ -209,7 +209,7 @@ export async function loadSampleData(today: DateStr): Promise<void> {
   }, true)
   const friends = await goal({
     title: 'Answer my friends', whyValueId: v('People'), whyText: 'So friends don’t feel ignored.',
-    shape: 'threshold', label: 'replies', measurementDefinition: 'Replied to every friend’s message by the end of the day',
+    shape: 'rhythm', times: 1, label: 'replies', measurementDefinition: 'Replied to every friend’s message by the end of the day',
     checkinType: 'binary', period: 'day', tolerancePct: 80, startDate: weeksAgo(5),
   }, true)
 

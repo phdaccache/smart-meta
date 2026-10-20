@@ -158,11 +158,17 @@ export function CadenceFields({ d, set, e, showErrors }: {
     <>
       {d.shape === 'rhythm' && (
         <Field label={t('form.target')} error={showErrors ? e.times : undefined}>
-          <div className="inline-fields">
+          {/* Day, week and month don't fit beside the stepper on a phone: they take their own line. */}
+          <div className="inline-fields wrap">
             <Stepper label={t('form.times')} value={d.times} min={1} max={31} onChange={(times) => set({ times })} />
             <span className="muted" style={{ flex: 'none' }}>{t('form.timesPer')}</span>
-            <Segmented label={t('form.period')} value={d.period} options={PERIODS.slice(1)} onChange={(period) => set({ period })} />
+            <Segmented label={t('form.period')} value={d.period} options={PERIODS} onChange={(period) => set({ period })} />
           </div>
+          {d.period === 'week' && d.times === 7 && (
+            <p className="field-hint after">
+              {t('form.sevenIsDaily')} <button type="button" className="link-btn" onClick={() => set({ period: 'day', times: 1 })}>{t('form.useDaily')}</button>
+            </p>
+          )}
         </Field>
       )}
 

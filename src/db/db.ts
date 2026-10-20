@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie'
+import { asRhythm } from '../lib/migrations'
 import type {
   Base, Commitment, Displacement, Entry, Goal, GoalReview, Occurrence, Prep, Project, Revision, Task, Value,
   WeekReview,
@@ -75,6 +76,16 @@ export class AppDB extends Dexie {
       outbox: '++seq, [collection+id]',
     })
     this.version(2).stores({ weekReviews: 'id, week, updatedAt' })
+    // Yes/no thresholds become rhythms once per period, queued so the synced copy follows.
+    this.version(3).stores({}).upgrade(async (tx) => {
+      const stamp = new Date().toISOString()
+      for (const c of await tx.table('commitments').toArray()) {
+        const next = asRhythm('commitments', c)
+        if (next === c) continue
+        await tx.table('commitments').put({ ...next, updatedAt: stamp })
+        await tx.table('outbox').add({ collection: 'commitments', id: c.id, queuedAt: stamp })
+      }
+    })
   }
 
   coll<C extends Collection>(c: C): Table<CollectionTypes[C], string> {
