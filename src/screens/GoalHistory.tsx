@@ -1,16 +1,16 @@
 import { useState, type ReactNode } from 'react'
 import { t } from '../i18n'
 import { addDays, isDateStr, monthShort, weekdayAbbr } from '../lib/dates'
-import { formatValue, reasonLower } from '../lib/describe'
+import { byNewest, commitmentHistory, type HistoryRow } from '../lib/history'
 import { revisionField, revisionValue, stateLabel } from '../lib/revisions'
 import type { Snapshot } from '../lib/today'
-import type { Commitment, DateStr, Entry, Goal } from '../lib/types'
+import type { DateStr, Goal } from '../lib/types'
 import { DatePickerButton, Sheet } from '../ui/components'
-import { useDisplacements, useGoalReviews, useRevisions } from '../ui/hooks'
+import { useDisplacements, useGoalReviews, useRevisions, useSettings } from '../ui/hooks'
 import { IconCalendar } from '../ui/icons'
 import { navigate } from '../ui/router'
 
-type Kind = 'hit' | 'miss' | 'undone' | 'change' | 'review'
+type Kind = HistoryRow['kind'] | 'change' | 'review'
 
 interface Row {
   key: string
@@ -23,7 +23,7 @@ interface Row {
   quiet?: boolean
 }
 
-const MARK: Record<Kind, string> = { hit: '✓', miss: '✕', undone: '↺', change: '✎', review: '★' }
+const MARK: Record<Kind, string> = { hit: '✓', miss: '✕', undone: '↺', add: '+', change: '✎', review: '★' }
 
 /** A goal's timeline: check-ins, misses, corrections, edits and reviews, newest first. */
 export function GoalHistorySheet(props: { goal: Goal; snap: Snapshot; today: DateStr; open: boolean; onClose: () => void }) {
@@ -31,36 +31,21 @@ export function GoalHistorySheet(props: { goal: Goal; snap: Snapshot; today: Dat
   const revisions = useRevisions(goal.id)
   const reviews = useGoalReviews(goal.id)
   const displacements = useDisplacements()
+  const settings = useSettings()
   const [limit, setLimit] = useState(60)
   if (!props.open) return null
 
   const commitments = snap.commitments.filter((c) => c.goalId === goal.id)
-  const subjects = new Map<string, { label: string; c?: Commitment; prep?: boolean }>()
-  commitments.forEach((c) => subjects.set(c.id, { label: c.label, c }))
-  snap.preps
-    .filter((p) => commitments.some((c) => c.id === p.commitmentId))
-    .forEach((p) => subjects.set(p.id, { label: p.title, prep: true }))
-
-  const entries = snap.entries.filter((e) => subjects.has(e.subjectId) && !e.deletedAt)
-  const replacedBy = new Map<string, Entry>()
-  entries.forEach((e) => e.supersedes && replacedBy.set(e.supersedes, e))
-
-  const rows: Row[] = []
-  for (const e of entries) {
-    if (e.outcome === 'void') continue
-    const s = subjects.get(e.subjectId)!
-    const replaced = replacedBy.get(e.id)
-    const value = e.value != null && s.c ? ` ${formatValue(s.c, e.value)}` : ''
-    const displacement = displacements.find((d) => d.id === e.displacementId)?.label
-    const why = e.outcome === 'miss' && e.missReason ? displacement ?? reasonLower(e.missReason) : undefined
-    rows.push({
-      key: e.id, date: e.date, at: e.recordedAt,
-      kind: replaced ? 'undone' : e.outcome === 'hit' ? 'hit' : 'miss',
-      text: <>{s.label}{value}{why && <span className="h-why"> · {why}</span>}</>,
-      sub: e.note ?? undefined,
-      struck: !!replaced,
-      quiet: s.prep,
-    })
+  const ctx = { today, rolloverHour: settings.rolloverHour }
+  const rows: Row[] = commitments.flatMap((c) => commitmentHistory(c, snap.entries, snap.occurrences, ctx, displacements))
+    .map((r) => ({ ...r, text: <>{r.text}{r.why && <span className="h-why"> · {r.why}</span>}</>, sub: r.note }))
+  // Preps aren't scored: just the evenings they were done.
+  const preps = new Map(snap.preps.filter((p) => commitments.some((c) => c.id === p.commitmentId)).map((p) => [p.id, p]))
+  const prepEntries = snap.entries.filter((e) => e.subjectType === 'prep' && preps.has(e.subjectId) && !e.deletedAt)
+  const undone = new Set(prepEntries.map((e) => e.supersedes).filter(Boolean))
+  for (const e of prepEntries) {
+    if (e.outcome !== 'hit') continue
+    rows.push({ key: e.id, date: e.date, at: e.recordedAt, kind: undone.has(e.id) ? 'undone' : 'hit', text: <>{preps.get(e.subjectId)!.title}</>, struck: undone.has(e.id), quiet: true })
   }
   // Old and new revisions alike are shown in the current language.
   const rctx = { goal, valueName: (id: string) => snap.values.find((v) => v.id === id)?.name }
@@ -81,7 +66,7 @@ export function GoalHistorySheet(props: { goal: Goal; snap: Snapshot; today: Dat
       sub: r.journalNote || r.whatHappened || undefined,
     })
   }
-  rows.sort((a, b) => b.date.localeCompare(a.date) || b.at.localeCompare(a.at))
+  rows.sort(byNewest)
 
   const shown = rows.slice(0, limit)
   const days: { date: DateStr; rows: Row[] }[] = []

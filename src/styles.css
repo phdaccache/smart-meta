@@ -690,6 +690,14 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .h-hit .h-mark { background: var(--on-track); }
 .h-miss .h-mark { background: var(--behind); }
 .h-undone .h-mark { background: var(--none); color: var(--ink-2); }
+.h-add .h-mark { background: none; border: 1.5px dashed var(--accent); color: var(--accent); }
+/* A commitment's last few check-ins, on its card. */
+.recent-block { border-top: 1px solid var(--line); padding: 10px 16px 8px; }
+.recent-head { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); }
+.recent-head .link-btn { text-transform: none; letter-spacing: 0; font-size: 14px; }
+.recent-list { list-style: none; margin: 4px 0 0; padding: 0; }
+.recent-list li { display: flex; gap: 10px; align-items: flex-start; padding: 5px 0; font-size: 15px; }
+.recent-date { flex: none; color: var(--ink-3); font-size: 13px; margin-top: 2px; }
 .h-change .h-mark { background: var(--accent-soft); color: var(--accent); }
 .h-review .h-mark { background: var(--accent); color: var(--accent-ink); }
 .h-text { flex: 1; min-width: 0; line-height: 1.35; }
@@ -1505,3 +1513,9 @@ button, a, summary, [role='button'], .chip {
 /* Developer: debug colors. */
 .debug-paint .sheet::after { background: #ff2d55; }
 .debug-paint .sheet-underlay { background: #34c759; }
+
+/* A rule occurrence's name: typed, or picked from earlier ones. */
+.name-pick { display: flex; gap: 8px; align-items: stretch; }
+.name-pick input { flex: 1; min-width: 0; }
+.pick-btn { position: relative; flex: none; display: inline-flex; align-items: center; gap: 4px; }
+.pick-btn select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; }

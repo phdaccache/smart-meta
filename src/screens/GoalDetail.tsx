@@ -6,6 +6,7 @@ import {
 import { marked, t } from '../i18n'
 import { dayMonth, isDateStr, relativeDay, untilText, weekdaysLabel } from '../lib/dates'
 import { cadenceText } from '../lib/describe'
+import { commitmentHistory, recentHistory } from '../lib/history'
 import {
   doneWhenProblem, emptyCommitmentDraft, isValid, MAX_PREPS, validateCommitment, validatePrep,
   type CommitmentDraft, type PrepDraft,
@@ -15,7 +16,7 @@ import type { Snapshot } from '../lib/today'
 import { stateLabel } from '../lib/revisions'
 import type { Commitment, Goal, GoalReview, Prep, Value } from '../lib/types'
 import { Field, InfoTip, PageText, Screen, Section, Sheet, StatusInfo, StatusWord, toast, TypeToConfirm, WeekBar } from '../ui/components'
-import { useGoalReviews, useSettings, useSnapshot, useToday } from '../ui/hooks'
+import { useDisplacements, useGoalReviews, useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconHistory, IconInsights } from '../ui/icons'
 import { goBack, navigate } from '../ui/router'
 import { ValueLookSheet, ValueTile, valueLook } from '../ui/valueLook'
@@ -138,7 +139,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
         ) : (
           <div className="stack">
             {commitments.map((c) => (
-              <CommitmentCard key={c.id} c={c} snap={snap} today={today} onEdit={() => setEditingC(c)} />
+              <CommitmentCard key={c.id} c={c} snap={snap} today={today} onEdit={() => setEditingC(c)} onHistory={() => setHistory(true)} />
             ))}
           </div>
         )}
@@ -217,8 +218,11 @@ export function GoalDetailScreen({ id }: { id: string }) {
   )
 }
 
-function CommitmentCard({ c, snap, today, onEdit }: { c: Commitment; snap: Snapshot; today: string; onEdit: () => void }) {
+function CommitmentCard({ c, snap, today, onEdit, onHistory }: { c: Commitment; snap: Snapshot; today: string; onEdit: () => void; onHistory: () => void }) {
   const preps = snap.preps.filter((p) => p.commitmentId === c.id)
+  const settings = useSettings()
+  const displacements = useDisplacements()
+  const recent = recentHistory(commitmentHistory(c, snap.entries, snap.occurrences, { today, rolloverHour: settings.rolloverHour }, displacements), today)
   const [editingPrep, setEditingPrep] = useState<Prep | 'new' | null>(null)
   const [logging, setLogging] = useState(false)
   const outcome = snap.goals.find((g) => g.id === c.goalId)?.kind === 'outcome'
@@ -237,6 +241,23 @@ function CommitmentCard({ c, snap, today, onEdit }: { c: Commitment; snap: Snaps
           </div>
         )}
       </div>
+      {recent.length > 0 && (
+        <div className="recent-block">
+          <div className="recent-head">
+            <span>{t('history.recent')}</span>
+            <button className="link-btn" onClick={onHistory}>{t('history.seeAll')}</button>
+          </div>
+          <ul className="recent-list">
+            {recent.map((r) => (
+              <li key={r.key} className={`h-${r.kind}`}>
+                <span className="h-mark" aria-label={r.kind}>{{ hit: '✓', miss: '✕', undone: '↺', add: '+' }[r.kind]}</span>
+                <span className={`h-text ${r.struck ? 'h-struck' : ''}`}>{r.text}{r.why && <span className="h-why"> · {r.why}</span>}</span>
+                <span className="recent-date">{relativeDay(r.date, today)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="prep-block">
         <div className="prep-block-head">
           <span className="title-row">{t('ins.preps')}

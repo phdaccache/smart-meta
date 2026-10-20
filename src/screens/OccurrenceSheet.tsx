@@ -3,9 +3,10 @@ import { addDisplacement, logOccurrence } from '../db/repo'
 import { formatTime, isDateStr, nowMinutes, parseTime } from '../lib/dates'
 import { t } from '../i18n'
 import { reasons } from '../lib/describe'
-import type { Commitment, DateStr, ID, MissReason } from '../lib/types'
+import type { Commitment, DateStr, ID, MissReason, Occurrence } from '../lib/types'
 import { Chip, Field, Sheet, toast } from '../ui/components'
-import { useDisplacements } from '../ui/hooks'
+import { useDisplacements, useSnapshot } from '../ui/hooks'
+import { IconChevronUpDown } from '../ui/icons'
 
 /**
  * Logs one occurrence of a rule-type (standard) commitment: "I had a meeting
@@ -23,6 +24,8 @@ export function OccurrenceSheet(props: { commitment: Commitment | null; date: Da
 
 function OccurrenceForm({ c, date: initialDate, today, onDone }: { c: Commitment; date: DateStr; today: DateStr; onDone: () => void }) {
   const displacements = useDisplacements()
+  const snap = useSnapshot()
+  const names = earlierNames(snap?.occurrences ?? [], c.id)
   const [date, setDate] = useState<DateStr>(initialDate)
   const [title, setTitle] = useState('')
   const [scheduled, setScheduled] = useState('')
@@ -59,7 +62,19 @@ function OccurrenceForm({ c, date: initialDate, today, onDone }: { c: Commitment
       </Field>
       <div style={{ marginTop: 18 }}>
         <Field label={t('occ.whatWasIt')} htmlFor="occ-title">
-          <input id="occ-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('occ.whatWasItPlaceholder')} />
+          <div className="name-pick">
+            <input id="occ-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('occ.whatWasItPlaceholder')} />
+            {names.length > 0 && (
+              // The phone's own list, as for picking a goal: fine however many names pile up.
+              <span className="btn pick-btn">
+                {t('occ.earlierNames')} <IconChevronUpDown width={14} height={14} />
+                <select aria-label={t('occ.earlierNames')} value="" onChange={(e) => e.target.value && setTitle(e.target.value)}>
+                  <option value="">{t('occ.earlierNames')}</option>
+                  {names.map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </span>
+            )}
+          </div>
         </Field>
       </div>
       {timed ? (
@@ -113,4 +128,15 @@ function OccurrenceForm({ c, date: initialDate, today, onDone }: { c: Commitment
       </div>
     </form>
   )
+}
+
+/** Names given to this rule's earlier occurrences, most recently used first, each once. */
+function earlierNames(occurrences: Occurrence[], commitmentId: ID): string[] {
+  const seen = new Map<string, string>()
+  for (const o of [...occurrences].filter((x) => x.commitmentId === commitmentId && !x.deletedAt && x.title?.trim())
+    .sort((a, b) => b.scheduledAt.localeCompare(a.scheduledAt))) {
+    const name = o.title!.trim()
+    if (!seen.has(name.toLowerCase())) seen.set(name.toLowerCase(), name)
+  }
+  return [...seen.values()]
 }
