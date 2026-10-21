@@ -2,7 +2,7 @@ import { useState, useSyncExternalStore } from 'react'
 import { createTask } from '../db/repo'
 import { t } from '../i18n'
 import type { DateStr } from '../lib/types'
-import { NoteField, Sheet, TitleField, toast } from '../ui/components'
+import { holdKeyboard, NoteField, Sheet, TitleField, toast } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { DateTimeRows, TaskLinks } from './TaskSheet'
 
@@ -20,6 +20,8 @@ export const openQuickAddFor = (link: { goalId: string } | { projectId: string }
 
 function openWith(link: typeof preset) {
   preset = link
+  // Opens ready to type: the keyboard comes up once the sheet is all the way up.
+  holdKeyboard()
   setOpen(true)
 }
 

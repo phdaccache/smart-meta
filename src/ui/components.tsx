@@ -107,6 +107,49 @@ export function PageText({ text }: { text: string }) {
 // ——— sheet ———
 
 /**
+ * iOS brings up the keyboard only for a focus made during the tap itself, and a sheet's field doesn't exist yet
+ * then; focusing a stand-in brought the keyboard up while the sheet was still rising, the page showing through.
+ * Called in the tap, this holds the focus in a stand-in that asks for no keyboard. The sheet opened by that tap
+ * takes it once it has slid all the way up and hands it to its first field: focus moving from one field to
+ * another keeps the right to a keyboard, so it comes up then, over the finished sheet, as when the field is tapped.
+ */
+let keyboardHold: { field: HTMLInputElement; before: HTMLElement | null; release: () => void } | null = null
+export function holdKeyboard() {
+  keyboardHold?.release()
+  const field = document.createElement('input')
+  field.inputMode = 'none'
+  field.setAttribute('aria-hidden', 'true')
+  field.tabIndex = -1
+  field.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px;'
+  const onSlid = (e: AnimationEvent) => {
+    const sheet = e.target as HTMLElement
+    if (!sheet.classList.contains('sheet')) return
+    const held = document.activeElement === field
+    release()
+    if (held) sheet.querySelector<HTMLElement>('textarea, input')?.focus({ preventScroll: true })
+  }
+  const release = () => {
+    if (keyboardHold === hold) keyboardHold = null
+    document.removeEventListener('animationend', onSlid, true)
+    clearTimeout(timer)
+    field.remove()
+  }
+  const hold = { field, before: document.activeElement as HTMLElement | null, release }
+  keyboardHold = hold
+  document.addEventListener('animationend', onSlid, true)
+  // Should the sheet never get all the way up (closed on the way), the hold doesn't linger.
+  const timer = setTimeout(() => {
+    const held = document.activeElement === field
+    release()
+    if (held) hold.before?.focus({ preventScroll: true })
+  }, 2000)
+  document.body.appendChild(field)
+  field.focus({ preventScroll: true })
+}
+/** The hold, while it has the focus and is waiting for the sheet to finish sliding up. */
+const heldKeyboard = () => (keyboardHold && document.activeElement === keyboardHold.field ? keyboardHold : null)
+
+/**
  * A sheet with no title (just its `label` for screen readers) starts straight with its content.
  * With `done`, it has ✕ at the left to leave without saving and ✓ at the right to save, as in iPhone's Reminders.
  * `large`: nearly full height, its top fixed just under the status bar whether the keyboard is up or not.
@@ -203,18 +246,20 @@ export function Sheet(props: {
   }
   useEffect(() => {
     if (!props.open) return
-    const prev = document.activeElement as HTMLElement | null
+    const prev = heldKeyboard()?.before ?? document.activeElement as HTMLElement | null
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && leave.current() && onClose.current()
     document.addEventListener('keydown', onKey)
     document.body.classList.add('sheet-open')
+    // Opened to type in (holdKeyboard): the hold gives its first field the focus once it's all the way up.
     // A field that focused itself on mount (autoFocus) keeps it; otherwise the first control gets it.
-    if (!ref.current?.contains(document.activeElement)) {
+    if (!heldKeyboard() && !ref.current?.contains(document.activeElement)) {
       ref.current?.querySelector<HTMLElement>('[autofocus], input, textarea, select, button')?.focus({ preventScroll: true })
     }
     return () => {
       document.removeEventListener('keydown', onKey)
       document.body.classList.remove('sheet-open')
-      prev?.focus?.({ preventScroll: true })
+      // Still sliding up with the hold: it gives the focus back itself.
+      if (!heldKeyboard()) prev?.focus?.({ preventScroll: true })
     }
   }, [props.open])
   // Pull it down to close it, as in Reminders; with unsaved typing it springs back and asks.
