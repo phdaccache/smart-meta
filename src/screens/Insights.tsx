@@ -3,12 +3,12 @@ import { getLang, type Key, marked, num, t, tk, tn } from '../i18n'
 import { capitalize, dayMonth, formatTime, monthName } from '../lib/dates'
 import { periodWord } from '../lib/describe'
 import {
-  burnups, goalsView, goalTrend, MIN_WEEKS, patternsView, prepare, RANGES, reviewYear, timeline, valueBalance, yearReview,
+  burnups, goalsView, goalTrend, MIN_WEEKS, patternsView, prepare, RANGES, reviewYear, timeline, valueBalance, yearReview, yearsWithData,
   type GoalTrend, type Marker, type NearMiss, type PatternsView, type Prepared, type PrepEffect, type PrepVerdict, type Range,
 } from '../lib/insights'
 import { stateLabel } from '../lib/revisions'
 import { statusFor, type ScoreContext } from '../lib/scoring'
-import type { Goal } from '../lib/types'
+import type { Goal, Value } from '../lib/types'
 import {
   Distribution, GoalChips, ProjectPace, ReasonBars, Sparkline, TimelineChart, TrendChart, useTapOutside,
   ValueMonths, WeekdayGrid,
@@ -17,6 +17,7 @@ import { InfoTip, PageText, Reveal, Screen, Section, Segmented } from '../ui/com
 import { useAllRevisions, useDisplacements, useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
 import { IconChevronRight } from '../ui/icons'
 import { navigate } from '../ui/router'
+import { ValueTile } from '../ui/valueLook'
 
 type View = 'goals' | 'patterns' | 'projects' | 'big'
 
@@ -85,7 +86,12 @@ export function InsightsScreen() {
   const p = usePrepared()
   const [view, setView] = useView()
   const [range, setRange] = useRange()
+  // The year tab opens on this year (in January, the one just ended); any earlier one can be picked.
+  const [picked, setYear] = useState<number | null>(null)
   if (!p) return null
+  const years = remember('years', [p], () => yearsWithData(p))
+  const opening = reviewYear(p.ctx.today)
+  const year = picked ?? (years.includes(opening) ? opening : years[0])
   const title = (
     <span className="title-row">{t('nav.insights')}
       <InfoTip label={t('ins.about')}><PageText text={marked('ins.aboutText')} /></InfoTip>
@@ -93,10 +99,10 @@ export function InsightsScreen() {
   )
   return (
     <Screen title={title} settings>
-      {/* The last tab is the year itself, as Plan splits goals from projects. */}
+      {/* Goals and projects, as Plan splits them, then patterns, then the year itself. */}
       <Segmented label={t('ins.view')} value={view} onChange={setView}
-        options={[{ value: 'goals', label: t('ins.tabGoals') }, { value: 'patterns', label: t('ins.tabPatterns') },
-          { value: 'projects', label: t('ins.projects') }, { value: 'big', label: String(reviewYear(p.ctx.today)) }]} />
+        options={[{ value: 'goals', label: t('ins.tabGoals') }, { value: 'projects', label: t('ins.projects') },
+          { value: 'patterns', label: t('ins.tabPatterns') }, { value: 'big', label: String(year) }]} />
       {(view === 'goals' || view === 'patterns') && (
         <div className="range-row" role="radiogroup" aria-label={t('ins.period')}>
           {RANGES.map((r) => (
@@ -106,10 +112,17 @@ export function InsightsScreen() {
           ))}
         </div>
       )}
+      {view === 'big' && years.length > 1 && (
+        <div className="range-row" role="radiogroup" aria-label={t('ins.year')}>
+          {years.map((y) => (
+            <button key={y} role="radio" aria-checked={year === y} className={year === y ? 'on' : ''} onClick={() => setYear(y)}>{y}</button>
+          ))}
+        </div>
+      )}
       {view === 'goals' && <GoalsTab p={p} range={range} />}
       {view === 'patterns' && <PatternsTab p={p} range={range} />}
       {view === 'projects' && <ProjectsTab p={p} />}
-      {view === 'big' && <BigPictureTab p={p} />}
+      {view === 'big' && <BigPictureTab p={p} year={year} />}
     </Screen>
   )
 }
@@ -136,7 +149,7 @@ function GoalsTab({ p, range }: { p: Prepared; range: Range }) {
       {v.trends.length > 0 && (
         <Section title={<Tip title={t('ins.trends')}>{t('ins.trendsInfo')}</Tip>}>
           <div className="card list">
-            {v.trends.map((x) => <TrendRow key={x.goal.id} t={x} />)}
+            {v.trends.map((x) => <TrendRow key={x.goal.id} t={x} values={p.snap.values} />)}
           </div>
           {v.tooNew.length > 0 && (
             <p className="small muted note">{t('ins.chartsAfterData', { n: MIN_WEEKS, names: v.tooNew.map((g) => g.title).join(', ') })}</p>
@@ -150,7 +163,8 @@ function GoalsTab({ p, range }: { p: Prepared; range: Range }) {
             {v.ended.map((x) => {
               const end = p.lives.get(x.goal.id)!.ended
               return (
-                <button key={x.goal.id} className="list-row" onClick={() => navigate(`/insights/goals/${x.goal.id}`)}>
+                <button key={x.goal.id} className="list-row has-tile" onClick={() => navigate(`/insights/goals/${x.goal.id}`)}>
+                  <GoalTile goal={x.goal} values={p.snap.values} />
                   <div className="text">
                     <div className="title" style={{ fontSize: 15 }}>{x.goal.title}</div>
                     <div className="sub">
@@ -169,9 +183,15 @@ function GoalsTab({ p, range }: { p: Prepared; range: Range }) {
   )
 }
 
-function TrendRow({ t: trend }: { t: GoalTrend }) {
+/** A goal's value icon, as on Plan and Today. */
+function GoalTile({ goal, values, size = 'sm' }: { goal: Goal; values: Value[]; size?: 'sm' | 'md' }) {
+  return <ValueTile value={values.find((v) => v.id === goal.whyValueId)} values={values} size={size} />
+}
+
+function TrendRow({ t: trend, values }: { t: GoalTrend; values: Value[] }) {
   return (
-    <button className="list-row trend-row" onClick={() => navigate(`/insights/goals/${trend.goal.id}`)}>
+    <button className="list-row trend-row has-tile" onClick={() => navigate(`/insights/goals/${trend.goal.id}`)}>
+      <GoalTile goal={trend.goal} values={values} />
       <div className="text">
         <div className="trend-head">
           <span className="title">{trend.goal.title}</span>
@@ -182,7 +202,6 @@ function TrendRow({ t: trend }: { t: GoalTrend }) {
           </span>
         </div>
         <Sparkline points={trend.points} tolerance={trend.goal.tolerancePct} markers={trend.markers} />
-        <div className="sub trend-takeaway">{trend.takeaway}</div>
       </div>
       <IconChevronRight className="chev" width={18} />
     </button>
@@ -304,8 +323,8 @@ function NearMissCard({ n, rolloverHour }: { n: NearMiss; rolloverHour: number }
 
 type YearList = 'started' | 'finished' | 'habits'
 
-function BigPictureTab({ p }: { p: Prepared }) {
-  const data = remember('big', [p], () => ({ year: yearReview(p), balance: valueBalance(p), timeline: timeline(p) }))
+function BigPictureTab({ p, year }: { p: Prepared; year: number }) {
+  const data = remember('big', [p, year], () => ({ year: yearReview(p, year), balance: valueBalance(p, year), timeline: timeline(p, year) }))
   const [list, setList] = useState<YearList | null>(null)
   const tiles = useRef<HTMLDivElement>(null)
   useTapOutside(tiles, list != null, () => setList(null))
@@ -353,16 +372,16 @@ function BigPictureTab({ p }: { p: Prepared }) {
       </Section>
 
       {data.balance.values.length > 0 && (
-        <Section title={<Tip title={t('ins.valueBalance')}>{t('ins.valueBalanceInfo')}</Tip>} aside={<span>{t('ins.range6m')}</span>}>
+        <Section title={<Tip title={t('ins.valueBalance')}>{t('ins.valueBalanceInfo')}</Tip>}>
           <div className="card pad">
-            <p className="takeaway">{data.balance.takeaway}</p>
+            {data.balance.takeaway && <p className="takeaway">{data.balance.takeaway}</p>}
             <ValueMonths b={data.balance} all={p.snap.values} />
           </div>
         </Section>
       )}
 
       {data.timeline.rows.length > 0 && (
-        <Section title={<Tip title={t('ins.timeline')}>{t('ins.timelineInfo')}</Tip>} aside={<span>{t('ins.range1y')}</span>}>
+        <Section title={<Tip title={t('ins.timeline')}>{t('ins.timelineInfo')}</Tip>}>
           <div className="card pad"><TimelineChart t={data.timeline} /></div>
         </Section>
       )}
@@ -412,7 +431,8 @@ export function GoalInsightsScreen({ id }: { id: string }) {
   const patterns = remember(`patterns:${id}`, [p, range], () => patternsView(p, range, goal.id, trend?.points[0]?.start))
   const enough = !!trend && trend.weeksWithData >= MIN_WEEKS
   return (
-    <Screen back="/insights" eyebrow={t('nav.insights')} title={goal.title}>
+    <Screen back="/insights" eyebrow={t('nav.insights')}
+      title={<span className="title-with-tile"><GoalTile goal={goal} values={p.snap.values} size="md" />{goal.title}</span>}>
       <div className="range-row" role="radiogroup" aria-label={t('ins.period')}>
         {RANGES.map((r) => (
           <button key={r} role="radio" aria-checked={range === r} className={range === r ? 'on' : ''} onClick={() => setRange(r)}>
@@ -452,18 +472,26 @@ export function GoalInsightsScreen({ id }: { id: string }) {
   )
 }
 
+/** The plan's changes, numbered as on the chart. A prep's says which prep only when tapped. */
 function MarkerList({ markers }: { markers: Marker[] }) {
+  const [open, setOpen] = useState<number | null>(null)
   return (
     <div className="card list">
       {markers.map((m, i) => {
         const diff = m.before != null && m.after != null ? m.after - m.before : null
+        const text = (
+          <div className="text">
+            <div className="title">{m.short ?? m.text}</div>
+            <div className="sub">{dayMonth(m.date)}</div>
+            {m.detail && <Reveal open={open === i}><div className="marker-detail">{m.detail}</div></Reveal>}
+          </div>
+        )
         return (
           <div key={i} className="list-row marker-row">
             <b className="marker-badge">{i + 1}</b>
-            <div className="text">
-              <div className="title">{m.text}</div>
-              <div className="sub">{dayMonth(m.date)}</div>
-            </div>
+            {m.detail ? (
+              <button type="button" className="marker-open" aria-expanded={open === i} onClick={() => setOpen(open === i ? null : i)}>{text}</button>
+            ) : text}
             <div className="marker-effect">
               {diff == null ? <span className="muted small">{t('ins.tooSoon')}</span> : (
                 <>

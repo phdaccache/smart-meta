@@ -871,7 +871,10 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .spark-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .spark-tol { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 3 3; }
 .spark-marker { stroke: var(--prep); stroke-width: 1.5; }
-.trend-takeaway { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+/* Goals and projects carry their icon, as on Plan and Today: by the name, at the top of a row with a chart under it. */
+.trend-row > .tile, .pace-row > .tile { align-self: flex-start; }
+.title-with-tile { display: flex; align-items: center; gap: 12px; }
+.title-with-tile > .tile { flex: none; }
 
 .trend-summary { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
 .hero { font: 700 44px/1 var(--font); letter-spacing: -0.02em; }
@@ -893,6 +896,9 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 }
 .marker-badge.small { width: 16px; height: 16px; font-size: 10px; }
 .marker-row .title { font-size: 15px; font-weight: 600; line-height: 1.3; }
+.marker-open { flex: 1; min-width: 0; display: flex; text-align: left; margin: -12px 0; padding: 12px 0; }
+.marker-open[aria-expanded='true'] .title { color: var(--accent); }
+.marker-detail { padding-top: 6px; font-size: 15px; line-height: 1.35; color: var(--ink); }
 .marker-effect { flex: none; font-size: 15px; font-variant-numeric: tabular-nums; text-align: right; }
 
 /* patterns: reasons */

@@ -208,7 +208,8 @@ describe('Insights — big picture', () => {
     // 2 steps in 30 days: 2 more take 30 more days.
     expect(b.projected).toBe('2026-10-31')
     expect(b.status).toBe('behind')
-    expect(b.text).toBe('Due 15 October · at your pace, ~31 October')
+    // A running project's bars say how it's going: no due date or projected finish under it.
+    expect(b.text).toBe('')
   })
 
   it('counts kept weeks per value, and names a value with nothing running', () => {

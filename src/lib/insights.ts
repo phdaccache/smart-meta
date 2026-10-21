@@ -161,6 +161,9 @@ export interface Marker {
   date: DateStr
   kind: MarkerKind
   text: string
+  /** A prep's change in a few words ("Prep added"), with the prep itself as `detail`, shown when asked for. */
+  short?: string
+  detail?: string
   /** Mean weekly % in the weeks before and after; null without enough weeks on a side. */
   before: number | null
   after: number | null
@@ -209,8 +212,12 @@ function planChanges(p: Prepared, g: Goal): Omit<Marker, 'before' | 'after'>[] {
       // Preps set up with the commitment are the original plan.
       const made = dayOf(prep.createdAt)
       const edited = dayOf(prep.updatedAt)
-      if (made > dayOf(c.createdAt)) out.push({ date: made, kind: 'prep', text: t('ins.marker.prepAdded', { name: prep.title }) })
-      if (edited > made && edited > dayOf(c.createdAt)) out.push({ date: edited, kind: 'prep', text: t('ins.marker.prepChanged', { name: prep.title }) })
+      if (made > dayOf(c.createdAt)) {
+        out.push({ date: made, kind: 'prep', text: t('ins.marker.prepAdded', { name: prep.title }), short: t('ins.marker.prepAddedShort'), detail: prep.title })
+      }
+      if (edited > made && edited > dayOf(c.createdAt)) {
+        out.push({ date: edited, kind: 'prep', text: t('ins.marker.prepChanged', { name: prep.title }), short: t('ins.marker.prepChangedShort'), detail: prep.title })
+      }
     }
   }
   return out.sort((a, b) => a.date.localeCompare(b.date))
@@ -583,21 +590,23 @@ export const NO_VALUE: Value = {
 }
 
 /** Weeks on track, per value, per month: what the effort actually went to. */
-export function valueBalance(p: Prepared, monthsBack = 6): ValueBalance {
+/** The months of `year` (to last week, for this one); without it, the last six months. */
+export function valueBalance(p: Prepared, year?: number): ValueBalance {
   const named = live(p.snap.values)
   // Goals without a value (skipped in the intro, or its value deleted) share a grey "No value" row.
   const orphan = (g: Goal) => !named.some((v) => v.id === g.whyValueId)
   const values = p.snap.goals.some((g) => orphan(g) && p.commitmentsOf(g).length > 0) ? [...named, NO_VALUE] : named
   const [y, m] = p.ctx.today.split('-').map(Number)
-  const back = y * 12 + (m - 1) - (monthsBack - 1)
-  const first = `${Math.floor(back / 12)}-${String((back % 12) + 1).padStart(2, '0')}-01`
-  const months = periodsBetween(first, p.lastWeek.end, 'month').map((m) => ({ month: m.start, counts: values.map(() => 0) }))
+  const back = y * 12 + (m - 1) - 5
+  const first = year ? `${year}-01-01` : `${Math.floor(back / 12)}-${String((back % 12) + 1).padStart(2, '0')}-01`
+  const last = year ? minDate(`${year}-12-31`, p.lastWeek.end) : p.lastWeek.end
+  const months = periodsBetween(first, last, 'month').map((m) => ({ month: m.start, counts: values.map(() => 0) }))
   const runningLately = values.map(() => false)
   const recentFrom = addDays(p.lastWeek.start, -7 * (LOOKBACK_WEEKS - 1))
   for (const g of p.snap.goals) {
     const vi = orphan(g) ? values.indexOf(NO_VALUE) : values.findIndex((v) => v.id === g.whyValueId)
     if (vi < 0 || p.commitmentsOf(g).length === 0) continue
-    for (const w of weekPoints(p, g, first, p.lastWeek.end)) {
+    for (const w of weekPoints(p, g, first, last)) {
       if (w.pct == null) continue
       if (w.start >= recentFrom) runningLately[vi] = true
       const m = months.find((x) => x.month === w.start.slice(0, 8) + '01')
@@ -607,6 +616,8 @@ export function valueBalance(p: Prepared, monthsBack = 6): ValueBalance {
   const totals = values.map((_, i) => months.reduce((a, m) => a + m.counts[i], 0))
   const idle = values.filter((v, i) => v !== NO_VALUE && !runningLately[i]).map((v) => v.name)
   const struggling = values.filter((v, i) => v !== NO_VALUE && runningLately[i] && months.slice(-3).every((m) => m.counts[i] === 0)).map((v) => v.name)
+  // What's idle or struggling is about lately: a year gone by has nothing to say about that.
+  if (last < p.lastWeek.end) return { values, months, totals, takeaway: '' }
   const parts: string[] = []
   if (idle.length) parts.push(t('ins.balance.idle', { values: joinList(idle, 'or'), n: LOOKBACK_WEEKS }))
   if (struggling.length) parts.push(t('ins.balance.struggling', { values: joinList(struggling) }))
@@ -629,18 +640,18 @@ export interface Timeline {
   rows: TimelineRow[]
 }
 
-/** Every goal that ran in the last year, as bars from start to end. */
-export function timeline(p: Prepared): Timeline {
-  const yearAgo = periodOf(addDays(p.ctx.today, -334), 'month').start
-  const lives = [...p.lives.values()].filter((l) => l.segments.some((s) => s.end >= yearAgo))
+/** Every goal that ran in `year` (without it, the last year), as bars from start to end. */
+export function timeline(p: Prepared, year?: number): Timeline {
+  const yearAgo = year ? `${year}-01-01` : periodOf(addDays(p.ctx.today, -334), 'month').start
+  const to = year ? minDate(`${year}-12-31`, p.ctx.today) : p.ctx.today
+  const lives = [...p.lives.values()].filter((l) => l.segments.some((s) => s.end >= yearAgo && s.start <= to))
   const earliest = lives.map((l) => l.segments[0].start).sort()[0] ?? p.ctx.today
   const from = periodOf(maxDate(earliest, yearAgo), 'month').start
-  const to = p.ctx.today
   const rows = lives
     .sort((a, b) => a.segments[0].start.localeCompare(b.segments[0].start) || a.goal.priority - b.goal.priority)
     .map((life) => ({
       life,
-      ticks: planChanges(p, life.goal).filter((m) => m.kind !== 'state' && m.date >= from).map((m) => m.date),
+      ticks: planChanges(p, life.goal).filter((m) => m.kind !== 'state' && m.date >= from && m.date <= to).map((m) => m.date),
     }))
   return { from, to, months: periodsBetween(from, to, 'month').map((m) => m.start), rows }
 }
@@ -680,8 +691,8 @@ export function burnup(p: Prepared, project: Project): Burnup {
   } else if (status === 'all_done') {
     text = t('ins.pace.allDone')
   } else {
-    const due = target ? t(target < p.ctx.today ? 'ins.pace.wasDue' : 'ins.pace.due', { date: dayMonth(target) }) : t('project.noDate')
-    text = projected ? t('ins.pace.atYourPace', { due, date: dayMonth(projected) }) : due
+    // A running project's bars say how it's going; its dates are on its own page.
+    text = ''
   }
   const timeUsed = target ? diffDays(start, p.ctx.today) / Math.max(1, diffDays(start, target)) : 0
   return { project, total: steps.length, done, start, projected, status, timeUsed, text }
@@ -717,14 +728,21 @@ export interface YearReview {
   projectsDone: number
 }
 
-/** The year Insights looks back on: this one, or in January the one just ended. */
+/** The year Insights opens on: this one, or in January the one just ended. */
 export function reviewYear(today: DateStr): number {
   return Number(today.slice(0, 4)) - (Number(today.slice(5, 7)) === 1 ? 1 : 0)
 }
 
-export function yearReview(p: Prepared): YearReview {
+/** Every year with a goal running in it, newest first, so any of them can be looked back on. */
+export function yearsWithData(p: Prepared): number[] {
+  const now = Number(p.ctx.today.slice(0, 4))
+  const starts = [...p.lives.values()].map((l) => l.segments[0]?.start).filter((d): d is DateStr => !!d).sort()
+  const first = starts.length ? Number(starts[0].slice(0, 4)) : now
+  return Array.from({ length: now - first + 1 }, (_, i) => now - i)
+}
+
+export function yearReview(p: Prepared, year = reviewYear(p.ctx.today)): YearReview {
   const month = Number(p.ctx.today.slice(5, 7))
-  const year = reviewYear(p.ctx.today)
   const span = { start: `${year}-01-01`, end: minDate(`${year}-12-31`, p.lastWeek.end) }
   const inYear = (d: DateStr) => d >= span.start && d <= `${year}-12-31`
   const stateRevs = live(p.revisions).filter((r) => r.field === 'state' && inYear(dayOf(r.timestamp)))
@@ -766,7 +784,7 @@ export function yearReview(p: Prepared): YearReview {
 
   return {
     year,
-    final: month === 12 || month === 1,
+    final: year < Number(p.ctx.today.slice(0, 4)) || month === 12,
     started: [...p.lives.values()].filter((l) => l.segments[0] && inYear(l.segments[0].start)).map((l) => l.goal),
     finished: goalsTo('completed'),
     toMaintenance: goalsTo('maintenance'),

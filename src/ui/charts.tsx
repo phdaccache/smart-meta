@@ -11,7 +11,7 @@ import { statusFor } from '../lib/scoring'
 import type { DateStr, Goal, Status, Value } from '../lib/types'
 import { IconChevronRight } from './icons'
 import { navigate } from './router'
-import { valueFill } from './valueLook'
+import { ProjectTile, valueFill } from './valueLook'
 
 const statusClass = (s: Status | null) => (s ? `st-${s.replace(' ', '-')}` : 'st-none')
 const shortMonth = monthShort
@@ -359,7 +359,8 @@ export function TimelineChart({ t: line }: { t: Timeline }) {
   const ref = useRef<HTMLDivElement>(null)
   useTapOutside(ref, sel != null, () => setSel(null))
   const total = Math.max(1, diffDays(line.from, line.to) + 1)
-  const at = (d: DateStr) => (100 * Math.max(0, diffDays(line.from, d))) / total
+  // A year gone by: what ran past its end is cut at the edge.
+  const at = (d: DateStr) => Math.min(100, (100 * Math.max(0, diffDays(line.from, d))) / total)
   const every = line.months.length > 7 ? 2 : 1
 
   return (
@@ -383,12 +384,12 @@ export function TimelineChart({ t: line }: { t: Timeline }) {
               <button className="tl-hit" aria-expanded={on} onClick={() => setSel(on ? null : life.goal.id)}>
                 <span className="tl-title">{life.goal.title}</span>
                 <span className={`tl-track ${end ? 'tl-past' : ''}`}>
-                  {life.segments.filter((s) => s.end >= line.from).map((s, i) => {
+                  {life.segments.filter((s) => s.end >= line.from && s.start <= line.to).map((s, i) => {
                     const from = s.start < line.from ? line.from : s.start
                     return <i key={i} className={`tl-seg tl-${s.state}`} style={{ left: `${at(from)}%`, width: `${Math.max(0.8, at(s.end) - at(from))}%` }} />
                   })}
                   {ticks.map((d, i) => <i key={`t${i}`} className="tl-tick" style={{ left: `${at(d)}%` }} />)}
-                  {end && <b className={`tl-end tl-${end.state}`} style={{ left: `${at(last.end)}%` }}>{END_MARK[end.state]}</b>}
+                  {end && last.end <= line.to && <b className={`tl-end tl-${end.state}`} style={{ left: `${at(last.end)}%` }}>{END_MARK[end.state]}</b>}
                 </span>
               </button>
               {on && (
@@ -422,7 +423,8 @@ export function ProjectPace({ b }: { b: Burnup }) {
   const steps = b.total ? b.done.length / b.total : 0
   const time = Math.min(1, Math.max(0, b.timeUsed))
   return (
-    <button className="list-row pace-row" onClick={() => navigate(`/projects/${b.project.id}`)}>
+    <button className="list-row pace-row has-tile" onClick={() => navigate(`/projects/${b.project.id}`)}>
+      <ProjectTile size="sm" />
       <div className="text">
         {/* A badge only when it needs attention; the bars already show a project on pace. */}
         <div className="pace-head">
@@ -439,7 +441,7 @@ export function ProjectPace({ b }: { b: Burnup }) {
             <span className="pace-value">{b.timeUsed > 1 && b.status !== 'overdue' ? t('chart.pastDue') : `${Math.round(100 * time)}%`}</span>
           </div>
         )}
-        <div className="sub">{b.text}</div>
+        {b.text && <div className="sub">{b.text}</div>}
       </div>
       <IconChevronRight className="chev" width={18} />
     </button>
