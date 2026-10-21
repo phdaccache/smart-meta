@@ -34,6 +34,17 @@ These are the owner's own priorities, collected across the conversation. They ou
     choices must not block them (§7.5, §15).
 11. **Feel ownership before signing in:** sign-in comes after the first goal is created (§6.5).
 12. Doesn't want the sign-in emails sent from their **personal** address if avoidable (§6.2).
+13. **Face ID / passkeys might not work in the installed web app**, and not everyone has iCloud
+    Keychain. Needs a fallback that still doesn't make users responsible for a key (§7.2).
+14. **Check-ins grow the data a lot.** Toggling a checkbox on and off, or checking in often, adds rows
+    every time (§3.5).
+15. **Sync must not lose data**, and the user should see when edits are not synced yet (like Google
+    Docs) (§6.9).
+16. **Is it OK with GitHub's rules** to keep backups there? (§10)
+17. **Approving people should be quick**, ideally one tap (§6.1).
+18. **Reminders should arrive on time**, not just "within 15 minutes" (§4.4).
+19. **Work in stages that fit a session:** small enough that Claude doesn't get confused, big enough
+    that it keeps the context (§14).
 
 ---
 
@@ -64,7 +75,7 @@ These are the owner's own priorities, collected across the conversation. They ou
 
 The outbox and local tables belong to the **device**, not the account. If A signs out and B signs in
 on the same phone, A's unsynced changes upload **into B's account**, and B's records are pulled into
-the same local tables as A's, so both people's data mix. Fix in stage 1 (§6.8).
+the same local tables as A's, so both people's data mix. Fix in S2 (§6.8).
 
 ---
 
@@ -87,7 +98,7 @@ the same local tables as A's, so both people's data mix. Fix in stage 1 (§6.8).
 | Money | Free plans only. Backups through a private GitHub repo. |
 | Platforms | iPhone first, Android as a bonus. Friends are about 50/50 and have installed the app. |
 | Testing | Vercel preview at the fixed branch address + a staging Supabase project; merge only when notifications work nicely. |
-| Rollout | Mockups → spikes → three stages (§14). |
+| Rollout | Seven stages, S0 to S6, one session each (§14). Merge after S6. |
 
 ### Notification types
 
@@ -96,9 +107,10 @@ the same local tables as A's, so both people's data mix. Fix in stage 1 (§6.8).
 | **Morning summary** | ✅ 8:00 by default, editable; weekdays-only option; skipped on empty days. Format chosen from mockups. |
 | **Due date, no time** | ✅ Mentioned in the morning summary. |
 | **Due date, with a time** | ✅ In the morning summary **and** its own push at the exact time. |
-| **Custom reminder** | ✅ On **tasks, projects, project steps, preps and commitments** (not goals: no purpose). **Once only** for now; repeating later. **Always pushed** (never capped). |
+| **Custom reminder** | ✅ On **tasks, projects, project steps, preps and commitments** (not goals: no purpose). **Once only** for now, commitments included. **Always pushed** (never capped). Repeating reminders and **at-risk reminders for commitments** are the next feature after the MVP (§15). |
+| **Weekly review** | ✅ Its own push on Monday morning, **with its own editable time** (default the same as the morning summary, 8:00). |
 | Project steps | ✅ Same rules as due dates (steps have end dates). |
-| **Weekly review** | ✅ **Its own push, Monday morning.** |
+| Late items | Not pushed again after their time; only counted in the badge (confirmed). |
 | Preps with a time | ✅ |
 | Goal review date reached | ✅ |
 | Goal completed / target hit | ✅ In-app celebration only, no push. |
@@ -115,8 +127,7 @@ The owner's top three: custom reminder, due date, review ready.
 **Daily limits:** pushes **the app starts by itself** (morning summary, weekly review, goal review
 date) are **at most 3 a day**. Pushes the user asked for (custom reminders, timed due dates, preps
 with a time) **always go out**, merged when close together. A server-side **safety fuse of 20 a day**
-catches bugs. *Claude's reading: a time the user set on a task or prep counts as "asked for". Confirm
-(§16).*
+catches bugs. A time the user set on a task or prep counts as "asked for" (confirmed).
 
 ### UI decisions
 
@@ -186,11 +197,31 @@ schedule.
 
 1. **Alarm at 60%.** Time to act.
 2. **Trim:** delete old tombstones (`deleted = true`, older than 90 days), prune revision history,
-   `VACUUM`, cap rows per user, close the waitlist.
+   `VACUUM`, cap rows per user, close the waitlist, compact quick undos (§3.5).
 3. **Friends chip in for Pro** ($25/month, about R$7 each for 20 people).
 4. **Plan B, still free:** move the data to **Cloudflare D1** (5 GB) behind a small Worker; keep
    Supabase only for sign-in, so nobody signs in again. A new `SyncTarget`; about 1 to 2 weeks.
    Encrypted data moves as-is.
+
+### 3.5 Check-ins and toggling (owner's worry)
+
+How it works today (checked in [src/db/repo.ts](../src/db/repo.ts)): records are **append-only**.
+Checking adds an entry; unchecking adds a **second** entry (`outcome: 'void'`) that cancels the first
+("Undo never deletes"). Correcting a value adds a new entry that supersedes the old one. Goal History
+shows undone check-ins as struck-through rows ([src/lib/history.ts](../src/lib/history.ts)).
+
+So toggling a checkbox on and off 5 times adds 10 rows. One person doing 5 extra toggles a day adds
+about 1 MB a year, roughly doubling heavy use. Fixes, in order:
+
+1. **Quick undo erases instead of appending:** if a check-in is undone within a couple of minutes
+   (a misclick or a change of mind), both rows are removed; if they never synced, they never leave
+   the phone. Older undos keep today's behavior, so History still shows real "undone" events.
+   *Changes what History shows for misclicks; owner to confirm (§16).*
+2. **Server write cap per user per day** (for example 2,000 rows), against bugs and abuse. A database
+   rule, invisible to normal use.
+3. **Purge old tombstones** (deleted rows older than 90 days, once every device has synced).
+4. Sync already waits 1.5 s after a write and sends each record once per batch, so fast toggles don't
+   multiply network calls; they only multiply rows, which 1 and 2 address.
 
 ---
 
@@ -227,9 +258,11 @@ tiny query each minute plus a few HTTP calls.
 
 1. **Planner unit tests:** time zones, daylight saving and travel, midnight, all-day vs timed, done,
    deleted, paused projects, goals in the backlog, language.
-2. **Drop stale pushes:** a push more than **30 minutes** late (owner's choice) is marked `skipped`,
-   never sent late. *Nuance: a 9:00 reminder arriving at 9:29 is still sent; if that proves annoying,
-   use 15 minutes for timed reminders and keep 30 for the summary and review.*
+2. **Drop stale pushes:** a push more than **15 minutes** late (owner's choice, for every type) is
+   marked `skipped`, never sent late. **Normally it arrives on time:** the dispatcher runs every
+   minute, so a 9:00 reminder leaves between 9:00 and 9:01; Apple delivers in seconds; Android may
+   hold it a few minutes in battery saving, which the `Urgency: high` header reduces. The 15 minutes
+   only covers outages.
 3. **Fuse:** at most 20 pushes per user per day, logged.
 4. **Server checks** on every planned row: `fire_at` within 15 days, payload byte size, at most N
    pending rows per user.
@@ -291,8 +324,11 @@ no account yet, Supabase creates one; that is the sign-up.
      is stored on the server. The owner gets a push: "New request: ana@…". If there are already 100
      members: "The list is full for now", still waiting.
    - **Member** → sync starts; notifications can be turned on.
-7. **The owner approves** by adding the person to `members` (dashboard now; maybe a Developer screen
-   button later). The cap of 100 is enforced there.
+7. **The owner approves with one tap:** the "New request" push opens a **Requests** list in Developer
+   mode showing each email with an **Approve** button. Behind it, a database function checks that the
+   caller is the owner, adds the person to `members` and refuses past the cap of 100. Until that
+   screen exists (it comes in S2), approving means adding a row in the Supabase dashboard, about a
+   minute.
 8. On the next open, the app notices, uploads everything, and says "You're in".
 
 What protects what:
@@ -332,8 +368,9 @@ Today the owner creates email + password accounts by hand. Options once email co
 | Pro | A way in if the code email lands in spam | One sign-in path; nothing to forget; less code |
 | Con | **The owner chose those passwords**, so the owner could sign in as that friend; contradicts §0.1. Resets need email anyway | If email fails, the user waits or checks spam |
 
-Recommendation: **drop passwords for friends**; the owner moves to email codes too. With encryption
-(§7) a password wouldn't unlock the data anyway, only the passkey does. *Pending the owner's OK (§16).*
+**Decided: drop the password accounts the owner made**; everyone, the owner included, signs in with
+email codes. (Not to be confused with the optional *data password* in §7.2, which the user's own
+password manager creates and the owner never sees.)
 
 ### 6.4 Profile and avatars
 
@@ -343,9 +380,7 @@ Recommendation: **drop passwords for friends**; the owner moves to email codes t
   ring. Stored as a tiny settings object (about 100 bytes), so **no storage worry**.
 - **Mockups first** for the owner to pick a style (§12).
 - The profile lives in its own table, separate from data, ready for social features.
-- *Open:* is the name and avatar "user data" the owner must not see? For approval the owner needs at
-  least the email. Simplest: email visible, name and avatar encrypted until social features need
-  them (§16).
+- **Name and avatar are visible to the owner** (decided), like the email.
 
 ### 6.5 Onboarding
 
@@ -392,6 +427,12 @@ Allowing several devices is cheap (blocking would cost more and hurt recovery).
   3. **Field-level merge** (each field keeps its own timestamp), so edits to different fields of the
      same item both survive. More work; only if real conflicts show up.
 - Encryption doesn't change this: the server compares timestamps, not content.
+- **Not synced yet indicator** (owner's idea, like Google Docs): when there are changes the server
+  hasn't received (offline, or sync failing), a small quiet status shows "Not synced yet", for example
+  near the screen title or in a toast after an edit made offline, and clears once sync catches up.
+  Settings already shows pending changes. Mockup first; keep it subtle (few badges).
+- The owner's rule: **the user must never lose data.** Every conflict keeps the newest version, the
+  phone never deletes local data on its own, and backups cover the rest.
 
 ---
 
@@ -427,8 +468,40 @@ How it works:
 4. Encryption sits **inside the sync layer only**, as a wrapper around the Supabase target. The phone
    keeps plain data locally as today; the rest of the app doesn't change.
 
-What the user does: one Face ID prompt when creating the account, one on each new phone. Nothing to
-write down.
+**When the passkey is used:**
+- **Once when the account is created** (Face ID makes the passkey).
+- **Once on each new phone, or after signing out** (Face ID unlocks the data key).
+- **Never in daily use:** after unlocking, the phone keeps the data key in its own storage, marked so
+  it can't be copied out, and opening the app asks nothing.
+
+**What it's linked to:** the passkey belongs to the user's **Apple ID** (iCloud Keychain) or **Google
+account** (Google Password Manager), **not to the phone**. Every device signed in to that account has
+it.
+
+**Losing the phone:** on a new iPhone signed in to the same Apple ID, the passkey is already there.
+Install, email code, Face ID, and the data is back.
+
+**Does everyone have iCloud Keychain?** Most iPhone users signed in to iCloud do (iPhone setup turns it
+on), but not all: some turn it off, some use another password manager (Google, 1Password). Android
+uses Google Password Manager by default. The app checks during setup and falls back when needed.
+
+**If Face ID / passkeys don't work in the installed web app** (or the user has no synced keychain),
+the options, in order of preference:
+
+1. **A data password saved by the password manager.** On the setup screen, Safari (or Chrome) offers a
+   strong generated password and saves it in iCloud Keychain or Google Password Manager. The data key
+   is derived from it. On a new phone, autofill fills it; the user never types or remembers it. Sign-in
+   itself stays the email code. If the user refuses to save it, they'd have to remember it, which is
+   the "responsible for a key" case, so the app insists on saving and explains why.
+2. **Move from the old phone:** the old phone shows a code or QR that the new phone scans to receive the
+   key. Works only while the old phone still exists; useful as an extra, not alone.
+3. **A recovery code** to keep somewhere: optional extra only, never required.
+
+**Is there another solution?** Every end-to-end encrypted product faces the same three-way limit:
+*the operator can't read it*, *the user keeps no key*, and *recovery after losing every device*. The
+only way to get all three is to lean on Apple's or Google's synced keychain, as WhatsApp's encrypted
+backups do. Anything else either lets the operator read (key on the server) or puts the key on the
+user.
 
 What could still go wrong, and the answer:
 - **iCloud Keychain off** → the passkey stays on that phone only; losing the phone loses the server
@@ -440,13 +513,14 @@ What could still go wrong, and the answer:
   local data stays plain on the phone, JSON export stays plain, and the data key is locked twice
   (passkey + optional second passkey).
 
-### 7.3 What the owner can still see
+### 7.3 What the owner can still see (accepted)
 
-Even with encryption, the server needs some things to work:
-- **Email** (to send codes and approve people).
+- **Email**, **name and avatar** (needed to send codes and approve people).
 - **Metadata:** how many records each user has, of which type, when they change, sizes, and when
-  pushes are scheduled. Not what they say. (The record type could be hidden too, at some cost.)
-- **Name and avatar:** encrypted or not, open (§16).
+  pushes are scheduled. Not what they say.
+
+The owner accepted both on 2026-10-21. **Encryption is decided**, pending only the iPhone test that
+picks passkey or data password.
 
 ### 7.4 Encrypted notifications (the trade-off the owner asked for)
 
@@ -463,7 +537,7 @@ the VAPID signature and forwards bytes.
 | Flexibility | The server can't merge or edit; the planner does everything (already planned) | The server could edit |
 | Fit with §0.1 | ✅ Required | ❌ Breaks it |
 
-Conclusion: with the owner's privacy requirement, it isn't optional. It comes in stage 2 together with
+Conclusion: with the owner's privacy requirement, it isn't optional. It comes in S5 together with
 push.
 
 ### 7.5 Encryption and social features (correction)
@@ -478,7 +552,9 @@ works with encryption:
 - What's harder: un-sharing (needs a new key), edits to shared items (re-encrypt for each friend),
   shared projects with several people, and no server-side features on shared content (search,
   previews).
-- To keep the door open, stage 1 creates the key pair from day one (cheap).
+- To keep the door open, the encryption stage creates the key pair from day one (cheap).
+- **Owner's decision:** social features come later; keep the path clear now (key pair, profiles in
+  their own table, stable ids) without building any of it.
 
 ---
 
@@ -577,13 +653,25 @@ workflow artifact (up to 90 days) or a commit, about the last 30 days. Free: 2,0
 a month. **Not in the public app repo** (others could see logs and artifacts; scheduled workflows in
 public repos are disabled after 60 idle days). With §7, the data inside is already ciphertext.
 
+**Is this OK with GitHub's rules?** A gray area, but defensible. GitHub's Actions terms say Actions
+shouldn't be used for activity "unrelated to the production, testing, deployment, or publication" of
+the project. Backing up this project's own production database is part of running it, so it's
+arguably related, and it's common practice. The realistic worst case is GitHub stopping the workflow,
+not losing the account. To stay well inside the rules: keep it small (weekly full + nightly changes),
+in a private repo, with encrypted files, using a fraction of the free 500 MB.
+- **If GitHub ever objects, or the files grow:** keep the job but store the files in the **Google
+  Drive of the app's Gmail account** (15 GB free, made for files), or run the job as a Supabase Edge
+  Function that uploads to that Drive (the project's own server, clearly allowed). Cloudflare R2
+  (10 GB free) asks for a payment method, so it's not the first choice.
+- With end-to-end encryption, the backups hold ciphertext anyway.
+
 **Schedule (egress, §3.2):** full copy **once a week** + **every night only changed rows** (the
 `records.seq` cursor gives exactly the change set). Restore = latest full copy + the nightly files
 after it.
 
 **Restore drill:** restore into the staging project once, then every few months.
 
-**When:** before friends' data starts syncing under the new system (end of stage 1). Not needed today.
+**When:** before friends' data starts syncing under the new system (stage S4). Not needed today.
 
 ---
 
@@ -637,44 +725,123 @@ Mockups are HTML pages (artifacts) or a preview build; nothing reaches `main`.
 
 ---
 
-## 14. Order of work
+## 14. Backlog and stages
 
-0. **Now:** this plan. No code.
-1. **Mockups** (§12): notification options, avatars, sign-in screens. Owner picks.
-2. **Spikes on a real iPhone** (installed preview): passkey PRF works in the Home Screen app; web push
-   arrives; Turnstile renders. 1 to 3 days. Needs the staging project.
-3. **Stage 1: accounts that are safe for friends.** Email codes (app Gmail, captcha), members + cap
-   100 + waiting screen + the owner's sign-up push, profiles with avatars, passkey encryption with key
-   pair, migration of current plaintext rows, one-person-per-phone, delete account, size limits,
-   backups + alarm + restore drill, CSP.
-4. **Stage 2: push, core.** VAPID, service worker handlers, one subscription per user, planner (tests
-   first), phone-encrypted payloads, dispatcher with stale-drop, fuse, kill switch and log; morning
-   summary, timed due dates, custom reminders (once), weekly review; Settings → Notifications;
-   diagnostics. Beta flag for the owner → shadow week → friends.
-5. **Stage 3: the rest.** Preps, goal review date, celebration, badge, quiet hours, lock-screen toggle.
-6. **Merge** to `main` once notifications work nicely (§13).
+### How the stages are sized
+
+The owner's concern: if everything comes at once, Claude gets confused; if it's split too finely,
+Claude loses the context. The balance used here:
+
+- **One stage = one session**, with one clear goal and an end state the owner can **try on the
+  preview** (or, for design stages, pick from).
+- **About 5 to 10 backlog items per stage**, touching one area of the app.
+- **Context lives in this doc, not in the chat.** Each stage's session starts by reading §0, §2 and
+  its own stage below, and ends by updating the doc (decisions, change log, ticked items). A fresh
+  session per stage then loses nothing.
+- If a stage turns into more than a day or two of back-and-forth, split it at that point.
+
+Three stages, as first proposed, were too big: the first one alone held accounts, encryption and
+operations. **Seven stages** (S0 to S6) fit the rule. All happen on branch `notifications`; the merge
+to `main` comes after S6 (§13).
+
+### S0. Mockups (design only, no app code)
+- [ ] Notification options: 2 to 3 per type (morning summary, due at a time, custom reminder, weekly
+      review, prep, goal review date), on an iPhone lock screen and in a stack, English and Portuguese.
+- [ ] Settings → Notifications screen.
+- [ ] Avatars: several styles with many options, shown as a friend list.
+- [ ] Sign-in (email, code), passkey or data-password setup, Waiting for access, Requests (approve).
+- [ ] "Not synced yet" indicator.
+- **Done when:** the owner has picked an option for each.
+
+### S1. Spikes and test setup
+- [ ] Owner: create the staging Supabase project; turn off Vercel preview protection; Claude adds the
+      Preview environment variables for this branch.
+- [ ] Throwaway test page on the preview: **passkey + PRF inside the installed iPhone app** (and
+      Android); **data-password autofill** as the fallback.
+- [ ] A test web push arrives on the installed preview (iPhone and Android).
+- [ ] Turnstile renders and passes in the installed app.
+- **Done when:** the encryption method is chosen (passkey or data password) and push is proven on the
+  owner's phone. Throwaway code is deleted.
+
+### S2. Accounts
+- [ ] Owner: create the app Gmail (2-Step Verification, app password) and a Cloudflare account; paste
+      secrets into Supabase.
+- [ ] Email-code sign-in with Turnstile; drop password sign-in.
+- [ ] `members` (cap 100) and `profiles` (name, avatar) with RLS and explicit grants; existing users
+      migrated as members.
+- [ ] Waiting for access screen; push to the owner on a new request; Requests screen with Approve.
+- [ ] Sign-in after the first goal; "Not now" popup; Safari hint on iPhone.
+- [ ] One person per phone (§6.8); sign-out rules; delete account.
+- **Done when:** a test friend can sign up on the preview, wait, get approved with one tap, and sync.
+
+### S3. Encryption
+- [ ] Data key + key pair (for social later); passkey or data-password unlock (from S1).
+- [ ] Encrypting wrapper around the sync target; decrypt on pull; validate shape.
+- [ ] Migration: the app re-uploads existing plaintext rows encrypted, then plaintext is gone from the
+      server.
+- [ ] New-phone flow, iCloud Keychain checks, optional extras (old-phone transfer, recovery code).
+- [ ] Tests: round trip, wrong key, lost key, migration.
+- **Done when:** on staging, the dashboard shows only ciphertext and a second phone unlocks with Face ID
+  (or autofill).
+
+### S4. Safety and operations
+- [ ] Private backups repo (owner creates it); weekly full + nightly changes, encrypted; restore drill.
+- [ ] Usage alarm in the backup job.
+- [ ] Database rules: size limit on `data`, write cap per user per day, clock guard.
+- [ ] Quick undo erases misclicks (§3.5), if the owner confirms; tombstone purge.
+- [ ] "Not synced yet" indicator.
+- [ ] Content-Security-Policy; Security Advisor clean; privacy note in Settings (written together).
+- **Done when:** a restore into staging works and the alarm fires on a test threshold.
+
+### S5. Push, core
+- [ ] VAPID keys; service worker push and click handlers (deep links).
+- [ ] One subscription per user; re-subscribe on open; diagnostics row.
+- [ ] Planner (tests first) with phone-encrypted payloads; upload only the difference.
+- [ ] Dispatcher: every minute, stale drop at 15 min, fuse 20/day, kill switch, send log.
+- [ ] Types: morning summary, due dates (no time → summary; with time → also at that time), custom
+      reminders (once), weekly review (own time).
+- [ ] Settings → Notifications (per type, summary time, weekdays only, review time).
+- [ ] Developer test button. Beta flag for the owner → shadow week.
+- **Done when:** the owner gets correct pushes for a week on the preview.
+
+### S6. The rest, then merge
+- [ ] Preps with a time, goal review date, in-app celebration.
+- [ ] App icon badge (late + today), quiet hours, lock-screen details toggle.
+- [ ] Merge plan: apply migrations to production, deploy, enable for the owner, then friends.
+- **Done when:** merged to `main` and friends have it.
 
 ### What the owner needs to set up, and when
 
-- **Staging Supabase project:** before the spikes (step 2). Supabase → New project → name
+- **Staging Supabase project:** in S1. Supabase → New project → name
   `smart-meta-staging`, region São Paulo, Free; save the database password in a password manager.
   Claude needs only the project URL and the publishable (anon) key, which are public by design.
-- **Private backups repo:** before stage 1 ends. GitHub → New repository → `smart-meta-backups`,
+- **Private backups repo:** in S4. GitHub → New repository → `smart-meta-backups`,
   **Private**, empty. Secrets (database connection string, encryption key) are pasted into its
   settings by the owner, never into chat.
-- **App Gmail account:** during stage 1. New Gmail, 2-Step Verification on, create an app password,
+- **App Gmail account:** in S2. New Gmail, 2-Step Verification on, create an app password,
   paste it into Supabase's SMTP settings yourself.
-- **Cloudflare account** (free) for Turnstile: during stage 1.
-- **Vercel:** turn off preview protection and add Preview environment variables: at step 2.
+- **Cloudflare account** (free) for Turnstile: in S2.
+- **Vercel:** turn off preview protection and add Preview environment variables: in S1.
 
 ---
 
 ## 15. Later (not now)
 
 - **Social:** share chosen entries; maybe shared goals and projects. Keep: profiles in their own
-  table, stable user ids, a key pair per user from stage 1, push infrastructure reusable for "Ana
+  table, stable user ids, a key pair per user from S3, push infrastructure reusable for "Ana
   shared a goal".
-- Repeating custom reminders (and then reminders on commitments make more sense, §16).
+- **Next feature after the MVP: smarter commitment reminders.** The owner's idea: remind at the last
+  possible moment, when the commitment is at risk (for example on Saturday with "2× a week" still
+  open, remind Saturday and Sunday; with 3 open, start on Friday). Claude's notes for when we design
+  it:
+  - At the very last moment there's no room left: one skip and the week is lost. Reminding **one day
+    before the last possible day** leaves a margin (2 open with 3 days left → start reminding).
+  - Put these **inside the morning summary** ("Gym: 2 left this week, today or tomorrow") instead of
+    separate pushes, so they don't use the cap of 3.
+  - The app already computes pace and "at risk" in `scoring.ts`; reuse it so the reminder and the
+    screen agree.
+  - Let the user choose per commitment: off, at-risk only, or every planned day.
+- Repeating custom reminders.
 - Google sign-in (if iPhone support improves), photo avatars, snooze, Android actions, evening
   logging reminder, custom domain + Resend.
 
@@ -682,21 +849,16 @@ Mockups are HTML pages (artifacts) or a preview build; nothing reaches `main`.
 
 ## 16. Open questions
 
-1. **Push the branch to GitHub?** (public repo). Claude's analysis: low risk, see the session reply
-   on 2026-10-21; the doc holds no secrets and describes defenses, not open holes. Owner to decide.
-2. **Daily cap reading:** a time the user set on a task or prep counts as "asked for" (always sent),
-   so the cap of 3 covers the morning summary, weekly review and goal review date. Correct?
-3. **Custom reminders on commitments:** commitments repeat (like "Gym 3× a week"); a once-only reminder
-   fits them poorly. Wait for repeating reminders, or allow once-only now?
-4. **Late items:** not pushed again after their time (only counted in the badge). OK?
-5. **Weekly review on Monday morning:** at the same time as the summary (two pushes at 8:00), or a few
-   minutes later?
-6. **Name and avatar:** visible to the owner, or encrypted too?
-7. **Metadata:** is it acceptable that the owner can see counts, timing and sizes (not content)?
-8. **Password accounts:** drop them (recommended, §6.3)?
-9. **Stale-push window:** 30 minutes for everything, or 15 for timed reminders?
-10. **Privacy note:** written together later (owner's ideas, Claude drafts), shown in Settings.
-11. Which mockups first: notifications, avatars, or sign-in screens?
+1. **Quick undo (§3.5):** may a check-in undone within a couple of minutes be erased (so it no longer
+   shows struck-through in History)? How many minutes?
+2. **Write cap per user per day:** is 2,000 rows a sensible ceiling?
+3. **Which S0 mockups first:** notifications, avatars, or sign-in screens?
+4. **Privacy note:** written together in S4 (owner's ideas, Claude drafts), shown in Settings.
+
+Answered on 2026-10-21 (kept for the record): push the branch (done); a time set on a task or prep
+counts as asked for; commitments get once-only reminders for now; late items aren't re-sent; weekly
+review is its own push with its own time; name and avatar visible; metadata acceptable; drop the
+owner-made password accounts; stale window 15 minutes for everything; seven stages.
 
 ---
 
@@ -714,3 +876,10 @@ Mockups are HTML pages (artifacts) or a preview build; nothing reaches `main`.
   end-to-end encryption (pending iPhone spike), phone-encrypted notifications; prototypes/mockups before
   implementation; test on the fixed branch preview with a staging project and merge only when
   notifications work nicely. Database 25.8 MB, region São Paulo.
+- **2026-10-21 (3):** branch pushed. Encryption decided (passkey, or a password-manager-saved data
+  password if passkeys fail in the installed app); email, name, avatar and metadata visible to the
+  owner is accepted. Approve with one tap from a Requests screen. Stale window 15 minutes for every
+  type. Weekly review with its own editable time. Commitments: once-only reminders now; at-risk
+  reminders are the next feature. Drop owner-made password accounts. Several devices allowed; "Not
+  synced yet" indicator. Check-in growth from toggling documented with fixes (§3.5). GitHub backup
+  rules analyzed (§10). Work split into seven stages, S0 to S6, one session each (§14).
