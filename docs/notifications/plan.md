@@ -220,7 +220,8 @@ about 1 MB a year, roughly doubling heavy use. Fixes, in order:
    30 minutes (a misclick or a change of mind), both rows are removed; if they never synced, they
    never leave the phone. Older undos keep today's behavior, so History still shows real "undone"
    events. Misclicks no longer appear struck through in History.
-2. **Server limits per user** against bugs, scripts and stolen accounts. A **row** is one saved
+2. **Server limits per user** against bugs, scripts and stolen accounts (confirmed by the owner;
+   the numbers live in [spec Adjustable numbers](spec.md#adjustable-numbers), N-2 to N-5). A **row** is one saved
    record: a check-in, a task, a goal, a review. Editing a record doesn't add a row; it changes the
    same one. For scale, a heavy user adds about **1,200 rows a year**, about 3 to 30 on a busy day.
    - **Total: at most 30,000 rows per user** (about 25 years of heavy use, about 25 MB at worst).
@@ -896,11 +897,9 @@ to `main` comes after S6 (§13).
 
 ## 16. Open questions
 
-1. **Row limits (§3.5):** 30,000 rows total and 5,000 new rows a day per user, as explained there.
-   Owner to confirm or adjust.
-2. **Which S0 mockups first:** notifications, avatars, or sign-in screens? (Decided in the S0
+1. **Which S0 mockups first:** notifications, avatars, or sign-in screens? (Decided in the S0
    session.)
-3. **Privacy note:** written together in S4 (owner's ideas, Claude drafts), shown in Settings.
+2. **Privacy note:** written together in S4 (owner's ideas, Claude drafts), shown in Settings.
 
 Answered on 2026-10-21 (kept for the record): push the branch (done); a time set on a task or prep
 counts as asked for; commitments get once-only reminders for now; late items aren't re-sent; weekly
@@ -934,3 +933,6 @@ owner-made password accounts; stale window 15 minutes for everything; seven stag
   decisions, stage status) and a checkable [spec](spec.md). Quick undo window 30 minutes. Row limits
   proposed (§3.5). Sync timing decided (§6.10): soon after changes, plus a flush when leaving the app;
   not "only on close". The privacy note must state that email and metadata are visible.
+- **2026-10-21 (5):** row limits confirmed. Spec checked against the whole conversation; missing items
+  added (see its coverage note). All numbers moved to one table, spec "Adjustable numbers" (N-1 to
+  N-25), defined in one place in code (RE-5). Clarified: syncing more often adds requests, not rows.
