@@ -837,7 +837,7 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
 .key-line { width: 14px; height: 2px; border-radius: 1px; background: var(--accent); display: inline-block; }
 .key-dash { width: 14px; height: 0; border-top: 1.5px dashed var(--ink-3); display: inline-block; }
-.key-dash.upright { width: 0; height: 12px; border-top: 0; border-left: 1.5px dashed var(--ink); }
+.key-dash.upright { width: 2px; height: 18px; border: 0; border-radius: 1px; background: var(--target-dash); }
 .key-tick { width: 2px; height: 12px; border-radius: 1px; background: var(--ink-2); display: inline-block; }
 .key-box { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 
@@ -951,7 +951,9 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .dist-col i.kept { background: var(--on-track); }
 .dist-col i.missed { background: var(--at-risk); }
 .dist-col.on i { outline: 2px solid var(--ink); outline-offset: 2px; }
-.dist-target { position: absolute; top: -6px; bottom: -5px; width: 0; margin-left: -1px; border-left: 1.5px dashed var(--ink); pointer-events: none; }
+/* The target: one dash pattern, drawn the same on the chart and in its key. */
+.dist, .legend { --target-dash: repeating-linear-gradient(to bottom, var(--ink) 0 5px, transparent 5px 8px); }
+.dist-target { position: absolute; top: -6px; bottom: -5px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--target-dash); pointer-events: none; }
 .dist-axis { position: relative; height: 16px; margin-top: 6px; font-size: 11px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .dist-axis span { position: absolute; top: 0; white-space: nowrap; }
 .dist-target-label { transform: translateX(-50%); color: var(--ink); font-weight: 650; }

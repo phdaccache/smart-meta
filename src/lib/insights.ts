@@ -717,9 +717,14 @@ export interface YearReview {
   projectsDone: number
 }
 
+/** The year Insights looks back on: this one, or in January the one just ended. */
+export function reviewYear(today: DateStr): number {
+  return Number(today.slice(0, 4)) - (Number(today.slice(5, 7)) === 1 ? 1 : 0)
+}
+
 export function yearReview(p: Prepared): YearReview {
   const month = Number(p.ctx.today.slice(5, 7))
-  const year = Number(p.ctx.today.slice(0, 4)) - (month === 1 ? 1 : 0)
+  const year = reviewYear(p.ctx.today)
   const span = { start: `${year}-01-01`, end: minDate(`${year}-12-31`, p.lastWeek.end) }
   const inYear = (d: DateStr) => d >= span.start && d <= `${year}-12-31`
   const stateRevs = live(p.revisions).filter((r) => r.field === 'state' && inYear(dayOf(r.timestamp)))

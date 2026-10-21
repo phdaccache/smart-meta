@@ -3,7 +3,7 @@ import { getLang, type Key, marked, num, t, tk, tn } from '../i18n'
 import { capitalize, dayMonth, formatTime, monthName } from '../lib/dates'
 import { periodWord } from '../lib/describe'
 import {
-  burnups, goalsView, goalTrend, MIN_WEEKS, patternsView, prepare, RANGES, timeline, valueBalance, yearReview,
+  burnups, goalsView, goalTrend, MIN_WEEKS, patternsView, prepare, RANGES, reviewYear, timeline, valueBalance, yearReview,
   type GoalTrend, type Marker, type NearMiss, type PatternsView, type Prepared, type PrepEffect, type PrepVerdict, type Range,
 } from '../lib/insights'
 import { stateLabel } from '../lib/revisions'
@@ -18,7 +18,7 @@ import { useAllRevisions, useDisplacements, useSettings, useSnapshot, useToday, 
 import { IconChevronRight } from '../ui/icons'
 import { navigate } from '../ui/router'
 
-type View = 'goals' | 'patterns' | 'big'
+type View = 'goals' | 'patterns' | 'projects' | 'big'
 
 function stored<T extends string | number>(key: string, parse: (s: string | null) => T): [T, (v: T) => void] {
   const [v, setV] = useState<T>(() => {
@@ -38,7 +38,7 @@ function stored<T extends string | number>(key: string, parse: (s: string | null
   }]
 }
 
-const useView = () => stored<View>('insights-view', (s) => (s === 'patterns' || s === 'big' ? s : 'goals'))
+const useView = () => stored<View>('insights-view', (s) => (s === 'patterns' || s === 'projects' || s === 'big' ? s : 'goals'))
 const useRange = () => stored<Range>('insights-range', (s) => RANGES.find((r) => String(r) === s) ?? 13)
 
 const RANGE_LABEL: Record<string, Key> = { 13: 'ins.range3m', 26: 'ins.range6m', 52: 'ins.range1y', Infinity: 'ins.rangeAll' }
@@ -93,9 +93,11 @@ export function InsightsScreen() {
   )
   return (
     <Screen title={title} settings>
+      {/* The last tab is the year itself, as Plan splits goals from projects. */}
       <Segmented label={t('ins.view')} value={view} onChange={setView}
-        options={[{ value: 'goals', label: t('ins.tabGoals') }, { value: 'patterns', label: t('ins.tabPatterns') }, { value: 'big', label: t('ins.tabBig') }]} />
-      {view !== 'big' && (
+        options={[{ value: 'goals', label: t('ins.tabGoals') }, { value: 'patterns', label: t('ins.tabPatterns') },
+          { value: 'projects', label: t('ins.projects') }, { value: 'big', label: String(reviewYear(p.ctx.today)) }]} />
+      {(view === 'goals' || view === 'patterns') && (
         <div className="range-row" role="radiogroup" aria-label={t('ins.period')}>
           {RANGES.map((r) => (
             <button key={r} role="radio" aria-checked={range === r} className={range === r ? 'on' : ''} onClick={() => setRange(r)}>
@@ -106,6 +108,7 @@ export function InsightsScreen() {
       )}
       {view === 'goals' && <GoalsTab p={p} range={range} />}
       {view === 'patterns' && <PatternsTab p={p} range={range} />}
+      {view === 'projects' && <ProjectsTab p={p} />}
       {view === 'big' && <BigPictureTab p={p} />}
     </Screen>
   )
@@ -193,8 +196,13 @@ function PatternsTab({ p, range }: { p: Prepared; range: Range }) {
   return <PatternSections p={p} data={data} empty />
 }
 
-function PatternSections({ p, data, empty }: { p: Prepared; data: PatternsView; empty?: boolean }) {
-  const nothing = data.obstacles.total === 0 && !data.preps.length && !data.weekdays.length && !data.nearMisses.length
+/**
+ * What gets in the way, preps, weekdays; on one goal's page, also how far off its misses were
+ * (that one is about a single goal's numbers, so it lives there).
+ */
+function PatternSections({ p, data, empty, howFar }: { p: Prepared; data: PatternsView; empty?: boolean; howFar?: boolean }) {
+  const nearMisses = howFar ? data.nearMisses : []
+  const nothing = data.obstacles.total === 0 && !data.preps.length && !data.weekdays.length && !nearMisses.length
   if (nothing) {
     return empty ? (
       <div className="empty">
@@ -217,10 +225,10 @@ function PatternSections({ p, data, empty }: { p: Prepared; data: PatternsView; 
           <div className="card pad"><WeekdayGrid rows={data.weekdays} /></div>
         </Section>
       )}
-      {data.nearMisses.length > 0 && (
+      {nearMisses.length > 0 && (
         <Section title={<Tip title={t('ins.howFar')}>{t('ins.howFarInfo')}</Tip>}>
           <div className="stack">
-            {data.nearMisses.map((n) => <NearMissCard key={n.commitment.id} n={n} rolloverHour={p.ctx.rolloverHour} />)}
+            {nearMisses.map((n) => <NearMissCard key={n.commitment.id} n={n} rolloverHour={p.ctx.rolloverHour} />)}
           </div>
         </Section>
       )}
@@ -297,7 +305,7 @@ function NearMissCard({ n, rolloverHour }: { n: NearMiss; rolloverHour: number }
 type YearList = 'started' | 'finished' | 'habits'
 
 function BigPictureTab({ p }: { p: Prepared }) {
-  const data = remember('big', [p], () => ({ year: yearReview(p), balance: valueBalance(p), timeline: timeline(p), burnups: burnups(p) }))
+  const data = remember('big', [p], () => ({ year: yearReview(p), balance: valueBalance(p), timeline: timeline(p) }))
   const [list, setList] = useState<YearList | null>(null)
   const tiles = useRef<HTMLDivElement>(null)
   useTapOutside(tiles, list != null, () => setList(null))
@@ -311,8 +319,6 @@ function BigPictureTab({ p }: { p: Prepared }) {
       {n > 0 && <IconChevronRight className="year-chev" width={14} height={14} />}
     </button>
   )
-  const active = data.burnups.filter((b) => b.project.state === 'active')
-  const done = data.burnups.filter((b) => b.project.state === 'done')
   return (
     <>
       <Section title={t(y.final ? 'ins.yearReview' : 'ins.yearSoFar', { year: String(y.year) })}>
@@ -341,6 +347,7 @@ function BigPictureTab({ p }: { p: Prepared }) {
             <dt>{t('ins.weeksReviewed')}</dt>
             <dd>{y.reviews} <span className="muted">{t('ins.ofN', { n: y.reviewable })}</span></dd>
             <dt>{t('ins.planChanges')}</dt><dd>{y.planChanges}</dd>
+            <dt>{t('ins.projectsDone')}</dt><dd>{y.projectsDone}</dd>
           </dl>
         </div>
       </Section>
@@ -360,8 +367,23 @@ function BigPictureTab({ p }: { p: Prepared }) {
         </Section>
       )}
 
+    </>
+  )
+}
+
+// ——— Projects ———
+
+function ProjectsTab({ p }: { p: Prepared }) {
+  const all = remember('projects', [p], () => burnups(p))
+  const active = all.filter((b) => b.project.state === 'active')
+  const done = all.filter((b) => b.project.state === 'done')
+  if (!active.length && !done.length) {
+    return <div className="empty"><h2>{t('plan.noProjects')}</h2></div>
+  }
+  return (
+    <>
       {active.length > 0 && (
-        <Section title={<Tip title={t('ins.projects')}>{t('ins.projectsInfo')}</Tip>}>
+        <Section title={<Tip title={t('ins.activeProjects')}>{t('ins.projectsInfo')}</Tip>}>
           <div className="card list">
             {active.map((b) => <ProjectPace key={b.project.id} b={b} />)}
           </div>
@@ -420,7 +442,7 @@ export function GoalInsightsScreen({ id }: { id: string }) {
               <MarkerList markers={trend.markers} />
             </Section>
           )}
-          <PatternSections p={p} data={patterns} />
+          <PatternSections p={p} data={patterns} howFar />
         </>
       )}
       <div style={{ marginTop: 28 }}>
