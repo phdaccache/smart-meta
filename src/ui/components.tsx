@@ -110,8 +110,8 @@ export function PageText({ text }: { text: string }) {
  * iOS brings up the keyboard only for a focus made during the tap itself, and a sheet's field doesn't exist yet
  * then; focusing a stand-in brought the keyboard up while the sheet was still rising, the page showing through.
  * Called in the tap, this holds the focus in a stand-in that asks for no keyboard. The sheet opened by that tap
- * takes it once it has slid all the way up and hands it to its first field: focus moving from one field to
- * another keeps the right to a keyboard, so it comes up then, over the finished sheet, as when the field is tapped.
+ * takes it once it is nearly up and hands it to its first field: focus moving from one field to
+ * another keeps the right to a keyboard, so it comes up then, as the sheet settles, as when the field is tapped.
  */
 let keyboardHold: { field: HTMLInputElement; before: HTMLElement | null; release: () => void } | null = null
 export function holdKeyboard() {
@@ -121,23 +121,36 @@ export function holdKeyboard() {
   field.setAttribute('aria-hidden', 'true')
   field.tabIndex = -1
   field.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px;'
-  const onSlid = (e: AnimationEvent) => {
-    const sheet = e.target as HTMLElement
-    if (!sheet.classList.contains('sheet')) return
-    const held = document.activeElement === field
+  const handOff = (sheet: HTMLElement) => {
+    const held = document.activeElement === field && sheet.isConnected
     release()
     if (held) sheet.querySelector<HTMLElement>('textarea, input')?.focus({ preventScroll: true })
   }
+  // The slide's curve covers 93% of the way in its first 180ms and spends the rest settling: the keyboard starts
+  // then, and its own rise covers the settle, instead of waiting through it.
+  let soon: ReturnType<typeof setTimeout> | undefined
+  const onSliding = (e: AnimationEvent) => {
+    const sheet = e.target as HTMLElement
+    if (sheet.classList.contains('sheet')) soon ??= setTimeout(() => handOff(sheet), 180)
+  }
+  // A slide shorter than that (reduced motion) hands off as it ends.
+  const onSlid = (e: AnimationEvent) => {
+    const sheet = e.target as HTMLElement
+    if (sheet.classList.contains('sheet')) handOff(sheet)
+  }
   const release = () => {
     if (keyboardHold === hold) keyboardHold = null
+    document.removeEventListener('animationstart', onSliding, true)
     document.removeEventListener('animationend', onSlid, true)
+    clearTimeout(soon)
     clearTimeout(timer)
     field.remove()
   }
   const hold = { field, before: document.activeElement as HTMLElement | null, release }
   keyboardHold = hold
+  document.addEventListener('animationstart', onSliding, true)
   document.addEventListener('animationend', onSlid, true)
-  // Should the sheet never get all the way up (closed on the way), the hold doesn't linger.
+  // Should the sheet close on the way up, the hold doesn't linger.
   const timer = setTimeout(() => {
     const held = document.activeElement === field
     release()
@@ -146,7 +159,7 @@ export function holdKeyboard() {
   document.body.appendChild(field)
   field.focus({ preventScroll: true })
 }
-/** The hold, while it has the focus and is waiting for the sheet to finish sliding up. */
+/** The hold, while it has the focus and is waiting for the sheet to get up. */
 const heldKeyboard = () => (keyboardHold && document.activeElement === keyboardHold.field ? keyboardHold : null)
 
 /**
@@ -250,7 +263,7 @@ export function Sheet(props: {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && leave.current() && onClose.current()
     document.addEventListener('keydown', onKey)
     document.body.classList.add('sheet-open')
-    // Opened to type in (holdKeyboard): the hold gives its first field the focus once it's all the way up.
+    // Opened to type in (holdKeyboard): the hold gives its first field the focus once it's nearly up.
     // A field that focused itself on mount (autoFocus) keeps it; otherwise the first control gets it.
     if (!heldKeyboard() && !ref.current?.contains(document.activeElement)) {
       ref.current?.querySelector<HTMLElement>('[autofocus], input, textarea, select, button')?.focus({ preventScroll: true })

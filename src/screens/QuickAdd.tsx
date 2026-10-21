@@ -20,7 +20,7 @@ export const openQuickAddFor = (link: { goalId: string } | { projectId: string }
 
 function openWith(link: typeof preset) {
   preset = link
-  // Opens ready to type: the keyboard comes up once the sheet is all the way up.
+  // Opens ready to type: the keyboard comes up as the sheet settles.
   holdKeyboard()
   setOpen(true)
 }
