@@ -1514,7 +1514,7 @@ button.goal-why { margin-top: 14px; }
 /* As in Reminders: ✕ and ✓ a little lower, more room between them and the fields, and above the title. */
 .sheet.large .sheet-head.bar { padding-top: 16px; }
 .sheet.large .sheet-head.bar + .sheet-body { padding-top: 16px; }
-.sheet.large .task-text .title-field { padding-top: 26px; }
+.sheet.large .task-text .title-field { padding-top: 20px; }
 /* Quick add rises with the keyboard, a little softer than a drawer, as Reminders' new reminder does. */
 @media (prefers-reduced-motion: no-preference) {
   .sheet.typing { animation-duration: 0.47s; animation-timing-function: var(--ease-rise); }
