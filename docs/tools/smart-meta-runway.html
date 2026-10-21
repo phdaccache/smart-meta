@@ -1,0 +1,343 @@
+<title>Smart Meta Runway</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one Settings-style column of grouped sections; verdict and chart first, inputs below. */
+:root {
+  --bg: #f2f2f7;
+  --surface: #ffffff;
+  --ink: #000000;
+  --ink-2: #6e6e73;
+  --ink-3: #aeaeb2;
+  --line: #e3e3e8;
+  --accent: #007aff;
+  --accent-soft: #e6f0ff;
+  --good: #248a3d;
+  --warn: #c93400;
+  --bad: #d70015;
+  --fill: rgb(118 118 128 / 0.12);
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000; --surface: #1c1c1e; --ink: #ffffff; --ink-2: #98989f; --ink-3: #5a5a5f;
+    --line: #38383a; --accent: #0a84ff; --accent-soft: #0a2a4d; --good: #30d158; --warn: #ff9f0a;
+    --bad: #ff453a; --fill: rgb(118 118 128 / 0.24); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000; --surface: #1c1c1e; --ink: #ffffff; --ink-2: #98989f; --ink-3: #5a5a5f;
+  --line: #38383a; --accent: #0a84ff; --accent-soft: #0a2a4d; --good: #30d158; --warn: #ff9f0a;
+  --bad: #ff453a; --fill: rgb(118 118 128 / 0.24); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.4; }
+.wrap { max-width: 760px; margin: 0 auto; padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 28px; }
+h1 { font-family: var(--font-display); font-size: 32px; font-weight: 700; letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+.lede { color: var(--ink-2); margin: 6px 0 0; max-width: 62ch; }
+h2 { font-size: 13px; font-weight: 400; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 8px 16px; }
+.group { background: var(--surface); border-radius: 14px; overflow: hidden; }
+.foot { color: var(--ink-2); font-size: 13px; margin: 8px 16px 0; }
+.row { display: flex; align-items: center; gap: 12px; padding: 11px 16px; min-height: 44px; }
+.row + .row { border-top: 0.5px solid var(--line); }
+.row label, .row .k { flex: 1; min-width: 0; }
+.row .sub { display: block; color: var(--ink-2); font-size: 12.5px; }
+.row input[type=number] { width: 92px; font: inherit; font-variant-numeric: tabular-nums; text-align: right; color: var(--accent);
+  border: 0; background: var(--fill); border-radius: 8px; padding: 6px 8px; }
+.row input[type=number]:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.row select { font: inherit; color: var(--accent); background: var(--fill); border: 0; border-radius: 8px; padding: 6px 8px; max-width: 55%; }
+.seg { display: flex; background: var(--fill); border-radius: 9px; padding: 2px; gap: 2px; }
+.seg button { flex: 1; font: inherit; font-size: 13px; font-weight: 500; border: 0; background: transparent; color: var(--ink); padding: 6px 4px; border-radius: 7px; cursor: pointer; }
+.seg button[aria-pressed=true] { background: var(--surface); box-shadow: 0 1px 3px rgb(0 0 0 / 0.15); }
+.verdict { padding: 18px 16px; display: flex; flex-direction: column; gap: 4px; }
+.verdict .big { font-family: var(--font-display); font-size: 26px; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
+.verdict .cost { font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; vertical-align: 2px; margin-right: 6px; }
+.pill.good { color: var(--good); background: color-mix(in srgb, var(--good) 14%, transparent); }
+.pill.warn { color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent); }
+.pill.bad { color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, transparent); }
+.chart { padding: 12px 8px 8px; }
+.chart svg { display: block; width: 100%; height: auto; }
+.meter { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 11px 16px; }
+.meter + .meter { border-top: 0.5px solid var(--line); }
+.meter .name { min-width: 0; }
+.meter .val { font-variant-numeric: tabular-nums; color: var(--ink-2); text-align: right; white-space: nowrap; }
+.meter .bar { grid-column: 1 / -1; height: 6px; background: var(--fill); border-radius: 3px; overflow: hidden; }
+.meter .bar i { display: block; height: 100%; border-radius: 3px; background: var(--good); }
+.meter .note { grid-column: 1 / -1; color: var(--ink-2); font-size: 12.5px; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 13.5px; }
+th, td { text-align: right; padding: 8px 16px; border-top: 0.5px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+thead th { border-top: 0; color: var(--ink-2); font-weight: 500; font-size: 12.5px; }
+.scroll { overflow-x: auto; }
+.notes { padding: 14px 16px; color: var(--ink-2); font-size: 13.5px; display: flex; flex-direction: column; gap: 8px; }
+.notes p { margin: 0; max-width: 68ch; }
+.notes a { color: var(--accent); }
+code { font-family: var(--mono); font-size: 0.92em; }
+@media (prefers-reduced-motion: no-preference) { .meter .bar i { transition: width 0.25s cubic-bezier(0.23, 1, 0.32, 1); } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Smart Meta Runway</h1>
+    <p class="lede">How long Supabase Free and Vercel Hobby hold up as friends join, and what it costs when they don't. Defaults come from the app's sample data; change anything below.</p>
+  </header>
+
+  <section>
+    <h2>Verdict</h2>
+    <div class="group">
+      <div class="verdict" id="verdict"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Database size over time</h2>
+    <div class="group chart"><svg id="chart" viewBox="0 0 700 280" role="img" aria-label="Database size by month against the 300 MB alarm and the 500 MB free limit"></svg></div>
+    <p class="foot">Free plan goes read-only at 500 MB. The dashed line is the 60% alarm from the plan.</p>
+  </section>
+
+  <section>
+    <h2>Free limits at the end of the period</h2>
+    <div class="group" id="meters"></div>
+  </section>
+
+  <section>
+    <h2>People</h2>
+    <div class="group">
+      <div class="row"><label for="u0">Users now</label><input id="u0" type="number" min="1" step="1" value="10"></div>
+      <div class="row"><label for="u1">Users at the end<span class="sub">Grows evenly from now to the end</span></label><input id="u1" type="number" min="1" step="1" value="50"></div>
+      <div class="row"><label for="yrs">Years</label><input id="yrs" type="number" min="1" max="10" step="1" value="3"></div>
+      <div class="row"><label for="opens">App opens per user per day</label><input id="opens" type="number" min="0" step="0.5" value="4"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Per user per year</h2>
+    <div class="group">
+      <div class="row"><span class="k">Usage profile</span>
+        <div class="seg" id="preset" role="group" aria-label="Usage profile">
+          <button type="button" data-p="light">Light</button>
+          <button type="button" data-p="typical" aria-pressed="true">Typical</button>
+          <button type="button" data-p="heavy">Heavy</button>
+        </div>
+      </div>
+      <div class="row"><label for="entries">Check-ins per day<span class="sub">Logging a commitment, prep or task. About 290 bytes each</span></label><input id="entries" type="number" min="0" step="0.1"></div>
+      <div class="row"><label for="goals">Goals</label><input id="goals" type="number" min="0" step="1"></div>
+      <div class="row"><label for="commitments">Commitments</label><input id="commitments" type="number" min="0" step="1"></div>
+      <div class="row"><label for="tasks">Tasks</label><input id="tasks" type="number" min="0" step="1"></div>
+      <div class="row"><label for="projects">Projects</label><input id="projects" type="number" min="0" step="1"></div>
+      <div class="row"><label for="preps">Preps</label><input id="preps" type="number" min="0" step="1"></div>
+      <div class="row"><label for="occurrences">Occurrences<span class="sub">Events on a goal, like a meeting</span></label><input id="occurrences" type="number" min="0" step="1"></div>
+      <div class="row"><label for="reviews">Weekly reviews</label><input id="reviews" type="number" min="0" max="53" step="1"></div>
+      <div class="row"><label for="revisions">Goal revisions</label><input id="revisions" type="number" min="0" step="1"></div>
+    </div>
+    <p class="foot">Heavy is the app's sample data scaled to a year: about 1,200 records.</p>
+  </section>
+
+  <section>
+    <h2>Notifications and backups</h2>
+    <div class="group">
+      <div class="row"><label for="pushes">Pushes per user per day</label><input id="pushes" type="number" min="0" step="1" value="3"></div>
+      <div class="row"><label for="backup">Backup schedule<span class="sub">Each full dump reads the whole database, which counts as egress</span></label>
+        <select id="backup">
+          <option value="inc" selected>Weekly full + daily changes</option>
+          <option value="daily">Full dump every night</option>
+          <option value="weekly">Weekly full only</option>
+          <option value="none">None</option>
+        </select>
+      </div>
+      <div class="row"><label for="avatar">Profile picture size, KB<span class="sub">0 for built-in avatars or Google's photo</span></label><input id="avatar" type="number" min="0" step="1" value="0"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Calibration</h2>
+    <div class="group">
+      <div class="row"><label for="base">Database size today, MB<span class="sub">Supabase dashboard, Usage page. Supabase's own tables use some space before any data</span></label><input id="base" type="number" min="0" step="0.1" value="25.8"></div>
+      <div class="row"><label for="bloat">Bloat factor<span class="sub">Space left by edits, about 1.3. With end-to-end encryption about 1.75, since encrypted data is larger</span></label><input id="bloat" type="number" min="1" max="3" step="0.05" value="1.75"></div>
+      <div class="row"><label for="deploys">Releases per month</label><input id="deploys" type="number" min="0" step="1" value="15"></div>
+      <div class="row"><label for="brl">Reais per dollar</label><input id="brl" type="number" min="0" step="0.1" value="5.4"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Year by year</h2>
+    <div class="group scroll"><table id="years"></table></div>
+  </section>
+
+  <section>
+    <h2>Where the numbers come from</h2>
+    <div class="group notes">
+      <p>Limits checked on 2026-10-21. Supabase Free: 500 MB database (read-only above it), 5 GB egress, 1 GB files, 50,000 monthly users, 500,000 Edge Function calls, no backups. Pro: $25 a month with 8 GB, then $0.125 per GB, 250 GB egress then $0.09 per GB, daily backups. <a href="https://supabase.com/pricing" target="_blank" rel="noopener">supabase.com/pricing</a></p>
+      <p>Vercel Hobby: 100 GB transfer, 1 million function calls, 50,000 Web Analytics events a month (collection pauses past it; Hobby is never billed). <a href="https://vercel.com/docs/limits/fair-use-guidelines" target="_blank" rel="noopener">vercel.com/docs/limits</a></p>
+      <p>GitHub Free private repos: 2,000 Actions minutes and 500 MB of artifact storage a month, used here for the encrypted backups.</p>
+      <p>Record sizes were measured on the app's sample data (JSON per record): check-ins 290 B, goals 410 B, commitments 400 B, tasks 250 B, projects 245 B, preps 270 B, occurrences 310 B, reviews 195 B, revisions 290 B. Each row also costs about 250 B in Postgres for its columns, header and two indexes. Dumps are assumed to compress to 20%.</p>
+      <p>A dispatcher that runs every minute costs about 43,200 Edge Function calls a month no matter how many users there are. Push delivery through Apple and Google is free.</p>
+      <p>Estimates, not a bill. Calibrate with your real database size once friends are on it.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const PRESETS = {
+    light:   { entries: 0.7, goals: 3,  commitments: 3,  tasks: 40, projects: 3, preps: 2, occurrences: 8,  reviews: 15, revisions: 4 },
+    typical: { entries: 1.5, goals: 6,  commitments: 8,  tasks: 70, projects: 6, preps: 5, occurrences: 20, reviews: 30, revisions: 10 },
+    heavy:   { entries: 2.1, goals: 10, commitments: 15, tasks: 70, projects: 8, preps: 6, occurrences: 30, reviews: 45, revisions: 14 },
+  }
+  const BYTES = { entries: 290, goals: 410, commitments: 400, tasks: 250, projects: 245, preps: 270, occurrences: 310, reviews: 195, revisions: 290 }
+  const ROW = 250
+  const MB = 1e6, GB = 1e9
+  const FREE = { db: 500 * MB, egress: 5 * GB, files: 1 * GB, mau: 50000, fn: 500000, vtransfer: 100 * GB, events: 50000, ghStore: 500 * MB, ghMin: 2000 }
+  const $ = (id) => document.getElementById(id)
+  const num = (id) => { const v = parseFloat($(id).value); return Number.isFinite(v) && v >= 0 ? v : 0 }
+
+  function applyPreset(name) {
+    const p = PRESETS[name]
+    for (const k in p) $(k).value = p[k]
+    document.querySelectorAll('#preset button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.p === name)))
+  }
+
+  const fmtB = (b) => b >= GB ? (b / GB).toFixed(b >= 10 * GB ? 0 : 1) + ' GB' : b >= MB ? Math.round(b / MB) + ' MB' : Math.round(b / 1e3) + ' KB'
+  const fmtN = (n) => Math.round(n).toLocaleString('en-US')
+  const money = (usd, brl) => usd === 0 ? '$0' : '$' + usd.toFixed(usd < 100 ? 2 : 0) + ' (R$' + Math.round(usd * brl) + ')'
+  const monthLabel = (m) => { const y = Math.floor(m / 12), r = m % 12; return (y ? y + 'y ' : '') + r + 'm' }
+
+  function compute() {
+    const u0 = Math.max(1, num('u0')), u1 = Math.max(1, num('u1')), years = Math.min(10, Math.max(1, Math.round(num('yrs')) || 1))
+    const months = years * 12, bloat = Math.max(1, num('bloat') || 1), brl = num('brl')
+    const opens = num('opens'), pushes = num('pushes'), deploys = num('deploys'), avatarKB = num('avatar')
+    let recordsPerYear = 0, bytesPerYear = 0
+    for (const k in BYTES) {
+      const n = k === 'entries' ? num(k) * 365 : num(k)
+      recordsPerYear += n
+      bytesPerYear += n * (BYTES[k] + ROW)
+    }
+    bytesPerYear *= bloat
+    const usersAt = (m) => u0 + (u1 - u0) * Math.min(1, m / months)
+    // Fixed per-user rows: auth user, member, profile, subscription; plus a 14-day plan and a 30-day send log.
+    const fixedPerUser = 2000 + 300 + 500 + 1000 + pushes * 14 * 450 + pushes * 30 * 200
+    let data = 0
+    const series = []
+    for (let m = 0; m <= months; m++) {
+      if (m > 0) data += usersAt(m) * bytesPerYear / 12
+      series.push(num('base') * MB + data + usersAt(m) * fixedPerUser)
+    }
+    const end = series[months], users = u1
+    const perUserData = users ? data / users : 0
+    // Egress per month at the end: syncs on open, pushes, one full re-pull per user a year, backups.
+    const syncEgress = users * opens * 30 * 4000 + users * pushes * 30 * 1500 + users * perUserData / 12
+    const backup = $('backup').value
+    const fullDumps = backup === 'daily' ? 30 : backup === 'none' ? 0 : 4.3
+    const incBytes = backup === 'inc' ? 26 * users * (bytesPerYear / 365) * 1.5 : 0
+    const backupEgress = fullDumps * end + incBytes
+    const egress = syncEgress + backupEgress
+    const fn = 43200 + users * 10
+    const files = users * avatarKB * 1000
+    const events = users * opens * 30
+    const vtransfer = users * deploys * 450000 + users * opens * 30 * 3000
+    const ghStore = backup === 'none' ? 0 : (backup === 'daily' ? 30 : 5) * end * 0.2 + incBytes * 0.2
+    const ghMin = backup === 'none' ? 0 : backup === 'daily' ? 30 * 2 : backup === 'weekly' ? 5 * 2 : 5 * 2 + 26
+    return { u0, u1, years, months, brl, series, end, egress, syncEgress, backupEgress, fn, files, events, vtransfer, ghStore, ghMin, recordsPerYear, bytesPerYear, usersAt }
+  }
+
+  function firstMonth(series, limit) { const i = series.findIndex((v) => v >= limit); return i < 0 ? null : i }
+
+  function supabaseCost(db, egress, files, mau, fn) {
+    const needsPro = db > FREE.db || egress > FREE.egress || files > FREE.files || mau > FREE.mau || fn > FREE.fn
+    if (!needsPro) return { plan: 'Free', usd: 0 }
+    const over = Math.max(0, db - 8 * GB) / GB * 0.125 + Math.max(0, egress - 250 * GB) / GB * 0.09 + Math.max(0, files - 100 * GB) / GB * 0.0213
+    return { plan: 'Pro', usd: 25 + over }
+  }
+
+  function render() {
+    const r = compute()
+    const alarmAt = firstMonth(r.series, 0.6 * FREE.db)
+    const limitAt = firstMonth(r.series, FREE.db)
+    const cost = supabaseCost(r.end, r.egress, r.files, r.u1, r.fn)
+    const egressOver = r.egress > FREE.egress
+    const v = $('verdict')
+    let head, pill
+    if (cost.plan === 'Free') {
+      pill = alarmAt === null ? '<span class="pill good">Free</span>' : '<span class="pill warn">Free, alarm</span>'
+      head = alarmAt === null ? 'Free for all ' + r.years + ' years.' : 'Free, but the 300 MB alarm fires after ' + monthLabel(alarmAt) + '.'
+    } else {
+      pill = '<span class="pill bad">Pro</span>'
+      const why = limitAt !== null ? 'the database reaches 500 MB after ' + monthLabel(limitAt) : egressOver ? 'egress passes 5 GB a month' : 'a free limit is passed'
+      head = 'Needs action: ' + why + '.'
+    }
+    v.innerHTML = '<div>' + pill + '</div><div class="big">' + head + '</div>' +
+      '<div class="cost">Supabase at the end: ' + cost.plan + ', ' + money(cost.usd, r.brl) + ' a month. Vercel Hobby: $0.</div>' +
+      '<div class="cost">' + fmtN(r.recordsPerYear) + ' records per user per year, about ' + fmtB(r.bytesPerYear) + ' each year.</div>'
+
+    drawChart(r)
+
+    const meters = [
+      { name: 'Supabase database', used: r.end, limit: FREE.db, fmt: fmtB, note: limitAt !== null ? 'Read-only after ' + monthLabel(limitAt) + '. Trim, or move to Pro or plan B.' : '' },
+      { name: 'Supabase egress, per month', used: r.egress, limit: FREE.egress, fmt: fmtB, note: 'Backups ' + fmtB(r.backupEgress) + ', app sync ' + fmtB(r.syncEgress) + '.' },
+      { name: 'Supabase Edge Function calls, per month', used: r.fn, limit: FREE.fn, fmt: fmtN, note: 'Mostly the dispatcher running every minute.' },
+      { name: 'Supabase monthly users', used: r.u1, limit: FREE.mau, fmt: fmtN },
+      { name: 'Supabase file storage', used: r.files, limit: FREE.files, fmt: fmtB, note: r.files ? '' : 'No uploaded pictures.' },
+      { name: 'Vercel data transfer, per month', used: r.vtransfer, limit: FREE.vtransfer, fmt: fmtB },
+      { name: 'Vercel Web Analytics events, per month', used: r.events, limit: FREE.events, fmt: fmtN, note: r.events > FREE.events ? 'Stats pause for the rest of the month. No charge.' : '' },
+      { name: 'GitHub backup storage', used: r.ghStore, limit: FREE.ghStore, fmt: fmtB, note: 'Encrypted dumps in a private repo.' },
+      { name: 'GitHub Actions minutes, per month', used: r.ghMin, limit: FREE.ghMin, fmt: fmtN },
+    ]
+    $('meters').innerHTML = meters.map((m) => {
+      const pct = m.limit ? m.used / m.limit : 0
+      const color = pct >= 1 ? 'var(--bad)' : pct >= 0.6 ? 'var(--warn)' : 'var(--good)'
+      return '<div class="meter"><div class="name">' + m.name + '</div><div class="val">' + m.fmt(m.used) + ' of ' + m.fmt(m.limit) + ' · ' + Math.round(pct * 100) + '%</div>' +
+        '<div class="bar"><i style="width:' + Math.min(100, pct * 100).toFixed(1) + '%;background:' + color + '"></i></div>' +
+        (m.note ? '<div class="note">' + m.note + '</div>' : '') + '</div>'
+    }).join('')
+
+    let rows = '<thead><tr><th>End of</th><th>Users</th><th>Database</th><th>Egress / month</th><th>Supabase / month</th></tr></thead><tbody>'
+    for (let y = 1; y <= r.years; y++) {
+      const m = y * 12, db = r.series[m], users = r.usersAt(m)
+      const scale = r.end ? db / r.end : 1
+      const eg = r.syncEgress * (users / r.u1) + r.backupEgress * scale
+      const c = supabaseCost(db, eg, r.files, users, r.fn)
+      rows += '<tr><td>Year ' + y + '</td><td>' + fmtN(users) + '</td><td>' + fmtB(db) + '</td><td>' + fmtB(eg) + '</td><td>' + c.plan + ' ' + money(c.usd, r.brl) + '</td></tr>'
+    }
+    $('years').innerHTML = rows + '</tbody>'
+  }
+
+  function drawChart(r) {
+    const W = 700, H = 280, L = 56, R = 16, T = 16, B = 34
+    const maxV = Math.max(FREE.db * 1.1, r.end * 1.08)
+    const x = (m) => L + (W - L - R) * (m / r.months)
+    const y = (v) => T + (H - T - B) * (1 - v / maxV)
+    const step = maxV > 2 * GB ? 500 * MB : maxV > 800 * MB ? 200 * MB : 100 * MB
+    let g = ''
+    for (let v = 0; v <= maxV; v += step) {
+      g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="var(--line)" stroke-width="1"/>'
+      g += '<text x="' + (L - 8) + '" y="' + (y(v) + 4) + '" text-anchor="end" font-size="11" fill="var(--ink-2)">' + fmtB(v) + '</text>'
+    }
+    for (let yr = 0; yr <= r.years; yr++) {
+      g += '<text x="' + x(yr * 12) + '" y="' + (H - 12) + '" text-anchor="middle" font-size="11" fill="var(--ink-2)">' + (yr === 0 ? 'Now' : 'Year ' + yr) + '</text>'
+    }
+    const limitLine = '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(FREE.db) + '" y2="' + y(FREE.db) + '" stroke="var(--bad)" stroke-width="1.5"/>' +
+      '<text x="' + (W - R) + '" y="' + (y(FREE.db) - 6) + '" text-anchor="end" font-size="11" fill="var(--bad)">500 MB free limit</text>'
+    const alarmLine = '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(0.6 * FREE.db) + '" y2="' + y(0.6 * FREE.db) + '" stroke="var(--warn)" stroke-width="1.2" stroke-dasharray="5 4"/>' +
+      '<text x="' + (W - R) + '" y="' + (y(0.6 * FREE.db) - 6) + '" text-anchor="end" font-size="11" fill="var(--warn)">300 MB alarm</text>'
+    const pts = r.series.map((v, m) => x(m).toFixed(1) + ',' + y(v).toFixed(1))
+    const area = '<path d="M' + x(0) + ',' + y(0) + ' L' + pts.join(' L') + ' L' + x(r.months) + ',' + y(0) + 'Z" fill="var(--accent-soft)"/>'
+    const line = '<polyline points="' + pts.join(' ') + '" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linejoin="round"/>'
+    const ex = x(r.months), ey = y(r.end)
+    const endDot = '<circle cx="' + ex + '" cy="' + ey + '" r="4" fill="var(--accent)"/>' +
+      '<text x="' + (ex - 8) + '" y="' + (ey - 9) + '" text-anchor="end" font-size="12" font-weight="600" fill="var(--ink)">' + fmtB(r.end) + '</text>'
+    $('chart').innerHTML = g + area + alarmLine + limitLine + line + endDot
+  }
+
+  document.querySelectorAll('#preset button').forEach((b) => b.addEventListener('click', () => { applyPreset(b.dataset.p); render() }))
+  document.querySelectorAll('input, select').forEach((el) => el.addEventListener('input', () => {
+    if (el.id in BYTES) document.querySelectorAll('#preset button').forEach((b) => b.setAttribute('aria-pressed', 'false'))
+    render()
+  }))
+  applyPreset('typical')
+  render()
+})()
+</script>
