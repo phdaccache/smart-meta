@@ -939,7 +939,6 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
   width: 64px; height: 8px; border-radius: 4px; display: inline-block;
   background: linear-gradient(to right, color-mix(in srgb, var(--at-risk) 6%, var(--surface-2)), color-mix(in srgb, var(--at-risk) 90%, var(--surface-2)));
 }
-.wd-none-key i { width: 12px; height: 12px; border-radius: 3px; border: 1px dashed var(--line-strong); display: inline-block; }
 
 /* patterns: how far off */
 .nm-head { display: flex; align-items: baseline; justify-content: space-between; gap: 4px 12px; flex-wrap: wrap; margin-bottom: 6px; }

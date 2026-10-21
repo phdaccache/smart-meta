@@ -203,16 +203,15 @@ function PatternSections({ p, data, empty }: { p: Prepared; data: PatternsView; 
       </div>
     ) : null
   }
-  // What works comes first; what gets in the way after it.
   return (
     <>
-      {data.preps.length > 0 && <PrepsSection effects={data.preps} />}
       {data.obstacles.total > 0 && (
         <Section title={<Tip title={t('ins.inTheWay')}>{t('ins.inTheWayInfo')}</Tip>}
           aside={<span>{t('ins.misses', { n: data.obstacles.total })}</span>}>
           <div className="card pad"><ReasonBars o={data.obstacles} /></div>
         </Section>
       )}
+      {data.preps.length > 0 && <PrepsSection effects={data.preps} />}
       {data.weekdays.length > 0 && (
         <Section title={<Tip title={t('ins.weekdays')}>{t('ins.weekdaysInfo')}</Tip>}>
           <div className="card pad"><WeekdayGrid rows={data.weekdays} /></div>

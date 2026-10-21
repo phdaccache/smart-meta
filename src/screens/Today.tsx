@@ -10,7 +10,7 @@ import { buildDay, type Snapshot, type TodayGroup, type TodayItem } from '../lib
 import type { Commitment, DateStr, ID, MissReason, Task } from '../lib/types'
 import { CheckButton, Chip, DatePickerButton, DueText, Screen, Segmented, Sheet, toast } from '../ui/components'
 import { ProjectTile, ValueTile } from '../ui/valueLook'
-import { useDisplacements, useMissAsks, useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
+import { useDisplacements, useMissAsksLoaded, useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
 import { dismissedMisses, reviewPending } from '../lib/review'
 import { IconCalendar, IconCheck, IconChevronLeft, IconChevronRight, IconFilter, IconNote, IconPlus } from '../ui/icons'
 import { navigate } from '../ui/router'
@@ -150,7 +150,7 @@ export function TodayScreen({ date }: { date?: DateStr }) {
   const settings = useSettings()
   const today = useToday(settings.rolloverHour)
   const snap = useSnapshot()
-  const asks = useMissAsks()
+  const asks = useMissAsksLoaded()
   const [openTask, setOpenTask] = useState<Task | null>(null)
   const [logFor, setLogFor] = useState<Commitment | null>(null)
   const [filter, setFilter] = useStoredFilter()
@@ -159,7 +159,9 @@ export function TodayScreen({ date }: { date?: DateStr }) {
   const ctx: ScoreContext = useMemo(() => ({ today, rolloverHour: settings.rolloverHour }), [today, settings.rolloverHour])
   const weekReviews = useWeekReviews()
   const dismissed = useMemo(() => dismissedMisses(weekReviews ?? []), [weekReviews])
-  const view = useMemo(() => (snap ? buildDay(snap, viewDate, ctx, asks, dismissed) : null), [snap, viewDate, ctx, asks, dismissed])
+  // Drawn once what was put off and dismissed is known too, so no question shows for a moment and goes.
+  const view = useMemo(() => (snap && asks && weekReviews ? buildDay(snap, viewDate, ctx, asks, dismissed) : null),
+    [snap, viewDate, ctx, asks, weekReviews, dismissed])
   const isPast = viewDate !== today
 
   if (!snap || !view) return null

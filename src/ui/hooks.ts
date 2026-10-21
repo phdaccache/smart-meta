@@ -43,8 +43,17 @@ export function useSettingsLoaded(): Settings | undefined {
   return useLiveQuery(getSettings, [])
 }
 
+let lastMissAsks: MissAsks | undefined
+/**
+ * The misses already put off, or undefined until first read. Kept from the last read, so a screen coming
+ * back draws as it was at once: without them, a put-off question showed for a moment and opened its group.
+ */
+export function useMissAsksLoaded(): MissAsks | undefined {
+  return useLiveQuery(async () => (lastMissAsks = await getMeta<MissAsks>('missAsks', {})), [], lastMissAsks)
+}
+
 export function useMissAsks(): MissAsks {
-  return useLiveQuery(() => getMeta<MissAsks>('missAsks', {}), []) ?? {}
+  return useMissAsksLoaded() ?? {}
 }
 
 export function useDisplacements(): Displacement[] {

@@ -252,8 +252,8 @@ export function WeekdayGrid({ rows }: { rows: WeekdayPattern[] }) {
         ))}
       </div>
       <div className="legend wd-legend">
+        {/* A dashed square (a day it isn't due) says so when tapped; the key keeps to the scale. */}
         <span>{t('chart.neverMissed')}</span><i className="wd-scale" /><span>{t('chart.always')}</span>
-        <span className="wd-none-key"><i />{t('chart.nothingToJudge')}</span>
       </div>
     </div>
   )
