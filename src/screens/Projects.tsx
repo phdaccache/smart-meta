@@ -6,7 +6,7 @@ import { addDays, dayMonth, dayMonthShort, diffDays, relativeDay } from '../lib/
 import { activeEntries } from '../lib/scoring'
 import { stepDeadlines } from '../lib/today'
 import type { DateStr, Project, Task } from '../lib/types'
-import { CheckButton, DatePickerButton, InfoTip, NoteField, PageText, Screen, Section, TitleField, toast, TypeToConfirm } from '../ui/components'
+import { CheckButton, DatePickerButton, holdKeyboard, InfoTip, NoteField, PageText, passKeyboard, Screen, Section, TitleField, toast, TypeToConfirm } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconCalendar, IconClose } from '../ui/icons'
 import { Sortable } from '../ui/Sortable'
@@ -62,6 +62,12 @@ export function StepsEditor({ steps, onChange }: { steps: string[]; onChange: (s
 }
 
 /** Laid out like Quick add: title and notes, then date and time, then the goal; then its steps, as on its page. */
+/** Opens ready to type: the keyboard rises as the screen slides in. */
+export function openNewProject(goalId?: string) {
+  holdKeyboard()
+  navigate(goalId ? `/projects/new?goal=${goalId}` : '/projects/new')
+}
+
 export function NewProjectScreen({ goalId: presetGoal }: { goalId?: string | null }) {
   const settings = useSettings()
   const today = useToday(settings.rolloverHour)
@@ -74,6 +80,8 @@ export function NewProjectScreen({ goalId: presetGoal }: { goalId?: string | nul
   const [goalId, setGoalId] = useState<string | null>(presetGoal ?? null)
   const [steps, setSteps] = useState<DraftStep[]>([])
   const [tried, setTried] = useState(false)
+  const form = useRef<HTMLDivElement>(null)
+  useEffect(() => passKeyboard(() => form.current?.querySelector('textarea')), [])
 
   const save = async () => {
     if (!title.trim()) return setTried(true)
@@ -84,7 +92,7 @@ export function NewProjectScreen({ goalId: presetGoal }: { goalId?: string | nul
 
   return (
     <Screen back="/goals" title={t('project.new')}>
-      <div className="task-form">
+      <div className="task-form" ref={form}>
         <div>
           <div className="card task-text">
             <TitleField value={title} onChange={setTitle} onEnter={() => (document.activeElement as HTMLElement | null)?.blur()}

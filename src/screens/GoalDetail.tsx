@@ -23,6 +23,7 @@ import { CadenceFields, GraceField, graceLabel, MeasurementFields, PrepEditor, S
 import { projectProgress } from './Goals'
 import { GoalHistorySheet } from './GoalHistory'
 import { OccurrenceSheet } from './OccurrenceSheet'
+import { openNewProject } from './Projects'
 import { openQuickAddFor } from './QuickAdd'
 import { TaskList } from './TaskSheet'
 
@@ -144,7 +145,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
         )}
       </Section>
 
-      <Section title={t('goal.projects')} aside={<button className="link-btn" onClick={() => navigate(`/projects/new?goal=${goal.id}`)}>{t('common.add')}</button>}>
+      <Section title={t('goal.projects')} aside={<button className="link-btn" onClick={() => openNewProject(goal.id)}>{t('common.add')}</button>}>
         {projects.length === 0 ? (
           <div className="card list-empty">{t('common.noneYet')}</div>
         ) : (

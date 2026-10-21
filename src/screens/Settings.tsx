@@ -7,7 +7,7 @@ import { formatTime } from '../lib/dates'
 import { loadSampleData } from '../dev/sample'
 import { loadWorstCaseData } from '../dev/worst'
 import { eraseAllData, signIn, signOut, syncNow, useSyncStatus } from '../sync/controller'
-import { DateField, Field, InfoTip, KEYBOARD_DELAYS, keyboardDelay, Screen, Section, Sheet, Stepper, Switch, toast, TypeToConfirm } from '../ui/components'
+import { DateField, Field, InfoTip, Screen, Section, Sheet, Stepper, Switch, toast, TypeToConfirm } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconChevronUpDown } from '../ui/icons'
 import { useInstall } from '../ui/install'
@@ -296,7 +296,6 @@ function DevSection({ devToday }: { devToday: string | null }) {
   const today = useToday(settings.rolloverHour)
   const [busy, setBusy] = useState(false)
   const [debugPaint, setDebugPaint] = useState(() => document.documentElement.classList.contains('debug-paint'))
-  const [kbDelay, setKbDelay] = useState(() => String(keyboardDelay()))
   const { email } = useSyncStatus()
   const load = async (fill: (today: string) => Promise<void>) => {
     // Signed in, the erase would reach the synced copy and every device using it.
@@ -334,13 +333,6 @@ function DevSection({ devToday }: { devToday: string | null }) {
             document.documentElement.classList.toggle('debug-paint', on)
           }} />
         </div>
-        <SelectRow id="dev-kb-delay" title="Keyboard delay" value={kbDelay}
-          info="How long into Quick add's slide up the keyboard starts. Sooner feels faster; too soon and the page may show around the sheet. Only on this device."
-          options={KEYBOARD_DELAYS.map((ms) => ({ value: String(ms), label: `${ms} ms` }))}
-          onChange={(v) => {
-            setKbDelay(v)
-            try { localStorage.setItem('keyboardDelay', v) } catch { /* private mode */ }
-          }} />
         <LinkRow title={busy ? 'Loading…' : 'Load sample data…'}
           sub={email ? 'Sign out of sync first, so your real data stays safe.' : 'Replaces everything on this device with a worked example and months of history.'} onClick={() => load(loadSampleData)} />
         <LinkRow title={busy ? 'Loading…' : 'Load worst-case data…'}

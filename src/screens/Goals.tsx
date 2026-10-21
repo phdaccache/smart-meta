@@ -11,6 +11,7 @@ import { ProjectTile, ValueLookSheet, ValueTile, valueLook } from '../ui/valueLo
 import { useAllGoalReviews, useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconMore, IconPlus } from '../ui/icons'
 import { navigate } from '../ui/router'
+import { openNewProject } from './Projects'
 import { Sortable } from '../ui/Sortable'
 
 type View = 'goals' | 'projects'
@@ -63,7 +64,7 @@ export function GoalsScreen() {
   return (
     <Screen title={t('plan.title')} settings actions={
       <button className="icon-btn" aria-label={view === 'goals' ? t('plan.newGoal') : t('plan.newProject')}
-        onClick={() => navigate(view === 'goals' ? '/goals/new' : '/projects/new')}><IconPlus /></button>
+        onClick={() => (view === 'goals' ? navigate('/goals/new') : openNewProject())}><IconPlus /></button>
     }>
       <div className="today-filter">
         <Segmented label={t('common.show')} value={view} onChange={setView}
@@ -74,7 +75,7 @@ export function GoalsScreen() {
         <>
           <Section title={t('plan.activeProjects')} aside={<span>{projects.length}</span>}>
             {projects.length === 0 ? (
-              <div className="card list-empty">{t('plan.noProjects')} <button className="link-btn" onClick={() => navigate('/projects/new')}>{t('plan.createProject')}</button></div>
+              <div className="card list-empty">{t('plan.noProjects')} <button className="link-btn" onClick={() => openNewProject()}>{t('plan.createProject')}</button></div>
             ) : (
               <div className="card list">
                 {projects.map((p) => <ProjectRow key={p.id} project={p} snap={snap} today={today} />)}
