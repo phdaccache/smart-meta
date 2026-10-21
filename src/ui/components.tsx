@@ -131,7 +131,7 @@ export function holdKeyboard() {
   let soon: ReturnType<typeof setTimeout> | undefined
   const onSliding = (e: AnimationEvent) => {
     const sheet = e.target as HTMLElement
-    if (sheet.classList.contains('sheet')) soon ??= setTimeout(() => handOff(sheet), 180)
+    if (sheet.classList.contains('sheet')) soon ??= setTimeout(() => handOff(sheet), keyboardDelay())
   }
   // A slide shorter than that (reduced motion) hands off as it ends.
   const onSlid = (e: AnimationEvent) => {
@@ -158,6 +158,15 @@ export function holdKeyboard() {
   }, 2000)
   document.body.appendChild(field)
   field.focus({ preventScroll: true })
+}
+/** How long into the slide the keyboard starts; Developer settings can try others on this device. */
+export const KEYBOARD_DELAYS: readonly number[] = [0, 60, 100, 140, 180]
+export function keyboardDelay(): number {
+  try {
+    const saved = localStorage.getItem('keyboardDelay')
+    if (saved !== null && KEYBOARD_DELAYS.includes(Number(saved))) return Number(saved)
+  } catch { /* private mode */ }
+  return 180
 }
 /** The hold, while it has the focus and is waiting for the sheet to get up. */
 const heldKeyboard = () => (keyboardHold && document.activeElement === keyboardHold.field ? keyboardHold : null)
