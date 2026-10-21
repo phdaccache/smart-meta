@@ -151,6 +151,14 @@ export function passKeyboard(find: () => HTMLElement | null | undefined): (() =>
     if (!field || document.activeElement !== hold.field) return
     field.focus({ preventScroll: true })
     hold.release()
+    // The iPhone draws the caret where the field was as it got the focus, still down or across the screen, and
+    // doesn't move it with the slide: it jumped into place after. Unseen until the slide is over (and a moment
+    // more, for the phone to put it in place), it just shows there.
+    const moving: Animation[] = []
+    for (let el: HTMLElement | null = field; el; el = el.parentElement) moving.push(...el.getAnimations())
+    field.style.caretColor = 'transparent'
+    const slid = Promise.all(moving.map((a) => a.finished)).catch(() => {})
+    Promise.race([slid, new Promise((r) => setTimeout(r, 1000))]).then(() => setTimeout(() => { field.style.caretColor = '' }, 80))
   })
   return () => cancelAnimationFrame(frame)
 }
