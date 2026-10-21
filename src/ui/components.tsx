@@ -169,12 +169,14 @@ export function passKeyboard(find: () => HTMLElement | null | undefined): (() =>
  * A sheet with no title (just its `label` for screen readers) starts straight with its content.
  * With `done`, it has ✕ at the left to leave without saving and ✓ at the right to save, as in iPhone's Reminders.
  * `large`: nearly full height, its top fixed just under the status bar whether the keyboard is up or not.
+ * `typing`: opened ready to type (holdKeyboard), it rises a little softer, alongside the keyboard.
  * `dirty`: it holds typing not saved yet, so pulling it down (or tapping outside) asks before throwing that away.
  */
 export function Sheet(props: {
   open: boolean; onClose: () => void; title?: string; label?: string; children: ReactNode
   done?: { label: string; disabled?: boolean; onClick: () => void }
   large?: boolean
+  typing?: boolean
   dirty?: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -317,7 +319,7 @@ export function Sheet(props: {
     {view && <div ref={underRef} className="sheet-underlay" aria-hidden="true" style={{ top: view.pageTop + view.height }} />}
     <div ref={layerRef} className={`sheet-layer ${keyboard ? 'keyboard' : ''} ${large ? 'large' : ''}`} style={view ? { top: view.top, height: view.height, bottom: 'auto' } : undefined}>
       <div className="sheet-backdrop" onClick={() => leave.current() && props.onClose()} />
-      <div className={`sheet ${props.title || props.done ? '' : 'untitled'} ${props.large ? 'large' : ''}`} role="dialog" aria-modal="true" ref={ref}
+      <div className={`sheet ${props.title || props.done ? '' : 'untitled'} ${props.large ? 'large' : ''} ${props.typing ? 'typing' : ''}`} role="dialog" aria-modal="true" ref={ref}
         aria-labelledby={props.title ? titleId : undefined} aria-label={props.title ? undefined : props.label}>
         {!props.done && <div className="sheet-grabber" aria-hidden="true" />}
         {props.done ? (

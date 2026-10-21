@@ -30,8 +30,8 @@
   /* Motion: a strong ease-out for things appearing or answering a touch, and iOS's sheet curve. */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
-  /* A spring with no bounce, as an iPhone sheet rises: gentler at the start than the drawer curve. */
-  --ease-spring: linear(0, 0.108, 0.307, 0.499, 0.654, 0.768, 0.848, 0.902, 0.937, 0.96, 0.975, 0.985, 0.991, 1);
+  /* Between the drawer curve and a bounceless spring: a sheet rising with the keyboard, as in Reminders. */
+  --ease-rise: linear(0, 0.158, 0.409, 0.62, 0.742, 0.825, 0.882, 0.922, 0.949, 0.968, 0.98, 0.987, 0.992, 1);
   --tabbar-h: 58px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -1511,9 +1511,12 @@ button.goal-why { margin-top: 14px; }
 .sheet-layer.keyboard .sheet.large { height: calc(100% - var(--safe-top) - 10px); }
 /* The keyboard covers a large sheet's bottom (see Sheet): what's under it can still scroll up into view. */
 .sheet.large .sheet-body { padding-bottom: calc(20px + var(--kb, 0px)); }
-/* Quick add and a task rise as Reminders' sheets do, not as fast as a drawer. */
+/* As in Reminders: ✕ and ✓ a little lower, and more room between them and the fields. */
+.sheet.large .sheet-head.bar { padding-top: 16px; }
+.sheet.large .sheet-head.bar + .sheet-body { padding-top: 16px; }
+/* Quick add rises with the keyboard, a little softer than a drawer, as Reminders' new reminder does. */
 @media (prefers-reduced-motion: no-preference) {
-  .sheet.large { animation-duration: 0.52s; animation-timing-function: var(--ease-spring); }
+  .sheet.typing { animation-duration: 0.47s; animation-timing-function: var(--ease-rise); }
 }
 .weekdays button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 
