@@ -621,7 +621,11 @@ interface DateLimits {
  * date picker does. It sits below the button, or above it when there's no room. A tap anywhere else closes it,
  * and doesn't reach what's underneath.
  */
-function DatePop(props: DateLimits & { anchor: HTMLElement; closing: boolean; label: string; onPick: (d: DateStr) => void; onClose: () => void }) {
+function DatePop(props: DateLimits & {
+  anchor: HTMLElement; closing: boolean; label: string; confirm?: string; onPick: (d: DateStr) => void; onClose: () => void
+}) {
+  // With `confirm`, a tap only marks the day; the button below hands it over.
+  const [chosen, setChosen] = useState(props.value)
   const settings = useSettings()
   const today = useToday(settings.rolloverHour)
   const pop = useRef<HTMLDivElement>(null)
@@ -663,7 +667,13 @@ function DatePop(props: DateLimits & { anchor: HTMLElement; closing: boolean; la
       <div className="date-pop-catch" onPointerDown={(e) => { e.preventDefault(); props.onClose() }} />
       <div ref={pop} role="dialog" aria-label={props.label} className={`date-pop ${props.closing ? 'closing' : ''}`}
         style={place ?? { width, visibility: 'hidden' }}>
-        <InlineCalendar value={props.value} min={props.min} max={props.max} today={today} onPick={props.onPick} />
+        <InlineCalendar value={props.confirm ? chosen : props.value} min={props.min} max={props.max} today={today}
+          onPick={props.confirm ? setChosen : props.onPick} />
+        {props.confirm && (
+          <button type="button" className="btn primary block date-pop-ok" disabled={!chosen} onClick={() => chosen && props.onPick(chosen)}>
+            {props.confirm}
+          </button>
+        )}
       </div>
     </div>,
     document.body,
@@ -677,6 +687,8 @@ function DatePop(props: DateLimits & { anchor: HTMLElement; closing: boolean; la
 export function DatePickerButton(props: DateLimits & {
   id?: string
   label?: string
+  /** Waits for this button (its label) before handing the day over, instead of taking the first tap. */
+  confirm?: string
   className?: string
   children: ReactNode
   onPick: (date: DateStr) => void
@@ -694,7 +706,7 @@ export function DatePickerButton(props: DateLimits & {
         {props.children}
       </button>
       {pop.phase !== 'closed' && btn.current && (
-        <DatePop value={props.value} min={props.min} max={props.max} anchor={btn.current} label={props.label ?? t('common.date')}
+        <DatePop value={props.value} min={props.min} max={props.max} anchor={btn.current} label={props.label ?? t('common.date')} confirm={props.confirm}
           closing={pop.phase === 'closing'} onClose={() => pop.set(false)}
           onPick={(d) => { pop.set(false); props.onPick(d) }} />
       )}

@@ -147,6 +147,7 @@ export const en = {
   'today.nDone': '{n} done',
   'today.pastDay': '{date} · past day',
   'today.goToPastDay': 'Go to a past day',
+  'today.goToDay': 'Go to this day',
   'today.filterGoals': 'Goals',
   'today.filterProjects': 'Projects',
   'today.filterTasks': 'Tasks',
@@ -229,6 +230,8 @@ export const en = {
   'qa.prevMonth': 'Previous month',
   'qa.nextMonth': 'Next month',
   'qa.hours': 'Hours',
+  'qa.months': 'Months',
+  'qa.years': 'Years',
   'qa.minutes': 'Minutes',
 
   // Habit wording

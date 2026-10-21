@@ -733,12 +733,12 @@ export function reviewYear(today: DateStr): number {
   return Number(today.slice(0, 4)) - (Number(today.slice(5, 7)) === 1 ? 1 : 0)
 }
 
-/** Every year with a goal running in it, newest first, so any of them can be looked back on. */
+/** Every year with a goal running in it, oldest first, so any of them can be looked back on. */
 export function yearsWithData(p: Prepared): number[] {
   const now = Number(p.ctx.today.slice(0, 4))
   const starts = [...p.lives.values()].map((l) => l.segments[0]?.start).filter((d): d is DateStr => !!d).sort()
-  const first = starts.length ? Number(starts[0].slice(0, 4)) : now
-  return Array.from({ length: now - first + 1 }, (_, i) => now - i)
+  const first = starts.length ? Math.min(now, Number(starts[0].slice(0, 4))) : now
+  return Array.from({ length: now - first + 1 }, (_, i) => first + i)
 }
 
 export function yearReview(p: Prepared, year = reviewYear(p.ctx.today)): YearReview {

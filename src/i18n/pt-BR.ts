@@ -142,6 +142,7 @@ export const ptBR: Messages = {
   'today.nDone': '{n} feitos',
   'today.pastDay': '{date} · dia passado',
   'today.goToPastDay': 'Ir para um dia passado',
+  'today.goToDay': 'Ir para este dia',
   'today.filterGoals': 'Metas',
   'today.filterProjects': 'Projetos',
   'today.filterTasks': 'Tarefas',
@@ -224,6 +225,8 @@ export const ptBR: Messages = {
   'qa.prevMonth': 'Mês anterior',
   'qa.nextMonth': 'Próximo mês',
   'qa.hours': 'Horas',
+  'qa.months': 'Meses',
+  'qa.years': 'Anos',
   'qa.minutes': 'Minutos',
 
   // Habit wording

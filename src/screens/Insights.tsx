@@ -3,7 +3,7 @@ import { getLang, type Key, marked, num, t, tk, tn } from '../i18n'
 import { capitalize, dayMonth, formatTime, monthName } from '../lib/dates'
 import { periodWord } from '../lib/describe'
 import {
-  burnups, goalsView, goalTrend, MIN_WEEKS, patternsView, prepare, RANGES, reviewYear, timeline, valueBalance, yearReview, yearsWithData,
+  burnups, goalsView, goalTrend, MIN_WEEKS, patternsView, prepare, RANGES, timeline, valueBalance, yearReview, yearsWithData,
   type Burnup, type GoalTrend, type Marker, type NearMiss, type PatternsView, type Prepared, type PrepEffect, type PrepVerdict, type Range,
 } from '../lib/insights'
 import { stateLabel } from '../lib/revisions'
@@ -86,12 +86,11 @@ export function InsightsScreen() {
   const p = usePrepared()
   const [view, setView] = useView()
   const [range, setRange] = useRange()
-  // The year tab opens on this year (in January, the one just ended); any earlier one can be picked.
+  // The year tab opens on this year; any earlier one can be picked.
   const [picked, setYear] = useState<number | null>(null)
   if (!p) return null
   const years = remember('years', [p], () => yearsWithData(p))
-  const opening = reviewYear(p.ctx.today)
-  const year = picked ?? (years.includes(opening) ? opening : years[0])
+  const year = picked ?? Number(p.ctx.today.slice(0, 4))
   const title = (
     <span className="title-row">{t('nav.insights')}
       <InfoTip label={t('ins.about')}><PageText text={marked('ins.aboutText')} /></InfoTip>
@@ -317,7 +316,7 @@ function NearMissCard({ n, rolloverHour }: { n: NearMiss; rolloverHour: number }
 type YearList = 'started' | 'finished' | 'habits'
 
 /**
- * The years with goals in them, newest first, as a pull-down beside the year card's title (iOS's pull-down
+ * The years with goals in them, oldest first, as a pull-down beside the year card's title (iOS's pull-down
  * button): the menu grows out of it, the year shown is ticked, a tap anywhere else closes it.
  */
 function YearMenu({ years, year, onChange }: { years: number[]; year: number; onChange: (y: number) => void }) {
@@ -428,8 +427,9 @@ function BigPictureTab({ p, year, years, onYear }: { p: Prepared; year: number; 
 
 function ProjectsTab({ p }: { p: Prepared }) {
   const all = remember('projects', [p], () => burnups(p))
-  // What needs attention first: overdue, then behind, then the rest as they were.
-  const urgency = (b: Burnup) => (b.status === 'overdue' ? 0 : b.status === 'behind' ? 1 : 2)
+  // What needs attention first: overdue, then behind, then on pace, then not started yet.
+  const ORDER: Burnup['status'][] = ['overdue', 'behind', 'on_pace', 'all_done', 'not_started']
+  const urgency = (b: Burnup) => ORDER.indexOf(b.status)
   const active = all.filter((b) => b.project.state === 'active').sort((a, b) => urgency(a) - urgency(b))
   const done = all.filter((b) => b.project.state === 'done')
   if (!active.length && !done.length) {

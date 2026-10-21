@@ -27,6 +27,8 @@ export function InlineCalendar(props: { value: DateStr | ''; min?: DateStr; max?
   const [month, setMonth] = useState(firstOfMonth(start))
   useEffect(() => setMonth(firstOfMonth(start)), [start])
   const grid = useRef<HTMLDivElement>(null)
+  // Tapping the month and year swaps the days for wheels of months and years, as iPhone's calendar does.
+  const [wheels, setWheels] = useState(false)
   const canBack = !min || shiftMonth(month, -1) >= firstOfMonth(min)
   const canOn = !max || shiftMonth(month, 1) <= max
   const step = (n: number) => {
@@ -51,14 +53,20 @@ export function InlineCalendar(props: { value: DateStr | ''; min?: DateStr; max?
         if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) step(dx < 0 ? 1 : -1)
       }}>
       <div className="cal-head">
-        <span className="cal-title">{capitalize(monthName(month))} {month.slice(0, 4)}</span>
-        <button type="button" className="icon-btn" aria-label={t('qa.prevMonth')} onClick={() => step(-1)} disabled={!canBack}>
-          <IconChevronLeft width={20} height={20} />
+        <button type="button" className={`cal-title ${wheels ? 'on' : ''}`} aria-expanded={wheels} onClick={() => setWheels(!wheels)}>
+          {capitalize(monthName(month))} {month.slice(0, 4)}
+          <IconChevronRight className="cal-title-chev" width={15} height={15} />
         </button>
-        <button type="button" className="icon-btn" aria-label={t('qa.nextMonth')} onClick={() => step(1)} disabled={!canOn}>
-          <IconChevronRight width={20} height={20} />
-        </button>
+        {!wheels && <>
+          <button type="button" className="icon-btn" aria-label={t('qa.prevMonth')} onClick={() => step(-1)} disabled={!canBack}>
+            <IconChevronLeft width={20} height={20} />
+          </button>
+          <button type="button" className="icon-btn" aria-label={t('qa.nextMonth')} onClick={() => step(1)} disabled={!canOn}>
+            <IconChevronRight width={20} height={20} />
+          </button>
+        </>}
       </div>
+      {wheels ? <MonthYearWheels month={month} min={min} max={max} today={props.today} onChange={setMonth} /> : (
       <div className="cal-grid" role="grid" ref={grid}>
         {[1, 2, 3, 4, 5, 6, 7].map((w) => <span key={w} className="cal-wd">{weekdayShort(w)}</span>)}
         {Array.from({ length: lead }, (_, i) => <span key={`x${i}`} />)}
@@ -69,6 +77,29 @@ export function InlineCalendar(props: { value: DateStr | ''; min?: DateStr; max?
           </button>
         ))}
       </div>
+      )}
+    </div>
+  )
+}
+
+/** A month and a year on two wheels, kept within `min` and `max`; years run 30 either side of today's without them. */
+function MonthYearWheels(props: { month: DateStr; min?: DateStr; max?: DateStr; today: DateStr; onChange: (first: DateStr) => void }) {
+  const now = Number(props.today.slice(0, 4))
+  const from = props.min ? Number(props.min.slice(0, 4)) : now - 30
+  const to = props.max ? Number(props.max.slice(0, 4)) : now + 30
+  const y = Number(props.month.slice(0, 4))
+  const m = Number(props.month.slice(5, 7)) - 1
+  const pick = (year: number, mon: number) => {
+    let first = `${year}-${pad(mon + 1)}-01`
+    if (props.min && first < firstOfMonth(props.min)) first = firstOfMonth(props.min)
+    if (props.max && first > props.max) first = firstOfMonth(props.max)
+    props.onChange(first)
+  }
+  return (
+    <div className="wheels cal-wheels">
+      <Wheel count={12} value={m} label={t('qa.months')} className="wide" format={(i) => capitalize(monthName(`2000-${pad(i + 1)}-01`))}
+        onChange={(i) => pick(y, i)} />
+      <Wheel count={to - from + 1} value={y - from} label={t('qa.years')} format={(i) => String(from + i)} onChange={(i) => pick(from + i, m)} />
     </div>
   )
 }
@@ -77,7 +108,7 @@ const ITEM = 36
 const pad = (n: number) => String(n).padStart(2, '0')
 
 /** One column of the wheel: scrolls and snaps, and the row in the middle is the choice. */
-function Wheel(props: { count: number; value: number; label: string; onChange: (n: number) => void }) {
+function Wheel(props: { count: number; value: number; label: string; onChange: (n: number) => void; format?: (i: number) => string; className?: string }) {
   const ref = useRef<HTMLDivElement>(null)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
   useEffect(() => {
@@ -86,7 +117,7 @@ function Wheel(props: { count: number; value: number; label: string; onChange: (
   }, [props.value])
   useEffect(() => () => clearTimeout(timer.current), [])
   return (
-    <div ref={ref} className="wheel" role="listbox" aria-label={props.label} tabIndex={0}
+    <div ref={ref} className={`wheel ${props.className ?? ''}`} role="listbox" aria-label={props.label} tabIndex={0}
       onScroll={() => {
         // Waits for the flick to settle before choosing.
         clearTimeout(timer.current)
@@ -106,7 +137,7 @@ function Wheel(props: { count: number; value: number; label: string; onChange: (
       {Array.from({ length: props.count }, (_, i) => (
         <div key={i} role="option" aria-selected={i === props.value} className={`wheel-item ${i === props.value ? 'on' : ''}`}
           onClick={() => ref.current?.scrollTo({ top: i * ITEM, behavior: 'smooth' })}>
-          {pad(i)}
+          {props.format ? props.format(i) : pad(i)}
         </div>
       ))}
     </div>

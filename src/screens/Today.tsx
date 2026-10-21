@@ -198,7 +198,7 @@ export function TodayScreen({ date }: { date?: DateStr }) {
       )}
       actions={<>
         {!isPast && view.groups.length > 0 && <WhenMenu value={when} onChange={setWhen} />}
-        <DatePickerButton className="icon-btn" value={viewDate} max={today} label={t('today.goToPastDay')}
+        <DatePickerButton className="icon-btn" value={viewDate} max={today} label={t('today.goToPastDay')} confirm={t('today.goToDay')}
           onPick={(d) => navigate(d === today ? '/' : `/day/${d}`)}>
           <IconCalendar />
         </DatePickerButton>

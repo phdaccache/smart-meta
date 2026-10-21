@@ -613,7 +613,14 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 
 /* inline calendar and time wheels */
 .cal-head { display: flex; align-items: center; gap: 2px; padding: 0 0 4px 6px; }
-.cal-title { flex: 1; font-weight: 650; font-size: 16px; }
+.cal-head .cal-title { margin-right: auto; display: inline-flex; align-items: center; gap: 4px; min-height: 44px; font-weight: 650; font-size: 16px; color: var(--ink); }
+.cal-title-chev { color: var(--accent); transition: transform 0.3s var(--ease-drawer); }
+.cal-title.on { color: var(--accent); }
+.cal-title.on .cal-title-chev { transform: rotate(90deg); }
+/* The month and year wheels take the days' place, at about their height. */
+.cal-wheels { min-height: 252px; animation: fade 0.2s ease-out; }
+.wheel.wide { width: 150px; }
+.date-pop-ok { margin-top: 8px; }
 .cal-head .icon-btn { color: var(--accent); }
 .cal-head .icon-btn:disabled { color: var(--ink-3); opacity: 0.5; }
 .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 2px; text-align: center; }
