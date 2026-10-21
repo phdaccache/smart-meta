@@ -596,7 +596,7 @@ export function TypeToConfirm(props: { phrase: string; action: string; onConfirm
 }
 
 /** Open, or closing a moment while it shrinks away, then gone. */
-function usePopPhase(closeMs = 200) {
+export function usePopPhase(closeMs = 200) {
   const [phase, setPhase] = useState<'closed' | 'open' | 'closing'>('closed')
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
   useEffect(() => () => clearTimeout(timer.current), [])

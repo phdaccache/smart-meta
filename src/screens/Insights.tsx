@@ -1,10 +1,10 @@
-import { useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { getLang, type Key, marked, num, t, tk, tn } from '../i18n'
 import { capitalize, dayMonth, formatTime, monthName } from '../lib/dates'
 import { periodWord } from '../lib/describe'
 import {
   burnups, goalsView, goalTrend, MIN_WEEKS, patternsView, prepare, RANGES, reviewYear, timeline, valueBalance, yearReview, yearsWithData,
-  type GoalTrend, type Marker, type NearMiss, type PatternsView, type Prepared, type PrepEffect, type PrepVerdict, type Range,
+  type Burnup, type GoalTrend, type Marker, type NearMiss, type PatternsView, type Prepared, type PrepEffect, type PrepVerdict, type Range,
 } from '../lib/insights'
 import { stateLabel } from '../lib/revisions'
 import { statusFor, type ScoreContext } from '../lib/scoring'
@@ -13,9 +13,9 @@ import {
   Distribution, GoalChips, ProjectPace, ReasonBars, Sparkline, TimelineChart, TrendChart, useTapOutside,
   ValueMonths, WeekdayGrid,
 } from '../ui/charts'
-import { InfoTip, PageText, Reveal, Screen, Section, Segmented } from '../ui/components'
+import { InfoTip, PageText, Reveal, Screen, Section, Segmented, usePopPhase } from '../ui/components'
 import { useAllRevisions, useDisplacements, useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
-import { IconChevronRight } from '../ui/icons'
+import { IconCheck, IconChevronRight, IconChevronUpDown } from '../ui/icons'
 import { navigate } from '../ui/router'
 import { ValueTile } from '../ui/valueLook'
 
@@ -99,10 +99,10 @@ export function InsightsScreen() {
   )
   return (
     <Screen title={title} settings>
-      {/* Goals and projects, as Plan splits them, then patterns, then the year itself. */}
+      {/* Goals, then their patterns, then projects, then the year itself. */}
       <Segmented label={t('ins.view')} value={view} onChange={setView}
-        options={[{ value: 'goals', label: t('ins.tabGoals') }, { value: 'projects', label: t('ins.projects') },
-          { value: 'patterns', label: t('ins.tabPatterns') }, { value: 'big', label: String(year) }]} />
+        options={[{ value: 'goals', label: t('ins.tabGoals') }, { value: 'patterns', label: t('ins.tabPatterns') },
+          { value: 'projects', label: t('ins.projects') }, { value: 'big', label: String(year) }]} />
       {(view === 'goals' || view === 'patterns') && (
         <div className="range-row" role="radiogroup" aria-label={t('ins.period')}>
           {RANGES.map((r) => (
@@ -112,17 +112,10 @@ export function InsightsScreen() {
           ))}
         </div>
       )}
-      {view === 'big' && years.length > 1 && (
-        <div className="range-row" role="radiogroup" aria-label={t('ins.year')}>
-          {years.map((y) => (
-            <button key={y} role="radio" aria-checked={year === y} className={year === y ? 'on' : ''} onClick={() => setYear(y)}>{y}</button>
-          ))}
-        </div>
-      )}
       {view === 'goals' && <GoalsTab p={p} range={range} />}
       {view === 'patterns' && <PatternsTab p={p} range={range} />}
       {view === 'projects' && <ProjectsTab p={p} />}
-      {view === 'big' && <BigPictureTab p={p} year={year} />}
+      {view === 'big' && <BigPictureTab p={p} year={year} years={years} onYear={setYear} />}
     </Screen>
   )
 }
@@ -323,7 +316,47 @@ function NearMissCard({ n, rolloverHour }: { n: NearMiss; rolloverHour: number }
 
 type YearList = 'started' | 'finished' | 'habits'
 
-function BigPictureTab({ p, year }: { p: Prepared; year: number }) {
+/**
+ * The years with goals in them, newest first, as a pull-down beside the year card's title (iOS's pull-down
+ * button): the menu grows out of it, the year shown is ticked, a tap anywhere else closes it.
+ */
+function YearMenu({ years, year, onChange }: { years: number[]; year: number; onChange: (y: number) => void }) {
+  const pop = usePopPhase()
+  const wrap = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!pop.open) return
+    const away = (e: PointerEvent) => !wrap.current?.contains(e.target as Node) && pop.set(false)
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && pop.set(false)
+    document.addEventListener('pointerdown', away, true)
+    document.addEventListener('keydown', esc)
+    wrap.current?.querySelector<HTMLElement>('[aria-checked="true"]')?.focus()
+    return () => {
+      document.removeEventListener('pointerdown', away, true)
+      document.removeEventListener('keydown', esc)
+    }
+  }, [pop.open])
+  return (
+    <div className="year-pick" ref={wrap}>
+      <button type="button" className="year-pick-btn" aria-label={t('ins.year')} aria-haspopup="menu" aria-expanded={pop.open}
+        onClick={() => pop.set(!pop.open)}>
+        {year}<IconChevronUpDown width={14} height={14} />
+      </button>
+      {pop.phase !== 'closed' && (
+        <div className={`menu ${pop.phase === 'closing' ? 'closing' : ''}`} role="menu" aria-label={t('ins.year')}>
+          {years.map((y) => (
+            <button key={y} type="button" role="menuitemradio" aria-checked={y === year} className="menu-item"
+              onClick={() => { onChange(y); pop.set(false) }}>
+              <span className="menu-check">{y === year && <IconCheck width={16} height={16} strokeWidth={2.4} />}</span>
+              {y}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function BigPictureTab({ p, year, years, onYear }: { p: Prepared; year: number; years: number[]; onYear: (y: number) => void }) {
   const data = remember('big', [p, year], () => ({ year: yearReview(p, year), balance: valueBalance(p, year), timeline: timeline(p, year) }))
   const [list, setList] = useState<YearList | null>(null)
   const tiles = useRef<HTMLDivElement>(null)
@@ -340,7 +373,8 @@ function BigPictureTab({ p, year }: { p: Prepared; year: number }) {
   )
   return (
     <>
-      <Section title={t(y.final ? 'ins.yearReview' : 'ins.yearSoFar', { year: String(y.year) })}>
+      <Section title={t(y.final ? 'ins.yearReview' : 'ins.yearSoFar', { year: String(y.year) })}
+        aside={years.length > 1 && <YearMenu years={years} year={year} onChange={onYear} />}>
         <div className="card pad year">
           <div ref={tiles}>
             <div className="year-tiles">
@@ -394,7 +428,9 @@ function BigPictureTab({ p, year }: { p: Prepared; year: number }) {
 
 function ProjectsTab({ p }: { p: Prepared }) {
   const all = remember('projects', [p], () => burnups(p))
-  const active = all.filter((b) => b.project.state === 'active')
+  // What needs attention first: overdue, then behind, then the rest as they were.
+  const urgency = (b: Burnup) => (b.status === 'overdue' ? 0 : b.status === 'behind' ? 1 : 2)
+  const active = all.filter((b) => b.project.state === 'active').sort((a, b) => urgency(a) - urgency(b))
   const done = all.filter((b) => b.project.state === 'done')
   if (!active.length && !done.length) {
     return <div className="empty"><h2>{t('plan.noProjects')}</h2></div>

@@ -732,6 +732,11 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 @keyframes menu-grow { from { transform: scale(0.15); } to { transform: none; } }
 @keyframes menu-show { from { opacity: 0; filter: blur(6px); } to { opacity: 1; filter: none; } }
 @keyframes menu-shrink { to { opacity: 0; transform: scale(0.15); filter: blur(4px); } }
+/* The year card's year: a pull-down beside its title. */
+.year-pick { position: relative; }
+.year-pick-btn { display: inline-flex; align-items: center; gap: 3px; min-height: 44px; margin: -8px 0; padding: 0 2px 0 8px; color: var(--accent); font-size: 17px; font-variant-numeric: tabular-nums; }
+.year-pick-btn:active { opacity: 0.5; }
+.year-pick .menu { min-width: 160px; transform-origin: calc(100% - 30px) -24px; }
 .menu-title { font-size: 13px; color: var(--ink-2); padding: 6px 16px 8px; border-bottom: 1px solid var(--line); }
 .menu-item {
   display: flex; align-items: center; gap: 6px; width: 100%; min-height: 44px; padding: 0 16px 0 10px;
@@ -867,7 +872,7 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .trend-head .title { font-size: 15px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .trend-pct { font-weight: 700; font-size: 16px; flex: none; font-variant-numeric: tabular-nums; }
 .trend-tol { font-weight: 450; font-size: 13px; color: var(--ink-2); }
-.spark { display: block; width: 100%; height: 32px; margin: 10px 0 8px; overflow: visible; }
+.spark { display: block; width: 100%; height: 32px; margin: 16px 0 8px; overflow: visible; }
 .spark-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .spark-tol { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 3 3; }
 .spark-marker { stroke: var(--prep); stroke-width: 1.5; }
