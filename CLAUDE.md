@@ -17,3 +17,10 @@ Never work from a stale `main`: a branch cut from it silently drops other sessio
 
 People use the app day to day. UI experiments go on a branch with a Vercel preview, and reach `main`
 only after the owner has tried them. When something about a change is unclear, ask instead of guessing.
+
+## Notifications and accounts project
+
+Friend accounts, end-to-end encrypted sync and web push are built on branch `notifications`, in stages.
+Before any work on notifications, accounts, sign-in, encryption, avatars or sync, read
+`docs/notifications/README.md` and follow it: it says what else to read, which decisions are shared
+between stages, and how to update the docs when you finish.

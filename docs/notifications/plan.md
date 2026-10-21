@@ -8,6 +8,9 @@ a line to the change log at the end.
 
 It reverses the 2026-10-02 decision to leave notifications, accounts and friend sync out of the MVP.
 
+**Start at [README.md](README.md)** (how sessions work, shared decisions, stage status). The checkable
+requirements are in [spec.md](spec.md); this plan holds the how and why behind them.
+
 ---
 
 ## 0. The owner's requirements and worries (keep these in view)
@@ -51,16 +54,16 @@ These are the owner's own priorities, collected across the conversation. They ou
 ## 1. Where the app stands today (checked in code, 2026-10-21)
 
 - **Local-first.** IndexedDB (Dexie) is the source of truth. Sync copies changes out through an
-  **outbox** and pulls newer rows in ([src/sync/engine.ts](../src/sync/engine.ts)), last write wins by
+  **outbox** and pulls newer rows in ([src/sync/engine.ts](../../src/sync/engine.ts)), last write wins by
   `updatedAt`.
 - **Supabase already exists**, region **South America (São Paulo)**. One Postgres table `records`
   (user_id, collection, id, jsonb data, updated_at, deleted, data_version, seq) with row-level security
-  and explicit grants ([supabase/migrations/0001_records.sql](../supabase/migrations/0001_records.sql)).
+  and explicit grants ([supabase/migrations/0001_records.sql](../../supabase/migrations/0001_records.sql)).
 - **Usage on 2026-10-21** (dashboard): database **25.8 MB** (this is what counts toward the 500 MB
   free limit; most of it is Supabase's own tables), WAL 96 MB and system 167 MB (disk, not the quota),
   disk 15%, memory 59% (normal for the free instance), CPU 5%, disk IO balance 99%.
 - **Accounts today:** email and password, sign-ups **off**, accounts made by hand in the dashboard.
-  No email is ever sent ([src/sync/controller.ts](../src/sync/controller.ts)).
+  No email is ever sent ([src/sync/controller.ts](../../src/sync/controller.ts)).
 - **Core logic is pure TypeScript** (`src/lib/today.ts`, `scoring.ts`, `review.ts`), so the phone can
   plan notifications.
 - **PWA** with a Workbox service worker (vite-plugin-pwa). No push handler yet.
@@ -205,20 +208,30 @@ schedule.
 
 ### 3.5 Check-ins and toggling (owner's worry)
 
-How it works today (checked in [src/db/repo.ts](../src/db/repo.ts)): records are **append-only**.
+How it works today (checked in [src/db/repo.ts](../../src/db/repo.ts)): records are **append-only**.
 Checking adds an entry; unchecking adds a **second** entry (`outcome: 'void'`) that cancels the first
 ("Undo never deletes"). Correcting a value adds a new entry that supersedes the old one. Goal History
-shows undone check-ins as struck-through rows ([src/lib/history.ts](../src/lib/history.ts)).
+shows undone check-ins as struck-through rows ([src/lib/history.ts](../../src/lib/history.ts)).
 
 So toggling a checkbox on and off 5 times adds 10 rows. One person doing 5 extra toggles a day adds
 about 1 MB a year, roughly doubling heavy use. Fixes, in order:
 
-1. **Quick undo erases instead of appending:** if a check-in is undone within a couple of minutes
-   (a misclick or a change of mind), both rows are removed; if they never synced, they never leave
-   the phone. Older undos keep today's behavior, so History still shows real "undone" events.
-   *Changes what History shows for misclicks; owner to confirm (§16).*
-2. **Server write cap per user per day** (for example 2,000 rows), against bugs and abuse. A database
-   rule, invisible to normal use.
+1. **Quick undo erases instead of appending (decided: 30 minutes):** if a check-in is undone within
+   30 minutes (a misclick or a change of mind), both rows are removed; if they never synced, they
+   never leave the phone. Older undos keep today's behavior, so History still shows real "undone"
+   events. Misclicks no longer appear struck through in History.
+2. **Server limits per user** against bugs, scripts and stolen accounts. A **row** is one saved
+   record: a check-in, a task, a goal, a review. Editing a record doesn't add a row; it changes the
+   same one. For scale, a heavy user adds about **1,200 rows a year**, about 3 to 30 on a busy day.
+   - **Total: at most 30,000 rows per user** (about 25 years of heavy use, about 25 MB at worst).
+     It keeps one runaway account to about 25 MB. Several accounts at the limit could still fill
+     the 500 MB, which is what the 60% alarm is for.
+   - **Burst: at most 5,000 new rows per user per day.** High on purpose, because two legitimate
+     moments upload a lot at once: the first upload after approval (months of local use) and the
+     encryption migration (which re-uploads everything). A bug or script stops there.
+   - **Planned notifications:** at most 300 pending rows per user.
+   - Hitting a limit never loses data: the rows stay on the phone, sync reports an error, and the
+     alarm tells the owner.
 3. **Purge old tombstones** (deleted rows older than 90 days, once every device has synced).
 4. Sync already waits 1.5 s after a write and sends each record once per batch, so fast toggles don't
    multiply network calls; they only multiply rows, which 1 and 2 address.
@@ -433,6 +446,37 @@ Allowing several devices is cheap (blocking would cost more and hurt recovery).
   Settings already shows pending changes. Mockup first; keep it subtle (few badges).
 - The owner's rule: **the user must never lose data.** Every conflict keeps the newest version, the
   phone never deletes local data on its own, and backups cover the rest.
+
+### 6.10 When sync runs
+
+Today ([src/sync/controller.ts](../../src/sync/controller.ts)): **1.5 seconds after a change**
+(debounced, so a burst of taps becomes one sync), when the app becomes visible, when the connection
+returns, and every 5 minutes.
+
+**Does it need to run on every action?** Not one sync per tap, but **soon after changes, yes**:
+- **Notifications depend on it.** "Cancel on done" only works once the server knows. Mark a 9:00 task
+  done at 8:55 and keep the app open: if sync waited for the app to close, the push would still fire.
+- **Other devices** see changes sooner, and data is off the phone sooner if the phone breaks.
+- **Cost is not a concern:** Supabase doesn't limit API requests, and each sync is a few small
+  requests.
+
+**Is "sync only when the app closes" a good idea?** No, as the only trigger:
+- On iPhone, "closing" isn't reliable. When the user leaves the app, iOS suspends it within seconds;
+  swiping it away from the app switcher later sends **no event at all**. A sync started at that moment
+  often never finishes.
+- Notifications would be wrong in the meantime (above).
+
+**But flushing when leaving is a good addition.** The plan:
+1. **After changes:** keep the debounce, about **2 seconds**, with a cap of about **10 seconds**
+   during continuous editing (so a long session still syncs).
+2. **When the app goes to the background** (`visibilitychange` → hidden): push pending changes
+   immediately, with `keepalive` requests that the browser may finish after the page is hidden.
+   Small batches only (browsers cap `keepalive` bodies at about 64 KB).
+3. **On open, on reconnect,** as today. The 5-minute timer only while the app is visible.
+4. **Android bonus:** Background Sync lets Chrome send offline edits later even with the app closed.
+   iPhone doesn't support it.
+5. **Plan notifications after each successful pull**, so plans always use the newest data.
+6. The **"Not synced yet"** indicator (§6.9) shows whenever changes are still pending.
 
 ---
 
@@ -787,10 +831,13 @@ to `main` comes after S6 (§13).
 ### S4. Safety and operations
 - [ ] Private backups repo (owner creates it); weekly full + nightly changes, encrypted; restore drill.
 - [ ] Usage alarm in the backup job.
-- [ ] Database rules: size limit on `data`, write cap per user per day, clock guard.
-- [ ] Quick undo erases misclicks (§3.5), if the owner confirms; tombstone purge.
+- [ ] Database rules: size limit on `data`, row limits per user (§3.5), clock guard.
+- [ ] Quick undo within 30 minutes erases (§3.5); tombstone purge.
+- [ ] Sync timing (§6.10): debounce with a cap, flush on background, timer only while visible.
 - [ ] "Not synced yet" indicator.
-- [ ] Content-Security-Policy; Security Advisor clean; privacy note in Settings (written together).
+- [ ] Content-Security-Policy; Security Advisor clean.
+- [ ] Privacy note in Settings, written together; it states that email, name, avatar and metadata
+      are visible to the owner and content isn't (spec PR-7, PR-8).
 - **Done when:** a restore into staging works and the alarm fires on a test threshold.
 
 ### S5. Push, core
@@ -849,11 +896,11 @@ to `main` comes after S6 (§13).
 
 ## 16. Open questions
 
-1. **Quick undo (§3.5):** may a check-in undone within a couple of minutes be erased (so it no longer
-   shows struck-through in History)? How many minutes?
-2. **Write cap per user per day:** is 2,000 rows a sensible ceiling?
-3. **Which S0 mockups first:** notifications, avatars, or sign-in screens?
-4. **Privacy note:** written together in S4 (owner's ideas, Claude drafts), shown in Settings.
+1. **Row limits (§3.5):** 30,000 rows total and 5,000 new rows a day per user, as explained there.
+   Owner to confirm or adjust.
+2. **Which S0 mockups first:** notifications, avatars, or sign-in screens? (Decided in the S0
+   session.)
+3. **Privacy note:** written together in S4 (owner's ideas, Claude drafts), shown in Settings.
 
 Answered on 2026-10-21 (kept for the record): push the branch (done); a time set on a task or prep
 counts as asked for; commitments get once-only reminders for now; late items aren't re-sent; weekly
@@ -883,3 +930,7 @@ owner-made password accounts; stale window 15 minutes for everything; seven stag
   reminders are the next feature. Drop owner-made password accounts. Several devices allowed; "Not
   synced yet" indicator. Check-in growth from toggling documented with fixes (§3.5). GitHub backup
   rules analyzed (§10). Work split into seven stages, S0 to S6, one session each (§14).
+- **2026-10-21 (4):** docs moved to `docs/notifications/` with a README (how sessions work, shared
+  decisions, stage status) and a checkable [spec](spec.md). Quick undo window 30 minutes. Row limits
+  proposed (§3.5). Sync timing decided (§6.10): soon after changes, plus a flush when leaving the app;
+  not "only on close". The privacy note must state that email and metadata are visible.
