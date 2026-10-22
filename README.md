@@ -1,6 +1,27 @@
 # Smart Meta
 
-A personal SMART-goals PWA for daily use on an iPhone.
+**Turn vague intentions into goals you actually keep.** Smart Meta is an
+offline-first goal tracker for the phone, built around the SMART method. A goal
+can't be saved without a measurable target, a recurring commitment and the
+reason behind it, and that reason shows up next to every item on the daily list.
+Small preps ("pack the gym bag tonight") make tomorrow's commitment easier, a
+weekly review asks what got in the way and suggests one change per goal, and
+Insights shows trends and patterns over months. It works fully offline, can sync
+to the cloud, and comes in English and Brazilian Portuguese.
+
+**Try it:** [smart-meta-h2ur.vercel.app](https://smart-meta-h2ur.vercel.app). On a phone,
+use Share → Add to Home Screen to install it.
+
+**Built with:** TypeScript, React, Vite, IndexedDB (Dexie), Supabase (PostgreSQL), Vercel.
+
+| Today | Plan | Goal | Insights |
+|:---:|:---:|:---:|:---:|
+| <img src="docs/screenshots/today-light.png" width="200" alt="Today, light mode"> | <img src="docs/screenshots/plan-light.png" width="200" alt="Plan, light mode"> | <img src="docs/screenshots/goal-light.png" width="200" alt="A goal, light mode"> | <img src="docs/screenshots/insights-light.png" width="200" alt="Insights, light mode"> |
+| <img src="docs/screenshots/today-dark.png" width="200" alt="Today, dark mode"> | <img src="docs/screenshots/plan-dark.png" width="200" alt="Plan, dark mode"> | <img src="docs/screenshots/goal-dark.png" width="200" alt="A goal, dark mode"> | <img src="docs/screenshots/insights-dark.png" width="200" alt="Insights, dark mode"> |
+
+*Screenshots use the app's sample data.*
+
+---
 
 - **How to use it:** [docs/GUIDE.md](docs/GUIDE.md)
 - **Workflows to test:** [docs/TESTING.md](docs/TESTING.md)
