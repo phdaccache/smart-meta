@@ -208,6 +208,8 @@ Settings and indicators:
 ### Process (PC)
 - **PC-1** All work on branch `notifications`, tested on its **Vercel preview** (fixed branch address,
   protection off) against a **staging Supabase project**. Friends' data is never touched by tests.
+  Each stage works on its own branch `notifications-s<N>`, cut from `notifications` and merged back
+  into it when the stage is done.
 - **PC-2** **Merge to `main` only when notifications work nicely** on the preview (end of S6).
 - **PC-3** `origin/main` is merged into the branch regularly.
 - **PC-4** Each stage is one session; it starts by reading [README.md](README.md), this spec and its

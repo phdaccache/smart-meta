@@ -132,6 +132,24 @@ date) are **at most 3 a day**. Pushes the user asked for (custom reminders, time
 with a time) **always go out**, merged when close together. A server-side **safety fuse of 20 a day**
 catches bugs. A time the user set on a task or prep counts as "asked for" (confirmed).
 
+### Notification wording (picked in S0, 2026-10-21)
+
+Picked from the [notifications mockup](mockups/notifications.html) (artifact:
+[Smart Meta Notifications](https://claude.ai/artifact/AkC6PcpN3kvGXDBSi54c87)). Every push has the app's
+icon and name; the title is one line on the lock screen (cut with "…"), the body up to four lines.
+
+| Type | Pick | Title | Body |
+|---|---|---|---|
+| Morning summary | A | "Today: 6 things" / "Hoje: 6 itens" | One sentence, at most 3 names (N-13): timed items with their time, then late ones marked, then the rest, then the count left. "Dentist appointment at 14:30, Renew gym membership (late), Gym and 3 more" / "Consulta no dentista às 14:30, Renovar a academia (atrasada), Academia e mais 3" |
+| Due at a time | A | The item's name | "Due at 14:30" / "Vence às 14:30". **Merged** (within N-10): title "2 things at 11:00" / "2 itens às 11:00", body one item per line, later ones with their time ("Send the invoice, 11:10") |
+| Custom reminder | C, adjusted | The item's name | Context, no why. **Project step:** "Step 1 of 4 in CV & LinkedIn." / "Etapa 1 de 4 em Currículo e LinkedIn." **Goal item** (habit): the goal, then the week so far: "Exercise regularly · 1 of 3 this week" / "Fazer exercício com frequência · 1 de 3 nesta semana". **Task without a goal:** its due date when it has one ("Due today." / "Vence hoje.") |
+| Weekly review | B | "Weekly review" / "Revisão da semana" | "Look back at last week and plan this one." / "Confira a semana passada e planeje esta." Same text every week, no numbers |
+| Prep with a time | A | The prep | "Prep · Exercise regularly" / "Preparo · Fazer exercício com frequência" |
+| Goal review date | B | "Review date reached" / "Chegou a data de revisão" | The goal's name |
+
+Not settled by the mockup (decide in S5, ask the owner if unclear): the reminder body for a prep,
+a project as a whole, and a task with no goal and no due date.
+
 ### UI decisions
 
 - **No bell icon, no inbox.** Today is the inbox; any history stays on the server.
@@ -786,12 +804,14 @@ Claude loses the context. The balance used here:
 - If a stage turns into more than a day or two of back-and-forth, split it at that point.
 
 Three stages, as first proposed, were too big: the first one alone held accounts, encryption and
-operations. **Seven stages** (S0 to S6) fit the rule. All happen on branch `notifications`; the merge
-to `main` comes after S6 (§13).
+operations. **Seven stages** (S0 to S6) fit the rule. Each stage runs on **its own branch**
+`notifications-s<N>`, cut from the latest `notifications` and merged back into it when the stage is
+done (owner's rule, 2026-10-21). The merge to `main` comes after S6 (§13).
 
 ### S0. Mockups (design only, no app code)
-- [ ] Notification options: 2 to 3 per type (morning summary, due at a time, custom reminder, weekly
+- [x] Notification options: 2 to 3 per type (morning summary, due at a time, custom reminder, weekly
       review, prep, goal review date), on an iPhone lock screen and in a stack, English and Portuguese.
+      Picked 2026-10-21, see §2 "Notification wording".
 - [ ] Settings → Notifications screen.
 - [ ] Avatars: several styles with many options, shown as a friend list.
 - [ ] Sign-in (email, code), passkey or data-password setup, Waiting for access, Requests (approve).
@@ -897,14 +917,18 @@ to `main` comes after S6 (§13).
 
 ## 16. Open questions
 
-1. **Which S0 mockups first:** notifications, avatars, or sign-in screens? (Decided in the S0
-   session.)
-2. **Privacy note:** written together in S4 (owner's ideas, Claude drafts), shown in Settings.
+1. **Privacy note:** written together in S4 (owner's ideas, Claude drafts), shown in Settings.
+2. **Stage branches and the preview (decide in S1):** each `notifications-s<N>` branch gets its own
+   Vercel preview address, so the Home Screen app installed from the `notifications` address only
+   shows a stage after it merges back. Options: test each stage on its own preview (a new Home Screen
+   icon per stage), or merge into `notifications` before testing on the phone. Staging environment
+   variables should then apply to all preview branches, not just `notifications`.
 
 Answered on 2026-10-21 (kept for the record): push the branch (done); a time set on a task or prep
 counts as asked for; commitments get once-only reminders for now; late items aren't re-sent; weekly
 review is its own push with its own time; name and avatar visible; metadata acceptable; drop the
-owner-made password accounts; stale window 15 minutes for everything; seven stages.
+owner-made password accounts; stale window 15 minutes for everything; seven stages. S0 mockup order:
+notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
 
 ---
 
@@ -936,3 +960,7 @@ owner-made password accounts; stale window 15 minutes for everything; seven stag
 - **2026-10-21 (5):** row limits confirmed. Spec checked against the whole conversation; missing items
   added (see its coverage note). All numbers moved to one table, spec "Adjustable numbers" (N-1 to
   N-25), defined in one place in code (RE-5). Clarified: syncing more often adds requests, not rows.
+- **2026-10-21 (6):** S0 started on branch `notifications-s0`. Owner's rule: one branch per stage,
+  cut from `notifications` and merged back. Mockup order set (notifications, sign-in, avatars,
+  Settings → Notifications, "Not synced yet"). Notification wording picked (§2): summary A, due A,
+  reminder C with the goal for goal items and no why, weekly review B, prep A, goal review B.

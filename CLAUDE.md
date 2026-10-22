@@ -21,6 +21,8 @@ only after the owner has tried them. When something about a change is unclear, a
 ## Notifications and accounts project
 
 Friend accounts, end-to-end encrypted sync and web push are built on branch `notifications`, in stages.
+Each stage runs on its own branch cut from the latest `origin/notifications`, named `notifications-s<N>`,
+and merges back into `notifications` when the stage is done.
 Before any work on notifications, accounts, sign-in, encryption, avatars or sync, read
 `docs/notifications/README.md` and follow it: it says what else to read, which decisions are shared
 between stages, and how to update the docs when you finish.

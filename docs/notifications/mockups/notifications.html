@@ -1,0 +1,730 @@
+<title>Smart Meta Notifications</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&display=swap">
+<style>
+/* Layout: desktop shows the three options as iPhones side by side; a phone drops the frame and swipes between them like an app. */
+:root {
+  /* The app's own tokens (src/styles.css), so the chrome reads as Smart Meta. */
+  --bg: #f2f2f7; --surface: #ffffff; --surface-2: rgb(118 118 128 / 0.12);
+  --ink: #000000; --ink-2: #6e6e73; --ink-3: #aeaeb2; --line: #e3e3e8; --line-strong: #c7c7cc;
+  --accent: #007aff; --accent-ink: #ffffff; --accent-soft: #e6f0ff; --seg-on: #ffffff; --on-track: #248a3d;
+  --radius: 18px; --radius-sm: 12px;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1); --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', Roboto, system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', Roboto, system-ui, sans-serif;
+  /* The lock screen: a wallpaper, iOS notification material and its text. */
+  --wall: radial-gradient(120% 60% at 20% 10%, #a9d0f5 0%, transparent 60%),
+          radial-gradient(90% 70% at 90% 85%, #d7a6e0 0%, transparent 60%),
+          linear-gradient(165deg, #6fa6e3 0%, #5b87d8 40%, #8a7dd6 75%, #b98fd6 100%);
+  --mat: rgb(246 246 248 / 0.66); --mat-ink: #000000; --mat-ink-2: rgb(60 60 67 / 0.62);
+  --mat-head: rgb(255 255 255 / 0.95); --pill: rgb(246 246 248 / 0.5);
+  --frame: #1c1c1e; --frame-edge: #3a3a3c;
+  --clock: rgb(255 255 255 / 0.96);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000; --surface: #1c1c1e; --surface-2: rgb(118 118 128 / 0.24);
+    --ink: #ffffff; --ink-2: #98989f; --ink-3: #636366; --line: #38383a; --line-strong: #48484a;
+    --accent: #0a84ff; --accent-soft: #0b2a4a; --seg-on: #636366; --on-track: #30d158;
+    --wall: radial-gradient(120% 60% at 20% 10%, #1f3d73 0%, transparent 60%),
+            radial-gradient(90% 70% at 90% 85%, #3d2457 0%, transparent 60%),
+            linear-gradient(165deg, #0f1f40 0%, #18275a 45%, #251c48 80%, #0e0a1d 100%);
+    --mat: rgb(37 37 40 / 0.62); --mat-ink: #ffffff; --mat-ink-2: rgb(235 235 245 / 0.6);
+    --mat-head: rgb(255 255 255 / 0.95); --pill: rgb(60 60 64 / 0.55);
+    --frame: #2c2c2e; --frame-edge: #48484a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000; --surface: #1c1c1e; --surface-2: rgb(118 118 128 / 0.24);
+  --ink: #ffffff; --ink-2: #98989f; --ink-3: #636366; --line: #38383a; --line-strong: #48484a;
+  --accent: #0a84ff; --accent-soft: #0b2a4a; --seg-on: #636366; --on-track: #30d158;
+  --wall: radial-gradient(120% 60% at 20% 10%, #1f3d73 0%, transparent 60%),
+          radial-gradient(90% 70% at 90% 85%, #3d2457 0%, transparent 60%),
+          linear-gradient(165deg, #0f1f40 0%, #18275a 45%, #251c48 80%, #0e0a1d 100%);
+  --mat: rgb(37 37 40 / 0.62); --mat-ink: #ffffff; --mat-ink-2: rgb(235 235 245 / 0.6);
+  --mat-head: rgb(255 255 255 / 0.95); --pill: rgb(60 60 64 / 0.55);
+  --frame: #2c2c2e; --frame-edge: #48484a;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 16px/1.4 var(--font); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+}
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+h1, h2, p { margin: 0; }
+
+/* ——— page chrome (desktop) ——— */
+.page {
+  max-width: 1200px; margin: 0 auto;
+  padding-left: max(24px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 120px;
+  display: grid; gap: 20px;
+}
+.head { display: grid; gap: 6px; }
+.eyebrow { font-size: 13px; color: var(--ink-2); font-weight: 500; }
+.large-title { font: 700 34px/1.1 var(--font-display); letter-spacing: -0.02em; }
+.lede { color: var(--ink-2); font-size: 15px; max-width: 64ch; text-wrap: pretty; }
+
+.controls { display: grid; gap: 12px; }
+.types { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip {
+  min-height: 36px; padding: 0 14px; border-radius: 999px; background: var(--surface-2);
+  font-size: 15px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out), transform 0.12s ease-out;
+}
+.chip:active { transform: scale(0.96); }
+.chip.on { background: var(--accent); color: var(--accent-ink); }
+.chip .done { width: 7px; height: 7px; border-radius: 50%; background: var(--on-track); }
+.chip.on .done { background: var(--accent-ink); }
+.toggles { display: flex; gap: 10px; flex-wrap: wrap; }
+.segmented { display: flex; background: var(--surface-2); padding: 2px; border-radius: 9px; }
+.segmented button {
+  min-height: 30px; padding: 0 12px; border-radius: 7px; font-size: 13px; font-weight: 500;
+  transition: background 0.2s ease;
+}
+.segmented button.on { background: var(--seg-on); font-weight: 600; box-shadow: 0 3px 8px rgb(0 0 0 / 0.12), 0 1px 1px rgb(0 0 0 / 0.04); }
+
+.screens { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 28px 24px; align-items: start; }
+.opt { --dev-w: min(100%, 340px); display: grid; gap: 12px; justify-items: center; min-width: 0; }
+.opt-head { display: flex; align-items: baseline; gap: 8px; width: var(--dev-w); }
+.letter {
+  flex: none; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center;
+  background: var(--surface-2); font-weight: 700; font-size: 14px; transform: translateY(-1px);
+}
+.opt-name { font: 600 17px/1.3 var(--font); letter-spacing: -0.01em; }
+.opt-note { width: var(--dev-w); font-size: 14px; color: var(--ink-2); line-height: 1.45; text-wrap: pretty; }
+.pick {
+  width: var(--dev-w); min-height: 44px; border-radius: 12px; font-weight: 600; font-size: 15px;
+  background: var(--surface-2); color: var(--accent);
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out), transform 0.12s ease-out;
+}
+.pick:active { transform: scale(0.98); }
+.pick.on { background: var(--accent); color: var(--accent-ink); }
+
+/* ——— device frame (desktop only) ——— */
+.device {
+  width: var(--dev-w); aspect-ratio: 390 / 844; border-radius: 52px; padding: 11px;
+  background: var(--frame); box-shadow: inset 0 0 0 1.5px var(--frame-edge), 0 20px 50px rgb(0 0 0 / 0.18);
+  position: relative;
+}
+.device::before { /* Dynamic Island */
+  content: ''; position: absolute; top: 22px; left: 50%; width: 30%; height: 3.4%; transform: translateX(-50%);
+  background: #000; border-radius: 99px; z-index: 3;
+}
+
+/* ——— lock screen ——— */
+.lock {
+  container-type: inline-size;
+  position: relative; height: 100%; border-radius: 42px; overflow: hidden; background: var(--wall);
+  display: flex; flex-direction: column; color: var(--clock);
+  font-family: var(--font);
+}
+.lock-scroll { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; scrollbar-width: none; }
+.lock-scroll::-webkit-scrollbar { display: none; }
+.status { display: flex; justify-content: flex-end; gap: 1.6cqw; align-items: center; padding: 5.2cqw 7cqw 0; height: 12cqw; flex: none; }
+.status svg { height: 3.3cqw; width: auto; fill: currentColor; }
+.top { text-align: center; padding-top: 2cqw; flex: none; }
+.padlock { height: 5.4cqw; width: auto; fill: currentColor; opacity: 0.9; }
+.date { font: 600 4.8cqw/1.2 var(--font-display); margin-top: 1.4cqw; opacity: 0.92; }
+.clock {
+  font: 700 23cqw/1 var(--font-display); letter-spacing: -0.035em; margin-top: 0.4cqw;
+  font-variant-numeric: tabular-nums; text-shadow: 0 1px 12px rgb(0 0 0 / 0.08);
+}
+.fill { flex: 1 0 6cqw; }
+.notifs { padding: 0 2.4cqw 3cqw; flex: none; }
+.bottom { display: flex; justify-content: space-between; align-items: center; padding: 0 12cqw 3cqw; flex: none; }
+.round {
+  width: 12.8cqw; height: 12.8cqw; border-radius: 50%; display: grid; place-items: center;
+  background: rgb(0 0 0 / 0.22); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+}
+.round svg { height: 5.4cqw; width: auto; fill: #fff; }
+.home { width: 35%; height: 1.3cqw; border-radius: 99px; background: rgb(255 255 255 / 0.9); margin: 0 auto 2.2cqw; flex: none; }
+
+/* ——— notification (iOS 18 lock screen) ——— */
+.nt {
+  display: flex; gap: 2.6cqw; align-items: center;
+  padding: 3.3cqw 3.8cqw 3.3cqw 3.3cqw; border-radius: 5.8cqw;
+  background: var(--mat); -webkit-backdrop-filter: blur(28px) saturate(1.8); backdrop-filter: blur(28px) saturate(1.8);
+  color: var(--mat-ink); font-size: 3.95cqw; line-height: 1.3; letter-spacing: -0.01em;
+  transform-origin: 50% 100%;
+}
+.nt-icon {
+  flex: none; width: 9.8cqw; height: 9.8cqw; border-radius: 2.3cqw; align-self: center;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='rgb(44,93,143)'/%3E%3Cpath d='M29 52l14 14 29-30' fill='none' stroke='rgb(252,251,248)' stroke-width='10.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / cover;
+}
+.nt-text { flex: 1; min-width: 0; }
+.nt-top { display: flex; align-items: baseline; gap: 2cqw; }
+.nt-title { flex: 1; min-width: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nt-time { flex: none; font-size: 3.4cqw; color: var(--mat-ink-2); }
+.nt-body {
+  white-space: pre-line; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow: hidden;
+}
+.arrive { animation: arrive 0.55s var(--ease-out) both; }
+@keyframes arrive { from { opacity: 0; transform: translateY(6cqw) scale(0.94); } }
+
+/* ——— stack: collapsed shows the newest with two edges behind; tapping spreads it out ——— */
+.stack-head {
+  display: grid; grid-template-rows: 0fr; opacity: 0;
+  transition: grid-template-rows 0.45s var(--ease-drawer), opacity 0.3s var(--ease-out);
+}
+.stack.open .stack-head { grid-template-rows: 1fr; opacity: 1; }
+.stack-head > div { overflow: hidden; }
+.stack-head .row { display: flex; align-items: center; gap: 2cqw; padding: 0 1cqw 2.4cqw; }
+.stack-head .app { flex: 1; font: 700 5.6cqw/1.2 var(--font-display); color: var(--mat-head); letter-spacing: -0.01em; }
+.stack-head .pill {
+  height: 7.6cqw; padding: 0 3.4cqw; border-radius: 99px; font-size: 3.6cqw; font-weight: 600;
+  background: var(--pill); color: var(--mat-ink); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+}
+.stack-head .x { width: 7.6cqw; padding: 0; display: grid; place-items: center; }
+.stack-head .x svg { width: 2.6cqw; height: 2.6cqw; stroke: currentColor; }
+.stack-cards { position: relative; transition: height 0.45s var(--ease-drawer); }
+.stack-cards .nt {
+  position: absolute; left: 0; right: 0; top: 0; cursor: pointer;
+  transition: transform 0.45s var(--ease-drawer), height 0.45s var(--ease-drawer), opacity 0.3s var(--ease-out);
+  overflow: hidden;
+}
+.stack-cards .nt > * { transition: opacity 0.25s var(--ease-out); }
+.stack-cards .nt.behind > * { opacity: 0; }
+.stack:not(.open) .stack-cards .nt:first-child:active { transform: scale(0.98); }
+
+/* ——— picks bar ——— */
+.picks {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+  padding: 12px max(24px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(24px, env(safe-area-inset-left, 0px));
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8); backdrop-filter: blur(20px) saturate(1.8);
+  border-top: 1px solid var(--line);
+}
+.picks-in { max-width: 1152px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+.picks-text { flex: 1; min-width: 0; font-size: 14px; color: var(--ink-2); }
+.picks-text b { color: var(--ink); font-weight: 600; }
+.copy {
+  flex: none; min-height: 40px; padding: 0 16px; border-radius: 12px; font-weight: 600; font-size: 15px;
+  background: var(--accent); color: var(--accent-ink);
+}
+.copy:disabled { opacity: 0.4; cursor: default; }
+.copy:active:not(:disabled) { opacity: 0.6; }
+.fallback { width: 100%; font: 13px/1.4 var(--font); padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); resize: none; }
+.dots { display: none; }
+.short { display: none; }
+
+/* ——— wide screens: controls in a sidebar, the three phones fill the window's height ——— */
+@media (min-width: 1100px) {
+  .page {
+    max-width: 1560px; padding-block: 24px; column-gap: 44px; row-gap: 22px;
+    grid-template-columns: 250px 1fr; grid-template-rows: auto auto 1fr;
+    grid-template-areas: "head screens" "controls screens" "picks screens";
+  }
+  .head { grid-area: head; }
+  .controls { grid-area: controls; align-content: start; gap: 16px; }
+  .screens { grid-area: screens; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); }
+  .opt { --dev-w: min(100%, 390px, calc((100dvh - 214px) * 0.4621)); }
+  .opt-note { min-height: 4.35em; }
+  .types { flex-direction: column; align-items: stretch; gap: 6px; }
+  .chip { justify-content: flex-start; min-height: 38px; }
+  .toggles { flex-direction: column; }
+  .toggles .segmented button { flex: 1; }
+  .picks { grid-area: picks; position: static; padding: 0; background: none; border: 0; backdrop-filter: none; -webkit-backdrop-filter: none; align-self: end; }
+  .picks-in { flex-direction: column; align-items: stretch; gap: 10px; }
+}
+
+/* ——— phone: no frame, the lock screen is the screen, swipe between A, B and C ——— */
+@media (max-width: 760px) {
+  html, body { overflow: hidden; }
+  .page {
+    height: 100%; padding: 0; gap: 0; display: flex; flex-direction: column;
+  }
+  .head { display: none; }
+  .screens {
+    order: 1; flex: 1; min-height: 0; display: flex; gap: 0;
+    overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none;
+  }
+  .screens::-webkit-scrollbar { display: none; }
+  .opt {
+    flex: 0 0 100%; scroll-snap-align: center; scroll-snap-stop: always;
+    display: flex; flex-direction: column; gap: 0; height: 100%;
+  }
+  .device { order: 1; width: 100%; flex: 1; min-height: 0; aspect-ratio: auto; border-radius: 0; padding: 0; background: none; box-shadow: none; }
+  .device::before { display: none; }
+  .lock { border-radius: 0; }
+  .status { display: none; }
+  .top { padding-top: 5cqw; }
+  .clock { font-size: 20cqw; }
+  .opt-head, .opt-note, .pick { order: 2; width: auto; align-self: stretch; margin-inline: 16px; }
+  .opt-head { margin-top: 12px; }
+  .opt-note { margin-top: 4px; font-size: 13px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .pick { margin-top: 10px; min-height: 40px; }
+  .dots { order: 2; display: flex; justify-content: center; gap: 7px; padding: 10px 0 2px; }
+  .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); transition: background 0.2s var(--ease-out), transform 0.2s var(--ease-out); }
+  .dots i.on { background: var(--ink); transform: scale(1.15); }
+  .controls { order: 3; padding: 8px 0 0; gap: 8px; }
+  .types {
+    flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 0 16px;
+    scroll-padding-inline: 16px;
+  }
+  .types::-webkit-scrollbar { display: none; }
+  .toggles { padding: 0 16px; flex-wrap: nowrap; }
+  .toggles .segmented { flex: 1; }
+  .toggles .segmented button { flex: 1; padding: 0 4px; }
+  .long { display: none; }
+  .short { display: inline; }
+  .picks { position: static; order: 4; border-top: 0; background: none; backdrop-filter: none; -webkit-backdrop-filter: none; padding: 8px 16px calc(10px + env(safe-area-inset-bottom, 0px)); }
+  .picks-text { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .copy { min-height: 36px; font-size: 14px; padding: 0 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arrive { animation: fade 0.2s ease both; }
+  @keyframes fade { from { opacity: 0; } }
+  .stack-cards, .stack-cards .nt, .stack-head { transition-duration: 0.01s; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .nt { background: color-mix(in srgb, var(--mat) 100%, var(--surface)); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+</style>
+
+<div class="page">
+  <header class="head">
+    <p class="eyebrow">S0 mockups · 1 of 5</p>
+    <h1 class="large-title">Notifications</h1>
+    <p class="lede">Three or four options for each kind, with made-up goals and tasks. Pick one per kind, then copy your picks back to me. In Stack, tap the stack to spread it out.</p>
+  </header>
+
+  <div class="controls">
+    <nav class="types" id="types" aria-label="Kind of notification"></nav>
+    <div class="toggles">
+      <div class="segmented" id="view" role="group" aria-label="View">
+        <button id="v-lock" data-v="lock"><span class="long">Lock screen</span><span class="short">Lock</span></button><button id="v-stack" data-v="stack">Stack</button>
+      </div>
+      <div class="segmented" id="lang" role="group" aria-label="Language">
+        <button id="l-en" data-l="en"><span class="long">English</span><span class="short">EN</span></button><button id="l-pt" data-l="pt"><span class="long">Português</span><span class="short">PT</span></button>
+      </div>
+      <div class="segmented" id="theme" role="group" aria-label="Appearance">
+        <button id="t-light" data-t="light">Light</button><button id="t-dark" data-t="dark">Dark</button>
+      </div>
+    </div>
+  </div>
+
+  <section class="screens" id="screens" aria-live="polite"></section>
+  <div class="dots" id="dots" aria-hidden="true"></div>
+
+  <footer class="picks">
+    <div class="picks-in">
+      <p class="picks-text" id="picks-text"></p>
+      <button class="copy" id="copy">Copy picks</button>
+    </div>
+  </footer>
+</div>
+
+<script>
+// ——— made-up content, from the app's own templates (src/lib/templates.ts) ———
+const L = (en, pt) => ({ en, pt })
+const join = (names, more, lang) => {
+  const and = lang === 'en' ? ' and ' : ' e '
+  if (more) return names.join(', ') + (lang === 'en' ? ` and ${more} more` : ` e mais ${more}`)
+  return names.length > 1 ? names.slice(0, -1).join(', ') + and + names[names.length - 1] : names[0] || ''
+}
+const ago = {
+  now: L('now', 'agora'), h3: L('3h ago', 'há 3 h'), h5: L('5h ago', 'há 5 h'), yday: L('Yesterday', 'Ontem'),
+  tue: L('Tuesday', 'terça'), mon: L('Monday', 'segunda'), o19: L('Oct 19', '19 de out.'), o12: L('Oct 12', '12 de out.'),
+  o1: L('Oct 1', '1 de out.'), s3: L('Sep 3', '3 de set.'),
+}
+
+// Morning summary: timed first, then late, then the rest; at most 3 names (N-13), then "+N more".
+const days = [
+  { when: ago.now, day: L('Thursday', 'Quinta'), n: 6,
+    timed: [[L('Dentist appointment', 'Consulta no dentista'), '14:30']],
+    late: [L('Renew gym membership', 'Renovar a academia')],
+    rest: [L('Gym', 'Academia'), L('Update the CV', 'Atualizar o currículo'), L('Read 20 pages', 'Ler 20 páginas'), L('Call mom', 'Ligar para a mãe')] },
+  { when: ago.yday, day: L('Wednesday', 'Quarta'), n: 4, timed: [], late: [],
+    rest: [L('Read 20 pages', 'Ler 20 páginas'), L('Update the CV', 'Atualizar o currículo'), L('Call mom', 'Ligar para a mãe'), L('Meditate', 'Meditar')] },
+  { when: ago.tue, day: L('Tuesday', 'Terça'), n: 2, timed: [[L('Team meeting', 'Reunião do time'), '10:00']], late: [], rest: [L('Gym', 'Academia')] },
+]
+function summaryParts(d, lang) {
+  const timed = d.timed.map(([x, t]) => ({ text: x[lang], t, kind: 'timed' }))
+  const late = d.late.map((x) => ({ text: x[lang], kind: 'late' }))
+  const rest = d.rest.map((x) => ({ text: x[lang], kind: 'rest' }))
+  const all = [...timed, ...late, ...rest]
+  return { shown: all.slice(0, 3), more: Math.max(0, d.n - 3) }
+}
+const at = (lang) => (lang === 'en' ? ' at ' : ' às ')
+const lateWord = (lang) => (lang === 'en' ? 'late' : 'atrasada')
+const things = (n, lang) => (lang === 'en' ? `${n} ${n === 1 ? 'thing' : 'things'}` : `${n} ${n === 1 ? 'item' : 'itens'}`)
+
+// Due at a time: an item with a time gets its own push then; items within 15 minutes merge (N-10).
+const dues = [
+  { when: ago.now, items: [[L('Dentist appointment', 'Consulta no dentista'), '14:30']] },
+  { when: ago.h3, items: [[L('Call the bank', 'Ligar para o banco'), '11:00'], [L('Send the invoice', 'Enviar a nota fiscal'), '11:10']] },
+  { when: ago.h5, items: [[L('Pick up the passport', 'Buscar o passaporte'), '09:00']] },
+]
+
+// Custom reminders, once only, on steps, habits, tasks, preps and projects.
+const reminders = [
+  { when: ago.now, item: L('Update the CV', 'Atualizar o currículo'), ctx: L('CV & LinkedIn', 'Currículo e LinkedIn'),
+    goal: L('Get a new job', 'Conseguir um novo emprego'),
+    progress: L('Step 1 of 4 in CV & LinkedIn.', 'Etapa 1 de 4 em Currículo e LinkedIn.') },
+  { when: ago.yday, item: L('At least 45 minutes of exercise', 'Pelo menos 45 minutos de exercício'), ctx: L('Exercise regularly', 'Fazer exercício com frequência'),
+    goal: L('Exercise regularly', 'Fazer exercício com frequência'),
+    progress: L('Exercise regularly · 1 of 3 this week', 'Fazer exercício com frequência · 1 de 3 nesta semana') },
+  // A task outside any goal: the goal-first option falls back to "Reminder".
+  { when: ago.mon, item: L('Renew gym membership', 'Renovar a academia'), ctx: null, goal: null,
+    progress: L('Due today.', 'Vence hoje.') },
+]
+
+// Weekly review on Monday, with its own time (N-12).
+const weeks = [
+  { when: ago.now, of: L('October 19', '19 de outubro'), on: 3, goals: 4, loose: 2 },
+  { when: ago.o19, of: L('October 12', '12 de outubro'), on: 4, goals: 4, loose: 0 },
+  { when: ago.o12, of: L('October 5', '5 de outubro'), on: 2, goals: 4, loose: 1 },
+]
+const looseEnds = (n, lang) => (lang === 'en' ? `${n} loose ${n === 1 ? 'end' : 'ends'}` : `${n} ${n === 1 ? 'pendência' : 'pendências'}`)
+
+// Preps with a time.
+const preps = [
+  { when: ago.now, prep: L('Pack the gym bag and pick tomorrow’s routine', 'Arrumar a mochila e escolher o treino de amanhã'),
+    goal: L('Exercise regularly', 'Fazer exercício com frequência'),
+    why: L('So my back stops hurting and I have energy after work.', 'Para minhas costas pararem de doer e eu ter energia depois do trabalho.') },
+  { when: ago.yday, prep: L('Book on the pillow, phone in the other room', 'Livro no travesseiro, celular em outro cômodo'),
+    goal: L('Read 10 books a year', 'Ler 10 livros por ano'),
+    why: L('To think with better ideas than my own.', 'Para pensar com ideias melhores que as minhas.') },
+  { when: ago.mon, prep: L('Phone charging outside the bedroom', 'Celular carregando fora do quarto'),
+    goal: L('Sleep well', 'Dormir bem'), why: L('So I stop losing mornings.', 'Para eu parar de perder as manhãs.') },
+]
+
+// A goal reaches its review date.
+const goalReviews = [
+  { when: ago.now, goal: L('Sleep well', 'Dormir bem'), on: 9, weeks: 12 },
+  { when: ago.o1, goal: L('Read 10 books a year', 'Ler 10 livros por ano'), on: 20, weeks: 26 },
+  { when: ago.s3, goal: L('Call my family every week', 'Ligar para a família toda semana'), on: 11, weeks: 12 },
+]
+
+const TYPES = [
+  { key: 'summary', label: 'Morning summary', date: '2026-10-22', clock: '8:00', data: days, options: [
+    { name: 'Count, then names in a sentence',
+      note: 'Compact. Reads like a sentence, the most urgent first. “+N more” reads “and 3 more”.',
+      make: (d, l) => {
+        const { shown, more } = summaryParts(d, l)
+        const names = shown.map((x) => x.kind === 'timed' ? x.text + at(l) + x.t : x.kind === 'late' ? `${x.text} (${lateWord(l)})` : x.text)
+        return { title: (l === 'en' ? 'Today: ' : 'Hoje: ') + things(d.n, l), body: join(names, more, l) }
+      } },
+    { name: 'Day and a short list',
+      note: 'One line per kind: timed, late, the rest. Easiest to scan; uses the 4 lines iOS shows. “+N more” reads “+3”.',
+      make: (d, l) => {
+        const { shown, more } = summaryParts(d, l)
+        const lines = []
+        const rest = []
+        for (const x of shown) {
+          if (x.kind === 'timed') lines.push(`${x.t}  ${x.text}`)
+          else if (x.kind === 'late') lines.push(`${l === 'en' ? 'Late' : 'Atrasada'}: ${x.text}`)
+          else rest.push(x.text)
+        }
+        if (rest.length || more) lines.push(rest.join(', ') + (more ? (rest.length ? ' ' : '') + `+${more}` : ''))
+        return { title: `${d.day[l]} · ${d.n} ${l === 'en' ? 'for today' : 'para hoje'}`, body: lines.join('\n') }
+      } },
+    { name: 'Lead with what’s next',
+      note: 'The first timed item becomes the title. Strong on days with an appointment; on other days the title is the day’s count.',
+      make: (d, l) => {
+        const { shown, more } = summaryParts(d, l)
+        const first = shown[0]
+        if (first && first.kind === 'timed') {
+          const others = shown.slice(1).map((x) => x.kind === 'late' ? `${x.text} (${lateWord(l)})` : x.text)
+          const body = others.length ? (l === 'en' ? 'Also: ' : 'Também: ') + join(others, more, l) + '.' : ''
+          return { title: (l === 'en' ? 'Next: ' : 'Próximo: ') + first.text + at(l) + first.t, body }
+        }
+        return { title: (l === 'en' ? 'Today: ' : 'Hoje: ') + things(d.n, l), body: join(shown.map((x) => x.text), more, l) + '.' }
+      } },
+  ] },
+  { key: 'due', label: 'Due at a time', date: '2026-10-22', clock: '14:30', data: dues, options: [
+    { name: 'Name first',
+      note: 'The task is the headline, the time sits below. Items within 15 minutes merge into one push with a count.',
+      make: (d, l) => d.items.length === 1
+        ? { title: d.items[0][0][l], body: (l === 'en' ? 'Due at ' : 'Vence às ') + d.items[0][1] }
+        : { title: `${things(d.items.length, l)}${at(l)}${d.items[0][1]}`, body: d.items.map(([x, t], i) => i ? `${x[l]}, ${t}` : x[l]).join('\n') } },
+    { name: 'Time first',
+      note: 'Reads like a calendar alert. The name sits in the body, so long names have more room.',
+      make: (d, l) => ({
+        title: (l === 'en' ? 'Due at ' : 'Vence às ') + d.items[0][1],
+        body: d.items.map(([x, t], i) => i ? `${x[l]} (${t})` : x[l]).join('\n'),
+      }) },
+    { name: 'One line',
+      note: 'Time and name in the title, no body. Shortest, but long names get cut off with “…”.',
+      make: (d, l) => ({ title: `${d.items[0][1]} · ${d.items.map(([x]) => x[l]).join(', ')}`, body: '' }) },
+  ] },
+  { key: 'reminder', label: 'Custom reminder', date: '2026-10-21', clock: '19:00', data: reminders, options: [
+    { name: 'Item first',
+      note: 'The item is the title; the body says it’s a reminder and where it belongs.',
+      make: (d, l) => ({ title: d.item[l], body: (l === 'en' ? 'Reminder' : 'Lembrete') + (d.ctx ? ' · ' + d.ctx[l] : '') }) },
+    { name: '“Reminder” first',
+      note: 'Every reminder starts the same way, so they’re easy to recognize. The item and where it belongs sit in the body.',
+      make: (d, l) => ({ title: l === 'en' ? 'Reminder' : 'Lembrete', body: d.item[l] + (d.ctx ? '\n' + d.ctx[l] : '') }) },
+    { name: 'Item with progress',
+      note: 'A project step says where it stands in its project; a goal’s habit names the goal and the week so far.',
+      make: (d, l) => ({ title: d.item[l], body: d.progress[l] }) },
+    { name: 'Goal first',
+      note: 'Leads with the goal; the item sits in the body. A task without a goal says “Reminder”.',
+      make: (d, l) => d.goal
+        ? { title: d.goal[l], body: (l === 'en' ? 'Reminder: ' : 'Lembrete: ') + d.item[l] }
+        : { title: l === 'en' ? 'Reminder' : 'Lembrete', body: d.item[l] } },
+  ] },
+  { key: 'review', label: 'Weekly review', date: '2026-10-26', clock: '8:00', data: weeks, options: [
+    { name: 'The app’s own words',
+      note: 'The same sentence Today shows on Mondays, plus last week’s numbers.',
+      make: (d, l) => ({
+        title: l === 'en' ? 'Last week is ready to review' : 'A semana passada está pronta para revisão',
+        body: (l === 'en' ? `${d.on} of ${d.goals} goals on track` : `${d.on} de ${d.goals} metas em dia`) + (d.loose ? ' · ' + looseEnds(d.loose, l) : ''),
+      }) },
+    { name: 'Short and calm',
+      note: 'No numbers. The same text every week, so it never feels like a grade.',
+      make: (d, l) => ({
+        title: l === 'en' ? 'Weekly review' : 'Revisão da semana',
+        body: l === 'en' ? 'Look back at last week and plan this one.' : 'Confira a semana passada e planeje esta.',
+      }) },
+    { name: 'The week’s result first',
+      note: 'Leads with how the week went; the body says what’s left to answer. The title may get cut off on smaller phones.',
+      make: (d, l) => ({
+        title: l === 'en' ? `Week of ${d.of.en}: ${d.on} of ${d.goals} on track` : `Semana de ${d.of.pt}: ${d.on} de ${d.goals} em dia`,
+        body: d.loose
+          ? (l === 'en' ? `${looseEnds(d.loose, l)} to answer.` : `${looseEnds(d.loose, l)} para responder.`)
+          : (l === 'en' ? 'Nothing left open.' : 'Nada pendente.'),
+      }) },
+  ] },
+  { key: 'prep', label: 'Prep with a time', date: '2026-10-21', clock: '21:00', data: preps, options: [
+    { name: 'Prep first',
+      note: 'Says what to do now; the body names the goal it’s for.',
+      make: (d, l) => ({ title: d.prep[l], body: (l === 'en' ? 'Prep · ' : 'Preparo · ') + d.goal[l] }) },
+    { name: 'Goal first',
+      note: 'Leads with the goal; the prep sits in the body, so long preps fit in full.',
+      make: (d, l) => ({ title: d.goal[l], body: (l === 'en' ? 'Prep: ' : 'Preparo: ') + d.prep[l] }) },
+    { name: 'Prep with the why',
+      note: 'Adds the goal’s why as a nudge. Long preps get cut off in the title.',
+      make: (d, l) => ({ title: d.prep[l], body: d.why[l] }) },
+  ] },
+  { key: 'goalReview', label: 'Goal review date', date: '2026-10-22', clock: '8:00', data: goalReviews, options: [
+    { name: 'A question',
+      note: 'Names the goal and asks the review’s first question.',
+      make: (d, l) => ({
+        title: (l === 'en' ? 'Time to review: ' : 'Hora de revisar: ') + d.goal[l],
+        body: l === 'en' ? 'Did you hit it? Renew it, keep it going or close it.' : 'Você conseguiu? Renove, mantenha ou encerre.',
+      }) },
+    { name: 'The app’s own words',
+      note: '“Review date reached”, as the goal page says it, with the goal in the body.',
+      make: (d, l) => ({ title: l === 'en' ? 'Review date reached' : 'Chegou a data de revisão', body: d.goal[l] }) },
+    { name: 'The goal and how it went',
+      note: 'Leads with the goal and its record, so you know what you’re walking into.',
+      make: (d, l) => ({
+        title: d.goal[l],
+        body: l === 'en' ? `Review date today. On track ${d.on} of ${d.weeks} weeks.` : `Data de revisão hoje. Em dia em ${d.on} das ${d.weeks} semanas.`,
+      }) },
+  ] },
+]
+const LETTERS = ['A', 'B', 'C', 'D']
+
+// ——— state ———
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('s0n.' + k); return v === null ? d : JSON.parse(v) } catch { return d } },
+  set(k, v) { try { localStorage.setItem('s0n.' + k, JSON.stringify(v)) } catch {} },
+}
+const state = {
+  type: store.get('type', 'summary'),
+  view: store.get('view', 'lock'),
+  lang: store.get('lang', 'en'),
+  theme: store.get('theme', null),
+  picks: store.get('picks', {}),
+}
+if (!TYPES.some((t) => t.key === state.type)) state.type = 'summary'
+
+// ——— icons ———
+const ICONS = {
+  signal: '<svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>',
+  wifi: '<svg viewBox="0 0 16 12"><path d="M8 2.2c2.3 0 4.4.9 6 2.4l1.2-1.3C13.3 1.5 10.8.4 8 .4S2.7 1.5.8 3.3L2 4.6c1.6-1.5 3.7-2.4 6-2.4zm0 3.6c1.3 0 2.5.5 3.4 1.3l1.2-1.3C11.4 4.7 9.8 4 8 4s-3.4.7-4.6 1.8l1.2 1.3c.9-.8 2.1-1.3 3.4-1.3zm0 3.6c.4 0 .8.2 1.1.4L8 11.6 6.9 9.8c.3-.2.7-.4 1.1-.4z"/></svg>',
+  battery: '<svg viewBox="0 0 27 12"><rect x=".5" y=".5" width="23" height="11" rx="3" fill="none" stroke="currentColor" opacity=".45"/><rect x="2" y="2" width="20" height="8" rx="1.8"/><path d="M25 4v4c.8-.3 1.3-1.1 1.3-2S25.8 4.3 25 4z" opacity=".45"/></svg>',
+  lock: '<svg class="padlock" viewBox="0 0 14 18"><path d="M3 7V5a4 4 0 0 1 8 0v2h.5A2.5 2.5 0 0 1 14 9.5v6a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 0 15.5v-6A2.5 2.5 0 0 1 2.5 7H3zm1.8 0h4.4V5a2.2 2.2 0 0 0-4.4 0v2z"/></svg>',
+  torch: '<svg viewBox="0 0 12 20"><path d="M1 0h10v3.5c0 1-.4 1.9-1 2.6L8.5 8v10.5A1.5 1.5 0 0 1 7 20H5a1.5 1.5 0 0 1-1.5-1.5V8L2 6.1c-.6-.7-1-1.6-1-2.6V0zm5 10.5a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/></svg>',
+  camera: '<svg viewBox="0 0 22 17"><path d="M7.6 0h6.8l1.6 2.4h3.5A2.5 2.5 0 0 1 22 4.9v9.6a2.5 2.5 0 0 1-2.5 2.5h-17A2.5 2.5 0 0 1 0 14.5V4.9a2.5 2.5 0 0 1 2.5-2.5H6L7.6 0zM11 4.6a4.6 4.6 0 1 0 0 9.2 4.6 4.6 0 0 0 0-9.2zm0 1.8a2.8 2.8 0 1 1 0 5.6 2.8 2.8 0 0 1 0-5.6z"/></svg>',
+  x: '<svg viewBox="0 0 10 10"><path d="M1 1l8 8M9 1L1 9" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  check: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+}
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+
+function lockDate(iso, lang) {
+  const d = new Date(iso + 'T12:00:00')
+  return new Intl.DateTimeFormat(lang === 'en' ? 'en-US' : 'pt-BR', { weekday: 'long', month: 'long', day: 'numeric' }).format(d)
+}
+
+function card(n, when, lang, extra = '') {
+  return `<div class="nt ${extra}">
+    <div class="nt-icon" aria-hidden="true"></div>
+    <div class="nt-text">
+      <div class="nt-top"><span class="nt-title">${esc(n.title)}</span><span class="nt-time">${esc(when[lang])}</span></div>
+      ${n.body ? `<p class="nt-body">${esc(n.body)}</p>` : ''}
+    </div>
+  </div>`
+}
+
+function lockScreen(type, opt, i) {
+  const l = state.lang
+  const notes = type.data.map((d) => ({ n: opt.make(d, l), when: d.when }))
+  const notifs = state.view === 'lock'
+    ? card(notes[0].n, notes[0].when, l, 'arrive')
+    : `<div class="stack" data-i="${i}">
+        <div class="stack-head"><div><div class="row">
+          <span class="app">Meta</span>
+          <button class="pill less">${l === 'en' ? 'Show less' : 'Mostrar menos'}</button>
+          <button class="pill x" aria-label="${l === 'en' ? 'Clear' : 'Limpar'}">${ICONS.x}</button>
+        </div></div></div>
+        <div class="stack-cards">${notes.map((x, k) => card(x.n, x.when, l, k ? 'behind' : '')).join('')}</div>
+      </div>`
+  return `<div class="lock">
+    <div class="status" aria-hidden="true">${ICONS.signal}${ICONS.wifi}${ICONS.battery}</div>
+    <div class="lock-scroll">
+      <div class="top">
+        ${ICONS.lock}
+        <p class="date">${esc(lockDate(type.date, l))}</p>
+        <p class="clock">${type.clock}</p>
+      </div>
+      <div class="fill"></div>
+      <div class="notifs">${notifs}</div>
+    </div>
+    <div class="bottom" aria-hidden="true"><span class="round">${ICONS.torch}</span><span class="round">${ICONS.camera}</span></div>
+    <div class="home" aria-hidden="true"></div>
+  </div>`
+}
+
+// ——— stack layout: measured, then placed with transforms so it can spread and fold back smoothly ———
+function layoutStack(stack, animate) {
+  const box = stack.querySelector('.stack-cards')
+  const cards = [...box.children]
+  const open = stack.classList.contains('open')
+  if (!animate) { box.style.transition = 'none'; cards.forEach((c) => (c.style.transition = 'none')) }
+  // Natural heights at the current width.
+  const prev = cards.map((c) => c.style.height)
+  cards.forEach((c) => (c.style.height = 'auto'))
+  const h = cards.map((c) => c.getBoundingClientRect().height)
+  cards.forEach((c, k) => (c.style.height = prev[k]))
+  void box.offsetHeight
+  const gap = box.closest('.lock').getBoundingClientRect().width * 0.022
+  let y = 0
+  cards.forEach((c, k) => {
+    c.style.zIndex = String(cards.length - k)
+    if (open) {
+      c.style.height = h[k] + 'px'
+      c.style.transform = `translateY(${y}px)`
+      c.style.opacity = '1'
+      c.classList.remove('behind')
+      y += h[k] + gap
+    } else {
+      const edge = Math.min(k, 2)
+      c.style.height = h[0] + 'px'
+      c.style.transform = `translateY(${edge * 9}px) scale(${1 - edge * 0.05})`
+      c.style.opacity = k > 2 ? '0' : String(1 - edge * 0.18)
+      c.classList.toggle('behind', k > 0)
+    }
+  })
+  box.style.height = (open ? y - gap : h[0] + 9 * Math.min(cards.length - 1, 2)) + 'px'
+  if (!animate) {
+    void box.offsetHeight
+    box.style.transition = ''
+    cards.forEach((c) => (c.style.transition = ''))
+  }
+}
+
+// ——— render ———
+const $ = (s) => document.querySelector(s)
+function render() {
+  const type = TYPES.find((t) => t.key === state.type)
+  document.documentElement.lang = state.lang === 'en' ? 'en' : 'pt-BR'
+  if (state.theme) document.documentElement.dataset.theme = state.theme
+  else delete document.documentElement.dataset.theme
+  const dark = state.theme ? state.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
+
+  $('#types').innerHTML = TYPES.map((t) =>
+    `<button class="chip ${t.key === state.type ? 'on' : ''}" data-type="${t.key}" aria-pressed="${t.key === state.type}">${state.picks[t.key] ? '<span class="done" aria-hidden="true"></span>' : ''}${esc(t.label)}${state.picks[t.key] ? ' ' + state.picks[t.key] : ''}</button>`).join('')
+  for (const b of document.querySelectorAll('#view button')) b.classList.toggle('on', b.dataset.v === state.view)
+  for (const b of document.querySelectorAll('#lang button')) b.classList.toggle('on', b.dataset.l === state.lang)
+  for (const b of document.querySelectorAll('#theme button')) b.classList.toggle('on', b.dataset.t === (dark ? 'dark' : 'light'))
+
+  const scroller = $('#screens')
+  const keep = scroller.scrollLeft
+  scroller.style.setProperty('--n', type.options.length)
+  $('#dots').innerHTML = type.options.map(() => '<i></i>').join('')
+  scroller.innerHTML = type.options.map((o, i) => {
+    const picked = state.picks[type.key] === LETTERS[i]
+    return `<article class="opt" data-i="${i}">
+      <div class="opt-head"><span class="letter">${LETTERS[i]}</span><h2 class="opt-name">${esc(o.name)}</h2></div>
+      <div class="device">${lockScreen(type, o, i)}</div>
+      <p class="opt-note">${esc(o.note)}</p>
+      <button class="pick ${picked ? 'on' : ''}" data-pick="${LETTERS[i]}" aria-pressed="${picked}">${picked ? ICONS.check + ' Picked' : 'Pick ' + LETTERS[i]}</button>
+    </article>`
+  }).join('')
+  scroller.scrollLeft = keep
+  document.querySelectorAll('.stack').forEach((s) => layoutStack(s, false))
+
+  const picked = TYPES.filter((t) => state.picks[t.key])
+  $('#picks-text').innerHTML = picked.length
+    ? `<b>${picked.length} of ${TYPES.length} picked:</b> ` + picked.map((t) => `${esc(t.label)} ${state.picks[t.key]}`).join(' · ')
+    : 'No picks yet. Pick one option for each kind.'
+  $('#copy').disabled = !picked.length
+  syncDots()
+}
+
+function syncDots() {
+  const s = $('#screens')
+  const i = Math.round(s.scrollLeft / Math.max(1, s.clientWidth))
+  document.querySelectorAll('#dots i').forEach((d, k) => d.classList.toggle('on', k === i))
+}
+
+// ——— events ———
+$('#types').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-type]'); if (!b) return
+  state.type = b.dataset.type; store.set('type', state.type); render()
+  b.scrollIntoView?.({ inline: 'nearest', block: 'nearest' })
+  $('#types').querySelector(`[data-type="${state.type}"]`)?.scrollIntoView({ inline: 'nearest', block: 'nearest' })
+})
+$('#view').addEventListener('click', (e) => { const b = e.target.closest('[data-v]'); if (!b) return; state.view = b.dataset.v; store.set('view', state.view); render() })
+$('#lang').addEventListener('click', (e) => { const b = e.target.closest('[data-l]'); if (!b) return; state.lang = b.dataset.l; store.set('lang', state.lang); render() })
+$('#theme').addEventListener('click', (e) => { const b = e.target.closest('[data-t]'); if (!b) return; state.theme = b.dataset.t; store.set('theme', state.theme); render() })
+$('#screens').addEventListener('click', (e) => {
+  const pick = e.target.closest('[data-pick]')
+  if (pick) {
+    const cur = state.picks[state.type]
+    if (cur === pick.dataset.pick) delete state.picks[state.type]
+    else state.picks[state.type] = pick.dataset.pick
+    store.set('picks', state.picks); render(); return
+  }
+  const stack = e.target.closest('.stack'); if (!stack) return
+  if (e.target.closest('.less, .x')) { stack.classList.remove('open'); layoutStack(stack, true); return }
+  if (!stack.classList.contains('open') && e.target.closest('.nt')) { stack.classList.add('open'); layoutStack(stack, true) }
+})
+$('#screens').addEventListener('scroll', syncDots, { passive: true })
+$('#copy').addEventListener('click', async () => {
+  const text = 'S0 notification picks: ' + TYPES.filter((t) => state.picks[t.key]).map((t) => `${t.label} ${state.picks[t.key]}`).join(', ')
+  const btn = $('#copy')
+  try {
+    await navigator.clipboard.writeText(text)
+    btn.textContent = 'Copied'
+    setTimeout(() => (btn.textContent = 'Copy picks'), 1600)
+  } catch {
+    const box = document.createElement('textarea')
+    box.className = 'fallback'; box.rows = 2; box.readOnly = true; box.value = text
+    $('#picks-text').replaceChildren(box); box.select()
+  }
+})
+let resizeTimer
+addEventListener('resize', () => {
+  clearTimeout(resizeTimer)
+  resizeTimer = setTimeout(() => document.querySelectorAll('.stack').forEach((s) => layoutStack(s, false)), 60)
+})
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', render)
+document.fonts?.ready.then(() => document.querySelectorAll('.stack').forEach((s) => layoutStack(s, false)))
+render()
+</script>

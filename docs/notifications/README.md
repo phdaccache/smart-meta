@@ -9,6 +9,7 @@ Meta. It runs on branch `notifications` and merges to `main` only when notificat
 |---|---|---|
 | [spec.md](spec.md) | **What** must be true: numbered, checkable requirements, and **Adjustable numbers** (every limit, time and threshold, N-1 to N-25) | Only when the owner changes a requirement or a number |
 | [plan.md](plan.md) | **How and why**: facts, designs, trade-offs, the owner's worries (§0), decisions (§2), stages (§14), open questions (§16), change log | Whenever something is decided, learned or done |
+| [mockups/](mockups/) | S0 mockups (HTML artifacts); the picks are recorded in plan §2 | When the owner asks for another round |
 | [runway-simulator.html](runway-simulator.html) | Storage and cost simulator (also a private artifact: [Smart Meta Runway](https://claude.ai/artifact/6xvMmYEUDBiKkGsgkfLWhq)) | When limits or record sizes change |
 
 ## For every session working on this
@@ -27,6 +28,9 @@ Each stage gets its own session, and sessions don't share a chat. To keep them f
    owner's OK).
 5. **Start from GitHub's latest** (see CLAUDE.md) and merge `origin/main` into the branch when it has
    new commits.
+6. **One branch per stage**, cut from the latest `origin/notifications` and named
+   `notifications-s<N>` (for example `notifications-s0`). It merges back into `notifications` when the
+   stage is done; `notifications` merges to `main` only after S6.
 
 ## Shared decisions every stage depends on
 
@@ -57,7 +61,7 @@ These are the contracts between stages. Changing one affects others.
 
 | Stage | Goal | Status |
 |---|---|---|
-| S0 | Mockups: notifications, avatars, sign-in screens, "Not synced yet" | Not started |
+| S0 | Mockups: notifications, avatars, sign-in screens, "Not synced yet" | In progress (notifications picked) |
 | S1 | Tests on the owner's iPhone (passkey, push, captcha) + staging setup | Not started |
 | S2 | Accounts | Not started |
 | S3 | Encryption | Not started |
