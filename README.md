@@ -3,8 +3,8 @@
 **Turn vague intentions into goals you actually keep.** Smart Meta is an
 offline-first goal tracker for the phone, built around the SMART method. A goal
 can't be saved without a measurable target, a recurring commitment and the
-reason behind it, and that reason shows up next to every item on the daily list.
-Small preps ("pack the gym bag tonight") make tomorrow's commitment easier, a
+reason behind it, and that reason stays in sight on Plan and in every weekly
+review. Small preps ("pack the gym bag tonight") make tomorrow's commitment easier, a
 weekly review asks what got in the way and suggests one change per goal, and
 Insights shows trends and patterns over months. It works fully offline, can sync
 to the cloud, and comes in English and Brazilian Portuguese.
@@ -40,13 +40,13 @@ offline, and an optional Supabase sync copies everything off the phone.
 
 ## What's in v1
 
-- **Today**: one list assembled from goals, preps, project steps and tasks, each
-  with its goal's *why*. Finished groups collapse. Miss prompts with one-tap
-  reasons and a user-grown "what took its place?" list. Quantity and time
-  check-ins inline. Backfill any past day from the calendar button.
+- **Today**: one list assembled from goals, preps, project steps and tasks,
+  grouped under each goal's name and value icon. Finished groups collapse.
+  Miss prompts with one-tap reasons and a user-grown "what took its place?"
+  list. Quantity and time check-ins inline. Backfill any past day from the calendar button.
 - **Plan**: goals (active, capped at 4 by default; maintenance; backlog;
-  archive) and projects. Goals are habits or finish lines.
-  History, revisions and reviews live on each goal.
+  archive) and projects. Goals are habits or finish lines, each card with its
+  *why*. History, revisions and reviews live on each goal.
   Status words plus a last-4-weeks bar. Goal detail with commitments, preps,
   full check-in history (corrections visible), revisions, edit, abandon,
   deliberately awkward delete, and the end-of-goal review.
@@ -66,9 +66,9 @@ offline, and an optional Supabase sync copies everything off the phone.
 - **Settings**: values, replay intro, day rollover (default 04:00), goal cap,
   creation mode, JSON export/import, sync sign-in.
 
-- **Review**: the weekly ritual: loose ends, last week per goal with reasons,
-  one evidence-backed suggestion per goal, dates, stalled projects, an open
-  slot. Rules in `src/lib/review.ts`, design in spec §16.
+- **Review**: the weekly ritual: loose ends, last week per goal with its *why*
+  and reasons, one evidence-backed suggestion per goal, dates, stalled projects,
+  an open slot. Rules in `src/lib/review.ts`, design in spec §16.
 
 - **Insights**: the long run, in three tabs. *Goals*: weekly trend per goal
   with plan changes marked and their before/after, and tolerance vs actual.
