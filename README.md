@@ -21,6 +21,10 @@ use Share → Add to Home Screen to install it.
 
 *Screenshots use the app's sample data.*
 
+<a href="https://github.com/phdaccache/smart-meta/raw/main/video/brag.mp4"><img src="video/brag-preview.webp" width="300" alt="Smart Meta launch video: goals dreamed up at night are gone by morning; Smart Meta makes one SMART, keeps its why in sight, asks why a day was missed, suggests a weekly fix, and groups habits, preps, projects and tasks under the goal"></a>
+
+*The launch video, 30 seconds (silent preview). [Full video with sound](https://github.com/phdaccache/smart-meta/raw/main/video/brag.mp4), also in [Portuguese](https://github.com/phdaccache/smart-meta/raw/main/video/brag-pt-BR.mp4); how it's made: [video/](video).*
+
 ---
 
 - **How to use it:** [docs/GUIDE.md](docs/GUIDE.md)

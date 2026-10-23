@@ -1,0 +1,8 @@
+{
+  "name": "smart-meta-video",
+  "private": true,
+  "description": "Renders the Smart Meta launch video (see ../README.md)",
+  "dependencies": {
+    "puppeteer-core": "^25.12.0"
+  }
+}
