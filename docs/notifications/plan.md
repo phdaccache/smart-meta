@@ -773,9 +773,17 @@ without personal data; Security Advisor after each migration.
 ## 9. Domain
 
 **No custom domain for now** (owner's decision). Keep `smart-meta-h2ur.vercel.app`: free, works for
-push. A domain would cost about US$10 to 15 a year (.com) or R$40 (.com.br), every year. Moving later
-is manageable once accounts exist (sign in at the new address, sync brings data back, re-add to the
-Home Screen, turn notifications on again).
+push. A domain would cost about US$10 to 15 a year (.com) or R$40 (.com.br), every year.
+
+**Correction (2026-10-29, S3):** moving later is **not** just "sign in at the new address". Passkeys
+belong to the address they were made on, so at a new address nobody's passkey opens their data key, and
+sync can't read the server copy. It's fixable, but it needs planning before any move:
+- **Related origins** (WebAuthn): the new address publishes a `/.well-known/webauthn` file listing the old
+  one, and the app keeps using `smart-meta-h2ur.vercel.app` as the passkeys' address. Supported by Safari
+  18+ and Chrome; check Android and every browser in use first.
+- Or, while still on the old address, each phone adds a second lock for a new passkey made at the new
+  one. Needs every person to open the app once before the switch.
+Push subscriptions and the Home Screen icon change with the address too (as already noted).
 
 ---
 
@@ -1027,14 +1035,77 @@ Choices made while building (tell the owner; change if they disagree):
 - **Done when:** a test friend can sign up on the preview, wait, get approved with one tap, and sync.
 
 ### S3. Encryption
-- [ ] Data key + key pair (for social later); passkey or data-password unlock (from S1).
-- [ ] Encrypting wrapper around the sync target; decrypt on pull; validate shape.
-- [ ] Migration: the app re-uploads existing plaintext rows encrypted, then plaintext is gone from the
-      server.
-- [ ] New-phone flow, iCloud Keychain checks, optional extras (old-phone transfer, recovery code).
-- [ ] Tests: round trip, wrong key, lost key, migration.
+Started 2026-10-29 on branch `notifications-s3` (staging Preview variables added). Owner's answers at the
+start: Face ID right after the code, also while waiting; only the owner has data on production, test
+data anywhere can be deleted; old-phone transfer and recovery code later (§15); staging test accounts are
+temporary and can be deleted whenever a stage needs it.
+
+Built on 2026-10-29, waiting for the owner's test on the preview:
+- [x] Data key + key pair (for social later); passkey or data-password unlock (from S1). `src/sync/crypto.ts`
+      (pure browser crypto), `src/sync/keys.ts` (passkeys, the phone's copy, the server's copy).
+- [x] Encrypting wrapper around the sync target; decrypt on pull; validate shape: `src/sync/encrypted.ts`.
+- [x] Migration: the app re-uploads existing plaintext rows encrypted, then plaintext is gone from the
+      server. Runs by itself at the start of each sync session, one cheap query when there's nothing left.
+- [x] New-phone flow (screen 11), Face ID (screen 5) and data password (screen 7). iCloud Keychain can't
+      be checked from a web page (see below). Optional extras moved to §15 (owner).
+- [x] Tests: round trip, wrong key, lost key, migration (`crypto.test.ts`, `encrypted.test.ts`), and the
+      SQL on a local Postgres (37 checks: who can read and write keys, lock shapes, readable records refused).
+- [ ] Owner: paste `supabase/migrations/0003_keys.sql` into the staging SQL editor; add the S3 preview
+      hostname `smart-meta-h2ur-git-notifications-s3-daccache.vercel.app` to the Turnstile widget.
+- [ ] Owner: test on the S3 preview (below).
 - **Done when:** on staging, the dashboard shows only ciphertext and a second phone unlocks with Face ID
   (or autofill).
+
+How it works (details for later stages):
+- **Keys.** A random 256-bit data key (AES-GCM) per account, made on the phone. Each way to open it is a
+  **lock**: the data key sealed with a key from the passkey's PRF secret (HKDF), or from the data password
+  (PBKDF2-SHA256, 600,000 rounds). A lock is bound to its key's id. The sharing key pair (ECDH P-256) has
+  its private half sealed with the data key. On the phone the data key is stored so it can't be read back
+  out (non-extractable `CryptoKey` in IndexedDB), plus the locked row (`meta` keys `dataKey:<user>` and
+  `keys:<user>`).
+- **`user_keys`** (0003): one row per account, `key_id`, `public_key`, `private_key`, `locks`. Members
+  insert it once and read it; **nobody can change or delete it through the API**, so a stolen session
+  can't swap the key or lock the owner out. It goes with the account (cascade).
+- **Records.** `data` becomes `{ e: 1, iv, ct }`, sealed with the data key and bound to its user,
+  collection and id, so the server can't move one record's content into another. Collection, id, times,
+  deleted flag and data version stay readable (spec PR-7). 0003 adds a check (`not valid`) that refuses
+  readable data in every new write while leaving old rows until the app seals them. Pulled records that
+  don't open, don't match their row, or are still readable are skipped and logged; the phone's copy stays.
+- **When Face ID is asked.** Right after the code (screen 5, a fourth sign-in dot), also while waiting for
+  access: the locked row then waits on the phone and goes up with the first sync after approval. A member
+  without the key on this phone (new phone, signed out, or an account from before S3) gets screen 5 or 11
+  once each time the app opens, over Today; Back leaves it for later, sync waits, and Settings → Account
+  shows "Unlock your data · Sync paused". Never in daily use (spec PR-3). Signing out forgets the key; a
+  waiting account keeps its locked row so it can unlock again. Erase all data keeps the keys.
+- **Passkeys** are made with a random user id, so a second set-up never replaces a passkey that already
+  locks something. If two phones set up while waiting, the first to upload wins and the other asks to
+  unlock with the first one's passkey (synced by the keychain).
+- **Data password** (screen 7): the email in a `username` field above it; anything under 12 characters is
+  refused ("use the strong password your password manager suggests"); after saving, it's asked for again
+  by autofill and only locks the data once it matches. On Android a line says to tap the key icon.
+- **Android wording:** "Face ID" only on iPhone; elsewhere "screen lock" and "your Google account".
+  Claude's wording, not in the mockup: change if the owner prefers.
+
+What a web page can't check: whether **iCloud Keychain** is on. It can only see whether passkeys with PRF
+work; when they don't, the app goes to the data password. If unlocking fails, the message says to check
+iCloud Keychain with the Apple ID used at set-up.
+
+**Passkeys belong to one web address** (the WebAuthn "relying party"). Consequences:
+- Each stage's preview is a different address: staging accounts locked on the S3 preview can't unlock on
+  the S4 or S5 previews. Owner's answer: delete the staging test accounts when a stage needs it.
+- A **custom domain later** needs care (§9).
+
+To test on the S3 preview (installed as its own Home Screen app; staging has 0003):
+1. Sign up a new email on the iPhone: code, then "Lock your data with Face ID" makes a passkey. Waiting
+   for access appears. Approve it from the owner's account: Today, then sync.
+2. In the staging Table Editor: `records.data` shows only `{"e":1,"iv":…,"ct":…}`; `user_keys` has one row.
+3. Same email on the Android phone: code, then "Unlock your data" asks for the passkey (from the list, or
+   via the iPhone's QR if Google doesn't have it); the goals arrive.
+4. Sign out and in again on one phone: Face ID once, nothing else.
+5. "Face ID isn't working?" with another new email: the password manager makes the password, it's asked
+   for again, then everything as above.
+6. The owner's own staging account, if it has data from S2: Face ID once on next open, then
+   `records` has no readable rows left.
 
 ### S4. Safety and operations
 - [ ] Private backups repo (owner creates it); weekly full + nightly changes, encrypted; restore drill.
@@ -1108,6 +1179,9 @@ Choices made while building (tell the owner; change if they disagree):
     screen agree.
   - Let the user choose per commitment: off, at-risk only, or every planned day.
 - Repeating custom reminders.
+- **More ways to unlock** (moved from S3 by the owner, 2026-10-29): move the key from the old phone with a
+  QR code, an optional recovery code, a second passkey. `user_keys.locks` already holds several locks;
+  adding one needs an update grant on that column only.
 - Google sign-in (if iPhone support improves), photo avatars, snooze, Android actions, evening
   logging reminder, custom domain + Resend.
 
@@ -1116,6 +1190,19 @@ Choices made while building (tell the owner; change if they disagree):
 ## 16. Open questions
 
 1. **Privacy note:** written together in S4 (owner's ideas, Claude drafts), shown in Settings.
+2. **Locked out of the server copy** (S3): someone who loses every way to unlock (iCloud Keychain off and
+   the phone gone, or the Apple ID lost) can't read the server copy; the phone's own data and JSON export
+   still work, and sync stays paused. A "start over with this phone's data" choice (new keys, the server
+   copy replaced) would let sync resume, but it erases whatever only the server had. Build it, and when?
+3. **Merging to `main` after S3** (for S6): once the owner's production data is sealed, any device still
+   on an older app version would pull ciphertext it can't read. Before the production migration, every
+   device should be on the new version (the PWA updates on open). And 0003 refuses readable writes, so it
+   goes to production together with the app that encrypts; an older app's writes then wait on its phone
+   until it updates.
+
+Answered on 2026-10-29 at the start of S3: Face ID right after the code, also while waiting; only the owner
+has data on production (everyone else's first sync happens after S6); staging test data can be deleted;
+old-phone transfer and recovery code later; staging test accounts are temporary.
 
 Answered on 2026-10-29: **every stage is tested on its own branch's preview** (owner's choice), so
 each stage needs its staging Preview variables in Vercel (Claude adds them) and its preview hostname
@@ -1201,3 +1288,9 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   it" when the phone holds someone else's data (AC-13), spec AC-7 to the green banner, new AC-17 (delete a
   request) and AC-18 (remove a member), README's membership line made stricter (profiles too), and the
   production setup listed under S6. `notifications-s2` merged into `notifications`.
+- **2026-10-29 (8):** **S3 started** on branch `notifications-s3`, with its staging Preview variables in
+  Vercel. Built the same day, waiting for the owner's test: data key and sharing key pair, passkey and
+  data-password locks, encrypting sync wrapper with the migration of readable rows, `user_keys` and the
+  readable-record check (0003), screens 5, 7 and 11, the "end-to-end encrypted" line on. Old-phone
+  transfer and recovery code moved to §15. §9 corrected: passkeys tie the data key to the app's address.
+  New open questions 16.2 (locked out) and 16.3 (merging after S3).

@@ -44,7 +44,11 @@ These are the contracts between stages. Changing one affects others.
 - **Encryption sits only in the sync layer:** a wrapper around the Supabase `SyncTarget`. Local data on
   the phone stays plain; the rest of the app doesn't know about encryption (plan §7.2).
 - **Data key, not passkey, encrypts data:** a random data key per user encrypts records; the passkey
-  (or data password) only unlocks that key. Each user also has a key pair for future sharing.
+  (or data password) only unlocks that key. Each user also has a key pair for future sharing. Formats
+  are in `src/sync/crypto.ts` and plan §14 S3; they're stored on the server, so change them only by
+  adding a version.
+- **Passkeys belong to one web address:** each stage's preview is its own, and a custom domain needs
+  planning first (plan §9).
 - **Tables** (all with RLS, explicit grants, nothing for `anon`; plan §8.2): `records` (exists),
   `members` (only the owner writes), `profiles`, `user_keys` (locked data key, public key),
   `push_subscriptions` (one row per user), `scheduled_notifications` (deterministic ids like
@@ -65,7 +69,7 @@ These are the contracts between stages. Changing one affects others.
 | S0 | Mockups: notifications, avatars, sign-in screens, "Not synced yet" | Done 2026-10-29 (every mockup picked) |
 | S1 | Tests on the owner's iPhone (passkey, push, captcha) + staging setup | Done 2026-10-29 (passkey chosen; push and captcha proven on iPhone and Android) |
 | S2 | Accounts | Done 2026-10-29 (tested on two phones; members, requests, profile, one person per phone) |
-| S3 | Encryption | Not started |
+| S3 | Encryption | Built 2026-10-29 on `notifications-s3`; waiting for the owner's test |
 | S4 | Safety and operations (backups, alarm, limits, sync timing, privacy note) | Not started |
 | S5 | Core notifications | Not started |
 | S6 | The rest, then merge to `main` | Not started |
