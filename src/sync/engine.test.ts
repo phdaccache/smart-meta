@@ -4,38 +4,7 @@ import { AppDB } from '../db/db'
 import { exportData, importData, wipeLocal } from '../db/backup'
 import type { Base, Value } from '../lib/types'
 import { queueEverything, SyncEngine } from './engine'
-import type { PullResult, RemoteRecord, SyncTarget } from './target'
-
-/** An in-memory server with a switchable network. */
-class FakeTarget implements SyncTarget {
-  rows = new Map<string, RemoteRecord & { seq: number }>()
-  online = true
-  seq = 0
-  pageSize = 2
-
-  async push(records: RemoteRecord[]) {
-    if (!this.online) throw new Error('offline')
-    for (const r of records) {
-      const key = `${r.collection}/${r.id}`
-      const cur = this.rows.get(key)
-      if (cur && cur.updatedAt > r.updatedAt) continue // server-side LWW guard
-      this.rows.set(key, { ...r, seq: ++this.seq })
-    }
-  }
-
-  async clear() {
-    if (!this.online) throw new Error('offline')
-    this.rows.clear()
-  }
-
-  async pull(cursor: string | null): Promise<PullResult> {
-    if (!this.online) throw new Error('offline')
-    const after = cursor ? Number(cursor) : 0
-    const all = [...this.rows.values()].filter((r) => r.seq > after).sort((a, b) => a.seq - b.seq)
-    const page = all.slice(0, this.pageSize)
-    return { records: page, cursor: page.length ? String(page.at(-1)!.seq) : cursor, more: all.length > page.length }
-  }
-}
+import { FakeTarget } from './testTarget'
 
 let n = 0
 const value = (name: string, updatedAt = new Date().toISOString()): Value => ({
