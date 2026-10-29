@@ -62,7 +62,7 @@ These are the contracts between stages. Changing one affects others.
 | Stage | Goal | Status |
 |---|---|---|
 | S0 | Mockups: notifications, avatars, sign-in screens, "Not synced yet" | Done 2026-10-29 (every mockup picked) |
-| S1 | Tests on the owner's iPhone (passkey, push, captcha) + staging setup | Not started |
+| S1 | Tests on the owner's iPhone (passkey, push, captcha) + staging setup | Done 2026-10-29 (passkey chosen; push and captcha proven on iPhone and Android) |
 | S2 | Accounts | Not started |
 | S3 | Encryption | Not started |
 | S4 | Safety and operations (backups, alarm, limits, sync timing, privacy note) | Not started |

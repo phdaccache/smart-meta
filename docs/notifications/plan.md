@@ -89,7 +89,7 @@ the same local tables as A's, so both people's data mix. Fix in S2 (§6.8).
 | Overall | Notifications for the owner and friends; accounts for friends are part of it. |
 | Infrastructure | **Vercel Hobby + Supabase Free**, no new database now. Plan B in §3.4. |
 | Architecture | **The app plans, the server delivers** (§4). |
-| Privacy | **The owner must not see user data** → end-to-end encryption, key held by the user's passkey (§7). Pending a spike on a real iPhone. |
+| Privacy | **The owner must not see user data** → end-to-end encryption, key held by the user's **passkey (PRF)** (§7). **Chosen in S1 (2026-10-29)** after it passed inside the installed app on iPhone and Android (§14 S1 results). The data password stays as the fallback. |
 | Sign-in | **Email with a 6-digit code.** No Google for now (unreliable in the installed iPhone app). |
 | Sign-in email sender | A **dedicated Gmail account** for the app (not the owner's personal one), through Gmail SMTP (§6.2). |
 | Sign-up | Open, with **Cloudflare Turnstile captcha**, then **owner approval**. Waiting screen. **Cap 100.** |
@@ -371,6 +371,16 @@ shows it.
   items close in time ("3 things at 9:00").
 - **Badge can be stale:** no silent pushes on iPhone, so the number updates only on app open or with
   a real push.
+- **Measured in S1 (2026-10-29):** pushes from a local script reached the installed app in about
+  **5 seconds** on iPhone (Apple) and **5 to 7 seconds** on Android (FCM). A VAPID subject of
+  `https://smart-meta-h2ur.vercel.app` is accepted by Apple.
+- **Tapping a push on Android:** the service worker must call `clients.openWindow()` or `focus()`
+  **first**, while the tap still allows it, and do any other work (logging, storage) after. The first
+  S1 version logged first and Android didn't open the app; iPhone didn't mind.
+- **No banner on Android is a phone setting:** whether a push pops up over the screen depends on the
+  phone's per-app and system settings (Samsung's "Brief" vs "Detailed" pop-up style, "Pop on screen"
+  per app). On the owner's Android no app showed banners, email included. The site can't change it;
+  Settings → Notifications on Android should mention where to turn it on (S5).
 
 ---
 
@@ -575,8 +585,10 @@ gives the app a secret only that passkey can produce: the app's encryption key c
   fine) ([WebKit](https://webkit.org/blog/15865/webkit-features-in-safari-18-0/),
   [guide](https://www.corbado.com/blog/passkeys-prf-webauthn)).
 - **Android:** supported by Chrome with Google Password Manager passkeys (verify on a device).
-- **Unknown:** whether it works **inside the installed Home Screen app** on iPhone. **Must be tested on
-  a real iPhone before committing** (spike, §14).
+- **Inside the installed Home Screen app: works** (S1 spike, 2026-10-29). iPhone on iOS 26.6 (Safari
+  26.6, iCloud Keychain on) and Android 10 (Chrome 156, Google Password Manager): PRF is returned already
+  at creation, and every unlock gives the same secret, including after fully closing the app and when
+  the user picks the passkey from a list. Details in §14 S1.
 
 How it works:
 1. On first sign-in the phone generates a random **data key** and encrypts every record with it
@@ -612,6 +624,12 @@ the options, in order of preference:
    is derived from it. On a new phone, autofill fills it; the user never types or remembers it. Sign-in
    itself stays the email code. If the user refuses to save it, they'd have to remember it, which is
    the "responsible for a key" case, so the app insists on saving and explains why.
+   **S1 found it works but is rough** (build these in S3): on Android autofill didn't offer the password
+   by itself (the owner had to tap the key icon and pick it); on iPhone the first run failed twice
+   after one good unlock, with only one saved entry, so autofill apparently filled a different value
+   than the one used to lock. Guards: say "tap the key icon" on the unlock screen; put the email in a
+   `username` field above the password so the manager matches the entry; and **right after saving,
+   ask for the password again by autofill and only lock data once it matches**.
 2. **Move from the old phone:** the old phone shows a code or QR that the new phone scans to receive the
    key. Works only while the old phone still exists; useful as an extra, not alone.
 3. **A recovery code** to keep somewhere: optional extra only, never required.
@@ -837,6 +855,19 @@ Mockups are HTML pages (artifacts) or a preview build; nothing reaches `main`.
 - **The preview talks to a staging Supabase project** (the second free project), set through Vercel's
   Preview environment variables for this branch. Friends' data is never touched; migrations are tried
   there first.
+  - **Set up in S1 (2026-10-29):** project `smart-meta-staging` (São Paulo, Free), URL
+    `https://gveqbekpnczaejxnmfmp.supabase.co`. Vercel project `smart-meta-h2ur` has
+    `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (publishable key) as **Preview variables scoped to
+    the branches `notifications` and `notifications-s1`**. They override `.env.production`, which
+    every build reads. **Each new stage branch needs the same two variables added for its name**
+    (Vercel only accepts a branch that exists on GitHub, so push it first). Other branches' previews
+    (UI experiments) keep using production, as before.
+  - Vercel Authentication (preview protection) was turned off for the project on 2026-10-29.
+  - Cloudflare Turnstile widget "Smart Meta" (Managed) exists with site key
+    `0x4AAAAAAFrfPqJiWrbNkis1` (public) and hostnames: the production address, the `notifications`
+    and `notifications-s1` previews, and `localhost`. **Each new stage branch's preview hostname must
+    be added to the widget** if Turnstile is tested there. The secret key is in the owner's password
+    manager.
 - **Merge to `main` only when the owner is sure notifications work nicely.** Merging means: apply the
   migrations to production Supabase, deploy, then enable for friends gradually (beta flag, then
   everyone).
@@ -876,18 +907,37 @@ done (owner's rule, 2026-10-21). The merge to `main` comes after S6 (§13).
 - **Done when:** the owner has picked an option for each. **Done 2026-10-29.**
 
 ### S1. Spikes and test setup
-- [ ] Owner: create the staging Supabase project; turn off Vercel preview protection; Claude adds the
-      Preview environment variables for this branch.
-- [ ] Throwaway test page on the preview: **passkey + PRF inside the installed iPhone app** (and
+- [x] Owner: create the staging Supabase project; turn off Vercel preview protection; Claude adds the
+      Preview environment variables for this branch. Done 2026-10-29, see §13.
+- [x] Throwaway test page on the preview: **passkey + PRF inside the installed iPhone app** (and
       Android); **data-password autofill** as the fallback.
-- [ ] A test web push arrives on the installed preview (iPhone and Android).
-- [ ] Turnstile renders and passes in the installed app.
+- [x] A test web push arrives on the installed preview (iPhone and Android).
+- [x] Turnstile renders and passes in the installed app.
 - **Done when:** the encryption method is chosen (passkey or data password) and push is proven on the
-  owner's phone. Throwaway code is deleted.
+  owner's phone. Throwaway code is deleted. **Done 2026-10-29: passkey chosen.**
+
+**S1 results (2026-10-29).** A throwaway page at `/s1/index.html` with its own manifest and service
+worker, installed as a separate Home Screen app from the `notifications-s1` preview. Push was sent
+from a local script with throwaway VAPID keys (deleted afterwards; S5 makes the real ones).
+
+| Test | iPhone (iOS 26.6, installed) | Android 10 (Chrome 156, installed) |
+|---|---|---|
+| Passkey + PRF | ✅ Secret at creation; 4 of 4 unlocks with the same secret, including after a full close and picking from the list | ✅ Same; 3 of 3 |
+| Data password autofill | ⚠️ First run: 1 good unlock, then 2 failures; redo: 5 of 5 | ⚠️ Works, but only after tapping the key icon by hand |
+| Server push arrives | ✅ About 5 s | ✅ 5 to 7 s; no banner (phone setting, §5) |
+| Tapping a push opens the app | ✅ | ✅ After moving `openWindow` first (§5) |
+| Turnstile, real key | ✅ Every time, including a second token | ✅ Same |
+
+Decision: **passkey with PRF** is the encryption method; the data password stays as the fallback with
+the guards in §7.2. The certificate trust setting on iPhone isn't needed (the preview has a real
+certificate).
 
 ### S2. Accounts
-- [ ] Owner: create the app Gmail (2-Step Verification, app password) and a Cloudflare account; paste
-      secrets into Supabase.
+- [ ] Owner: create the app Gmail (2-Step Verification, app password); paste the SMTP app password and
+      the Turnstile secret into Supabase (staging first). The Cloudflare account and Turnstile widget
+      already exist (made in S1, §13).
+- [ ] Claude: add the staging Preview variables for `notifications-s2` and its hostname to the
+      Turnstile widget, or merge into `notifications` before phone tests (§16.2).
 - [ ] Email-code sign-in with Turnstile; drop password sign-in.
 - [ ] `members` (cap 100) and `profiles` (name, avatar) with RLS and explicit grants; existing users
       migrated as members.
@@ -937,7 +987,7 @@ done (owner's rule, 2026-10-21). The merge to `main` comes after S6 (§13).
 
 ### What the owner needs to set up, and when
 
-- **Staging Supabase project:** in S1. Supabase → New project → name
+- **Staging Supabase project:** in S1 (**done 2026-10-29**). Supabase → New project → name
   `smart-meta-staging`, region São Paulo, Free; save the database password in a password manager.
   Claude needs only the project URL and the publishable (anon) key, which are public by design.
 - **Private backups repo:** in S4. GitHub → New repository → `smart-meta-backups`,
@@ -945,8 +995,8 @@ done (owner's rule, 2026-10-21). The merge to `main` comes after S6 (§13).
   settings by the owner, never into chat.
 - **App Gmail account:** in S2. New Gmail, 2-Step Verification on, create an app password,
   paste it into Supabase's SMTP settings yourself.
-- **Cloudflare account** (free) for Turnstile: in S2.
-- **Vercel:** turn off preview protection and add Preview environment variables: in S1.
+- **Cloudflare account** (free) for Turnstile: **done in S1** (2026-10-29), widget "Smart Meta".
+- **Vercel:** turn off preview protection and add Preview environment variables: **done in S1**.
 
 ---
 
@@ -975,11 +1025,14 @@ done (owner's rule, 2026-10-21). The merge to `main` comes after S6 (§13).
 ## 16. Open questions
 
 1. **Privacy note:** written together in S4 (owner's ideas, Claude drafts), shown in Settings.
-2. **Stage branches and the preview (decide in S1):** each `notifications-s<N>` branch gets its own
+2. **Stage branches and the preview (from S2 on):** each `notifications-s<N>` branch gets its own
    Vercel preview address, so the Home Screen app installed from the `notifications` address only
    shows a stage after it merges back. Options: test each stage on its own preview (a new Home Screen
-   icon per stage), or merge into `notifications` before testing on the phone. Staging environment
-   variables should then apply to all preview branches, not just `notifications`.
+   icon per stage), or merge into `notifications` before testing on the phone. **S1 was tested on its
+   own preview** (the owner's choice, since it was throwaway). Claude suggests merging into
+   `notifications` before phone tests from S2 on, so there is one icon; ask the owner at the start of
+   S2. Staging variables are scoped per branch (§13), not to all previews, so UI-experiment previews
+   keep using production.
 
 Answered on 2026-10-21 (kept for the record): push the branch (done); a time set on a task or prep
 counts as asked for; commitments get once-only reminders for now; late items aren't re-sent; weekly
@@ -1035,3 +1088,11 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
 - **2026-10-29 (3):** "Not synced yet" picked (§6.9): a quiet status at the right of Today's date line;
   Settings → Sync shows the last sync time and an icon that explains. **S0 done:** every mockup
   picked; the mockups live in `docs/notifications/mockups/` and the picks in §2, §6.4 and §6.9.
+- **2026-10-29 (4):** **S1 done** on branch `notifications-s1`. Staging Supabase, Vercel preview
+  variables (per branch), preview protection off and the Turnstile widget set up (§13). A throwaway
+  test page proved on the owner's iPhone (iOS 26.6) and Android (Chrome 156), inside the installed
+  app: passkey PRF works, push arrives in about 5 s and a tap opens the app, Turnstile passes.
+  **Encryption method chosen: passkey with PRF**, data password as fallback with guards (§7.2).
+  Learned: open the window first on a push tap (Android); no banner on Android is a phone setting
+  (§5). S1 tested on its own preview; from S2 on, ask whether to merge first (§16.2). Test page and
+  test VAPID keys deleted.
