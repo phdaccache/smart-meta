@@ -21,6 +21,7 @@ import { CheckButton, Chip, Field, PageText, toast } from '../ui/components'
 import { useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
 import { FlagBR, FlagUS, IconCheck, IconChevronLeft, IconClose, IconPlus } from '../ui/icons'
 import { useInstall, useInstalled } from '../ui/install'
+import { syncStatus } from '../sync/controller'
 import { goBack, match, navigate } from '../ui/router'
 import { Tile, ValueTile, valueLook } from '../ui/valueLook'
 import {
@@ -83,13 +84,17 @@ function useIntro(): IntroState {
   }, () => state)
 }
 
-/** Skip or finish: first run leaves the Getting started card on Today. */
-async function leaveIntro() {
+/**
+ * Skip or finish: first run leaves the Getting started card on Today. Finished, a first run offers to sign in
+ * (Activate notifications) when there's an account to make, after the first goal (spec AC-8).
+ */
+async function leaveIntro(finished = false) {
   const s = await getSettings()
   const introAt = toDateStr(new Date())
   await setSettings(s.onboarded ? { introAt } : { onboarded: true, gettingStarted: true, introAt })
   resetIntro()
-  navigate('/')
+  const sync = syncStatus()
+  navigate(finished && !s.onboarded && sync.configured && sync.phase === 'signed-out' ? '/account' : '/')
 }
 
 // ——— routing ———
@@ -98,7 +103,7 @@ const inBrowser = () =>
   (navigator as Navigator & { standalone?: boolean }).standalone !== true && !window.matchMedia('(display-mode: standalone)').matches
 
 /** On an iPhone, Safari and the Home Screen app keep separate data: install first. */
-function inIosBrowser(): boolean {
+export function inIosBrowser(): boolean {
   const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
   return ios && inBrowser()
 }
@@ -146,7 +151,7 @@ function Frame(props: {
             <IconChevronLeft width={20} height={20} /> {t('nav.back')}
           </button>
         ) : props.lead ?? <span />}
-        <button type="button" className="btn ghost" onClick={leaveIntro}>{t('common.skip')}</button>
+        <button type="button" className="btn ghost" onClick={() => leaveIntro()}>{t('common.skip')}</button>
       </div>
       <div className="intro-body">{props.children}</div>
       {props.nav && (
@@ -869,7 +874,7 @@ function IntroPieces() {
     }
   }, [stage])
   const forward = () => {
-    if (stage >= 5) return leaveIntro()
+    if (stage >= 5) return leaveIntro(true)
     // Where each chip is as Join everything is pressed: that's where it leaves from.
     if (stage === 4) rects.current = new Map([...chips.current].map(([k, el]) => [k, el.getBoundingClientRect()]))
     setStage(stage + 1)

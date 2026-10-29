@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { AppDB } from '../db/db'
 import { exportData, importData, wipeLocal } from '../db/backup'
 import type { Base, Value } from '../lib/types'
-import { SyncEngine } from './engine'
+import { queueEverything, SyncEngine } from './engine'
 import type { PullResult, RemoteRecord, SyncTarget } from './target'
 
 /** An in-memory server with a switchable network. */
@@ -161,3 +161,17 @@ describe('export / import', () => {
     expect((await other.values.get(v.id))!.name).toBe('Health & energy')
   })
 })
+
+describe('first upload into an account', () => {
+  it('queues every record once, even ones that were never queued', async () => {
+    await write(db, value('Health'))
+    await write(db, value('Health, edited later'))
+    await db.values.put(value('Never queued'))
+    await queueEverything(db)
+    expect(await db.outbox.count()).toBe(3)
+    await engine.sync()
+    expect(target.rows.size).toBe(3)
+    expect(await engine.pending()).toBe(0)
+  })
+})
+

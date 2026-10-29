@@ -28,10 +28,18 @@ $$;
 
 -- ——— members ———
 
-create table if not exists public.members (
-  user_id     uuid        primary key references auth.users (id) on delete cascade,
-  approved_at timestamptz not null default now()
-);
+-- Everyone who had an account before this migration was already syncing: they stay in. Only the first
+-- run does this, so running the file again never lets in someone who signed up since.
+do $$
+begin
+  if to_regclass('public.members') is null then
+    create table public.members (
+      user_id     uuid        primary key references auth.users (id) on delete cascade,
+      approved_at timestamptz not null default now()
+    );
+    insert into public.members (user_id) select id from auth.users;
+  end if;
+end $$;
 
 -- No policies: nobody reads or writes it through the API. The functions below do.
 alter table public.members enable row level security;
@@ -42,11 +50,6 @@ create or replace function private.is_member() returns boolean
 language sql stable security definer set search_path = '' as $$
   select exists (select 1 from public.members m where m.user_id = auth.uid())
 $$;
-
--- Everyone who had an account before this migration was already syncing: they stay in.
-insert into public.members (user_id)
-select id from auth.users
-on conflict do nothing;
 
 -- ——— records: members only ———
 
@@ -75,7 +78,7 @@ create table if not exists public.profiles (
       -- One emoji: a short run of symbols, no letters, digits, spaces, control characters or markup.
       and char_length(avatar ->> 'emoji') between 1 and 16
       and (avatar ->> 'emoji') !~ '[[:alnum:][:space:]\u0001-\u001f\u007f<>&"''\\]'
-      and avatar ->> 'color' in ('red', 'orange', 'yellow', 'green', 'mint', 'teal', 'cyan', 'blue', 'indigo', 'purple', 'pink', 'brown')
+      and avatar ->> 'color' in ('red', 'orange', 'yellow', 'green', 'mint', 'teal', 'blue', 'indigo', 'purple', 'pink', 'brown', 'gray')
       and avatar ->> 'look' in ('gradient', 'solid', 'soft')
       and avatar ->> 'pattern' in ('none', 'dots', 'stripes', 'grid', 'waves', 'sunburst')
     )
@@ -132,6 +135,20 @@ begin
     order by u.created_at;
 end $$;
 
+-- The rest of Requests: who's in, newest first (at most the cap, so all of them).
+create or replace function public.members_overview()
+returns table (email text, approved_at timestamptz)
+language plpgsql stable security definer set search_path = '' as $$
+begin
+  if not private.is_owner() then
+    raise exception 'only the owner can see members' using errcode = '42501';
+  end if;
+  return query
+    select u.email::text, m.approved_at
+    from public.members m join auth.users u on u.id = m.user_id
+    order by m.approved_at desc;
+end $$;
+
 -- One tap in Requests. Refuses anyone but the owner, and past the cap.
 create or replace function public.approve_member(member uuid) returns void
 language plpgsql security definer set search_path = '' as $$
@@ -166,7 +183,9 @@ end $$;
 
 revoke all on function private.members_max(), private.is_owner(), private.is_member() from public, anon;
 grant execute on function private.members_max(), private.is_owner(), private.is_member() to authenticated;
-revoke all on function public.my_access(), public.pending_requests(), public.approve_member(uuid), public.delete_my_account()
+revoke all on function public.my_access(), public.pending_requests(), public.members_overview(), public.approve_member(uuid),
+  public.delete_my_account()
   from public, anon;
-grant execute on function public.my_access(), public.pending_requests(), public.approve_member(uuid), public.delete_my_account()
+grant execute on function public.my_access(), public.pending_requests(), public.members_overview(), public.approve_member(uuid),
+  public.delete_my_account()
   to authenticated;

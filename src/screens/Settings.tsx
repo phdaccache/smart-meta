@@ -6,8 +6,9 @@ import { langSetting, setLangSetting, t, tlist, tn, type LangSetting } from '../
 import { formatTime } from '../lib/dates'
 import { loadSampleData } from '../dev/sample'
 import { loadWorstCaseData } from '../dev/worst'
-import { eraseAllData, signIn, signOut, syncNow, useSyncStatus } from '../sync/controller'
-import { DateField, Field, InfoTip, Screen, Section, Sheet, Stepper, Switch, toast, TypeToConfirm } from '../ui/components'
+import { canSignOut, deleteAccount, eraseAllData, signOut, syncNow, useSyncStatus } from '../sync/controller'
+import { pendingRequests } from '../sync/account'
+import { DateField, InfoTip, Screen, Section, Sheet, Stepper, Switch, toast, TypeToConfirm } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconChevronUpDown } from '../ui/icons'
 import { useInstall } from '../ui/install'
@@ -19,6 +20,9 @@ import { navigate, useLocation } from '../ui/router'
 import { ValueLookSheet, ValueTile, valueLook } from '../ui/valueLook'
 import type { Value } from '../lib/types'
 import { resetIntro } from './Intro'
+import { openSignIn } from './Account'
+import { AvatarView, ProfileSheet } from '../ui/Avatar'
+import { useProfile } from '../sync/profile'
 
 export function SettingsScreen() {
   const settings = useSettings()
@@ -33,6 +37,7 @@ export function SettingsScreen() {
   if (query.get('view') === 'restore') {
     return (
       <Screen back="/" title={t('set.restoreTitle')}>
+        <SyncSection />
         <DataSection lastExportAt={settings.lastExportAt} />
         {developer && <DevSection devToday={settings.devToday} />}
       </Screen>
@@ -44,6 +49,7 @@ export function SettingsScreen() {
   ]
   return (
     <Screen back="/" title={t('set.title')}>
+      <ProfileSection />
       <Section title={t('set.secGoals')}>
         <div className="card list settings">
           <LinkRow title={t('set.values')} sub={values.length ? values.map((v) => v.name).join(' · ') : t('set.noneYet')}
@@ -84,9 +90,33 @@ export function SettingsScreen() {
       </Section>
 
       <EraseSection />
+      <DeleteAccountSection />
       {developer && <DevSection devToday={settings.devToday} />}
       <ReleaseNotes open={news} releases={RELEASES} onClose={() => setNews(false)} />
     </Screen>
+  )
+}
+
+/** Signed in: who you are, at the top as in the iPhone's Settings; tapping it edits name and avatar. */
+function ProfileSection() {
+  const s = useSyncStatus()
+  const profile = useProfile()
+  const [editing, setEditing] = useState(false)
+  if (s.phase === 'signed-out' || !profile) return null
+  return (
+    <Section>
+      <div className="card list settings">
+        <button className="list-row profile-row" onClick={() => setEditing(true)}>
+          <AvatarView avatar={profile.avatar} size={56} />
+          <div className="text">
+            <div className={`title ellipsis ${profile.name ? '' : 'muted'}`}>{profile.name || t('prof.noName')}</div>
+            <div className="sub ellipsis">{s.email}</div>
+          </div>
+          <IconChevronRight className="chev" width={18} />
+        </button>
+      </div>
+      <ProfileSheet open={editing} onClose={() => setEditing(false)} />
+    </Section>
   )
 }
 
@@ -139,24 +169,8 @@ function ago(iso: string | null): string {
 
 function SyncSection() {
   const s = useSyncStatus()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [leaving, setLeaving] = useState<Awaited<ReturnType<typeof canSignOut>> | null>(null)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [signingIn, setSigningIn] = useState(false)
-
-  const run = async (fn: () => Promise<void>) => {
-    setBusy(true)
-    setError(null)
-    try {
-      await fn()
-      setSigningIn(false)
-    } catch (e) {
-      setError((e as Error).message)
-    } finally {
-      setBusy(false)
-    }
-  }
 
   if (!s.configured) {
     return (
@@ -170,47 +184,72 @@ function SyncSection() {
     return (
       <Section title={t('set.sync')}>
         <div className="card list settings">
-          <LinkRow title={t('set.signInRow')} sub={t('set.signInSub')} onClick={() => setSigningIn(true)} />
+          <LinkRow title={t('set.signInRow')} sub={t('set.signInSub')} onClick={openSignIn} />
         </div>
-        <Sheet open={signingIn} onClose={() => setSigningIn(false)} title={t('set.signIn')}>
-          <form onSubmit={(e) => { e.preventDefault(); run(() => signIn(email, password)) }}>
-            <Field label={t('set.email')} htmlFor="email" info={t('set.emailInfo')}>
-              <input id="email" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </Field>
-            <Field label={t('set.password')} htmlFor="password">
-              <input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
-            </Field>
-            {error && <p className="field-error" style={{ marginTop: 10 }}>{error}</p>}
-            <div className="sheet-actions">
-              <button className="btn primary" disabled={busy || !email.includes('@') || !password}>{t('set.signIn')}</button>
-            </div>
-          </form>
-        </Sheet>
       </Section>
     )
   }
 
+  // Signing out wipes a member's phone, so only once everything is up; it asks first (spec AC-13).
+  const askSignOut = async () => {
+    setBusy(true)
+    setLeaving(await canSignOut())
+    setBusy(false)
+  }
+  const leave = async () => {
+    setBusy(true)
+    try {
+      await signOut()
+      window.location.replace('/')
+    } catch (e) {
+      toast((e as Error).message)
+      setBusy(false)
+    }
+  }
+  const member = s.access === 'member'
   return (
     <Section title={t('set.sync')}>
       <div className="card list settings">
         <div className="list-row">
           <div className="text"><span className="title">{t('set.account')}</span></div>
-          <span className="row-value">{s.email}</span>
+          <span className="row-value ellipsis">{s.email}</span>
         </div>
-        <div className="list-row">
-          <div className="text"><span className="title">{t('set.synced')}</span></div>
-          <span className="row-value">
-            {s.phase === 'syncing' ? t('set.syncing') : s.phase === 'error' ? t('set.offlineRetry', { when: ago(s.lastSyncedAt) }) : ago(s.lastSyncedAt)}
-            {s.pending > 0 && ` · ${t('set.waiting')} ${s.pending}`}
-          </span>
-        </div>
-        <button className="list-row accent" onClick={syncNow} disabled={s.phase === 'syncing'}>
-          <div className="text"><div className="title">{t('set.syncNow')}</div></div>
-        </button>
-        <button className="list-row accent" onClick={() => signOut()}>
+        {member ? (
+          <>
+            <div className="list-row">
+              <div className="text"><span className="title">{t('set.synced')}</span></div>
+              <span className="row-value">
+                {s.phase === 'syncing' ? t('set.syncing') : s.phase === 'error' ? t('set.offlineRetry', { when: ago(s.lastSyncedAt) }) : ago(s.lastSyncedAt)}
+                {s.pending > 0 && ` · ${t('set.waiting')} ${s.pending}`}
+              </span>
+            </div>
+            <button className="list-row accent" onClick={syncNow} disabled={s.phase === 'syncing'}>
+              <div className="text"><div className="title">{t('set.syncNow')}</div></div>
+            </button>
+          </>
+        ) : s.access && (
+          <button className="list-row" onClick={() => navigate('/account/waiting')}>
+            <div className="text"><div className="title">{t('set.access')}</div></div>
+            <span className="row-value">{t(s.access === 'full' ? 'acct.statusFull' : 'acct.statusWaiting')}</span>
+            <IconChevronRight className="chev" width={18} />
+          </button>
+        )}
+        <button className="list-row accent" onClick={askSignOut} disabled={busy}>
           <div className="text"><div className="title">{t('set.signOut')}</div></div>
         </button>
       </div>
+      <Sheet open={leaving != null} onClose={() => setLeaving(null)} title={t('set.signOutQ')}>
+        <p className="small muted" style={{ marginBottom: 14 }}>
+          {leaving === 'ready' ? t('set.signOutText') : leaving === 'keeps-data' ? t('set.signOutKeeps')
+            : leaving === 'offline' ? t('set.signOutOffline') : t('set.signOutUnsynced')}
+          {leaving === 'ready' && <>{' '}<button className="link-btn" style={{ minHeight: 0 }} onClick={doExport}>{t('set.exportFirst')}</button></>}
+        </p>
+        <div className="sheet-actions">
+          {leaving === 'ready' || leaving === 'keeps-data'
+            ? <button className="btn primary" disabled={busy} onClick={leave}>{t('set.signOut')}</button>
+            : <button className="btn primary" onClick={() => setLeaving(null)}>{t('news.ok')}</button>}
+        </div>
+      </Sheet>
     </Section>
   )
 }
@@ -289,6 +328,53 @@ function EraseSection() {
   )
 }
 
+function DeleteAccountSection() {
+  const s = useSyncStatus()
+  const [open, setOpen] = useState(false)
+  if (s.phase === 'signed-out') return null
+  const remove = async () => {
+    try {
+      await deleteAccount()
+      window.location.replace('/')
+    } catch (e) {
+      toast((e as Error).message)
+    }
+  }
+  return (
+    <Section>
+      {!open ? (
+        <div className="card list settings">
+          <LinkRow title={t('set.deleteAccount')} tone="danger" onClick={() => setOpen(true)} />
+        </div>
+      ) : (
+        <div className="card pad">
+          <p style={{ fontWeight: 650, marginBottom: 6 }}>{t('set.deleteQ')}</p>
+          <p className="small muted" style={{ marginBottom: 14 }}>
+            {t('set.deleteText')}{' '}
+            <button className="link-btn" style={{ minHeight: 0 }} onClick={doExport}>{t('set.exportFirst')}</button>
+          </p>
+          <TypeToConfirm phrase={t('set.deletePhrase')} action={t('set.deleteButton')} onConfirm={remove} />
+          <button className="btn ghost block" style={{ marginTop: 8 }} onClick={() => setOpen(false)}>{t('common.cancel')}</button>
+        </div>
+      )}
+    </Section>
+  )
+}
+
+/** Developer → Requests, for the owner: how many wait, read when Settings opens. */
+function useWaitingCount(signedIn: boolean): number | null {
+  const [n, setN] = useState<number | null>(null)
+  useEffect(() => {
+    if (!signedIn) return
+    let live = true
+    pendingRequests().then((r) => live && setN(r.length)).catch(() => live && setN(null))
+    return () => {
+      live = false
+    }
+  }, [signedIn])
+  return n
+}
+
 // ——— developer (temporary) ———
 
 function DevSection({ devToday }: { devToday: string | null }) {
@@ -296,7 +382,9 @@ function DevSection({ devToday }: { devToday: string | null }) {
   const today = useToday(settings.rolloverHour)
   const [busy, setBusy] = useState(false)
   const [debugPaint, setDebugPaint] = useState(() => document.documentElement.classList.contains('debug-paint'))
-  const { email } = useSyncStatus()
+  const { email, access } = useSyncStatus()
+  // Only the owner's account can list requests; anyone else's Developer section has no row for it.
+  const waiting = useWaitingCount(access === 'member')
   const load = async (fill: (today: string) => Promise<void>) => {
     // Signed in, the erase would reach the synced copy and every device using it.
     if (email) return toast('Sign out of sync first. Sample data then stays on this device only.')
@@ -313,6 +401,9 @@ function DevSection({ devToday }: { devToday: string | null }) {
   return (
     <Section title={<span className="title-row">Developer<InfoTip label="About Developer">Just for testing the app. Nothing here is needed day to day.</InfoTip></span>}>
       <div className="card list settings">
+        {waiting != null && (
+          <LinkRow title={t('set.requests')} sub={tn('set.requestsSub', waiting)} onClick={() => navigate('/settings/requests')} />
+        )}
         <div className="list-row">
           <div className="text">
             <span className="title title-row">

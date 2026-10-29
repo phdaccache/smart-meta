@@ -48,6 +48,8 @@ export function SwipeToDelete(props: {
   confirm?: () => boolean
   /** The last row of a list that can't be empty. */
   disabled?: boolean
+  /** Another verb than Delete, on a grey pill: the sync banner's Hide. */
+  verb?: { label: string; icon: ReactNode }
   children: ReactNode
 }) {
   const row = useRef<HTMLDivElement>(null)
@@ -278,10 +280,11 @@ export function SwipeToDelete(props: {
     <div ref={row} className={`${props.className ?? ''} swipeable`} style={props.style}>
       {props.children}
       <div className="swipe-actions">
-        <button type="button" className="swipe-delete" aria-label={props.label} tabIndex={-1} onClick={() => removeRef.current()}>
-          <IconTrash width={20} height={20} />
+        <button type="button" className={`swipe-delete ${props.verb ? 'grey' : ''}`} aria-label={props.label} tabIndex={-1}
+          onClick={() => removeRef.current()}>
+          {props.verb?.icon ?? <IconTrash width={20} height={20} />}
         </button>
-        <span className="swipe-label" aria-hidden="true">{t('common.delete')}</span>
+        <span className="swipe-label" aria-hidden="true">{props.verb?.label ?? t('common.delete')}</span>
       </div>
     </div>
   )

@@ -944,15 +944,42 @@ certificate).
 - [x] Claude: add the staging Preview variables for `notifications-s2` (done 2026-10-29). Owner: add
       the S2 preview hostname `smart-meta-h2ur-git-notifications-s2-daccache.vercel.app` to the
       Turnstile widget. S2 is tested on its own preview (§16.2).
-- [ ] Email-code sign-in with Turnstile; drop password sign-in.
+Built on 2026-10-29, waiting for the owner's test on the preview (ticked once it passes):
+- [ ] Email-code sign-in with Turnstile; drop password sign-in. `src/sync/account.ts` (send and check
+      the code), `src/ui/captcha.ts` (Turnstile, invisible unless Cloudflare wants a tap, reset after
+      every send so "Send a new code" has a fresh token), screens in `src/screens/Account.tsx`.
 - [ ] `members` (cap 100) and `profiles` (name, avatar) with RLS and explicit grants; existing users
-      migrated as members. Claude writes the SQL; **the owner pastes it into the staging SQL editor**
-      (Claude has no Supabase access, owner's choice 2026-10-29). The owner is
-      `pedrodaccache@gmail.com`.
-- [ ] Waiting for access screen; Requests screen with Approve (Settings → Developer, with the number
-      waiting). **No push to the owner in S2:** it needs S5's pieces (see S5).
-- [ ] Sign-in after the first goal; "Not now" popup; Safari hint on iPhone.
-- [ ] One person per phone (§6.8); sign-out rules; delete account.
+      migrated as members: `supabase/migrations/0002_accounts.sql`. Claude writes the SQL; **the owner
+      pastes it into the staging SQL editor** (Claude has no Supabase access, owner's choice
+      2026-10-29). The owner is recognized by the same email hash as the Developer section, so the
+      address isn't in the public repo, and gets in by themselves on the first sign-in. The file is
+      safe to run again: the existing-users backfill only runs when `members` is created. Tested
+      before pasting on a local Postgres with a stand-in for Supabase's auth (37 checks: who can read
+      and write what, the cap, approving, deleting).
+- [ ] Waiting for access screen; Requests screen with Approve (Settings → Developer → Requests, with
+      the number waiting). **No push to the owner in S2:** it needs S5's pieces (see S5).
+- [ ] Sign-in after the first goal; "Not now" popup; Safari hint on iPhone; the "Sync and get
+      notifications" banner on Today (swipe left to Hide, back after a day, a week, a month, then never).
+- [ ] One person per phone (§6.8); sign-out rules; delete account. The phone's owner is
+      `meta.phoneOwner` ({ id, email }), set at the first sign-in; everything already on the phone is
+      queued for the first upload then. Sending a code to another email is refused while the phone
+      holds someone's data. A member's sign-out syncs first and refuses with anything left, then
+      wipes the phone; a waiting account's sign-out keeps the data on the phone (it was never
+      uploaded). Delete account calls `delete_my_account()` (no Edge Function), then wipes the phone.
+- [ ] Name and avatar: a row at the top of Settings opens the editor picked in S0. Kept on the phone and
+      sent to `profiles` only once the account is a member (spec AC-4: nothing on the server while
+      waiting).
+
+Choices made while building (tell the owner; change if they disagree):
+- "Your goals are end-to-end encrypted." is **hidden until S3** (`ENCRYPTED` in `Account.tsx`): in S2 it
+  wouldn't be true yet. S3 turns it on.
+- The sign-in dots show three steps (activate, email, code); S3 adds the Face ID step.
+- Avatar colors are the values' 12 colors (gray, not cyan) and the sunburst pattern is stored as
+  `sunburst`; the server checks the same lists.
+- A non-member can't write their profile either (stricter than the README's "their own profile"),
+  following spec AC-4.
+- Local testing against staging: `npm run dev -- --mode staging` with `.env.staging.local` (ignored by
+  git), or the `dev-staging` entry in `.claude/launch.json`. `.env.local` points at production.
 - **Done when:** a test friend can sign up on the preview, wait, get approved with one tap, and sync.
 
 ### S3. Encryption
@@ -1114,3 +1141,8 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   `pedrodaccache@gmail.com`. The push to the owner on a new request moves from S2 to S5 (spec AC-5):
   S1 sent its push by hand from a local script, but this one must go out by itself whenever someone
   signs up, which needs S5's server sender.
+- **2026-10-29 (6):** S2 built on `notifications-s2`, waiting for the owner's test on the preview:
+  email-code sign-in with Turnstile (password sign-in removed), the accounts migration (members,
+  profiles, approve, requests, delete account), Activate notifications after the intro, "Not now",
+  the Safari hint, Waiting for access and List is full, the Today banner, Requests, name and avatar,
+  one owner per phone, sign-out and delete account. Choices made while building are listed under S2.

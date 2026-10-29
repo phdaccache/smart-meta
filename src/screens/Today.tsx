@@ -21,6 +21,7 @@ import { useSyncStatus } from '../sync/controller'
 import { dashboardUrl } from '../sync/supabase'
 import { deleteWithUndo, TaskSheet } from './TaskSheet'
 import { GettingStarted } from './Intro'
+import { SyncBanner } from './Account'
 
 type Filter = 'all' | 'goals' | 'projects' | 'tasks'
 
@@ -204,6 +205,7 @@ export function TodayScreen({ date }: { date?: DateStr }) {
         </DatePickerButton>
       </>}
     >
+      {!isPast && <SyncBanner settings={settings} />}
       {!isPast && <GettingStarted snap={snap} />}
       {view.groups.length === 0 ? (
         <EmptyDay snap={snap} ctx={ctx} isPast={isPast} />

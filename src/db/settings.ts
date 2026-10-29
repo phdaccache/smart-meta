@@ -17,6 +17,9 @@ export interface Settings {
   areas: string[]
   /** Last day the intro was finished or skipped: a note about a new intro isn't news to them. */
   introAt: string | null
+  /** Times the "Sync and get notifications" banner was swiped away, and when it may come back. */
+  syncBannerHides: number
+  syncBannerUntil: string | null
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -29,6 +32,8 @@ export const DEFAULT_SETTINGS: Settings = {
   devToday: null,
   areas: [],
   introAt: null,
+  syncBannerHides: 0,
+  syncBannerUntil: null,
 }
 
 export async function getSettings(): Promise<Settings> {
