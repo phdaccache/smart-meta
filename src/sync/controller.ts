@@ -108,6 +108,9 @@ export function syncNow() {
 let current: string | null = null
 
 async function onSession(user: User | null) {
+  // Supabase says "signed in" again each time the app comes back to the front, and repeats what other tabs
+  // of the app hear. The same account again needs nothing: the wake-ups below already check access.
+  if (user && user.id === current) return
   current = user?.id ?? null
   log('session', short(user?.id))
   if (!user) {
@@ -141,24 +144,49 @@ async function onSession(user: User | null) {
   await refreshAccess()
 }
 
+/** The check under way, if any: checks asked for meanwhile share it. */
+let checking: Promise<Access | null> | null = null
+
 /**
  * Asks the server whether this account may sync, and starts or stops sync to match. Offline, the
  * last answer stands. Waiting turns into member on the first check after the owner approves.
  */
-export async function refreshAccess(): Promise<Access | null> {
+export function refreshAccess(): Promise<Access | null> {
+  checking ??= checkAccess().finally(() => {
+    checking = null
+  })
+  return checking
+}
+
+/**
+ * Stores the server's answer and gives back the one stored before, in one step: another tab or window of
+ * the app checking at the same time (or waking from the background with an old answer) can't both see
+ * "waiting" and show the green banner twice.
+ */
+const swapAccess = (userId: string, access: Access) =>
+  db.transaction('rw', db.meta, async () => {
+    const before = ((await db.meta.get(accessKey(userId)))?.value ?? null) as Access | null
+    if (before !== access) await db.meta.put({ key: accessKey(userId), value: access })
+    return before
+  })
+
+async function checkAccess(): Promise<Access | null> {
   const userId = status.userId
   if (!supabase || !userId) return null
-  const before = await getMeta<Access | null>(accessKey(userId), null)
-  let access = before
   const { data, error } = await supabase.rpc('my_access')
   log('access', short(userId), error ? `failed: ${error.message}` : data)
   if (!error && data === 'removed') {
     await removedFromSync(userId)
     return null
   }
+  let access: Access | null
+  let before: Access | null = null
   if (!error && (data === 'member' || data === 'waiting' || data === 'full')) {
-    access = data
-    if (access !== before) await setMeta(accessKey(userId), access)
+    const answer: Access = data
+    access = answer
+    before = await swapAccess(userId, answer)
+  } else {
+    access = await getMeta<Access | null>(accessKey(userId), null)
   }
   if (status.userId !== userId) return null
   // Access is said last, with the key's state already known: the sign-in reads both together.
