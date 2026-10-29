@@ -1301,6 +1301,10 @@ export const ptBR: Messages = {
   'err.crashed': 'Algo deu errado.',
   'err.reload': 'Recarregar',
   'err.copyLog': 'Copiar o registro de diagnóstico',
+  'twice.title': 'O Smart Meta está aberto duas vezes',
+  'twice.app': 'Ele também está aberto em uma aba do navegador neste celular. Feche essa aba para continuar usando o app: duas cópias abertas ao mesmo tempo podem travar uma à outra.',
+  'twice.tab': 'Ele também está aberto como app, ou em outra aba, neste aparelho. Feche esta aba e use o app: duas cópias abertas ao mesmo tempo podem travar uma à outra.',
+  'twice.goes': 'Este aviso some sozinho quando a outra for fechada.',
   'check.words': 'pelo menos, no mínimo, no máximo, não mais que, ou mais, ou menos, menos de, mais de, todo, toda, todos, todas, cada, nunca, sempre, só, somente, apenas, sem, antes, depois, até, dentro de, uma vez, duas vezes, vezes',
 
   // What's new

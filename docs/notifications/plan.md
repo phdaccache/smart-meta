@@ -1040,7 +1040,7 @@ start: Face ID right after the code, also while waiting; only the owner has data
 data anywhere can be deleted; old-phone transfer and recovery code later (§15); staging test accounts are
 temporary and can be deleted whenever a stage needs it.
 
-Built on 2026-10-29, waiting for the owner's test on the preview:
+Built on 2026-10-29; the owner tested every step below on the iPhone and Android the same day:
 - [x] Data key + key pair (for social later); passkey or data-password unlock (from S1). `src/sync/crypto.ts`
       (pure browser crypto), `src/sync/keys.ts` (passkeys, the phone's copy, the server's copy).
 - [x] Encrypting wrapper around the sync target; decrypt on pull; validate shape: `src/sync/encrypted.ts`.
@@ -1050,9 +1050,12 @@ Built on 2026-10-29, waiting for the owner's test on the preview:
       be checked from a web page (see below). Optional extras moved to §15 (owner).
 - [x] Tests: round trip, wrong key, lost key, migration (`crypto.test.ts`, `encrypted.test.ts`), and the
       SQL on a local Postgres (37 checks: who can read and write keys, lock shapes, readable records refused).
-- [ ] Owner: paste `supabase/migrations/0003_keys.sql` into the staging SQL editor; add the S3 preview
+- [x] Owner: paste `supabase/migrations/0003_keys.sql` into the staging SQL editor; add the S3 preview
       hostname `smart-meta-h2ur-git-notifications-s3-daccache.vercel.app` to the Turnstile widget.
-- [ ] Owner: test on the S3 preview (below).
+- [x] Owner: test on the S3 preview (below). All six steps passed, after the Android fixes below.
+- [x] **Open twice** warning (owner, after the Android finding below): a screen over the app that can't be
+      dismissed while another copy is open on the device, gone by itself once it closes.
+      `src/ui/OpenTwice.tsx`.
 - **Done when:** on staging, the dashboard shows only ciphertext and a second phone unlocks with Face ID
   (or autofill).
 
@@ -1085,6 +1088,24 @@ How it works (details for later stages):
   by autofill and only locks the data once it matches. On Android a line says to tap the key icon.
 - **Android wording:** "Face ID" only on iPhone; elsewhere "screen lock" and "your Google account".
   Claude's wording, not in the mockup: change if the owner prefers.
+
+**Android: the app open twice (found while testing, 2026-10-29).** Installing on Android starts from a
+Chrome tab, and the tab stays open. The tab and the installed app share one database, and Android
+freezes the tab in the background, sometimes in the middle of a write; the app then waits on that
+database until the tab is closed. Seen as: a frozen sign-in that went back to the intro, a 30-second
+blank screen, no profile row in Settings, the green banner back after being hidden. Closing the Chrome
+tab fixed all of it at once. What changed:
+- **The warning**: each copy holds a browser lock (Web Locks) while it's open; the browser lists every
+  copy's lock, frozen ones too, so the app sees the other copy and covers itself with "Smart Meta is
+  open twice" until it's closed. It's drawn outside the rest of the app, so it shows even while the
+  database is blocked. iPhone Safari and the Home Screen app keep separate data and don't see each other.
+- Supabase repeats "signed in" on every return to the front and relays other tabs' events: the same
+  account is now handled once, access checks share one run, and the stored access is swapped in one
+  transaction, so the green banner can only come once.
+- **Diagnostics log** (Settings → Developer → Diagnostics log, with Copy): sign-in, access, keys, sync
+  and uncaught errors on that device, in localStorage so it works when the database doesn't. Ids
+  shortened, no content or keys. A drawing error now shows a screen with Reload and Copy log instead of
+  a blank page.
 
 What a web page can't check: whether **iCloud Keychain** is on. It can only see whether passkeys with PRF
 work; when they don't, the app goes to the data password. If unlocking fails, the message says to check
@@ -1294,3 +1315,7 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   readable-record check (0003), screens 5, 7 and 11, the "end-to-end encrypted" line on. Old-phone
   transfer and recovery code moved to §15. §9 corrected: passkeys tie the data key to the app's address.
   New open questions 16.2 (locked out) and 16.3 (merging after S3).
+- **2026-10-29 (9):** S3 tested by the owner on both phones; all six steps pass. Found on Android: the
+  Chrome tab left open after installing shares the database with the app and, frozen in the background,
+  blocks it. Added the "open twice" warning (can't be dismissed, owner's choice), one access check at a
+  time, and a diagnostics log in Developer.

@@ -1306,6 +1306,10 @@ export const en = {
   'err.crashed': 'Something went wrong.',
   'err.reload': 'Reload',
   'err.copyLog': 'Copy the diagnostics log',
+  'twice.title': 'Smart Meta is open twice',
+  'twice.app': 'It’s also open in a browser tab on this phone. Close that tab to keep using the app: two copies open at once can block each other.',
+  'twice.tab': 'It’s also open as the app, or in another tab, on this device. Close this tab and use the app: two copies open at once can block each other.',
+  'twice.goes': 'This goes away by itself once the other one is closed.',
   'check.words': 'at least, at most, no more than, or more, or less, less than, more than, every, each, never, always, only, without, before, after, by, within, until, once, twice',
 
   // What's new

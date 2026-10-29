@@ -1685,6 +1685,9 @@ button, a, summary, [role='button'], .chip {
   background: var(--surface); border-radius: 10px; padding: 10px; margin-bottom: 14px; user-select: text; -webkit-user-select: text; }
 .crash { min-height: 100dvh; display: grid; align-content: center; gap: 12px; padding: 24px 16px; text-align: center; background: var(--bg); }
 .crash h1 { font-size: 22px; }
+.open-twice { position: fixed; inset: 0; z-index: 1000; display: grid; align-content: center; justify-items: center; gap: 10px;
+  padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)); text-align: center; background: var(--bg); }
+.open-twice .intro-sub { max-width: 340px; }
 .account-hint { font-size: 13px; color: var(--ink-2); line-height: 1.4; text-align: center; }
 .account-hint .link-btn { min-height: 0; font-size: 15px; font-weight: 500; }
 .intro-nav .account-hint { margin-bottom: 10px; }
