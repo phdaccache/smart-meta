@@ -954,7 +954,7 @@ Built on 2026-10-29, waiting for the owner's test on the preview (ticked once it
       2026-10-29). The owner is recognized by the same email hash as the Developer section, so the
       address isn't in the public repo, and gets in by themselves on the first sign-in. The file is
       safe to run again: the existing-users backfill only runs when `members` is created. Tested
-      before pasting on a local Postgres with a stand-in for Supabase's auth (37 checks: who can read
+      before pasting on a local Postgres with a stand-in for Supabase's auth (40 checks: who can read
       and write what, the cap, approving, deleting).
 - [ ] Waiting for access screen; Requests screen with Approve (Settings → Developer → Requests, with
       the number waiting). **No push to the owner in S2:** it needs S5's pieces (see S5).
@@ -976,6 +976,12 @@ Choices made while building (tell the owner; change if they disagree):
 - The sign-in dots show three steps (activate, email, code); S3 adds the Face ID step.
 - Avatar colors are the values' 12 colors (gray, not cyan) and the sunburst pattern is stored as
   `sunburst`; the server checks the same lists.
+- Security Advisor on staging (2026-10-29) flagged the app's functions as "SECURITY DEFINER callable by
+  signed-in users" and the policies as re-reading the user per row. Fixed: the functions' bodies live in
+  `private` (not in the API) behind thin `public` wrappers that run as the caller, the policies read
+  `(select auth.uid())` once, and `members` has an explicit deny-all policy. "Unused index" on
+  `records` stays: staging has no rows yet. **Never run 0001 again on its own after 0002**: it would add
+  back the old policy without the membership check (0002 removes it every time it runs).
 - A non-member can't write their profile either (stricter than the README's "their own profile"),
   following spec AC-4.
 - Local testing against staging: `npm run dev -- --mode staging` with `.env.staging.local` (ignored by

@@ -41,8 +41,11 @@ begin
   end if;
 end $$;
 
--- No policies: nobody reads or writes it through the API. The functions below do.
+-- Nobody reads or writes it through the API; the functions below do. Said as a policy too, so it's on
+-- record rather than implied.
 alter table public.members enable row level security;
+drop policy if exists "not through the API" on public.members;
+create policy "not through the API" on public.members for all to authenticated using (false) with check (false);
 revoke all on public.members from anon, authenticated;
 grant select, insert, delete on public.members to service_role;
 
@@ -57,8 +60,8 @@ drop policy if exists "own records" on public.records;
 drop policy if exists "own records, members only" on public.records;
 create policy "own records, members only" on public.records
   for all to authenticated
-  using (auth.uid() = user_id and (select private.is_member()))
-  with check (auth.uid() = user_id and (select private.is_member()));
+  using ((select auth.uid()) = user_id and (select private.is_member()))
+  with check ((select auth.uid()) = user_id and (select private.is_member()));
 
 -- ——— profiles ———
 
@@ -91,16 +94,21 @@ alter table public.profiles enable row level security;
 drop policy if exists "own profile, members only" on public.profiles;
 create policy "own profile, members only" on public.profiles
   for all to authenticated
-  using (auth.uid() = user_id and (select private.is_member()))
-  with check (auth.uid() = user_id and (select private.is_member()));
+  using ((select auth.uid()) = user_id and (select private.is_member()))
+  with check ((select auth.uid()) = user_id and (select private.is_member()));
 revoke all on public.profiles from anon;
 grant select, insert, update on public.profiles to authenticated;
 
 -- ——— what the app calls ———
 
+-- The work happens in `private`, as the definer, each function checking who's asking. The app reaches
+-- each one through a thin wrapper of the same name in `public` that runs as the caller: Supabase's
+-- Security Advisor wants nothing in the API that runs with more rights than the caller.
+
+
 -- Where this account stands: 'member', 'waiting', or 'full' (waiting, and the list is at the cap).
 -- The owner is let in the first time they ask.
-create or replace function public.my_access() returns text
+create or replace function private.my_access() returns text
 language plpgsql security definer set search_path = '' as $$
 begin
   if auth.uid() is null then
@@ -120,7 +128,7 @@ begin
 end $$;
 
 -- The owner's Requests list: everyone with a confirmed email who isn't a member yet, oldest first.
-create or replace function public.pending_requests()
+create or replace function private.pending_requests()
 returns table (user_id uuid, email text, requested_at timestamptz)
 language plpgsql stable security definer set search_path = '' as $$
 begin
@@ -136,7 +144,7 @@ begin
 end $$;
 
 -- The rest of Requests: who's in, newest first (at most the cap, so all of them).
-create or replace function public.members_overview()
+create or replace function private.members_overview()
 returns table (email text, approved_at timestamptz)
 language plpgsql stable security definer set search_path = '' as $$
 begin
@@ -150,7 +158,7 @@ begin
 end $$;
 
 -- One tap in Requests. Refuses anyone but the owner, and past the cap.
-create or replace function public.approve_member(member uuid) returns void
+create or replace function private.approve_member(member uuid) returns void
 language plpgsql security definer set search_path = '' as $$
 begin
   if not private.is_owner() then
@@ -172,7 +180,7 @@ end $$;
 
 -- Settings → Delete account: the account and, by `on delete cascade`, its records, membership and
 -- profile. Later tables (keys, push) cascade from auth.users too.
-create or replace function public.delete_my_account() returns void
+create or replace function private.delete_my_account() returns void
 language plpgsql security definer set search_path = '' as $$
 begin
   if auth.uid() is null then
@@ -181,8 +189,26 @@ begin
   delete from auth.users where id = auth.uid();
 end $$;
 
-revoke all on function private.members_max(), private.is_owner(), private.is_member() from public, anon;
-grant execute on function private.members_max(), private.is_owner(), private.is_member() to authenticated;
+-- The API: one wrapper per function above.
+create or replace function public.my_access() returns text
+language sql security invoker set search_path = '' as $$ select private.my_access() $$;
+create or replace function public.pending_requests()
+returns table (user_id uuid, email text, requested_at timestamptz)
+language sql stable security invoker set search_path = '' as $$ select * from private.pending_requests() $$;
+create or replace function public.members_overview()
+returns table (email text, approved_at timestamptz)
+language sql stable security invoker set search_path = '' as $$ select * from private.members_overview() $$;
+create or replace function public.approve_member(member uuid) returns void
+language sql security invoker set search_path = '' as $$ select private.approve_member(member) $$;
+create or replace function public.delete_my_account() returns void
+language sql security invoker set search_path = '' as $$ select private.delete_my_account() $$;
+
+revoke all on function private.members_max(), private.is_owner(), private.is_member(), private.my_access(),
+  private.pending_requests(), private.members_overview(), private.approve_member(uuid), private.delete_my_account()
+  from public, anon;
+grant execute on function private.members_max(), private.is_owner(), private.is_member(), private.my_access(),
+  private.pending_requests(), private.members_overview(), private.approve_member(uuid), private.delete_my_account()
+  to authenticated;
 revoke all on function public.my_access(), public.pending_requests(), public.members_overview(), public.approve_member(uuid),
   public.delete_my_account()
   from public, anon;
