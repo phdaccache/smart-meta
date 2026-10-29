@@ -1,0 +1,696 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=block" rel="stylesheet">
+<style>
+  /* v5: the app's v2.1 look (iOS greys, white cards, system blue), no first person, no signature. */
+  :root {
+    --night: #13202e; --day: #f2f2f7; --sun: #f2b84b;
+    --ink: #000000; --ink-2: #6e6e73; --line: #e3e3e8; --blue: #007aff; --blue-soft: #e6f0ff;
+    --prep: #00879b; --project: #c26b00; --task: #8e8e93;
+  }
+  * { box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--night); margin: 0; }
+  body { font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  .abs { position: absolute; }
+  .layer { position: absolute; inset: 0; }
+
+  .phrase { position: absolute; left: 0; right: 0; text-align: center; font-weight: 800; letter-spacing: -0.045em; line-height: 1.02; white-space: nowrap; }
+  .w { display: inline-block; overflow: hidden; vertical-align: top; padding: 0 0.02em 0.12em; margin-bottom: -0.12em; }
+  .w > span { display: inline-block; will-change: transform; }
+
+  .goalchip { position: absolute; display: inline-flex; align-items: center; gap: 20px; padding: 18px 34px 18px 22px; border-radius: 999px;
+    font-size: 42px; font-weight: 600; white-space: nowrap; border: 3px solid; letter-spacing: -0.01em; }
+  .goalchip i { width: 46px; height: 46px; border-radius: 50%; border: 4px solid; display: block; flex: none; }
+
+  /* SMART */
+  .tile { position: absolute; display: grid; place-items: center; font: 800 84px/1 'Inter', sans-serif; letter-spacing: -0.02em; }
+  .tile span { display: block; }
+  #word { position: absolute; left: 0; right: 0; text-align: center; font-size: 38px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--blue); }
+  #word .w > span { padding: 0 2px; }
+  #vague { position: absolute; display: inline-flex; align-items: center; gap: 22px; padding: 22px 42px 22px 26px; border-radius: 999px; white-space: nowrap;
+    font-size: 54px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink); background: #fff; box-shadow: 0 10px 30px rgb(0 0 0 / 0.08); }
+  #vague i { width: 54px; height: 54px; border-radius: 50%; border: 4px solid #c7c7cc; display: block; flex: none; }
+  #vague b { position: absolute; left: 100px; height: 5px; top: 50%; background: #ff3b30; border-radius: 3px; }
+  #scard { position: absolute; left: 110px; width: 860px; background: #fff; border-radius: 50px; overflow: hidden; }
+  .srow { position: absolute; left: 36px; right: 36px; height: 112px; display: flex; align-items: center; gap: 28px; }
+  .srow .l { width: 64px; height: 64px; border-radius: 18px; background: var(--blue-soft); color: var(--blue); display: grid; place-items: center; font: 800 34px/1 'Inter'; flex: none; }
+  .srow .x { font-size: 46px; font-weight: 500; letter-spacing: -0.02em; color: var(--ink); white-space: nowrap; }
+  .srow.first .x { font-weight: 700; font-size: 52px; }
+  .srow + .srow::before { content: ''; position: absolute; left: 92px; right: 0; top: 0; height: 2px; background: var(--line); }
+  #scheck { position: absolute; width: 96px; height: 96px; border-radius: 50%; background: #34c759; display: grid; place-items: center; box-shadow: 0 12px 30px rgb(52 199 89 / 0.35); }
+
+  .shot { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; background: var(--day); }
+  .shot img { position: absolute; left: 0; top: 0; width: 1080px; height: 1919px; display: block; }
+  .shot .blur { filter: blur(16px) saturate(0.9); }
+  .shot .dim { position: absolute; inset: 0; background: rgb(242 242 247 / 0.5); }
+  .focus { position: absolute; overflow: hidden; }
+  .focus img { position: absolute; width: 1080px; height: 1919px; }
+
+  .balloon { position: absolute; left: 50%; padding: 38px 52px 42px; border-radius: 44px; background: var(--blue); color: #fff;
+    font-size: 62px; font-weight: 800; letter-spacing: -0.03em; white-space: nowrap; box-shadow: 0 30px 60px rgb(0 60 140 / 0.28); }
+  .balloon .tail { position: absolute; left: 50%; width: 54px; height: 54px; background: var(--blue); border-radius: 8px; transform: translateX(-50%) rotate(45deg); }
+  .balloon .txt { position: relative; }
+
+  .touch { position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; background: rgb(0 0 0 / 0.25); border: 4px solid rgb(255 255 255 / 0.85); }
+  .ripple { position: absolute; border-radius: 50%; border: 6px solid var(--blue); }
+
+  /* Not only goals: one goal, things float in on strings and get reeled into it */
+  #gcard { position: absolute; left: 180px; width: 720px; background: #fff; border-radius: 56px; overflow: hidden; }
+  #ghead { position: absolute; left: 0; top: 0; width: 720px; height: 170px; }
+  #gtile { position: absolute; left: 48px; top: 30px; width: 110px; height: 110px; border-radius: 30px; background: #ffe3e9; display: grid; place-items: center; }
+  .gbar { position: absolute; border-radius: 99px; }
+  #gsep { position: absolute; left: 0; right: 0; top: 168px; height: 2px; background: var(--line); }
+  .pill { position: absolute; left: 0; top: 0; width: 600px; height: 104px; margin: -52px 0 0 -300px; border-radius: 52px; background: #fff; transform-origin: 50% 50%; }
+  .pill .ic { position: absolute; left: 30px; top: 30px; width: 44px; height: 44px; }
+  .pill .b1 { position: absolute; left: 104px; top: 31px; height: 20px; border-radius: 10px; }
+  .pill .b2 { position: absolute; left: 104px; top: 61px; height: 13px; border-radius: 7px; opacity: 0.55; }
+  #sheen { position: absolute; top: -20%; bottom: -20%; width: 40%; pointer-events: none;
+    background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.75), transparent); mix-blend-mode: soft-light; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="layer" style="background:var(--night)"></div>
+  <div class="layer" id="stars"></div>
+  <div class="layer" id="dayBg" style="background:var(--day)"></div>
+
+  <svg class="abs" id="moon" width="220" height="220" viewBox="0 0 100 100" style="left:430px;top:300px">
+    <defs><mask id="mm"><rect width="100" height="100" fill="#fff"/><circle cx="66" cy="38" r="36" fill="#000"/></mask></defs>
+    <circle cx="50" cy="50" r="40" fill="#f5f3ee" mask="url(#mm)"/>
+  </svg>
+  <div class="abs" id="sun" style="width:200px;height:200px;border-radius:50%;background:var(--sun);left:440px;top:300px"></div>
+
+  <div id="chips"></div>
+
+  <!-- the app icon, then it splits into S M A R T -->
+  <div class="abs" id="logoMark" style="left:430px;top:520px;width:220px;height:220px;border-radius:48px;background:#2c5d8f;box-shadow:0 30px 70px rgb(0 0 0 / 0.14)">
+    <svg viewBox="0 0 100 100" width="220" height="220"><path id="logoCheck0" d="M29 52l14 14 29-30" fill="none" stroke="#fcfbf8" stroke-width="10.4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="70"/></svg>
+  </div>
+
+  <div class="layer" id="smart">
+    <div id="tiles"></div>
+    <div id="word"></div>
+    <div id="vague"><i></i><span id="vagueTxt"></span><b></b></div>
+    <div id="scard"></div>
+    <div id="scheck"><svg viewBox="0 0 24 24" width="56" height="56"><path id="scheckPath" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="22"/></svg></div>
+  </div>
+
+  <div class="layer" id="appClip"><div id="app" class="layer">
+    <div class="shot" id="shotPlan">
+      <img data-src="plan"><img class="blur" data-src="plan"><div class="dim"></div>
+      <div class="focus"><img data-src="plan"></div>
+    </div>
+    <div class="shot" id="shotToday">
+      <img data-src="today"><img class="b" data-src="today-forgot">
+      <img class="blur" data-src="today"><img class="blur b" data-src="today-forgot"><div class="dim"></div>
+      <div class="focus"><img data-src="today"><img class="b" data-src="today-forgot"></div>
+    </div>
+    <div class="shot" id="shotReview">
+      <img data-src="review"><img class="blur" data-src="review"><div class="dim"></div>
+      <div class="focus"><img data-src="review">
+        <svg class="abs" style="overflow:visible;left:0;top:0" width="10" height="10"><path id="ulPath" fill="none" stroke="#ff9500" stroke-width="9" stroke-linecap="round"/></svg>
+      </div>
+    </div>
+    <div class="touch" id="touch"></div>
+    <div class="ripple" id="ripple"></div>
+  </div></div>
+
+  <div class="layer" id="asm">
+    <div id="waves"></div>
+    <svg class="abs" id="strings" width="1080" height="1920" style="left:0;top:0;overflow:visible"></svg>
+    <div id="gcard">
+      <div id="ghead">
+        <div id="gtile"><svg width="62" height="62" viewBox="0 0 24 24"><path fill="#ff2d55" d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 3 5 6.6 5c2.1 0 3.6 1.2 4.4 2.6h2C13.8 6.2 15.3 5 17.4 5 21 5 23 8.6 21.6 11.8 19.5 16.4 12 21 12 21z"/></svg></div>
+        <div class="gbar" style="left:196px;top:56px;width:330px;height:32px;background:#1c1c1e"></div>
+        <div class="gbar" style="left:196px;top:104px;width:200px;height:20px;background:#d1d1d6"></div>
+        <svg class="abs" style="left:640px;top:62px" width="30" height="46" viewBox="0 0 10 16"><path d="M2 2l6 6-6 6" fill="none" stroke="#c7c7cc" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div id="gsep"></div>
+      <div id="sheen"></div>
+    </div>
+    <div id="pills"></div>
+  </div>
+
+  <div id="phrases"></div>
+  <div id="balloons"></div>
+
+  <div class="abs" id="lockup" style="left:0;right:0;top:0;height:1920px">
+    <svg class="abs" id="logo" width="200" height="200" viewBox="0 0 100 100" style="left:440px;top:700px">
+      <rect width="100" height="100" rx="22" fill="#2c5d8f"/>
+      <path id="logoCheck" d="M29 52l14 14 29-30" fill="none" stroke="#fcfbf8" stroke-width="10.4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="70" stroke-dashoffset="70"/>
+    </svg>
+  </div>
+</div>
+
+<script>
+const LANG = LANG_JSON
+const R = RECTS_JSON
+const STR = {
+  en: {
+    night: ['Every night', 'you dream up', 'new goals.'], morning: ['By morning,', 'they’re gone.'], stay: 'Now they stay.',
+    smart: 'Make it SMART.', smartAccent: 2,
+    chips: ['Read more', 'Go to the gym', 'Save money', 'Learn English', 'Sleep better'], vague: 'Go to the gym',
+    words: ['Specific', 'Measurable', 'Achievable', 'Relevant', 'Time-bound'],
+    rows: ['Exercise regularly', '45 min of exercise, 3× a week', '80% counts as on track', 'To end the back pain', 'Starts Monday'],
+    balloons: ['Your why, always in sight.', 'Missed a day? Say why.', 'Every week, it suggests a fix.'],
+    notOnly: 'Not only goals.', kinds: ['Habits', 'Preps', 'Projects', 'Tasks'],
+    tag: 'Goals that survive<br>the moment of decision.',
+  },
+  pt: {
+    night: ['Toda noite', 'você sonha com', 'novas metas.'], morning: ['De manhã,', 'elas somem.'], stay: 'Agora elas ficam.',
+    smart: 'Deixe a meta SMART.', smartAccent: 3,
+    chips: ['Ler mais', 'Ir à academia', 'Guardar dinheiro', 'Aprender inglês', 'Dormir melhor'], vague: 'Ir à academia',
+    words: ['Específica', 'Mensurável', 'Atingível', 'Relevante', 'Temporal'],
+    rows: ['Treinar regularmente', '45 min, 3× por semana', '80% já conta como em dia', 'Para acabar com a dor nas costas', 'Começa segunda'],
+    balloons: ['Seu porquê, sempre à vista.', 'Falhou um dia? Diga por quê.', 'Toda semana, sugere um ajuste.'],
+    notOnly: 'Não só metas.', kinds: ['Hábitos', 'Preparos', 'Projetos', 'Tarefas'],
+    tag: 'Metas que sobrevivem<br>ao momento da decisão.',
+  },
+}[LANG]
+document.documentElement.lang = LANG === 'pt' ? 'pt-BR' : 'en'
+for (const img of document.querySelectorAll('img[data-src]')) img.src = `assets/${img.dataset.src}-${LANG}.png`
+
+const k = 1080 / 390
+const $ = (id) => document.getElementById(id)
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x))
+const prog = (t, a, b) => clamp((t - a) / (b - a))
+const lerp = (a, b, p) => a + (b - a) * p
+const outCubic = (p) => 1 - Math.pow(1 - p, 3)
+const outQuint = (p) => 1 - Math.pow(1 - p, 5)
+const inCubic = (p) => p * p * p
+const inOut = (p) => p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2
+const outBack = (p, s = 1.70158) => 1 + (s + 1) * Math.pow(p - 1, 3) + s * Math.pow(p - 1, 2)
+const mixHex = (a, b, p) => {
+  const pa = a.match(/\w\w/g).map((h) => parseInt(h, 16)), pb = b.match(/\w\w/g).map((h) => parseInt(h, 16))
+  return `rgb(${pa.map((v, i) => Math.round(lerp(v, pb[i], p))).join(',')})`
+}
+const sc = (r) => ({ x: r.x * k, y: r.y * k, w: r.w * k, h: r.h * k })
+
+// ——— timeline ———
+const T = {
+  logo: 6.3, split: 8.0,
+  steps: [9.45, 10.3, 10.9, 11.5, 12.1], done: 12.4,
+  dive: 13.9,         // the finished card holds, then dives into the app
+  A0: 14.45,          // the app is in full view
+  AS: 22.5,           // Not only goals
+  out: 27.1,          // sign-off
+  end: 30.0,
+}
+T.docks = [1.7, 1.95, 2.35, 2.75, 3.0, 3.4].map((o) => T.AS + o)
+T.reel = T.AS + 3.55
+const A = (o) => T.A0 + o
+
+// ——— stars ———
+let seed = 7
+const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647)
+const STARS = Array.from({ length: 46 }, () => ({ x: rnd() * 1080, y: rnd() * 1300, s: 3 + rnd() * 5, ph: rnd() * 6.28 }))
+for (const s of STARS) {
+  const d = document.createElement('div'); d.className = 'abs'
+  Object.assign(d.style, { left: s.x + 'px', top: s.y + 'px', width: s.s + 'px', height: s.s + 'px', borderRadius: '50%', background: '#f5f3ee' })
+  s.el = d; $('stars').appendChild(d)
+}
+
+// ——— phrases ———
+const BLUE = '#007aff', TEAL = '#00879b', AMBER = '#c26b00', GREY = '#8e8e93'
+const PHRASES = [
+  { text: STR.night[0], in: 0.08, out: 0.9, y: 900, size: 150, night: true },
+  { text: STR.night[1], in: 0.95, out: 1.8, y: 900, size: 150, night: true },
+  { text: STR.night[2], in: 1.85, out: 3.4, y: 900, size: 168, night: true },
+  { text: STR.morning[0], in: 3.95, out: 4.8, y: 900, size: 150 },
+  { text: STR.morning[1], in: 4.85, out: 6.15, y: 900, size: 150, dissolve: true },
+  { text: STR.stay, in: 6.55, out: 7.85, y: 900, size: 118 },
+  { text: STR.smart, in: 8.45, out: T.dive + 1, y: 370, size: 112, accent: [STR.smartAccent], parent: 'smart' },
+  { text: STR.notOnly, in: T.AS + 0.05, out: T.AS + 1.2, y: 300, size: 112 },
+  { text: STR.kinds[0] + ' ' + STR.kinds[1], ins: [T.docks[0] - 0.12, T.docks[2] - 0.25], colors: [BLUE, TEAL], out: T.out, y: 228, size: 100 },
+  { text: STR.kinds[2] + ' ' + STR.kinds[3], ins: [T.docks[3] - 0.25, T.docks[5] - 0.25], colors: [AMBER, GREY], out: T.out + 0.05, y: 345, size: 100 },
+]
+for (const ph of PHRASES) {
+  const d = document.createElement('div'); d.className = 'phrase'
+  d.style.top = ph.y + 'px'
+  d.style.fontSize = ph.size + 'px'
+  ph.in ??= ph.ins[0]
+  ph.words = ph.text.split(' ').map((w, i, arr) => {
+    const wrap = document.createElement('span'); wrap.className = 'w'
+    const inner = document.createElement('span')
+    inner.innerHTML = [...w].map((c) => `<span style="display:inline-block">${c}</span>`).join('')
+    if (ph.accent?.includes(i)) inner.style.color = BLUE
+    if (ph.colors) inner.style.color = ph.colors[i]
+    wrap.appendChild(inner); d.appendChild(wrap)
+    if (i < arr.length - 1) d.appendChild(document.createTextNode(ph.colors ? '  ' : ' '))
+    return { wrap, inner, letters: [...inner.children] }
+  })
+  ph.el = d; (ph.parent ? $(ph.parent) : $('phrases')).appendChild(d)
+}
+function renderPhrase(ph, t) {
+  const vis = t >= ph.in - 0.01 && t <= ph.out + 0.4
+  ph.el.style.display = vis ? 'block' : 'none'
+  if (!vis) return
+  ph.el.style.color = ph.night ? '#f5f3ee' : '#000'
+  ph.words.forEach((w, i) => {
+    const t0 = ph.ins ? ph.ins[i] : ph.in + i * 0.09
+    const pIn = outQuint(prog(t, t0, t0 + 0.55))
+    let y = (1 - pIn) * 115
+    if (!ph.dissolve) y -= inCubic(prog(t, ph.out + i * 0.04, ph.out + i * 0.04 + 0.3)) * 115
+    w.inner.style.transform = `translateY(${y}%)`
+    if (ph.dissolve) {
+      w.wrap.style.overflow = t > ph.out - 0.6 ? 'visible' : 'hidden'
+      w.letters.forEach((l, j) => {
+        const n = i * 6 + j
+        const p = outCubic(prog(t, ph.out - 0.55 + n * 0.035, ph.out - 0.05 + n * 0.035))
+        l.style.transform = `translate(${p * (j % 2 ? 14 : -10)}px, ${-p * 90}px) rotate(${p * (j % 2 ? 12 : -9)}deg)`
+        l.style.opacity = 1 - p
+        l.style.filter = `blur(${p * 10}px)`
+      })
+    }
+  })
+}
+
+// ——— the goals from the app's intro ———
+const CHIPS = [
+  { x: 120, y: 560, r: -5 }, { x: 560, y: 650, r: 4 }, { x: 90, y: 1170, r: 3 }, { x: 520, y: 1260, r: -4 }, { x: 330, y: 1420, r: 2 },
+].map((c, i) => ({ ...c, text: STR.chips[i] }))
+CHIPS.forEach((c, i) => {
+  const d = document.createElement('div'); d.className = 'goalchip'
+  d.innerHTML = `<i></i>${c.text}`
+  c.el = d; c.dot = d.firstChild; c.i = i
+  $('chips').appendChild(d)
+})
+function renderChips(t, day) {
+  for (const c of CHIPS) {
+    const t0 = 1.95 + c.i * 0.11
+    const p = prog(t, t0, t0 + 0.6)
+    const vis = t > t0 && t < 6.3
+    c.el.style.display = vis ? 'inline-flex' : 'none'
+    if (!vis) continue
+    const e = outBack(p, 1.4)
+    let x = lerp(340, c.x, e), y = lerp(990, c.y, e)
+    const dt = t - t0
+    x += Math.sin(dt * 1.1 + c.i * 1.7) * 14
+    y += Math.cos(dt * 0.9 + c.i * 2.3) * 12
+    let rot = c.r + Math.sin(dt * 0.8 + c.i) * 2
+    const f0 = 4.45 + [0.0, 0.18, 0.08, 0.3, 0.14][c.i]
+    if (t > f0) {
+      const ft = t - f0
+      y += 1500 * ft * ft + 60 * ft
+      x += (c.i % 2 ? 1 : -1) * 90 * ft
+      rot += (c.i % 2 ? 1 : -1) * 70 * ft * ft
+    }
+    c.el.style.transform = `translate(${x}px, ${y}px) rotate(${rot}deg) scale(${lerp(0.4, 1, outCubic(p))})`
+    c.el.style.opacity = clamp(p * 3)
+    c.el.style.color = mixHex('f5f3ee', '000000', day)
+    c.el.style.background = day > 0 ? mixHex('1f2e3e', 'ffffff', day) : 'rgba(245,243,238,0.07)'
+    c.el.style.borderColor = mixHex('4a5a6b', 'ffffff', day)
+    c.el.style.boxShadow = `0 10px 30px rgb(0 0 0 / ${0.07 * day})`
+    c.dot.style.borderColor = mixHex('6b7b8c', 'c7c7cc', day)
+  }
+}
+
+// ——— SMART ———
+const LETTERS = ['S', 'M', 'A', 'R', 'T']
+const TILE = 150, GAP = 22, TILES_X = 540 - (5 * TILE + 4 * GAP) / 2, TILES_Y = 550
+const tiles = LETTERS.map((l, i) => {
+  const d = document.createElement('div'); d.className = 'tile'
+  d.innerHTML = `<span>${l}</span>`
+  $('tiles').appendChild(d)
+  return { el: d, span: d.firstChild, x: TILES_X + i * (TILE + GAP) }
+})
+const wordEls = STR.words.map((w) => {
+  const d = document.createElement('div'); d.className = 'abs'
+  d.style.cssText = 'left:0;right:0;text-align:center'
+  d.innerHTML = `<span class="w"><span>${w}</span></span>`
+  $('word').appendChild(d)
+  return d.querySelector('.w > span')
+})
+$('word').style.top = TILES_Y + TILE + 34 + 'px'
+$('word').style.height = '60px'
+$('vagueTxt').textContent = STR.vague
+const CARD_Y = 930, ROW_H = 112, CARD_PAD = 24
+const rows = STR.rows.map((txt, i) => {
+  const d = document.createElement('div'); d.className = 'srow' + (i === 0 ? ' first' : '')
+  d.innerHTML = `<div class="l">${LETTERS[i]}</div><div class="x">${txt}</div>`
+  d.style.top = CARD_PAD + i * ROW_H + 'px'
+  $('scard').appendChild(d)
+  return { el: d, l: d.firstChild, x: d.lastChild }
+})
+
+function renderSmart(t) {
+  const on = t > T.split && t < T.dive + 0.6
+  $('smart').style.display = on ? 'block' : 'none'
+  // the icon pops in over "Now they stay.", then splits into the tiles
+  const lp = prog(t, T.logo, T.logo + 0.5)
+  $('logoMark').style.display = t > T.logo && t < T.split + 0.05 ? 'block' : 'none'
+  $('logoMark').style.transform = `scale(${outBack(lp, 1.9)}) rotate(${(1 - outCubic(lp)) * -14}deg)`
+  $('logoCheck0').style.strokeDashoffset = 70 * (1 - outCubic(prog(t, T.logo + 0.2, T.logo + 0.6)))
+  if (!on) return
+
+  const sp = inOut(prog(t, T.split, T.split + 0.6))
+  const steps = T.steps
+  tiles.forEach((tl, i) => {
+    const pp = clamp(sp * 1.25 - i * 0.06)
+    const x = lerp(430, tl.x, pp), y = lerp(520, TILES_Y, pp), s = lerp(220, TILE, pp)
+    // states: off → on (its step) → done; all flash on at the end
+    const onAt = steps[i], doneAt = steps[i + 1] ?? T.done
+    const wave = prog(t, T.done + i * 0.06, T.done + i * 0.06 + 0.12)
+    const isOn = (t >= onAt && t < doneAt) || wave > 0
+    const isDone = t >= doneAt
+    let bg = '#e5e5ea', fg = '#8e8e93'
+    if (isDone) { bg = '#e6f0ff'; fg = BLUE }
+    if (isOn) { bg = BLUE; fg = '#ffffff' }
+    if (sp < 1) bg = mixHex('2c5d8f', 'e5e5ea', clamp(pp * 1.4))
+    const pop = Math.sin(Math.PI * prog(t, onAt, onAt + 0.3)) * 0.14 + Math.sin(Math.PI * wave) * 0.08
+    Object.assign(tl.el.style, { left: x + 'px', top: y + 'px', width: s + 'px', height: s + 'px', borderRadius: lerp(48, 36, pp) + 'px',
+      background: bg, color: fg, transform: `scale(${1 + pop})` })
+    tl.span.style.opacity = prog(t, T.split + 0.35, T.split + 0.6)
+  })
+  // the word under the letters
+  wordEls.forEach((w, i) => {
+    const a = steps[i], b = steps[i + 1] ?? T.dive
+    const pin = outQuint(prog(t, a, a + 0.4)), pout = inCubic(prog(t, b - 0.12, b + 0.1))
+    w.style.transform = `translateY(${(1 - pin) * 110 - pout * 110}%)`
+    w.parentElement.parentElement.style.display = t > a - 0.05 && t < b + 0.15 ? 'block' : 'none'
+  })
+
+  // the vague goal drops in, gets struck out, and opens into a card
+  const vd = prog(t, 8.65, 9.1)
+  const strike = inOut(prog(t, steps[0] - 0.05, steps[0] + 0.2))
+  const open = inOut(prog(t, steps[0] + 0.3, steps[0] + 0.65))
+  const vague = $('vague')
+  vague.style.display = t > 8.65 && open < 1 ? 'inline-flex' : 'none'
+  const vw = vague.offsetWidth || 500
+  vague.style.left = 540 - vw / 2 + 'px'
+  vague.style.top = CARD_Y + 30 + 'px'
+  vague.style.transform = `translateY(${(1 - outBack(vd, 2.2)) * -500}px) rotate(${(1 - outCubic(vd)) * 8 + Math.sin(t * 2) * 1.5 * (1 - open)}deg) scale(${1 - 0.15 * open})`
+  vague.style.opacity = clamp(vd * 4) * (1 - prog(t, steps[0] + 0.2, steps[0] + 0.4))
+  vague.lastChild.style.width = strike * (vw - 140) + 'px'
+
+  const shown = rows.map((_, i) => outCubic(prog(t, steps[i] + (i ? 0.05 : 0.4), steps[i] + (i ? 0.4 : 0.75))))
+  const nRows = shown.reduce((a, b) => a + b, 0)
+  const ch = CARD_PAD * 2 + Math.max(0.6, nRows) * ROW_H
+  const card = $('scard')
+  card.style.display = open > 0 ? 'block' : 'none'
+  const cw = lerp(vw * 0.85, 860, open)
+  Object.assign(card.style, { left: 540 - cw / 2 + 'px', width: cw + 'px', top: CARD_Y + 'px', height: lerp(140, ch, open) + 'px', opacity: open,
+    boxShadow: `0 30px 70px rgb(0 0 0 / ${0.08 + 0.04 * prog(t, T.done, T.done + 0.3)})` })
+  rows.forEach((r, i) => {
+    const p = shown[i]
+    r.el.style.opacity = p
+    r.el.style.transform = `translateX(${(1 - p) * 120}px)`
+    r.l.style.transform = `scale(${1 + Math.sin(Math.PI * prog(t, steps[i] + (i ? 0.25 : 0.6), steps[i] + (i ? 0.55 : 0.9))) * 0.25})`
+  })
+  // done: a check lands on the card
+  const cp = prog(t, T.done + 0.1, T.done + 0.45)
+  $('scheck').style.display = cp > 0 ? 'grid' : 'none'
+  Object.assign($('scheck').style, { left: 540 + 430 - 70 + 'px', top: CARD_Y - 40 + 'px', transform: `scale(${outBack(cp, 2.4)})` })
+  $('scheckPath').style.strokeDashoffset = 22 * (1 - outCubic(prog(t, T.done + 0.25, T.done + 0.55)))
+
+  // dive into the app
+  const dv = inCubic(prog(t, T.dive, T.dive + 0.5))
+  const cy = CARD_Y + ch / 2
+  $('smart').style.transformOrigin = `540px ${cy}px`
+  $('smart').style.transform = `scale(${1 + 1.6 * dv})`
+  $('smart').style.filter = dv > 0 ? `blur(${dv * 14}px)` : 'none'
+  $('smart').style.opacity = 1 - prog(t, T.dive + 0.05, T.dive + 0.45)
+}
+
+// ——— Not only goals: habits, a prep, project steps and a task float in on strings, then get reeled into the goal ———
+// the goal holds the strings low on the screen, the pieces float above it like balloons; the reel lifts the goal up into them
+const G = { top: 560, low: 1420, head: 170, rowH: 104, gap: 16, pad: 26 }
+const KIND = {
+  habit: { color: BLUE, bar: '#9cc7ff', icon: `<circle cx="22" cy="22" r="18" fill="none" stroke="${BLUE}" stroke-width="4.5"/>` },
+  prep: { color: TEAL, bar: '#93d3dd', icon: `<circle cx="22" cy="22" r="18" fill="none" stroke="${TEAL}" stroke-width="4.5"/>` },
+  project: { color: AMBER, bar: '#efc08a', icon: `<circle cx="22" cy="22" r="18" fill="none" stroke="${AMBER}" stroke-width="4.5"/><path d="M22 22V6a16 16 0 0 1 15.2 11z" fill="${AMBER}"/>` },
+  task: { color: GREY, bar: '#cfcfd4', icon: `<rect x="4" y="4" width="36" height="36" rx="10" fill="none" stroke="#aeaeb2" stroke-width="4.5"/>` },
+}
+const PILLS = [
+  { kind: 'habit', from: [-420, 420], slot: [300, 650], w1: 300, w2: 170 },
+  { kind: 'habit', from: [1500, 380], slot: [785, 730], w1: 240, w2: 150 },
+  { kind: 'prep', from: [-420, 1250], slot: [290, 905], w1: 330, w2: 190 },
+  { kind: 'project', from: [1500, 1300], slot: [795, 985], w1: 270, w2: 210 },
+  { kind: 'project', from: [-300, 2100], slot: [315, 1165], w1: 310, w2: 140 },
+  { kind: 'task', from: [1400, 2100], slot: [770, 1240], w1: 220, w2: 120 },
+].map((p, i) => ({ ...p, at: T.docks[i], i }))
+const FLOAT_S = 0.8
+for (const p of PILLS) {
+  const K = KIND[p.kind]
+  const d = document.createElement('div'); d.className = 'pill'
+  d.innerHTML = `<svg class="ic" viewBox="0 0 44 44">${K.icon}</svg><div class="b1" style="width:${p.w1}px;background:${K.bar}"></div><div class="b2" style="width:${p.w2}px;background:${K.bar}"></div>`
+  p.el = d; $('pills').appendChild(d)
+  const wave = document.createElement('div'); wave.className = 'abs'
+  Object.assign(wave.style, { borderRadius: '50%', border: `4px solid ${K.color}` })
+  p.wave = wave; $('waves').appendChild(wave)
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+  Object.assign(path.style, { fill: 'none', stroke: K.color, strokeWidth: 5, strokeLinecap: 'round', opacity: 0 })
+  p.str = path; $('strings').appendChild(path)
+}
+const stackY = (i) => G.top + G.head + G.pad + i * (G.rowH + G.gap) + G.rowH / 2
+const G_FULL = G.head + G.pad * 2 + PILLS.length * G.rowH + (PILLS.length - 1) * G.gap
+
+function renderAssembly(t) {
+  const on = t > T.AS + 0.2 && t < T.out + 0.55
+  $('asm').style.display = on ? 'block' : 'none'
+  if (!on) return
+  const pin = prog(t, T.AS + 0.3, T.AS + 0.8)
+  const rec = inOut(prog(t, T.out, T.out + 0.5))
+  // the reel: strings pull every piece into the goal, one after another
+  const reelP = (i) => inOut(prog(t, T.reel + i * 0.05, T.reel + 0.55 + i * 0.05))
+  const grow = inOut(prog(t, T.reel, T.reel + 0.75))
+  const gh = lerp(G.head, G_FULL, grow)
+  const gTop = lerp(G.low, G.top, inOut(prog(t, T.reel - 0.05, T.reel + 0.6)))
+  const settle = prog(t, T.reel + 0.6, T.out)
+  const bump = PILLS.reduce((a, p) => a + Math.sin(Math.PI * prog(t, p.at, p.at + 0.3)) * 0.02, 0) + Math.sin(Math.PI * prog(t, T.reel + 0.55, T.reel + 0.95)) * 0.025
+  const gs = lerp(0.7, 1, outBack(pin, 1.8)) * (1 + bump) * (1 - 0.1 * rec)
+  const tilt = Math.sin(Math.PI * settle) * 4
+  const gc = $('gcard')
+  Object.assign(gc.style, { top: gTop + 'px', height: gh + 'px', opacity: clamp(pin * 2) * (1 - rec),
+    transformOrigin: `360px ${G.head / 2}px`, transform: `perspective(1600px) rotateX(${tilt}deg) scale(${gs})`,
+    filter: rec > 0 ? `blur(${rec * 16}px)` : 'none',
+    boxShadow: `0 ${30 + 20 * grow}px ${70 + 40 * grow}px rgb(0 0 0 / ${0.08 + 0.05 * grow})` })
+  $('gsep').style.opacity = grow
+  const sa = T.reel + 0.75
+  $('sheen').style.left = lerp(-60, 130, inOut(prog(t, sa, sa + 0.8))) + '%'
+  $('sheen').style.display = t > sa && t < sa + 0.8 ? 'block' : 'none'
+
+  for (const p of PILLS) {
+    const fly = prog(t, p.at - 0.55, p.at)
+    const vis = fly > 0
+    p.el.style.display = vis ? 'block' : 'none'
+    if (!vis) { p.str.style.opacity = 0; p.wave.style.display = 'none'; continue }
+    const e = outCubic(fly)
+    // in flight along a curve, then floating at its slot
+    const [sx, sy] = p.from, [tx, ty] = p.slot
+    const mx = (sx + tx) / 2 + (sy - ty) * 0.22, my = (sy + ty) / 2 + (tx - sx) * 0.22
+    let x = (1 - e) * (1 - e) * sx + 2 * (1 - e) * e * mx + e * e * tx
+    let y = (1 - e) * (1 - e) * sy + 2 * (1 - e) * e * my + e * e * ty
+    const dt = Math.max(0, t - p.at)
+    const bob = clamp(dt / 0.4)
+    x += Math.sin(dt * 1.6 + p.i * 1.3) * 10 * bob
+    y += Math.cos(dt * 1.9 + p.i * 2.1) * 12 * bob
+    let rot = (1 - e) * (p.from[0] < 540 ? -16 : 16) + Math.sin(dt * 1.4 + p.i) * 3 * bob + (p.slot[0] < 540 ? -3 : 3) * bob
+    const land = Math.sin(Math.PI * prog(t, p.at, p.at + 0.3)) * 0.12
+    let s = FLOAT_S * (1 + land)
+    // reeled into the goal card
+    const r = reelP(p.i)
+    const ry = stackY(p.i) + (gTop - G.top)
+    x = lerp(x, 540, r); y = lerp(y, ry, r); rot = lerp(rot, 0, r); s = lerp(s, 1, r)
+    // after the reel the stack rides the card's bump, tilt and exit
+    const k2 = prog(t, T.reel + 0.5, T.reel + 0.6)
+    const gy = gTop + G.head / 2
+    const ox = 540 + (x - 540) * lerp(1, gs, k2), oy = gy + (y - gy) * lerp(1, gs, k2)
+    p.el.style.transform = `translate(${ox}px, ${oy}px) rotate(${rot}deg) scale(${s * lerp(1, gs, k2)})`
+    p.el.style.filter = rec > 0 ? `blur(${rec * 16}px)` : fly < 1 ? `blur(${6 * (1 - e) * (1 - e)}px)` : 'none'
+    p.el.style.opacity = 1 - rec
+    p.el.style.background = mixHex('ffffff', 'f2f2f7', r)
+    p.el.style.boxShadow = `0 ${18 * (1 - r) + 2}px ${40 * (1 - r) + 4}px rgb(0 0 0 / ${0.12 * (1 - r) + 0.02})`
+    // the string: from the bottom of the goal to the piece, slack while floating, taut and gone as it's reeled in
+    const strOn = prog(t, p.at - 0.15, p.at + 0.1) * (1 - prog(t, T.reel + p.i * 0.05 + 0.25, T.reel + p.i * 0.05 + 0.45))
+    if (strOn > 0) {
+      const ax = 540 + (p.slot[0] < 540 ? -14 : 14), ay = gTop + 6
+      const a = rot * Math.PI / 180, hb = 50 * s
+      const nx = x - Math.sin(a) * hb, ny = y + Math.cos(a) * hb
+      const sway = 40 * (1 - r) * Math.sin(t * 1.7 + p.i * 1.9)
+      p.str.setAttribute('d', `M ${ax} ${ay} Q ${(ax + nx) / 2 + sway} ${(ay + ny) / 2 + 30 * (1 - r)} ${nx} ${ny}`)
+      p.str.style.opacity = 0.6 * strOn
+    } else p.str.style.opacity = 0
+    // a ring goes out as it lands
+    const wp = prog(t, p.at, p.at + 1.0)
+    p.wave.style.display = wp > 0 && wp < 1 ? 'block' : 'none'
+    if (wp > 0 && wp < 1) {
+      const rr = 80 + outCubic(wp) * 240
+      Object.assign(p.wave.style, { left: tx - rr + 'px', top: ty - rr + 'px', width: 2 * rr + 'px', height: 2 * rr + 'px', opacity: 0.35 * Math.pow(1 - wp, 1.5) })
+    }
+  }
+}
+
+// ——— balloons ———
+const BALLOONS = [
+  { text: STR.balloons[0], in: A(0.3), out: A(1.95), y: 1070, tail: 'top' },
+  { text: STR.balloons[1], in: A(2.75), out: A(5.1), y: 1440, tail: 'top' },
+  { text: STR.balloons[2], in: A(6.1), out: A(7.95), y: 360, tail: 'bottom', size: 56 },
+]
+for (const b of BALLOONS) {
+  const d = document.createElement('div'); d.className = 'balloon'
+  if (b.size) d.style.fontSize = b.size + 'px'
+  d.innerHTML = `<div class="tail"></div><div class="txt">${b.text.split(' ').map((w) => `<span class="w"><span>${w}</span></span>`).join(' ')}</div>`
+  d.style.top = b.y + 'px'
+  const tail = d.firstChild
+  if (b.tail === 'top') tail.style.top = '-18px'; else tail.style.bottom = '-18px'
+  b.el = d; b.words = [...d.querySelectorAll('.w > span')]
+  $('balloons').appendChild(d)
+}
+function renderBalloon(b, t) {
+  const vis = t > b.in && t < b.out + 0.3
+  b.el.style.display = vis ? 'block' : 'none'
+  if (!vis) return
+  const p = prog(t, b.in, b.in + 0.5), q = inCubic(prog(t, b.out, b.out + 0.25))
+  const s = lerp(0.5, 1, outBack(p, 2)) * (1 - 0.12 * q)
+  b.el.style.transformOrigin = b.tail === 'top' ? '50% 0%' : '50% 100%'
+  b.el.style.transform = `translateX(-50%) translateY(${(b.tail === 'top' ? -1 : 1) * (1 - outCubic(p)) * 40}px) scale(${s})`
+  b.el.style.opacity = clamp(p * 4) * (1 - q)
+  b.words.forEach((w, i) => { w.style.transform = `translateY(${(1 - outQuint(prog(t, b.in + 0.12 + i * 0.07, b.in + 0.62 + i * 0.07))) * 110}%)` })
+}
+
+// ——— the app: Plan (the why) → Today (a miss, "Forgot") → Review (the fix) ———
+const SHOTS = ['shotPlan', 'shotToday', 'shotReview'].map((id) => {
+  const el = $(id)
+  return { el, blur: [...el.querySelectorAll('.blur')], dim: el.querySelector('.dim'), focus: el.querySelector('.focus'),
+    fimgs: [...el.querySelectorAll('.focus img')], b: [...el.querySelectorAll('.b')] }
+})
+function placeFocus(sh, r, lift, radius) {
+  const s = 1 + 0.055 * lift
+  Object.assign(sh.focus.style, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px', borderRadius: radius + 'px',
+    transform: `scale(${s})`, boxShadow: `0 ${40 * lift}px ${90 * lift}px rgb(0 0 0 / ${0.2 * lift})`, opacity: lift > 0.001 ? 1 : 0 })
+  for (const img of sh.fimgs) { img.style.left = -r.x + 'px'; img.style.top = -r.y + 'px' }
+  for (const img of sh.blur) img.style.opacity = lift
+  sh.dim.style.opacity = lift
+}
+const rPlan = sc(R.planCard)
+const rPrompt = sc({ x: R.promptCard.x, y: R.promptCard.y, w: R.promptCard.w, h: Math.max(R.prompt.y + R.prompt.h, R.promptB.y + R.promptB.h) + 12 - R.promptCard.y })
+const rForgot = sc(R.forgot), rSug = sc(R.sugCard), rWord = sc(R.forgotWord)
+
+function renderApp(t) {
+  const appOn = t >= T.dive + 0.1 && t < T.AS + 0.6
+  $('appClip').style.display = appOn ? 'block' : 'none'
+  if (!appOn) return
+  const open = outCubic(prog(t, T.dive + 0.15, A(0)))
+  let camS = lerp(1.14, 1.0, open) + 0.012 * prog(t, A(0.3), A(2.0))
+  const out = inOut(prog(t, T.AS, T.AS + 0.5))
+  camS *= 1 - 0.1 * out
+  $('app').style.transform = `scale(${camS})`
+  $('app').style.filter = out > 0 ? `blur(${out * 18}px)` : 'none'
+  $('app').style.opacity = prog(t, T.dive + 0.2, T.dive + 0.55) * (1 - out)
+
+  // pushes between the screens, as in the app
+  const push1 = inOut(prog(t, A(2.0), A(2.5))), push2 = inOut(prog(t, A(5.25), A(5.8)))
+  const [P, D, V] = SHOTS
+  const slide = (sh, inP, outP) => {
+    sh.el.style.display = inP > 0 && outP < 1 ? 'block' : 'none'
+    sh.el.style.transform = `translateX(${(1 - inP) * 1080 - outP * 360}px)`
+    sh.el.style.filter = outP > 0 ? `brightness(${1 - 0.12 * outP})` : 'none'
+    sh.el.style.boxShadow = inP < 1 ? `-30px 0 60px rgb(0 0 0 / ${0.15 * inP})` : 'none'
+  }
+  slide(P, 1, push1); slide(D, push1, push2); slide(V, push2, 0)
+
+  // Plan: the goal card and its why lift out
+  const fP = outCubic(prog(t, A(0.05), A(0.5))) * (1 - inCubic(prog(t, A(1.8), A(2.05))))
+  placeFocus(P, rPlan, fP, 50)
+
+  // Today: the miss prompt lifts, a finger taps "Forgot"
+  const fT = outCubic(prog(t, A(2.5), A(2.95))) * (1 - inCubic(prog(t, A(4.85), A(5.25))))
+  const tapped = t >= A(3.4)
+  for (const el of D.b) el.style.display = tapped ? 'block' : 'none'
+  placeFocus(D, rPrompt, fT, 50)
+  const cx = rForgot.x + rForgot.w / 2, cy = rForgot.y + rForgot.h / 2
+  const lift = 1 + 0.055 * fT
+  const fcx = rPrompt.x + rPrompt.w / 2, fcy = rPrompt.y + rPrompt.h / 2
+  const tx = fcx + (cx - fcx) * lift, ty = fcy + (cy - fcy) * lift
+  const appr = inOut(prog(t, A(2.9), A(3.35))), press = prog(t, A(3.35), A(3.47)), rel = prog(t, A(3.55), A(3.85))
+  $('touch').style.display = t > A(2.9) && t < A(4.05) ? 'block' : 'none'
+  $('touch').style.left = lerp(tx + 260, tx, appr) + 'px'
+  $('touch').style.top = lerp(ty + 520, ty, appr) + 'px'
+  $('touch').style.transform = `scale(${1 - 0.25 * press + 0.25 * rel})`
+  $('touch').style.opacity = clamp(appr * 2) * (1 - prog(t, A(3.65), A(4.05)))
+  const rp = outCubic(prog(t, A(3.4), A(4.0)))
+  $('ripple').style.display = t > A(3.4) && t < A(4.05) ? 'block' : 'none'
+  Object.assign($('ripple').style, { left: tx - 40 - rp * 110 + 'px', top: ty - 40 - rp * 110 + 'px', width: 80 + rp * 220 + 'px', height: 80 + rp * 220 + 'px', opacity: 1 - rp })
+
+  // Review: the suggestion lifts, its evidence gets underlined
+  const fR = outCubic(prog(t, A(5.8), A(6.25)))
+  placeFocus(V, rSug, fR, 50)
+  const ul = $('ulPath')
+  const ux = rWord.x - rSug.x, uy = rWord.y - rSug.y + rWord.h + 4, uw = rWord.w
+  ul.setAttribute('d', `M ${ux - 6} ${uy + 2} C ${ux + uw * 0.3} ${uy - 3}, ${ux + uw * 0.7} ${uy + 5}, ${ux + uw + 8} ${uy - 1}`)
+  ul.style.strokeDasharray = uw + 30
+  ul.style.strokeDashoffset = (uw + 30) * (1 - inOut(prog(t, A(6.8), A(7.25))))
+}
+
+const lockTitle = document.createElement('div')
+lockTitle.className = 'phrase'; lockTitle.style.cssText += 'top:940px;font-size:108px;color:#000'
+lockTitle.textContent = 'Smart Meta'
+const lockTag = document.createElement('div')
+lockTag.className = 'abs'; lockTag.style.cssText = 'left:0;right:0;top:1090px;text-align:center;font-size:50px;font-weight:500;color:#6e6e73;letter-spacing:-0.015em;line-height:1.25'
+lockTag.innerHTML = STR.tag
+$('lockup').append(lockTitle, lockTag)
+
+// Longer languages: shrink any line that would not fit
+function fitAll() {
+  const show = (el) => { const d = el.style.display; el.style.display = 'block'; return () => { el.style.display = d } }
+  const fit = (el, maxW, sizeEl = el) => {
+    const r = document.createRange(); r.selectNodeContents(el)
+    const w = r.getBoundingClientRect().width
+    if (w > maxW) sizeEl.style.fontSize = parseFloat(getComputedStyle(sizeEl).fontSize) * maxW / w + 'px'
+  }
+  const u0 = show($('smart')), u1 = show($('scard'))
+  for (const ph of PHRASES) { const u = show(ph.el); fit(ph.el, 980); u() }
+  for (const b of BALLOONS) { const u = show(b.el); fit(b.el.querySelector('.txt'), 900, b.el); u() }
+  rows.forEach((r) => fit(r.x, 690))
+  u1(); u0()
+}
+
+function render(t) {
+  // ——— sky ———
+  const sunUp = outCubic(prog(t, 3.5, 4.35))
+  const flood = inOut(prog(t, 3.75, 4.7))
+  const day = prog(t, 3.9, 4.4)
+  $('dayBg').style.clipPath = `circle(${flood * 2300}px at 540px ${400 + (1 - sunUp) * 1200}px)`
+  $('dayBg').style.display = flood > 0 ? 'block' : 'none'
+  STARS.forEach((s) => { s.el.style.opacity = (0.35 + 0.35 * Math.sin(t * 2 + s.ph)) * clamp(t / 0.6) })
+  const moonIn = outCubic(prog(t, 0, 0.9)), moonOut = inCubic(prog(t, 3.4, 3.95))
+  $('moon').style.transform = `translateY(${(1 - moonIn) * 60 + moonOut * 260}px) rotate(${-10 + t * 3}deg)`
+  $('moon').style.opacity = moonIn * (1 - moonOut)
+  const sunGone = inCubic(prog(t, 5.7, 6.3))
+  $('sun').style.display = t > 3.45 && t < 6.4 ? 'block' : 'none'
+  $('sun').style.transform = `translateY(${(1 - sunUp) * 1200 - sunGone * 500}px) scale(${lerp(0.6, 1, sunUp) * (1 - 0.3 * sunGone)})`
+  $('sun').style.opacity = 1 - sunGone
+  $('sun').style.boxShadow = `0 0 ${120 + 40 * Math.sin(t * 2)}px rgb(242 184 75 / 0.55)`
+
+  renderChips(t, day)
+  renderSmart(t)
+  renderApp(t)
+  renderAssembly(t)
+  for (const ph of PHRASES) renderPhrase(ph, t)
+  for (const b of BALLOONS) renderBalloon(b, t)
+
+  // ——— sign-off ———
+  const L0 = T.out + 0.3
+  const lk = t > L0
+  $('lockup').style.display = lk ? 'block' : 'none'
+  if (lk) {
+    const p = prog(t, L0, L0 + 0.5)
+    $('logo').style.transform = `scale(${outBack(p, 1.9)}) rotate(${(1 - outCubic(p)) * -14}deg)`
+    $('logoCheck').style.strokeDashoffset = 70 * (1 - outCubic(prog(t, L0 + 0.25, L0 + 0.65)))
+    const tp = outQuint(prog(t, L0 + 0.15, L0 + 0.65)), gp = outQuint(prog(t, L0 + 0.35, L0 + 0.85))
+    lockTitle.style.opacity = tp; lockTitle.style.transform = `translateY(${(1 - tp) * 50}px)`
+    lockTag.style.opacity = gp; lockTag.style.transform = `translateY(${(1 - gp) * 40}px)`
+  }
+}
+window.render = render
+window.ready = Promise.all([...[400, 500, 600, 700, 800].map((w) => document.fonts.load(`${w} 100px Inter`, 'Aa')), document.fonts.ready,
+  ...[...document.images].map((i) => i.decode().catch(() => {}))]).then(fitAll)
+render(Number(new URLSearchParams(location.search).get('t') || 0))
+</script>
+</body>
+</html>

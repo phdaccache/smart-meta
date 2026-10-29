@@ -1,6 +1,35 @@
 # Smart Meta
 
-A personal SMART-goals PWA for daily use on an iPhone.
+**Turn vague intentions into goals you actually keep.** Smart Meta is an
+offline-first goal tracker for the phone, built around the SMART method. A goal
+can't be saved without a measurable target, a recurring commitment and the
+reason behind it, and that reason stays in sight on Plan and in every weekly
+review. Small preps ("pack the gym bag tonight") make tomorrow's commitment easier, a
+weekly review asks what got in the way and suggests one change per goal, and
+Insights shows trends and patterns over months. It works fully offline, can sync
+to the cloud, and comes in English and Brazilian Portuguese.
+
+**Try it:** [smart-meta-h2ur.vercel.app](https://smart-meta-h2ur.vercel.app). On a phone,
+use Share → Add to Home Screen to install it.
+
+**Built with:** TypeScript, React, Vite, IndexedDB (Dexie), Supabase (PostgreSQL), Vercel.
+
+| Today | Plan | Goal | Insights |
+|:---:|:---:|:---:|:---:|
+| <img src="docs/screenshots/today-light.png" width="200" alt="Today, light mode"> | <img src="docs/screenshots/plan-light.png" width="200" alt="Plan, goals, light mode"> | <img src="docs/screenshots/goal-light.png" width="200" alt="A goal, light mode"> | <img src="docs/screenshots/insights-light.png" width="200" alt="Insights, goal trends, light mode"> |
+| <img src="docs/screenshots/today-dark.png" width="200" alt="Today, dark mode"> | <img src="docs/screenshots/plan-dark.png" width="200" alt="Plan, projects, dark mode"> | <img src="docs/screenshots/goal-dark.png" width="200" alt="A finish-line goal, dark mode"> | <img src="docs/screenshots/insights-dark.png" width="200" alt="Insights, patterns, dark mode"> |
+
+*Screenshots use the app's sample data.*
+
+## Demo video
+
+<p align="center">
+  <a href="https://github.com/phdaccache/smart-meta/raw/main/video/brag.mp4"><img src="video/brag-preview.webp" width="300" alt="Smart Meta launch video: goals dreamed up at night are gone by morning; Smart Meta makes one SMART, keeps its why in sight, asks why a day was missed, suggests a weekly fix, and groups habits, preps, projects and tasks under the goal"></a>
+</p>
+
+<p align="center"><em>The launch video (silent preview)</em></p>
+
+---
 
 - **How to use it:** [docs/GUIDE.md](docs/GUIDE.md)
 - **Workflows to test:** [docs/TESTING.md](docs/TESTING.md)
@@ -11,13 +40,13 @@ offline, and an optional Supabase sync copies everything off the phone.
 
 ## What's in v1
 
-- **Today**: one list assembled from goals, preps, project steps and tasks, each
-  with its goal's *why*. Finished groups collapse. Miss prompts with one-tap
-  reasons and a user-grown "what took its place?" list. Quantity and time
-  check-ins inline. Backfill any past day from the calendar button.
+- **Today**: one list assembled from goals, preps, project steps and tasks,
+  grouped under each goal's name and value icon. Finished groups collapse.
+  Miss prompts with one-tap reasons and a user-grown "what took its place?"
+  list. Quantity and time check-ins inline. Backfill any past day from the calendar button.
 - **Plan**: goals (active, capped at 4 by default; maintenance; backlog;
-  archive) and projects. Goals are habits or finish lines.
-  History, revisions and reviews live on each goal.
+  archive) and projects. Goals are habits or finish lines, each card with its
+  *why*. History, revisions and reviews live on each goal.
   Status words plus a last-4-weeks bar. Goal detail with commitments, preps,
   full check-in history (corrections visible), revisions, edit, abandon,
   deliberately awkward delete, and the end-of-goal review.
@@ -37,9 +66,9 @@ offline, and an optional Supabase sync copies everything off the phone.
 - **Settings**: values, replay intro, day rollover (default 04:00), goal cap,
   creation mode, JSON export/import, sync sign-in.
 
-- **Review**: the weekly ritual: loose ends, last week per goal with reasons,
-  one evidence-backed suggestion per goal, dates, stalled projects, an open
-  slot. Rules in `src/lib/review.ts`, design in spec §16.
+- **Review**: the weekly ritual: loose ends, last week per goal with its *why*
+  and reasons, one evidence-backed suggestion per goal, dates, stalled projects,
+  an open slot. Rules in `src/lib/review.ts`, design in spec §16.
 
 - **Insights**: the long run, in three tabs. *Goals*: weekly trend per goal
   with plan changes marked and their before/after, and tolerance vs actual.
