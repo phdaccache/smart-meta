@@ -1,5 +1,6 @@
 import type { Base } from '../lib/types'
 import { isEnvelope, openRecord, sealRecord } from './crypto'
+import { log } from './log'
 import type { PullResult, RemoteRecord, SyncTarget } from './target'
 
 /** A target that can also list records still stored readable, from before encryption. */
@@ -62,6 +63,7 @@ export class EncryptedTarget implements SyncTarget {
       if (rows.length < MIGRATE_PAGE) break
     }
     this.migrated = true
+    if (sealed) log('sealed', sealed, 'records synced before encryption')
     return sealed
   }
 
@@ -86,7 +88,7 @@ export class EncryptedTarget implements SyncTarget {
 
   private skip(r: RemoteRecord, why: string): null {
     this.unreadable++
-    console.warn(`sync: skipped ${r.collection}/${r.id}: ${why}`)
+    log('skipped', r.collection, why)
     return null
   }
 }

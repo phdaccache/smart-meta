@@ -7,6 +7,7 @@ import { dayMonth, formatTime, toDateStr } from '../lib/dates'
 import { loadSampleData } from '../dev/sample'
 import { loadWorstCaseData } from '../dev/worst'
 import { canSignOut, deleteAccount, eraseAllData, signOut, syncNow, useSyncStatus } from '../sync/controller'
+import { clearLog, readLog } from '../sync/log'
 import { pendingRequests } from '../sync/account'
 import { DateField, InfoTip, Screen, Section, Sheet, Stepper, Switch, toast, TypeToConfirm } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
@@ -427,6 +428,7 @@ function DevSection({ devToday }: { devToday: string | null }) {
   const today = useToday(settings.rolloverHour)
   const [busy, setBusy] = useState(false)
   const [debugPaint, setDebugPaint] = useState(() => document.documentElement.classList.contains('debug-paint'))
+  const [logOpen, setLogOpen] = useState(false)
   const { email, access } = useSyncStatus()
   // Only the owner's account can list requests; anyone else's Developer section has no row for it.
   const waiting = useWaitingCount(access === 'member')
@@ -473,8 +475,35 @@ function DevSection({ devToday }: { devToday: string | null }) {
           sub={email ? 'Sign out of sync first, so your real data stays safe.' : 'Replaces everything on this device with a worked example and months of history.'} onClick={() => load(loadSampleData)} />
         <LinkRow title={busy ? 'Loading…' : 'Load worst-case data…'}
           sub={email ? 'Sign out of sync first, so your real data stays safe.' : 'Long names, a one-letter value, emoji, links and counts of 1, for checking layouts.'} onClick={() => load(loadWorstCaseData)} />
+        <LinkRow title="Diagnostics log" sub="Sign-in, keys and sync on this device, for finding what went wrong." onClick={() => setLogOpen(true)} />
       </div>
+      <DiagnosticsLog open={logOpen} onClose={() => setLogOpen(false)} />
     </Section>
+  )
+}
+
+/** The diagnostics log (src/sync/log.ts), newest last: copy it to send to the developer. */
+function DiagnosticsLog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [lines, setLines] = useState<string[]>([])
+  useEffect(() => {
+    if (open) setLines(readLog())
+  }, [open])
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(lines.join('\n'))
+      toast('Log copied.')
+    } catch {
+      toast('Couldn’t copy. Select the text instead.')
+    }
+  }
+  return (
+    <Sheet open={open} onClose={onClose} title="Diagnostics log">
+      <pre className="dev-log">{lines.length ? lines.join('\n') : 'Nothing yet.'}</pre>
+      <div className="sheet-actions">
+        <button className="btn" onClick={() => { clearLog(); setLines([]) }}>Clear</button>
+        <button className="btn primary" onClick={copy}>Copy</button>
+      </div>
+    </Sheet>
   )
 }
 

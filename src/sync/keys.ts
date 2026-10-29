@@ -5,6 +5,7 @@ import {
   fromB64, newKeys, passkeyLock, passwordLock, random, toB64, unlock, WrongKeyError, type KeyRow, type Lock, type NewKeys,
   type PasskeyLock,
 } from './crypto'
+import { log } from './log'
 
 /**
  * Where each person's keys live (plan §7.2). On the server, `user_keys`: the data key, only locked. On the
@@ -77,7 +78,10 @@ export async function readyKey(client: SupabaseClient, userId: string): Promise<
   const row = await localRow(userId)
   for (let attempt = 0; attempt < 2; attempt++) {
     const { data, error } = await client.from('user_keys').select('key_id, public_key, private_key, locks').eq('user_id', userId).maybeSingle()
-    if (error) return local && row?.keyId === local.keyId ? 'offline' : row ? 'unlock' : 'offline'
+    if (error) {
+      log('keys: reading the server failed', error.message)
+      return local && row?.keyId === local.keyId ? 'offline' : row ? 'unlock' : 'offline'
+    }
     if (data) {
       const server = fromServer(data as ServerRow)
       if (local?.keyId === server.keyId) {
@@ -85,6 +89,7 @@ export async function readyKey(client: SupabaseClient, userId: string): Promise<
         return local.key
       }
       // Another phone's keys got there first (or this one's never did): the server's are the ones.
+      log('keys: the server has them; this phone', local ? 'had others' : 'has none')
       await db.meta.delete(dataKeyKey(userId))
       await setMeta(rowKey(userId), server)
       return 'unlock'
@@ -96,6 +101,7 @@ export async function readyKey(client: SupabaseClient, userId: string): Promise<
     })
     if (!insertError) return local.key
     // Made at the same moment on another phone: read theirs and go again.
+    log('keys: upload failed', insertError.code, insertError.message)
     if (insertError.code !== '23505') return 'offline'
   }
   return 'offline'

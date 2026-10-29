@@ -1298,6 +1298,9 @@ export const ptBR: Messages = {
   'err.newerVersion': 'Os dados são de uma versão mais nova do app (v{n}). Atualize o app antes.',
   'err.syncNotConfigured': 'A sincronização não está configurada nesta versão.',
   'err.offlineErase': 'Você está sem conexão. Conecte-se antes para apagar também a cópia sincronizada.',
+  'err.crashed': 'Algo deu errado.',
+  'err.reload': 'Recarregar',
+  'err.copyLog': 'Copiar o registro de diagnóstico',
   'check.words': 'pelo menos, no mínimo, no máximo, não mais que, ou mais, ou menos, menos de, mais de, todo, toda, todos, todas, cada, nunca, sempre, só, somente, apenas, sem, antes, depois, até, dentro de, uma vez, duas vezes, vezes',
 
   // What's new

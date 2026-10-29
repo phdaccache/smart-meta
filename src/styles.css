@@ -1681,6 +1681,10 @@ button, a, summary, [role='button'], .chip {
 .account-form { width: 100%; text-align: left; margin-top: 28px; display: grid; gap: 8px; }
 .account-form .field-error, .account-form .account-hint { text-align: center; }
 .account-form input[readonly] { color: var(--ink-2); }
+.dev-log { max-height: 50vh; overflow: auto; font-size: 11px; line-height: 1.45; white-space: pre-wrap; word-break: break-word;
+  background: var(--surface); border-radius: 10px; padding: 10px; margin-bottom: 14px; user-select: text; -webkit-user-select: text; }
+.crash { min-height: 100dvh; display: grid; align-content: center; gap: 12px; padding: 24px 16px; text-align: center; background: var(--bg); }
+.crash h1 { font-size: 22px; }
 .account-hint { font-size: 13px; color: var(--ink-2); line-height: 1.4; text-align: center; }
 .account-hint .link-btn { min-height: 0; font-size: 15px; font-weight: 500; }
 .intro-nav .account-hint { margin-bottom: 10px; }

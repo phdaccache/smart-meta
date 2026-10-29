@@ -1303,6 +1303,9 @@ export const en = {
   'err.newerVersion': 'Data is from a newer version of the app (v{n}). Update the app first.',
   'err.syncNotConfigured': 'Sync is not configured for this build.',
   'err.offlineErase': 'You’re offline. Connect first so the synced copy is erased too.',
+  'err.crashed': 'Something went wrong.',
+  'err.reload': 'Reload',
+  'err.copyLog': 'Copy the diagnostics log',
   'check.words': 'at least, at most, no more than, or more, or less, less than, more than, every, each, never, always, only, without, before, after, by, within, until, once, twice',
 
   // What's new

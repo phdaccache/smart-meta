@@ -10,6 +10,7 @@ import {
 import { keysReady, syncStatus, useSyncStatus, type Access } from '../sync/controller'
 import { WrongKeyError } from '../sync/crypto'
 import type { KeyRow } from '../sync/crypto'
+import { log } from '../sync/log'
 import {
   localRow, NoPrfError, passkeysWork, setUpWithPasskey, setUpWithPassword, unlockWithPasskey, unlockWithPassword,
 } from '../sync/keys'
@@ -223,6 +224,7 @@ function EmailScreen() {
       holdKeyboard()
       navigate('/account/code')
     } catch (e) {
+      log('sign-in: sending the code failed', e)
       setError((e as Error).message)
       setBlocked(e instanceof OtherOwnerError)
     } finally {
@@ -269,8 +271,10 @@ function CodeScreen() {
     setError(null)
     try {
       field.current?.blur()
+      log('sign-in: checking the code')
       done(await verifyCode(typedEmail, value))
     } catch (e) {
+      log('sign-in: the code failed', e)
       setError((e as Error).message)
       setBusy(false)
     }
@@ -331,6 +335,7 @@ function done(access: Access | null) {
   typedEmail = ''
   sentAt = 0
   const lock = syncStatus().lock
+  log('sign-in: code accepted;', 'access', access, 'key', lock ?? 'ready')
   if (lock) navigate(lock === 'setup' ? '/account/lock' : '/account/unlock', { replace: true })
   else finish(access)
 }
@@ -343,6 +348,7 @@ function finish(access: Access | null) {
 
 /** With the data key on this phone: sync starts (for a member), and the sign-in goes on. */
 async function keysDone() {
+  log('keys: on this phone')
   await keysReady()
   finish(syncStatus().access)
 }
@@ -366,6 +372,7 @@ export function KeysPrompt() {
   useEffect(() => {
     if (!s.lock || prompted || path.startsWith('/account') || path.startsWith('/welcome')) return
     prompted = true
+    log('opening the', s.lock, 'screen')
     openOver('/', s.lock === 'setup' ? '/account/lock' : '/account/unlock')
   }, [s.lock, path])
   return null
@@ -404,6 +411,7 @@ function LockScreen() {
       await setUpWithPasskey(s.userId, s.email ?? '')
       await keysDone()
     } catch (e) {
+      log('keys: Face ID set-up failed', e)
       setBusy(false)
       if (e instanceof NoPrfError) navigate('/account/password', { replace: true })
       else setError(passkeyError(e))
@@ -474,7 +482,8 @@ function PasswordScreen() {
     try {
       await setUpWithPassword(s.userId, password)
       await keysDone()
-    } catch {
+    } catch (e) {
+      log('keys: password set-up failed', e)
       setBusy(false)
       setError(t('acct.errOther'))
     }
@@ -502,7 +511,8 @@ function PasswordScreen() {
 function UnlockScreen() {
   const s = useSyncStatus()
   const email = s.email ?? ''
-  const [row, setRow] = useState<KeyRow | null>(null)
+  /** Undefined while it's read; null if this phone has none (it shouldn't happen: sync saves it first). */
+  const [row, setRow] = useState<KeyRow | null | undefined>(undefined)
   const [usePassword, setUsePassword] = useState(false)
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
@@ -512,8 +522,12 @@ function UnlockScreen() {
   useEffect(() => {
     if (!s.userId) return
     localRow(s.userId).then((r) => {
+      if (!r) log('unlock: no keys on this phone')
       setRow(r)
       if (r && !r.locks.some((l) => l.kind === 'passkey')) setUsePassword(true)
+    }, (e) => {
+      log('unlock: reading the keys failed', e)
+      setRow(null)
     })
   }, [s.userId])
   const kinds = row && { passkey: row.locks.some((l) => l.kind === 'passkey'), password: row.locks.some((l) => l.kind === 'password') }
@@ -527,14 +541,14 @@ function UnlockScreen() {
       else await unlockWithPassword(s.userId, password)
       await keysDone()
     } catch (e) {
+      log('unlock failed:', how, e)
       setBusy(false)
       if (how === 'password') setError(e instanceof WrongKeyError ? t('acct.pwWrong', { email }) : t('acct.errOther'))
       else setError(e instanceof WrongKeyError || e instanceof NoPrfError ? byPhone('acct.unlockFailed', 'acct.unlockFailedOther') : passkeyError(e))
     }
   }
 
-  if (!kinds) return null
-  if (usePassword) {
+  if (kinds && usePassword) {
     return (
       <Page form onBack={kinds.passkey ? () => { setUsePassword(false); setError(null) } : later} bar={t('acct.yourData')}
         title={t('acct.unlockTitle')} sub={t('acct.unlockPwSub', { email })}
@@ -550,9 +564,9 @@ function UnlockScreen() {
   }
   return (
     <Page onBack={later} icon={ICONS.faceId} title={t('acct.unlockTitle')} sub={byPhone('acct.unlockSub', 'acct.unlockSubOther')}
-      foot={error && <p className="field-error account-hint">{error}</p>}
-      nav={<button className="btn primary block" disabled={busy} onClick={() => open('passkey')}>{byPhone('acct.unlockGo', 'acct.unlockGoOther')}</button>}
-      below={kinds.password && <button className="quiet-link" onClick={() => { setUsePassword(true); setError(null) }}>{t('acct.unlockUsePw')}</button>} />
+      foot={(error || row === null) && <p className="field-error account-hint">{error ?? t('acct.errOther')}</p>}
+      nav={<button className="btn primary block" disabled={busy || !row} onClick={() => open('passkey')}>{byPhone('acct.unlockGo', 'acct.unlockGoOther')}</button>}
+      below={kinds?.password && <button className="quiet-link" onClick={() => { setUsePassword(true); setError(null) }}>{t('acct.unlockUsePw')}</button>} />
   )
 }
 

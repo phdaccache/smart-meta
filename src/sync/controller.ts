@@ -9,6 +9,7 @@ import { toast } from '../ui/components'
 import { EncryptedTarget } from './encrypted'
 import { queueEverything, SyncEngine } from './engine'
 import { forgetAll, forgetKey, keepKeys, localLockState, readyKey, type LockState } from './keys'
+import { log, short } from './log'
 import { startProfileSync, stopProfileSync } from './profile'
 import { SupabaseTarget, supabase } from './supabase'
 
@@ -92,6 +93,7 @@ async function run() {
     failures = 0
     set({ phase: 'idle', error: null, lastSyncedAt: await e.lastSyncedAt(), pending: await e.pending() })
   } catch (err) {
+    log('sync failed', err)
     // Never surfaces as a blocking error: data is safe locally and will retry.
     set({ phase: 'error', error: (err as Error).message, pending: await e.pending() })
     schedule(BACKOFF[Math.min(failures++, BACKOFF.length - 1)])
@@ -107,6 +109,7 @@ let current: string | null = null
 
 async function onSession(user: User | null) {
   current = user?.id ?? null
+  log('session', short(user?.id))
   if (!user) {
     engine = null
     stopProfileSync()
@@ -148,6 +151,7 @@ export async function refreshAccess(): Promise<Access | null> {
   const before = await getMeta<Access | null>(accessKey(userId), null)
   let access = before
   const { data, error } = await supabase.rpc('my_access')
+  log('access', short(userId), error ? `failed: ${error.message}` : data)
   if (!error && data === 'removed') {
     await removedFromSync(userId)
     return null
@@ -168,6 +172,7 @@ export async function refreshAccess(): Promise<Access | null> {
     clearTimeout(timer)
     if (access) {
       const lock = await localLockState(userId)
+      log('key', short(userId), 'not a member yet:', lock ?? 'ready')
       if (status.userId === userId) set({ lock })
     }
   }
@@ -178,6 +183,7 @@ export async function refreshAccess(): Promise<Access | null> {
 /** Starts syncing once this phone holds the account's data key; until then, says what's missing. */
 async function startEngine(userId: string) {
   const key = await readyKey(supabase!, userId)
+  log('key', short(userId), key instanceof CryptoKey ? 'ready' : key)
   if (status.userId !== userId || engine) return
   if (!(key instanceof CryptoKey)) {
     // Offline with nothing to go on: the next wake asks again.
@@ -229,7 +235,10 @@ export function sessionReady(userId: string, ms = 15_000): Promise<Access | null
       resolve(a)
     }
     const onChange = () => void check()
-    const timeout = setTimeout(() => done(status.userId === userId ? status.access : null), ms)
+    const timeout = setTimeout(() => {
+      log('sign-in: still waiting for access after', ms / 1000, 's')
+      done(status.userId === userId ? status.access : null)
+    }, ms)
     listeners.add(onChange)
     check()
   })
