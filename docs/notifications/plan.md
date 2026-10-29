@@ -936,12 +936,16 @@ certificate).
 - [ ] Owner: create the app Gmail (2-Step Verification, app password); paste the SMTP app password and
       the Turnstile secret into Supabase (staging first). The Cloudflare account and Turnstile widget
       already exist (made in S1, §13).
-- [ ] Claude: add the staging Preview variables for `notifications-s2` and its hostname to the
-      Turnstile widget, or merge into `notifications` before phone tests (§16.2).
+- [x] Claude: add the staging Preview variables for `notifications-s2` (done 2026-10-29). Owner: add
+      the S2 preview hostname `smart-meta-h2ur-git-notifications-s2-daccache.vercel.app` to the
+      Turnstile widget. S2 is tested on its own preview (§16.2).
 - [ ] Email-code sign-in with Turnstile; drop password sign-in.
 - [ ] `members` (cap 100) and `profiles` (name, avatar) with RLS and explicit grants; existing users
-      migrated as members.
-- [ ] Waiting for access screen; push to the owner on a new request; Requests screen with Approve.
+      migrated as members. Claude writes the SQL; **the owner pastes it into the staging SQL editor**
+      (Claude has no Supabase access, owner's choice 2026-10-29). The owner is
+      `pedrodaccache@gmail.com`.
+- [ ] Waiting for access screen; Requests screen with Approve (Settings → Developer, with the number
+      waiting). **No push to the owner in S2:** it needs S5's pieces (see S5).
 - [ ] Sign-in after the first goal; "Not now" popup; Safari hint on iPhone.
 - [ ] One person per phone (§6.8); sign-out rules; delete account.
 - **Done when:** a test friend can sign up on the preview, wait, get approved with one tap, and sync.
@@ -977,6 +981,11 @@ certificate).
       reminders (once), weekly review (own time).
 - [ ] Settings → Notifications (per type, summary time, weekdays only, review time).
 - [ ] Developer test button. Beta flag for the owner → shadow week.
+- [ ] **Push to the owner on each new access request** (spec AC-5), moved here from S2 on
+      2026-10-29: "New request: ana@…", tapping it opens Requests. Sent by the server when someone
+      signs up, so it needs this stage's VAPID keys, server sender and the owner's subscription.
+      Not planned by the phone and not encrypted (it holds only an email, which the owner sees
+      anyway). Doesn't count toward the owner's cap of 3.
 - **Done when:** the owner gets correct pushes for a week on the preview.
 
 ### S6. The rest, then merge
@@ -1025,14 +1034,12 @@ certificate).
 ## 16. Open questions
 
 1. **Privacy note:** written together in S4 (owner's ideas, Claude drafts), shown in Settings.
-2. **Stage branches and the preview (from S2 on):** each `notifications-s<N>` branch gets its own
-   Vercel preview address, so the Home Screen app installed from the `notifications` address only
-   shows a stage after it merges back. Options: test each stage on its own preview (a new Home Screen
-   icon per stage), or merge into `notifications` before testing on the phone. **S1 was tested on its
-   own preview** (the owner's choice, since it was throwaway). Claude suggests merging into
-   `notifications` before phone tests from S2 on, so there is one icon; ask the owner at the start of
-   S2. Staging variables are scoped per branch (§13), not to all previews, so UI-experiment previews
-   keep using production.
+
+Answered on 2026-10-29: **every stage is tested on its own branch's preview** (owner's choice), so
+each stage needs its staging Preview variables in Vercel (Claude adds them) and its preview hostname
+in the Turnstile widget (the owner adds it); a new Home Screen icon per stage. Supabase changes are
+pasted into the staging SQL editor by the owner; Claude gets no Supabase access. The push to the
+owner on a new request moves to S5.
 
 Answered on 2026-10-21 (kept for the record): push the branch (done); a time set on a task or prep
 counts as asked for; commitments get once-only reminders for now; late items aren't re-sent; weekly
@@ -1096,3 +1103,9 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   Learned: open the window first on a push tap (Android); no banner on Android is a phone setting
   (§5). S1 tested on its own preview; from S2 on, ask whether to merge first (§16.2). Test page and
   test VAPID keys deleted.
+- **2026-10-29 (5):** **S2 started** on branch `notifications-s2`, with its staging Preview variables
+  in Vercel. Owner's answers: every stage is tested on its own preview (§16.2 closed); Claude gets no
+  Supabase access, so the owner pastes SQL into the staging SQL editor; the owner's account is
+  `pedrodaccache@gmail.com`. The push to the owner on a new request moves from S2 to S5 (spec AC-5):
+  S1 sent its push by hand from a local script, but this one must go out by itself whenever someone
+  signs up, which needs S5's server sender.

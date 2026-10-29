@@ -38,8 +38,9 @@ and projects; photo avatars; Google sign-in if it becomes reliable on iPhone.
 - **AC-3** [S2] A **captcha** (Cloudflare Turnstile) runs before a code is sent, including "resend".
 - **AC-4** [S2] Without approval, a signed-in user sees **"Waiting for access"**, keeps using the app on
   the phone, and stores **nothing** on the server.
-- **AC-5** [S2] The owner gets a **push for each new request** and approves it with **one tap** from a
-  Requests screen in Developer mode. Only the owner can approve.
+- **AC-5** [S2] The owner approves each new request with **one tap** from a Requests screen in
+  Developer mode. Only the owner can approve. [S5] The owner gets a **push for each new request**.
+  (Push moved to S5 by the owner 2026-10-29.)
 - **AC-6** [S2] At most `N-1` members. Past that, new users see that the list is full and keep waiting.
 - **AC-7** [S2] On approval, everything the user created locally uploads, and "You're in" shows once.
 - **AC-8** [S2] An **"Activate notifications"** screen appears **after the last onboarding screen**
