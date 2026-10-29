@@ -42,7 +42,9 @@ and projects; photo avatars; Google sign-in if it becomes reliable on iPhone.
   Developer mode. Only the owner can approve. [S5] The owner gets a **push for each new request**.
   (Push moved to S5 by the owner 2026-10-29.)
 - **AC-6** [S2] At most `N-1` members. Past that, new users see that the list is full and keep waiting.
-- **AC-7** [S2] On approval, everything the user created locally uploads, and "You're in" shows once.
+- **AC-7** [S2] On approval, everything the user created locally uploads, and a green banner on Today
+  says so ("You've been accepted! Your goals are now backed up.") until swiped away. (Changed by the
+  owner 2026-10-29: a banner, not a toast.)
 - **AC-8** [S2] An **"Activate notifications"** screen appears **after the last onboarding screen**
   (after the first goal), with "Not now". Until the person syncs, Today shows a **"Sync and get
   notifications"** banner; swiping it away hides it for a day, then a week, then a month, then for good
@@ -60,6 +62,11 @@ and projects; photo avatars; Google sign-in if it becomes reliable on iPhone.
 - **AC-14** [S2] The owner-made password accounts are removed; the owner signs in with codes too.
 - **AC-15** [S2] No anonymous accounts.
 - **AC-16** [S2] The app stays **fully usable without an account** (local only), as today.
+- **AC-17** [S2] The owner can **delete a request** (swipe in Requests, or its sheet): that sign-up is
+  deleted and the person can sign up again. (Owner, 2026-10-29.)
+- **AC-18** [S2] The owner can **remove a member**: their account and synced data are deleted, their phone
+  keeps everything and works without sync, and Today shows a red "removed from sync" banner. The owner
+  can't remove themselves. (Owner, 2026-10-29.)
 
 ### Privacy and encryption (PR)
 

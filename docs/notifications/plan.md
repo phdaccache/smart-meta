@@ -944,11 +944,11 @@ certificate).
 - [x] Claude: add the staging Preview variables for `notifications-s2` (done 2026-10-29). Owner: add
       the S2 preview hostname `smart-meta-h2ur-git-notifications-s2-daccache.vercel.app` to the
       Turnstile widget. S2 is tested on its own preview (§16.2).
-Built on 2026-10-29, waiting for the owner's test on the preview (ticked once it passes):
-- [ ] Email-code sign-in with Turnstile; drop password sign-in. `src/sync/account.ts` (send and check
+Built on 2026-10-29; the owner tested everything on two phones on the preview the same day:
+- [x] Email-code sign-in with Turnstile; drop password sign-in. `src/sync/account.ts` (send and check
       the code), `src/ui/captcha.ts` (Turnstile, invisible unless Cloudflare wants a tap, reset after
       every send so "Send a new code" has a fresh token), screens in `src/screens/Account.tsx`.
-- [ ] `members` (cap 100) and `profiles` (name, avatar) with RLS and explicit grants; existing users
+- [x] `members` (cap 100) and `profiles` (name, avatar) with RLS and explicit grants; existing users
       migrated as members: `supabase/migrations/0002_accounts.sql`. Claude writes the SQL; **the owner
       pastes it into the staging SQL editor** (Claude has no Supabase access, owner's choice
       2026-10-29). The owner is recognized by the same email hash as the Developer section, so the
@@ -956,19 +956,22 @@ Built on 2026-10-29, waiting for the owner's test on the preview (ticked once it
       safe to run again: the existing-users backfill only runs when `members` is created. Tested
       before pasting on a local Postgres with a stand-in for Supabase's auth (47 checks: who can read
       and write what, the cap, approving, deleting).
-- [ ] Waiting for access screen; Requests screen with Approve (Settings → Developer → Requests, with
+- [x] Waiting for access screen; Requests screen with Approve (Settings → Developer → Requests, with
       the number waiting). **No push to the owner in S2:** it needs S5's pieces (see S5).
-- [ ] Sign-in after the first goal; "Not now" popup; Safari hint on iPhone; the "Sync and get
+- [x] Sign-in after the first goal; "Not now" popup; Safari hint on iPhone; the "Sync and get
       notifications" banner on Today (swipe left to Hide, back after a day, a week, a month, then never).
-- [ ] One person per phone (§6.8); sign-out rules; delete account. The phone's owner is
+- [x] One person per phone (§6.8); sign-out rules; delete account. The phone's owner is
       `meta.phoneOwner` ({ id, email }), set at the first sign-in; everything already on the phone is
       queued for the first upload then. Sending a code to another email is refused while the phone
       holds someone's data. A member's sign-out syncs first and refuses with anything left, then
       wipes the phone; a waiting account's sign-out keeps the data on the phone (it was never
       uploaded). Delete account calls `delete_my_account()` (no Edge Function), then wipes the phone.
-- [ ] Name and avatar: a row at the top of Settings opens the editor picked in S0. Kept on the phone and
-      sent to `profiles` only once the account is a member (spec AC-4: nothing on the server while
-      waiting).
+- [x] Name and avatar: the row at the top of Settings opens Account, whose card has a pencil for the editor
+      picked in S0. Kept on the phone, with or without an account, and sent to `profiles` only once the
+      account is a member (spec AC-4: nothing on the server while waiting).
+- [x] Someone else's data on the phone (spec AC-13): sending a code to another email is refused before the
+      captcha, with "Save a copy and remove it" (the share sheet with the JSON export, then the phone is
+      emptied) so the new person can sign in.
 
 Choices made while building (tell the owner; change if they disagree):
 - "Your goals are end-to-end encrypted." is **hidden until S3** (`ENCRYPTED` in `Account.tsx`): in S2 it
@@ -1007,6 +1010,14 @@ Choices made while building (tell the owner; change if they disagree):
   phone keeps everything and works on without sync, and Today shows a red "You were removed from sync"
   banner (`my_access()` answers `removed` for a session whose account is gone). Signing in again with the
   same email takes the data on the phone back as theirs.
+- Third round (2026-10-29): the pencil moved into the profile card on Account (no chevron there), the
+  green banner shows a cloud, and both banners close only by swiping (no ✕).
+- Security Advisor's remaining warning, "Leaked Password Protection Disabled", is accepted: that check
+  (HaveIBeenPwned) needs a paid Supabase plan, and the app uses no passwords at all.
+- Mockup leftovers, by stage: Face ID, data password and new-phone unlock (sign-in screens 5, 6, 7, 11)
+  are S3; "Not synced yet" and the Sync row's status are S4; the friend list is for social, later. The
+  avatars mockup shows names and avatars in Requests; S2 shows the email's initial, since a waiting
+  person's profile stays on their phone (AC-4). Approved members could show theirs: ask the owner.
 - Local testing against staging: `npm run dev -- --mode staging` with `.env.staging.local` (ignored by
   git), or the `dev-staging` entry in `.claude/launch.json`. `.env.local` points at production.
 - **Done when:** a test friend can sign up on the preview, wait, get approved with one tap, and sync.
@@ -1053,6 +1064,12 @@ Choices made while building (tell the owner; change if they disagree):
 - [ ] Preps with a time, goal review date, in-app celebration.
 - [ ] App icon badge (late + today), quiet hours, lock-screen details toggle.
 - [ ] Merge plan: apply migrations to production, deploy, enable for the owner, then friends.
+- [ ] Production Supabase set up like staging was in S2, before deploying: custom SMTP with the app Gmail
+      (`smartmeta.codes@gmail.com`, its app password pasted by the owner), the code-only "Confirm signup"
+      and "Magic Link" templates, sign-ups on, anonymous sign-ins off, confirm email on, 6-digit codes,
+      Turnstile captcha with its secret, 30 emails an hour; then `0002_accounts.sql` in the SQL editor
+      (existing users become members), and Security Advisor checked. Friends sign in once with a code:
+      the password sign-in is gone from the app (spec AC-14).
 - **Done when:** merged to `main` and friends have it.
 
 ### What the owner needs to set up, and when
@@ -1175,3 +1192,8 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   profiles, approve, requests, delete account), Activate notifications after the intro, "Not now",
   the Safari hint, Waiting for access and List is full, the Today banner, Requests, name and avatar,
   one owner per phone, sign-out and delete account. Choices made while building are listed under S2.
+- **2026-10-29 (7):** **S2 done.** The owner tested sign-up, waiting, approval, sync, sign-out, delete
+  account, deleting requests and removing members on two phones. Last additions: "Save a copy and remove
+  it" when the phone holds someone else's data (AC-13), spec AC-7 to the green banner, new AC-17 (delete a
+  request) and AC-18 (remove a member), README's membership line made stricter (profiles too), and the
+  production setup listed under S6. `notifications-s2` merged into `notifications`.

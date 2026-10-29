@@ -49,8 +49,9 @@ These are the contracts between stages. Changing one affects others.
   `members` (only the owner writes), `profiles`, `user_keys` (locked data key, public key),
   `push_subscriptions` (one row per user), `scheduled_notifications` (deterministic ids like
   `due:<taskId>:<fireAt>`), `send_log`.
-- **Membership gates the server:** non-members can't read or write anything but their own profile and
-  membership status.
+- **Membership gates the server:** non-members can't read or write anything on the server, their own
+  profile included; they can only ask for their membership status (`my_access()`). Their name, avatar and
+  data wait on the phone until approval (spec AC-4; made stricter by S2 with the owner's OK).
 - **One person per phone:** the phone records its owner; data of two people never mixes (plan §6.8).
 - **Sync timing:** a few seconds after changes, on open, on reconnect, and a flush when the app goes to
   the background (plan §6.10).
@@ -63,7 +64,7 @@ These are the contracts between stages. Changing one affects others.
 |---|---|---|
 | S0 | Mockups: notifications, avatars, sign-in screens, "Not synced yet" | Done 2026-10-29 (every mockup picked) |
 | S1 | Tests on the owner's iPhone (passkey, push, captcha) + staging setup | Done 2026-10-29 (passkey chosen; push and captcha proven on iPhone and Android) |
-| S2 | Accounts | In progress (branch `notifications-s2`) |
+| S2 | Accounts | Done 2026-10-29 (tested on two phones; members, requests, profile, one person per phone) |
 | S3 | Encryption | Not started |
 | S4 | Safety and operations (backups, alarm, limits, sync timing, privacy note) | Not started |
 | S5 | Core notifications | Not started |

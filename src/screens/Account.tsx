@@ -4,8 +4,8 @@ import { marked, t, tk, type Key } from '../i18n'
 import { addDays, dayMonth, formatTime, toDateStr } from '../lib/dates'
 import type { DateStr } from '../lib/types'
 import {
-  approve, CODE_LENGTH, looksLikeEmail, members, pendingRequests, rejectRequest, removeMember, RESEND_SECONDS, sendCode,
-  verifyCode, type Member, type Request,
+  approve, CODE_LENGTH, looksLikeEmail, members, OtherOwnerError, pendingRequests, rejectRequest, removeMember, RESEND_SECONDS,
+  saveAndRemove, sendCode, verifyCode, type Member, type Request,
 } from '../sync/account'
 import { useSyncStatus, type Access } from '../sync/controller'
 import { useCaptcha } from '../ui/captcha'
@@ -181,9 +181,18 @@ function EmailScreen() {
   const [email, setEmail] = useState(typedEmail)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  /** Someone else's data is on this phone: offer to save a copy and remove it (spec AC-13). */
+  const [blocked, setBlocked] = useState(false)
   const field = useRef<HTMLInputElement>(null)
   const captcha = useCaptcha()
   useEffect(() => passKeyboard(() => field.current), [])
+
+  const clearOut = async () => {
+    if (!(await saveAndRemove())) return
+    setBlocked(false)
+    setError(null)
+    toast(t('acct.savedRemoved'))
+  }
 
   const send = async () => {
     if (busy || !looksLikeEmail(email)) return
@@ -193,7 +202,7 @@ function EmailScreen() {
       const address = email.trim().toLowerCase()
       // The same address within the minute: the code already sent still works.
       if (address !== typedEmail || Date.now() - sentAt > RESEND_SECONDS * 1000) {
-        await sendCode(address, await captcha.take().catch(() => { throw new Error(t('acct.errCaptcha')) }))
+        await sendCode(address, captcha.take)
         sentAt = Date.now()
       }
       typedEmail = address
@@ -201,6 +210,7 @@ function EmailScreen() {
       navigate('/account/code')
     } catch (e) {
       setError((e as Error).message)
+      setBlocked(e instanceof OtherOwnerError)
     } finally {
       setBusy(false)
     }
@@ -215,8 +225,9 @@ function EmailScreen() {
         <label className="field-label" htmlFor="account-email">{t('acct.email')}</label>
         <input ref={field} id="account-email" type="email" inputMode="email" autoComplete="email" autoCapitalize="none"
           autoCorrect="off" spellCheck={false} enterKeyHint="send" value={email}
-          onChange={(e) => { setEmail(e.target.value); setError(null) }} />
+          onChange={(e) => { setEmail(e.target.value); setError(null); setBlocked(false) }} />
         {error && <p className="field-error">{error}</p>}
+        {blocked && <button type="button" className="btn danger block" onClick={clearOut}>{t('acct.saveRemove')}</button>}
         <div ref={captcha.ref} className="captcha" />
       </form>
     </Page>
@@ -254,7 +265,7 @@ function CodeScreen() {
   const resend = async () => {
     setError(null)
     try {
-      await sendCode(typedEmail, await captcha.take().catch(() => { throw new Error(t('acct.errCaptcha')) }))
+      await sendCode(typedEmail, captcha.take)
       restart()
       setCode('')
       toast(t('acct.resent'))

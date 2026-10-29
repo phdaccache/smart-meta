@@ -1,4 +1,6 @@
 import type { AuthError } from '@supabase/supabase-js'
+import { exportData, shareOrDownload, wipeLocal } from '../db/backup'
+import { db } from '../db/db'
 import { t } from '../i18n'
 import { phoneOwner, sessionReady, type Access } from './controller'
 import { supabase } from './supabase'
@@ -24,15 +26,30 @@ function message(e: AuthError | Error): string {
   return t('acct.errOther')
 }
 
+/** This phone holds someone else's data: they sign in, or it's saved and removed first (spec AC-13). */
+export class OtherOwnerError extends Error {
+  constructor(public email: string) {
+    super(t('acct.otherOwner', { email }))
+  }
+}
+
+/** Saves a copy of what's on this phone (the share sheet, or a download), then removes it all. False if cancelled. */
+export async function saveAndRemove(): Promise<boolean> {
+  if ((await shareOrDownload(await exportData())) === 'cancelled') return false
+  await wipeLocal(db)
+  return true
+}
+
 /**
  * Sends a code, making the account if the email has none. A phone holding someone else's data says
- * so here, before any email goes out (spec AC-13). `captchaToken` comes from Turnstile (spec AC-3).
+ * so here, before the captcha or any email (spec AC-13). `captcha` gives a Turnstile token (spec AC-3).
  */
-export async function sendCode(email: string, captchaToken: string): Promise<void> {
+export async function sendCode(email: string, captcha: () => Promise<string>): Promise<void> {
   if (!supabase) throw new Error(t('err.syncNotConfigured'))
   const address = email.trim().toLowerCase()
   const owner = await phoneOwner()
-  if (owner && owner.email.toLowerCase() !== address) throw new Error(t('acct.otherOwner', { email: owner.email }))
+  if (owner && owner.email.toLowerCase() !== address) throw new OtherOwnerError(owner.email)
+  const captchaToken = await captcha().catch(() => { throw new Error(t('acct.errCaptcha')) })
   const { error } = await supabase.auth.signInWithOtp({ email: address, options: { shouldCreateUser: true, captchaToken } })
   if (error) throw new Error(message(error))
 }
