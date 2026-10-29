@@ -5,6 +5,9 @@ import { inject, pageview } from '@vercel/analytics'
 import { App } from './App'
 import { initLang } from './i18n'
 import { startSync } from './sync/controller'
+import { logUncaught } from './sync/log'
+import { CrashScreen } from './ui/CrashScreen'
+import { holdOpenLock, OpenTwice } from './ui/OpenTwice'
 import { installCaretAtEnd } from './ui/caret'
 import './ui/install'
 import './styles.css'
@@ -44,12 +47,18 @@ registerSW({
     })
   },
 })
+logUncaught()
+holdOpenLock()
 startSync()
 // Text tool, dev server only (src/dev/texts/README.md).
 if (import.meta.env.DEV) void import('./dev/texts/mount')
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <CrashScreen>
+      <App />
+      {/* Outside App: it must show even when a blocked database keeps App from drawing. */}
+      <OpenTwice />
+    </CrashScreen>
   </StrictMode>,
 )
