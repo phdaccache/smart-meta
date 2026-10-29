@@ -353,6 +353,11 @@ if (new URLSearchParams(location.search).get('from') === 'push') {
   history.replaceState(null, '', '/s1/index.html')
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) renderPush() })
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'from-push') log('push', true, 'brought to front by tapping a push')
+  })
+}
 
 // ---------- 4. Turnstile ----------
 
