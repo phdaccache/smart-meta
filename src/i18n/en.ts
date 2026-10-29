@@ -1100,7 +1100,6 @@ export const en = {
   'set.email': 'Email',
   'set.signInRow': 'Sign in',
   'set.signInSub': 'Back up your goals and get reminders.',
-  'set.account': 'Account',
   'set.synced': 'Synced',
   'set.offlineRetry': '{when} · offline, will retry',
   'set.syncing': 'syncing…',

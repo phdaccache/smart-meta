@@ -1679,7 +1679,7 @@ button, a, summary, [role='button'], .chip {
 .account .intro-appicon { margin: 0 auto; }
 .intro-steps .share svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .account-form { width: 100%; text-align: left; margin-top: 28px; display: grid; gap: 8px; }
-.account-form .field-error.center, .account-form .account-hint { text-align: center; }
+.account-form .field-error, .account-form .account-hint { text-align: center; }
 .account-hint { font-size: 13px; color: var(--ink-2); line-height: 1.4; text-align: center; }
 .account-hint .link-btn { min-height: 0; font-size: 15px; font-weight: 500; }
 .intro-nav .account-hint { margin-bottom: 10px; }

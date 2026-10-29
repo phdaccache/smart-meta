@@ -262,10 +262,6 @@ function SyncSection() {
   return (
     <Section title={t('set.sync')}>
       <div className="card list settings">
-        <div className="list-row label-row">
-          <div className="text"><span className="title">{t('set.account')}</span></div>
-          <span className="row-value ellipsis">{s.email}</span>
-        </div>
         {member ? (
           <>
             <div className="list-row">

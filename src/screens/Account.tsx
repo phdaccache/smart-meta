@@ -189,6 +189,8 @@ function EmailScreen() {
   useEffect(() => passKeyboard(() => field.current), [])
 
   const clearOut = async () => {
+    // Emptying the phone redraws the app from scratch; the address typed stays for the next try.
+    typedEmail = email.trim().toLowerCase()
     if (!(await saveAndRemove())) return
     setBlocked(false)
     setError(null)
@@ -298,7 +300,7 @@ function CodeScreen() {
             <span key={i} className={i === Math.min(code.length, CODE_LENGTH - 1) && !busy ? 'focus' : ''} aria-hidden="true">{d.trim()}</span>
           ))}
         </label>
-        {error && <p className="field-error center">{error}</p>}
+        {error && <p className="field-error">{error}</p>}
         <p className="account-hint">
           {left > 0
             ? t('acct.resendIn', { time: `0:${String(left).padStart(2, '0')}` })

@@ -1095,7 +1095,6 @@ export const ptBR: Messages = {
   'set.email': 'E-mail',
   'set.signInRow': 'Entrar',
   'set.signInSub': 'Guarde suas metas e receba lembretes.',
-  'set.account': 'Conta',
   'set.synced': 'Sincronizado',
   'set.offlineRetry': '{when} · sem conexão, vai tentar de novo',
   'set.syncing': 'sincronizando…',
