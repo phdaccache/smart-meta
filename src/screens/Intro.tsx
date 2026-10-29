@@ -22,7 +22,7 @@ import { useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
 import { FlagBR, FlagUS, IconCheck, IconChevronLeft, IconClose, IconPlus } from '../ui/icons'
 import { useInstall, useInstalled } from '../ui/install'
 import { syncStatus } from '../sync/controller'
-import { goBack, match, navigate } from '../ui/router'
+import { goBack, match, navigate, openOver } from '../ui/router'
 import { Tile, ValueTile, valueLook } from '../ui/valueLook'
 import {
   AchieveFields, KindField, MeasureFields, measureFields, PrepFields, PrepHead, SMART, SMART_LINE, SMART_Q, SmartBar, TimeFields, TitleFields, WhyText,
@@ -85,8 +85,9 @@ function useIntro(): IntroState {
 }
 
 /**
- * Skip or finish: first run leaves the Getting started card on Today. Finished, a first run offers to sign in
- * (Activate notifications) when there's an account to make, after the first goal (spec AC-8).
+ * Skip or finish: first run leaves the Getting started card on Today. Finished (after "Not only goals"), it
+ * offers to sign in while signed out: Activate notifications (spec AC-8). Saving the goal already counted
+ * as onboarded, so this doesn't ask whether it's the first run.
  */
 async function leaveIntro(finished = false) {
   const s = await getSettings()
@@ -94,7 +95,8 @@ async function leaveIntro(finished = false) {
   await setSettings(s.onboarded ? { introAt } : { onboarded: true, gettingStarted: true, introAt })
   resetIntro()
   const sync = syncStatus()
-  navigate(finished && !s.onboarded && sync.configured && sync.phase === 'signed-out' ? '/account' : '/')
+  if (finished && sync.configured && sync.phase === 'signed-out') openOver('/', '/account')
+  else navigate('/')
 }
 
 // ——— routing ———
