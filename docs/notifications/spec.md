@@ -152,7 +152,10 @@ Settings and indicators:
   review).
 - **NO-21** [S6] **Lock-screen details:** on by default; off sends generic text.
 - **NO-22** [S6] **Quiet hours:** off by default.
-- **NO-23** [S5] **Diagnostics row:** permission, subscription, last push delivered.
+- **NO-23** [S5] **Diagnostics are logged, not shown:** the send log (NO-16) keeps each push's result
+  (delivered, failed, subscription gone), and the push subscription keeps when the phone last checked
+  its permission and subscription. Users never see this. (Changed by the owner 2026-10-29: no
+  diagnostics row in Settings.)
 - **NO-24** [S5] **Denied or revoked permission:** instructions to turn it back on.
 - **NO-25** [S5] **Send a test notification**, Developer mode only.
 - **NO-26** No bell icon and no in-app inbox.

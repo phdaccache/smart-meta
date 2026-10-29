@@ -197,7 +197,8 @@ toast on Today; Requests is a Settings-style list. Numbers are the owner's scree
 - **Deep links:** tapping opens that task, goal or project.
 - **Cancel on done.** **No snooze.** **Time zone** stored with the plan. **Language** from app settings.
 - **Denied permission:** instructions to turn it back on.
-- **Diagnostics row** in Settings.
+- **Diagnostics are logs, not a row** (owner, 2026-10-29): permission, subscription and delivery results
+  go to the send log and the subscription row (spec NO-23); users don't see them.
 
 ---
 
@@ -970,9 +971,6 @@ done (owner's rule, 2026-10-21). The merge to `main` comes after S6 (§13).
    shows a stage after it merges back. Options: test each stage on its own preview (a new Home Screen
    icon per stage), or merge into `notifications` before testing on the phone. Staging environment
    variables should then apply to all preview branches, not just `notifications`.
-3. **Diagnostics (spec NO-23):** the owner removed the status rows from Settings → Notifications.
-   Drop diagnostics, or keep them only in the Developer section (permission, subscription, last push
-   delivered)?
 
 Answered on 2026-10-21 (kept for the record): push the branch (done); a time set on a task or prep
 counts as asked for; commitments get once-only reminders for now; late items aren't re-sent; weekly
@@ -1024,4 +1022,4 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   a light pattern; no ring, no initials.
 - **2026-10-29 (2):** Settings → Notifications picked (§2 "UI decisions"): one page, switches that open
   their options like Quick Add, banner-style cards for "not allowed yet" and "no account". The owner
-  removed the status rows; where diagnostics (spec NO-23) go is an open question (§16).
+  removed the status rows. Diagnostics become logs users don't see (spec NO-23 changed).
