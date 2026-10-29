@@ -791,7 +791,7 @@ after it.
 2. One user → many: the shared-phone bug (§6.8) and conflicts (§6.9).
 3. **Encryption bug or lost passkey → unreadable server data** (§7.2). Now the biggest risk.
 4. **Passkey PRF may not work in the installed iPhone app** → spike before building (§14).
-5. Support load ("it doesn't notify me") → diagnostics row.
+5. Support load ("it doesn't notify me") → diagnostics logs (send log, subscription checks; spec NO-23).
 6. The owner becomes the operator → alarm, backups, kill switch.
 7. Free projects pause after 7 idle days (staging only).
 8. Public repo: no secrets, no backups there.
@@ -911,7 +911,7 @@ done (owner's rule, 2026-10-21). The merge to `main` comes after S6 (§13).
 
 ### S5. Push, core
 - [ ] VAPID keys; service worker push and click handlers (deep links).
-- [ ] One subscription per user; re-subscribe on open; diagnostics row.
+- [ ] One subscription per user; re-subscribe on open; diagnostics logged (spec NO-23).
 - [ ] Planner (tests first) with phone-encrypted payloads; upload only the difference.
 - [ ] Dispatcher: every minute, stale drop at 15 min, fuse 20/day, kill switch, send log.
 - [ ] Types: morning summary, due dates (no time → summary; with time → also at that time), custom
