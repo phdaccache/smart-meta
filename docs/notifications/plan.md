@@ -954,7 +954,7 @@ Built on 2026-10-29, waiting for the owner's test on the preview (ticked once it
       2026-10-29). The owner is recognized by the same email hash as the Developer section, so the
       address isn't in the public repo, and gets in by themselves on the first sign-in. The file is
       safe to run again: the existing-users backfill only runs when `members` is created. Tested
-      before pasting on a local Postgres with a stand-in for Supabase's auth (40 checks: who can read
+      before pasting on a local Postgres with a stand-in for Supabase's auth (43 checks: who can read
       and write what, the cap, approving, deleting).
 - [ ] Waiting for access screen; Requests screen with Approve (Settings → Developer → Requests, with
       the number waiting). **No push to the owner in S2:** it needs S5's pieces (see S5).
@@ -984,6 +984,20 @@ Choices made while building (tell the owner; change if they disagree):
   back the old policy without the membership check (0002 removes it every time it runs).
 - A non-member can't write their profile either (stricter than the README's "their own profile"),
   following spec AC-4.
+- Owner's first round of feedback (2026-10-29), done: the sign-in dots count Activate only when the flow
+  began there; the intro's last button says Next when sign-in follows; "Go to [Today]" on Waiting as in the
+  intro; one height for the main button on every onboarding and sign-in screen (a link under it sits in
+  the space kept below, see `.intro-below`); six equal code boxes; a long email no longer squeezes its
+  label; "erases the phone" reworded; Turnstile runs only when a code is sent (`execution: 'execute'`),
+  so its box shows only when it's needed and the code goes once it's ticked; "You're in" became a green
+  banner on Today ("You've been accepted! Your goals are now backed up."), swiped away like the sync
+  banner; the sync banner's day count follows "Pretend today is"; Requests rows swipe to Approve and
+  Delete (Notes style, no full swipe) and open a sheet with the whole email; deleting a request deletes
+  that sign-up (`reject_request()`, never a member); the waiting count is read again on returning.
+- Settings, as the owner asked: a profile row at the top (avatar, name, and the email or "Not signed in")
+  opens **Account**: "Edit name and avatar", Sync, Backup, and one card with Erase all data and Delete
+  account, each confirmed in a sheet. Name and avatar exist without an account too (kept on the phone).
+  Developer is its own page (Settings → Developer, developers only), with Requests in it.
 - Local testing against staging: `npm run dev -- --mode staging` with `.env.staging.local` (ignored by
   git), or the `dev-staging` entry in `.claude/launch.json`. `.env.local` points at production.
 - **Done when:** a test friend can sign up on the preview, wait, get approved with one tap, and sync.

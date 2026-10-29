@@ -39,7 +39,7 @@ export function SettingsScreen() {
       <Screen back="/" title={t('set.restoreTitle')}>
         <SyncSection />
         <DataSection lastExportAt={settings.lastExportAt} />
-        {developer && <DevSection devToday={settings.devToday} />}
+        {developer && <DeveloperRow />}
       </Screen>
     )
   }
@@ -49,7 +49,11 @@ export function SettingsScreen() {
   ]
   return (
     <Screen back="/" title={t('set.title')}>
-      <ProfileSection />
+      <Section>
+        <div className="card list settings">
+          <ProfileRow onClick={() => navigate('/settings/account')} />
+        </div>
+      </Section>
       <Section title={t('set.secGoals')}>
         <div className="card list settings">
           <LinkRow title={t('set.values')} sub={values.length ? values.map((v) => v.name).join(' · ') : t('set.noneYet')}
@@ -75,9 +79,6 @@ export function SettingsScreen() {
         </div>
       </Section>
 
-      <SyncSection />
-      <DataSection lastExportAt={settings.lastExportAt} />
-
       <Section title={t('set.secAbout')}>
         <div className="card list settings">
           <LinkRow title={t('news.title')} onClick={() => setNews(true)} />
@@ -89,34 +90,54 @@ export function SettingsScreen() {
         <p className="settings-note">Smart Meta · {t('set.madeBy')}</p>
       </Section>
 
-      <EraseSection />
-      <DeleteAccountSection />
-      {developer && <DevSection devToday={settings.devToday} />}
+      {developer && <DeveloperRow />}
       <ReleaseNotes open={news} releases={RELEASES} onClose={() => setNews(false)} />
     </Screen>
   )
 }
 
-/** Signed in: who you are, at the top as in the iPhone's Settings; tapping it edits name and avatar. */
-function ProfileSection() {
+/**
+ * Who you are, at the top of Settings as on the iPhone: name and avatar (kept on the phone, signed in or
+ * not), and the email once signed in.
+ */
+function ProfileRow({ onClick }: { onClick?: () => void }) {
   const s = useSyncStatus()
   const profile = useProfile()
-  const [editing, setEditing] = useState(false)
-  if (s.phase === 'signed-out' || !profile) return null
-  return (
-    <Section>
-      <div className="card list settings">
-        <button className="list-row profile-row" onClick={() => setEditing(true)}>
-          <AvatarView avatar={profile.avatar} size={56} />
-          <div className="text">
-            <div className={`title ellipsis ${profile.name ? '' : 'muted'}`}>{profile.name || t('prof.noName')}</div>
-            <div className="sub ellipsis">{s.email}</div>
-          </div>
-          <IconChevronRight className="chev" width={18} />
-        </button>
+  if (!profile) return null
+  const inner = (
+    <>
+      <AvatarView avatar={profile.avatar} size={56} />
+      <div className="text">
+        <div className={`title ellipsis ${profile.name ? '' : 'muted'}`}>{profile.name || t('prof.noName')}</div>
+        <div className="sub ellipsis">{s.email ?? t('set.notSignedIn')}</div>
       </div>
-      <ProfileSheet open={editing} onClose={() => setEditing(false)} />
-    </Section>
+    </>
+  )
+  return onClick ? (
+    <button className="list-row profile-row" onClick={onClick}>
+      {inner}
+      <IconChevronRight className="chev" width={18} />
+    </button>
+  ) : <div className="list-row profile-row">{inner}</div>
+}
+
+/** Settings → the profile row: name and avatar, sync, backup, and erasing. */
+export function AccountScreen() {
+  const settings = useSettings()
+  const [editing, setEditing] = useState(false)
+  return (
+    <Screen back="/settings" backLabel={t('set.title')} title={t('set.accountTitle')}>
+      <Section>
+        <div className="card list settings">
+          <ProfileRow />
+          <LinkRow title={t('set.profileEdit')} onClick={() => setEditing(true)} />
+        </div>
+        <ProfileSheet open={editing} onClose={() => setEditing(false)} />
+      </Section>
+      <SyncSection />
+      <DataSection lastExportAt={settings.lastExportAt} />
+      <DangerSection />
+    </Screen>
   )
 }
 
@@ -184,7 +205,7 @@ function SyncSection() {
     return (
       <Section title={t('set.sync')}>
         <div className="card list settings">
-          <LinkRow title={t('set.signInRow')} sub={t('set.signInSub')} onClick={openSignIn} />
+          <LinkRow title={t('set.signInRow')} sub={t('set.signInSub')} onClick={() => openSignIn()} />
         </div>
       </Section>
     )
@@ -210,7 +231,7 @@ function SyncSection() {
   return (
     <Section title={t('set.sync')}>
       <div className="card list settings">
-        <div className="list-row">
+        <div className="list-row label-row">
           <div className="text"><span className="title">{t('set.account')}</span></div>
           <span className="row-value ellipsis">{s.email}</span>
         </div>
@@ -293,89 +314,78 @@ function DataSection({ lastExportAt }: { lastExportAt: string | null }) {
   )
 }
 
-function EraseSection() {
+/** The two that can't be undone, together at the bottom of Account: each asks in a sheet first. */
+function DangerSection() {
   const sync = useSyncStatus()
-  const [open, setOpen] = useState(false)
-  const synced = sync.configured && sync.phase !== 'signed-out'
-
-  const erase = async () => {
+  const [asking, setAsking] = useState<'erase' | 'delete' | null>(null)
+  const signedIn = sync.configured && sync.phase !== 'signed-out'
+  const run = async (fn: () => Promise<void>) => {
     try {
-      await eraseAllData()
+      await fn()
       window.location.replace('/')
     } catch (e) {
       toast((e as Error).message)
     }
   }
-
+  const erase = asking === 'erase'
   return (
     <Section>
-      {!open ? (
-        <div className="card list settings">
-          <LinkRow title={t('set.eraseAll')} tone="danger" onClick={() => setOpen(true)} />
-        </div>
-      ) : (
-        <div className="card pad">
-          <p style={{ fontWeight: 650, marginBottom: 6 }}>{t('set.eraseQ')}</p>
-          <p className="small muted" style={{ marginBottom: 14 }}>
-            {synced ? t('set.eraseTextSync') : t('set.eraseText')}{' '}
-            <button className="link-btn" style={{ minHeight: 0 }} onClick={doExport}>{t('set.exportFirst')}</button>
-          </p>
-          <TypeToConfirm phrase={t('set.erasePhrase')} action={t('set.eraseButton')} onConfirm={erase} />
-          <button className="btn ghost block" style={{ marginTop: 8 }} onClick={() => setOpen(false)}>{t('common.cancel')}</button>
-        </div>
-      )}
+      <div className="card list settings">
+        <LinkRow title={t('set.eraseAll')} tone="danger" onClick={() => setAsking('erase')} />
+        {signedIn && <LinkRow title={t('set.deleteAccount')} tone="danger" onClick={() => setAsking('delete')} />}
+      </div>
+      <Sheet open={asking != null} onClose={() => setAsking(null)} title={t(erase ? 'set.eraseQ' : 'set.deleteQ')}>
+        <p className="small muted" style={{ marginBottom: 14 }}>
+          {erase ? (signedIn ? t('set.eraseTextSync') : t('set.eraseText')) : t('set.deleteText')}{' '}
+          <button className="link-btn" style={{ minHeight: 0 }} onClick={doExport}>{t('set.exportFirst')}</button>
+        </p>
+        <TypeToConfirm key={asking ?? ''} phrase={t(erase ? 'set.erasePhrase' : 'set.deletePhrase')}
+          action={t(erase ? 'set.eraseButton' : 'set.deleteButton')} onConfirm={() => run(erase ? eraseAllData : deleteAccount)} />
+      </Sheet>
     </Section>
   )
 }
 
-function DeleteAccountSection() {
-  const s = useSyncStatus()
-  const [open, setOpen] = useState(false)
-  if (s.phase === 'signed-out') return null
-  const remove = async () => {
-    try {
-      await deleteAccount()
-      window.location.replace('/')
-    } catch (e) {
-      toast((e as Error).message)
-    }
-  }
+// ——— developer (temporary) ———
+
+/** Settings → Developer, for testing only. */
+function DeveloperRow() {
   return (
     <Section>
-      {!open ? (
-        <div className="card list settings">
-          <LinkRow title={t('set.deleteAccount')} tone="danger" onClick={() => setOpen(true)} />
-        </div>
-      ) : (
-        <div className="card pad">
-          <p style={{ fontWeight: 650, marginBottom: 6 }}>{t('set.deleteQ')}</p>
-          <p className="small muted" style={{ marginBottom: 14 }}>
-            {t('set.deleteText')}{' '}
-            <button className="link-btn" style={{ minHeight: 0 }} onClick={doExport}>{t('set.exportFirst')}</button>
-          </p>
-          <TypeToConfirm phrase={t('set.deletePhrase')} action={t('set.deleteButton')} onConfirm={remove} />
-          <button className="btn ghost block" style={{ marginTop: 8 }} onClick={() => setOpen(false)}>{t('common.cancel')}</button>
-        </div>
-      )}
+      <div className="card list settings">
+        <LinkRow title="Developer" sub="Just for testing the app." onClick={() => navigate('/settings/developer')} />
+      </div>
     </Section>
   )
 }
 
-/** Developer → Requests, for the owner: how many wait, read when Settings opens. */
+export function DeveloperScreen() {
+  const settings = useSettings()
+  return (
+    <Screen back="/settings" backLabel={t('set.title')} title="Developer">
+      <DevSection devToday={settings.devToday} />
+    </Screen>
+  )
+}
+
+/**
+ * Developer → Requests, for the owner: how many wait. Read again each time this page is the one shown: it
+ * stays drawn under Requests, so approving there would otherwise leave the old count here.
+ */
 function useWaitingCount(signedIn: boolean): number | null {
   const [n, setN] = useState<number | null>(null)
+  const { path } = useLocation()
+  const shown = path === '/settings/developer'
   useEffect(() => {
-    if (!signedIn) return
+    if (!signedIn || !shown) return
     let live = true
     pendingRequests().then((r) => live && setN(r.length)).catch(() => live && setN(null))
     return () => {
       live = false
     }
-  }, [signedIn])
+  }, [signedIn, shown])
   return n
 }
-
-// ——— developer (temporary) ———
 
 function DevSection({ devToday }: { devToday: string | null }) {
   const settings = useSettings()
@@ -399,7 +409,7 @@ function DevSection({ devToday }: { devToday: string | null }) {
     }
   }
   return (
-    <Section title={<span className="title-row">Developer<InfoTip label="About Developer">Just for testing the app. Nothing here is needed day to day.</InfoTip></span>}>
+    <Section>
       <div className="card list settings">
         {waiting != null && (
           <LinkRow title={t('set.requests')} sub={tn('set.requestsSub', waiting)} onClick={() => navigate('/settings/requests')} />

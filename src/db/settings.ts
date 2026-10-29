@@ -17,9 +17,11 @@ export interface Settings {
   areas: string[]
   /** Last day the intro was finished or skipped: a note about a new intro isn't news to them. */
   introAt: string | null
-  /** Times the "Sync and get notifications" banner was swiped away, and when it may come back. */
+  /** Times the "Sync and get notifications" banner was swiped away, and the day it may come back. */
   syncBannerHides: number
   syncBannerUntil: string | null
+  /** The green "You've been accepted" banner on Today, from approval until it's swiped away. */
+  acceptedBanner: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -34,6 +36,7 @@ export const DEFAULT_SETTINGS: Settings = {
   introAt: null,
   syncBannerHides: 0,
   syncBannerUntil: null,
+  acceptedBanner: false,
 }
 
 export async function getSettings(): Promise<Settings> {

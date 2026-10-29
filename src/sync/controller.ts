@@ -4,7 +4,7 @@ import { t } from '../i18n'
 import { wipeLocal } from '../db/backup'
 import { db } from '../db/db'
 import { writeListeners } from '../db/repo'
-import { getMeta, setMeta } from '../db/settings'
+import { getMeta, setMeta, setSettings } from '../db/settings'
 import { toast } from '../ui/components'
 import { queueEverything, SyncEngine } from './engine'
 import { startProfileSync, stopProfileSync } from './profile'
@@ -150,7 +150,8 @@ export async function refreshAccess(): Promise<Access | null> {
       schedule(0)
       startProfileSync(supabase, userId)
     }
-    if (before === 'waiting' || before === 'full') toast(t('acct.youreIn'))
+    // Approved while waiting: a green banner on Today says so until it's swiped away.
+    if (before === 'waiting' || before === 'full') await setSettings({ acceptedBanner: true })
   } else {
     engine = null
     stopProfileSync()

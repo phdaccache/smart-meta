@@ -50,12 +50,18 @@ export function SwipeToDelete(props: {
   disabled?: boolean
   /** Another verb than Delete, on a grey pill: the sync banner's Hide. */
   verb?: { label: string; icon: ReactNode }
+  /**
+   * A second action left of Delete, as Notes has more than one: the row then opens wider and a swipe all the
+   * way across no longer deletes (with two choices, which one would it be?).
+   */
+  extra?: { label: string; icon: ReactNode; run: () => void }
   children: ReactNode
 }) {
   const row = useRef<HTMLDivElement>(null)
   const latest = useRef(props)
   latest.current = props
   const removeRef = useRef<() => void>(() => {})
+  const extraRef = useRef<() => void>(() => {})
 
   useEffect(() => {
     const el = row.current
@@ -74,6 +80,9 @@ export function SwipeToDelete(props: {
     let suppressUntil = 0
     const suppressClick = () => { suppressUntil = performance.now() + 400 }
 
+    /** How far the row rests open: one action's room, or two. */
+    const openAt = () => (latest.current.extra ? OPEN * 2 : OPEN)
+
     const place = (nx: number) => {
       x = nx
       const reveal = Math.max(0, -nx)
@@ -81,7 +90,7 @@ export function SwipeToDelete(props: {
       el.style.setProperty('--reveal', `${reveal}px`)
       // The row rounds off as it comes away, and the bin grows in as it's uncovered.
       el.style.setProperty('--swipe-r', `${Math.min(14, reveal / 4)}px`)
-      el.style.setProperty('--bin', `${Math.min(1, reveal / OPEN)}`)
+      el.style.setProperty('--bin', `${Math.min(1, reveal / openAt())}`)
       if (nx) el.dataset.swipe = removing ? 'removing' : 'on'
       else if (!dragging && !removing) delete el.dataset.swipe
     }
@@ -163,6 +172,10 @@ export function SwipeToDelete(props: {
       })
     }
     removeRef.current = () => remove(0, true)
+    extraRef.current = () => {
+      close()
+      latest.current.extra?.run()
+    }
 
     const onPointerDown = (e: PointerEvent) => {
       if (latest.current.disabled || removing || (e.pointerType === 'mouse' && e.button !== 0)) return
@@ -196,10 +209,11 @@ export function SwipeToDelete(props: {
       }
       // From here only the sideways part counts: a finger drifting down keeps swiping.
       let nx = start.from + dx
+      const furthest = latest.current.extra ? openAt() : width
       if (nx > 0) nx = rubberband(nx, width)
-      else if (nx < -width) nx = -width - rubberband(-width - nx, width)
+      else if (nx < -furthest) nx = -furthest - rubberband(-furthest - nx, width)
       place(nx)
-      arm(-nx > width * FULL)
+      arm(!latest.current.extra && -nx > width * FULL)
       trail.push({ x: nx, t: e.timeStamp })
       if (trail.length > 6) trail.shift()
     }
@@ -222,12 +236,12 @@ export function SwipeToDelete(props: {
       const v = lastP.t > first.t ? ((lastP.x - first.x) / (lastP.t - first.t)) * 1000 : 0
       if (armed) return remove(v)
       // Where the flick is heading decides, not just where it was let go.
-      const opening = x + project(v) < -OPEN / 2
+      const opening = x + project(v) < -openAt() / 2
       open = opening
       if (opening) closeOpen = close
       else if (closeOpen === close) closeOpen = null
       // A thrown row overshoots a little; one just let go settles.
-      springTo(opening ? -OPEN : 0, v, Math.abs(v) > 300 ? 0.82 : 1)
+      springTo(opening ? -openAt() : 0, v, Math.abs(v) > 300 ? 0.82 : 1)
     }
     const onPointerCancel = () => {
       if (!start) return
@@ -235,7 +249,7 @@ export function SwipeToDelete(props: {
       if (!dragging) return
       dragging = false
       arm(false)
-      springTo(open ? -OPEN : 0, 0)
+      springTo(open ? -openAt() : 0, 0)
     }
     // Once the row is moving sideways, the page doesn't scroll under it.
     const onTouchMove = (e: TouchEvent) => {
@@ -279,13 +293,30 @@ export function SwipeToDelete(props: {
   return (
     <div ref={row} className={`${props.className ?? ''} swipeable`} style={props.style}>
       {props.children}
-      <div className="swipe-actions">
-        <button type="button" className={`swipe-delete ${props.verb ? 'grey' : ''}`} aria-label={props.label} tabIndex={-1}
-          onClick={() => removeRef.current()}>
-          {props.verb?.icon ?? <IconTrash width={20} height={20} />}
-        </button>
-        <span className="swipe-label" aria-hidden="true">{props.verb?.label ?? t('common.delete')}</span>
-      </div>
+      {props.extra ? (
+        <div className="swipe-actions two">
+          <div className="swipe-act">
+            <button type="button" className="swipe-delete extra" aria-label={props.extra.label} tabIndex={-1} onClick={() => extraRef.current()}>
+              {props.extra.icon}
+            </button>
+            <span className="swipe-label" aria-hidden="true">{props.extra.label}</span>
+          </div>
+          <div className="swipe-act">
+            <button type="button" className="swipe-delete" aria-label={props.label} tabIndex={-1} onClick={() => removeRef.current()}>
+              <IconTrash width={20} height={20} />
+            </button>
+            <span className="swipe-label" aria-hidden="true">{t('common.delete')}</span>
+          </div>
+        </div>
+      ) : (
+        <div className="swipe-actions">
+          <button type="button" className={`swipe-delete ${props.verb ? 'grey' : ''}`} aria-label={props.label} tabIndex={-1}
+            onClick={() => removeRef.current()}>
+            {props.verb?.icon ?? <IconTrash width={20} height={20} />}
+          </button>
+          <span className="swipe-label" aria-hidden="true">{props.verb?.label ?? t('common.delete')}</span>
+        </div>
+      )}
     </div>
   )
 }

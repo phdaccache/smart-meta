@@ -178,6 +178,17 @@ begin
   insert into public.members (user_id) values (member);
 end $$;
 
+-- Swiping a request away in Requests: that sign-up is deleted (they can sign up again). Never a member.
+create or replace function private.reject_request(member uuid) returns void
+language plpgsql security definer set search_path = '' as $$
+begin
+  if not private.is_owner() then
+    raise exception 'only the owner can delete requests' using errcode = '42501';
+  end if;
+  delete from auth.users u
+  where u.id = member and not exists (select 1 from public.members m where m.user_id = u.id);
+end $$;
+
 -- Settings → Delete account: the account and, by `on delete cascade`, its records, membership and
 -- profile. Later tables (keys, push) cascade from auth.users too.
 create or replace function private.delete_my_account() returns void
@@ -200,18 +211,20 @@ returns table (email text, approved_at timestamptz)
 language sql stable security invoker set search_path = '' as $$ select * from private.members_overview() $$;
 create or replace function public.approve_member(member uuid) returns void
 language sql security invoker set search_path = '' as $$ select private.approve_member(member) $$;
+create or replace function public.reject_request(member uuid) returns void
+language sql security invoker set search_path = '' as $$ select private.reject_request(member) $$;
 create or replace function public.delete_my_account() returns void
 language sql security invoker set search_path = '' as $$ select private.delete_my_account() $$;
 
 revoke all on function private.members_max(), private.is_owner(), private.is_member(), private.my_access(),
-  private.pending_requests(), private.members_overview(), private.approve_member(uuid), private.delete_my_account()
+  private.pending_requests(), private.members_overview(), private.approve_member(uuid), private.reject_request(uuid), private.delete_my_account()
   from public, anon;
 grant execute on function private.members_max(), private.is_owner(), private.is_member(), private.my_access(),
-  private.pending_requests(), private.members_overview(), private.approve_member(uuid), private.delete_my_account()
+  private.pending_requests(), private.members_overview(), private.approve_member(uuid), private.reject_request(uuid), private.delete_my_account()
   to authenticated;
 revoke all on function public.my_access(), public.pending_requests(), public.members_overview(), public.approve_member(uuid),
-  public.delete_my_account()
+  public.reject_request(uuid), public.delete_my_account()
   from public, anon;
 grant execute on function public.my_access(), public.pending_requests(), public.members_overview(), public.approve_member(uuid),
-  public.delete_my_account()
+  public.reject_request(uuid), public.delete_my_account()
   to authenticated;

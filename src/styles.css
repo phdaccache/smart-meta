@@ -1069,7 +1069,16 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 
 /* ——— intro (first run) ——— */
 
-.intro { display: flex; flex-direction: column; min-height: calc(100dvh - var(--safe-bottom) - 40px); }
+.intro { display: flex; flex-direction: column; min-height: 100dvh; }
+/*
+ * Every onboarding and sign-in screen has its main button at the same height: the bar under it keeps a fixed
+ * space below, stuck to the bottom when the screen is long and at the bottom of the screen when it's short.
+ * A quieter choice ("Not now") sits in that space instead of pushing the button up.
+ */
+.app:has(> .screen.intro) { padding-bottom: 0; }
+.intro { --under-button: calc(2 * var(--safe-bottom) + 52px); }
+.intro .intro-nav { position: sticky; padding-bottom: var(--under-button); }
+.intro-below { position: absolute; left: 0; right: 0; bottom: calc(var(--under-button) - 46px); display: flex; justify-content: center; }
 .intro-body { flex: 1; display: flex; flex-direction: column; }
 .intro.centered .intro-body, .intro-head { text-align: center; }
 .intro .card { text-align: left; }
@@ -1677,6 +1686,9 @@ button, a, summary, [role='button'], .chip {
 .account-lock { display: flex; gap: 6px; justify-content: center; font-size: 13px; color: var(--ink-2); line-height: 1.4; margin-bottom: 10px; }
 .account-lock svg { flex: none; width: 14px; height: 14px; margin-top: 2px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .account-rows { width: 100%; margin-top: 28px; text-align: left; }
+/* A label beside a long value (an email) keeps its one line; the value is the one cut short. */
+.account-rows .list-row .text, .label-row .text { flex: none; }
+.account-rows .row-value, .label-row .row-value { flex: 1; }
 /* Turnstile's box, shown only when Cloudflare wants a tap. */
 .captcha { display: flex; justify-content: center; }
 .captcha:empty { display: none; }
@@ -1687,7 +1699,6 @@ button, a, summary, [role='button'], .chip {
   height: 56px; border-radius: 12px; border: 1px solid var(--line-strong); background: var(--surface);
   display: grid; place-items: center; font: 600 26px/1 var(--font-display); font-variant-numeric: tabular-nums;
 }
-.codes span:nth-of-type(3) { margin-right: 6px; }
 .codes:focus-within span.focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .codes .codes-input {
   position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; padding: 0;
@@ -1706,6 +1717,9 @@ button, a, summary, [role='button'], .chip {
 /* The banner on Today: swiped left it uncovers a grey Hide, as a task uncovers Delete. */
 .sync-banner-card { margin-bottom: 12px; overflow: hidden; }
 .sync-banner, .sync-banner.swipeable[data-swipe] { background: var(--accent-soft); }
+.sync-banner.green, .sync-banner.green.swipeable[data-swipe] { background: color-mix(in srgb, var(--on-track) 14%, var(--surface)); }
+.sync-banner.green .sync-banner-icon { background: var(--on-track); }
+.sync-banner.green .sync-banner-text { font-size: 15px; line-height: 1.3; }
 .sync-banner-btn { display: flex; gap: 12px; align-items: center; width: 100%; padding: 12px 12px 12px 14px; text-align: left; }
 .sync-banner-icon {
   width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; background: var(--accent); color: #fff; flex: none;
@@ -1714,6 +1728,12 @@ button, a, summary, [role='button'], .chip {
 .sync-banner-text { flex: 1; min-width: 0; font-size: 16px; font-weight: 600; }
 .sync-banner-btn .chev { color: var(--ink-3); flex: none; }
 .swipe-delete.grey { background: #8e8e93; }
+/* Two actions, side by side as in Notes: the second (blue) left of Delete. */
+.swipe-actions.two { flex-direction: row; gap: 0; padding: 0 4px; }
+.swipe-actions.two .swipe-act { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 0; }
+.swipe-actions.two .swipe-delete { width: 56px; }
+.swipe-delete.extra { background: var(--accent); }
+.swipe-delete.extra svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 .swipe-delete.grey svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
 
 /* Requests, for the owner. */
@@ -1723,6 +1743,10 @@ button, a, summary, [role='button'], .chip {
   background: var(--surface-2); font-size: 13px; font-weight: 600; color: var(--ink-2);
 }
 .request-row .link-btn { font-weight: 600; flex: none; }
+.request-open { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; text-align: left; }
+.request-detail .title { overflow-wrap: anywhere; }
+.request-detail .sub { margin: 0 0 2px; }
+.sheet-actions.column { flex-direction: column; gap: 4px; }
 .ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ——— avatars (docs/notifications plan §6.4): any emoji on a system color, a look and a light pattern ——— */

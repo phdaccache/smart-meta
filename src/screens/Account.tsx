@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { setSettings, type Settings } from '../db/settings'
-import { t, tk, type Key } from '../i18n'
-import { dayMonth, formatTime, toDateStr } from '../lib/dates'
+import { marked, t, tk, type Key } from '../i18n'
+import { addDays, dayMonth, formatTime, toDateStr } from '../lib/dates'
+import type { DateStr } from '../lib/types'
 import {
-  approve, CODE_LENGTH, looksLikeEmail, members, pendingRequests, RESEND_SECONDS, sendCode, verifyCode, type Request,
+  approve, CODE_LENGTH, looksLikeEmail, members, pendingRequests, rejectRequest, RESEND_SECONDS, sendCode, verifyCode,
+  type Request,
 } from '../sync/account'
 import { useSyncStatus, type Access } from '../sync/controller'
 import { useCaptcha } from '../ui/captcha'
-import { holdKeyboard, passKeyboard, Screen, Section, toast } from '../ui/components'
+import { holdKeyboard, PageText, passKeyboard, Screen, Section, Sheet, toast } from '../ui/components'
 import { IconChevronLeft, IconChevronRight } from '../ui/icons'
 import { goBack, navigate, openOver, useLocation } from '../ui/router'
 import { SwipeToDelete } from '../ui/SwipeToDelete'
@@ -31,8 +33,12 @@ export function accountRoute(path: string): ReactNode | null {
   return null
 }
 
+/** Whether this sign-in began at Activate notifications: its dots then count that step too. */
+let fromActivate = false
+
 /** Opens the email step, ready to type. Called in the tap, for the keyboard (see holdKeyboard). */
-export function openSignIn() {
+export function openSignIn(activate = false) {
+  fromActivate = activate
   if (!inIosBrowser()) holdKeyboard()
   navigate('/account/email')
 }
@@ -50,6 +56,7 @@ const ICONS = {
   cloudLock: <Icon d={<><path d="M7 18a4 4 0 0 1-.6-7.95A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9H7z" /><path d="M10 13.5v-1a2 2 0 0 1 4 0v1" /><rect x="9.2" y="13.5" width="5.6" height="3.6" rx="1" /></>} />,
   share: <Icon d={<><path d="M12 15V3.5M8 7.5l4-4 4 4" /><path d="M8.5 10.5H7A2.5 2.5 0 0 0 4.5 13v6A2.5 2.5 0 0 0 7 21.5h10a2.5 2.5 0 0 0 2.5-2.5v-6a2.5 2.5 0 0 0-2.5-2.5h-1.5" /></>} />,
   x: <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" /></svg>,
+  check: <Icon d={<path d="m5 12.5 4.5 4.5L19 7.5" />} />,
 }
 
 /** The sign-in steps, as dots under each: the one shown is long. */
@@ -71,6 +78,8 @@ function Page(props: {
   step?: (typeof STEPS)[number]
   foot?: ReactNode
   nav?: ReactNode
+  /** A quieter choice under the main button, in the space kept for it (see .intro-below). */
+  below?: ReactNode
 }) {
   return (
     <div className={`screen intro account ${props.form ? 'form' : 'centered'}`}>
@@ -92,10 +101,15 @@ function Page(props: {
       </div>
       <div className="wizard-nav intro-nav">
         {props.step && (
-          <div className="intro-dots" aria-hidden="true">{STEPS.map((s) => <i key={s} className={s === props.step ? 'on' : ''} />)}</div>
+          <div className="intro-dots" aria-hidden="true">
+            {STEPS.filter((s) => s !== 'activate' || fromActivate || props.step === 'activate').map((s) => (
+              <i key={s} className={s === props.step ? 'on' : ''} />
+            ))}
+          </div>
         )}
         {props.foot}
         {props.nav}
+        {props.below && <div className="intro-below">{props.below}</div>}
       </div>
     </div>
   )
@@ -111,17 +125,15 @@ function ActivateScreen() {
       <Page icon={ICONS.bell} title={t('acct.activateTitle')} sub={t('acct.activateSub')} step="activate"
         right={<button type="button" className="btn ghost" onClick={() => setAsking(true)}>{t('common.skip')}</button>}
         foot={ENCRYPTED && <p className="account-lock">{ICONS.lock}<span>{t('acct.encrypted')}</span></p>}
-        nav={<>
-          <button className="btn primary block" onClick={openSignIn}>{t('acct.continueEmail')}</button>
-          <button className="quiet-link" onClick={() => setAsking(true)}>{t('acct.notNow')}</button>
-        </>} />
+        nav={<button className="btn primary block" onClick={() => openSignIn(true)}>{t('acct.continueEmail')}</button>}
+        below={<button className="quiet-link" onClick={() => setAsking(true)}>{t('acct.notNow')}</button>} />
       {/* 2 · "Not now": no reminders and no backup without an account (spec AC-9). */}
       {asking && (
         <div className="action-sheet page" role="alertdialog" aria-label={t('acct.noAccountQ')}>
           <div className="action-sheet-shade" onClick={() => setAsking(false)} />
           <div className="action-sheet-group">
             <div className="action-sheet-msg"><b>{t('acct.noAccountQ')}</b>{t('acct.noAccountText')}</div>
-            <button type="button" className="action-sheet-btn" onClick={() => { setAsking(false); openSignIn() }}>{t('acct.signIn')}</button>
+            <button type="button" className="action-sheet-btn" onClick={() => { setAsking(false); openSignIn(true) }}>{t('acct.signIn')}</button>
             <button type="button" className="action-sheet-btn" onClick={later}>{t('acct.withoutAccount')}</button>
           </div>
           <button type="button" className="action-sheet-btn cancel" autoFocus onClick={() => setAsking(false)}>{t('common.cancel')}</button>
@@ -252,12 +264,10 @@ function CodeScreen() {
   return (
     <Page form back="/account/email" bar={t('acct.signIn')} title={t('acct.codeTitle')}
       sub={t('acct.codeSub', { email: typedEmail })} step="code"
-      nav={<>
-        <button className="btn primary block" disabled={busy || code.length !== CODE_LENGTH} onClick={() => check()}>
-          {busy ? t('acct.checking') : t('common.continue')}
-        </button>
-        <button className="quiet-link" onClick={() => { holdKeyboard(); goBack('/account/email') }}>{t('acct.otherEmail')}</button>
-      </>}>
+      nav={<button className="btn primary block" disabled={busy || code.length !== CODE_LENGTH} onClick={() => check()}>
+        {busy ? t('acct.checking') : t('common.continue')}
+      </button>}
+      below={<button className="quiet-link" onClick={() => { holdKeyboard(); goBack('/account/email') }}>{t('acct.otherEmail')}</button>}>
       <div className="account-form">
         {/* One real field under six boxes: iOS offers the code from Mail above the keyboard. */}
         <label className="codes" onClick={() => field.current?.focus()}>
@@ -295,6 +305,12 @@ function done(access: Access | null) {
 
 // ——— 8 and 9 · Waiting for access, the list is full ———
 
+/** The whole date and time, for a request opened in its sheet. */
+function askedFull(iso: string): string {
+  const d = new Date(iso)
+  return `${dayMonth(toDateStr(d))} ${d.getFullYear()}, ${formatTime(d.getHours() * 60 + d.getMinutes())}`
+}
+
 function askedText(iso: string | null): string {
   if (!iso) return ''
   const d = new Date(iso)
@@ -319,7 +335,7 @@ function WaitingScreen() {
     <Page icon={full ? ICONS.people : ICONS.hourglass} title={t(full ? 'acct.fullTitle' : 'acct.waitingTitle')}
       sub={t(full ? 'acct.fullSub' : 'acct.waitingSub')}
       foot={<p className="account-hint">{t('acct.meanwhile')}</p>}
-      nav={<button className="btn primary block" onClick={() => navigate('/')}>{t('acct.goToday')}</button>}>
+      nav={<button className="btn primary block" onClick={() => navigate('/')}><PageText text={marked('intro.goToday')} /></button>}>
       <div className="card list account-rows">
         {rows.map(([k, v]) => (
           <div key={k} className="list-row"><div className="text"><span className="title">{tk(k)}</span></div><span className="row-value">{v}</span></div>
@@ -329,34 +345,56 @@ function WaitingScreen() {
   )
 }
 
-// ——— the banner on Today, until the person syncs ———
+// ——— the banners on Today ———
 
 /** Swiped away, it comes back after a day, then a week, then a month, then never (spec AC-8). */
 const BANNER_BACK_DAYS = [1, 7, 30]
 
-export function SyncBanner({ settings }: { settings: Settings }) {
+/**
+ * Until the person syncs. Days count from the app's today, so "Pretend today is" in Developer brings it
+ * back as a later day would.
+ */
+export function SyncBanner({ settings, today }: { settings: Settings; today: DateStr }) {
   const s = useSyncStatus()
   const [gone, setGone] = useState(false)
   if (!s.configured || s.phase !== 'signed-out' || gone) return null
   if (settings.syncBannerHides > BANNER_BACK_DAYS.length) return null
-  if (settings.syncBannerUntil && new Date(settings.syncBannerUntil) > new Date()) return null
+  if (settings.syncBannerUntil && today < settings.syncBannerUntil.slice(0, 10)) return null
   const hide = () => {
     setGone(true)
     const days = BANNER_BACK_DAYS[settings.syncBannerHides]
-    setSettings({
-      syncBannerHides: settings.syncBannerHides + 1,
-      syncBannerUntil: days ? new Date(Date.now() + days * 86_400_000).toISOString() : null,
-    })
+    setSettings({ syncBannerHides: settings.syncBannerHides + 1, syncBannerUntil: days ? addDays(today, days) : null })
   }
   return (
     <div className="card list sync-banner-card">
       <SwipeToDelete className="sync-banner" label={t('acct.hideBanner')} onDelete={hide}
         verb={{ label: t('acct.hide'), icon: ICONS.x }}>
-        <button type="button" className="sync-banner-btn" onClick={openSignIn}>
+        <button type="button" className="sync-banner-btn" onClick={() => openSignIn()}>
           <span className="sync-banner-icon">{ICONS.cloudLock}</span>
           <span className="sync-banner-text">{t('acct.banner')}</span>
           <IconChevronRight className="chev" width={18} />
         </button>
+      </SwipeToDelete>
+    </div>
+  )
+}
+
+/** After the owner approves (spec AC-7): green, until swiped away. */
+export function AcceptedBanner({ settings }: { settings: Settings }) {
+  const [gone, setGone] = useState(false)
+  if (!settings.acceptedBanner || gone) return null
+  const hide = () => {
+    setGone(true)
+    setSettings({ acceptedBanner: false })
+  }
+  return (
+    <div className="card list sync-banner-card">
+      <SwipeToDelete className="sync-banner green" label={t('acct.hideBanner')} onDelete={hide}
+        verb={{ label: t('acct.hide'), icon: ICONS.x }}>
+        <div className="sync-banner-btn">
+          <span className="sync-banner-icon">{ICONS.check}</span>
+          <span className="sync-banner-text">{t('acct.accepted')}</span>
+        </div>
       </SwipeToDelete>
     </div>
   )
@@ -371,7 +409,9 @@ function RequestsScreen() {
   const [waiting, setWaiting] = useState<Request[] | null>(null)
   const [approved, setApproved] = useState<{ email: string; approvedAt: string }[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  /** The person tapped, shown whole in a sheet (a long email is cut short in the list). */
+  const [open, setOpen] = useState<{ email: string; at: string; request?: Request } | null>(null)
   const load = async () => {
     try {
       const [w, m] = await Promise.all([pendingRequests(), members()])
@@ -387,49 +427,84 @@ function RequestsScreen() {
   }, [query.toString()])
 
   const yes = async (r: Request) => {
-    setBusy(r.userId)
+    setBusy(true)
     try {
       await approve(r.userId)
       toast(t('acct.approvedToast', { email: r.email }))
+      setOpen(null)
       await load()
     } catch (e) {
       toast((e as Error).message)
     } finally {
-      setBusy(null)
+      setBusy(false)
     }
   }
+  const no = async (r: Request) => {
+    setWaiting((all) => all && all.filter((x) => x.userId !== r.userId))
+    setOpen(null)
+    try {
+      await rejectRequest(r.userId)
+      toast(t('acct.deletedReq'))
+    } catch (e) {
+      toast((e as Error).message)
+    }
+    await load()
+  }
+  const sure = (r: Request) => confirm(t('acct.deleteReqQ', { email: r.email }))
 
   const initial = (email: string) => <span className="initial" aria-hidden="true">{email.charAt(0).toUpperCase()}</span>
   return (
-    <Screen back="/settings" backLabel={t('set.title')} title={t('set.requests')}>
+    <Screen back="/settings/developer" backLabel="Developer" title={t('set.requests')}>
       {error && <p className="field-error">{error}</p>}
       {waiting && (
         <>
           <Section title={`${t('acct.waitingRow')} · ${waiting.length}`}>
             <div className="card list settings">
               {waiting.length === 0 && <div className="list-row"><div className="text"><span className="sub">{t('acct.reqNone')}</span></div></div>}
+              {/* Swiped left: Approve, then Delete, as Notes offers more than one action. */}
               {waiting.map((r) => (
-                <div key={r.userId} className="list-row request-row">
-                  {initial(r.email)}
-                  <div className="text"><div className="title ellipsis">{r.email}</div><div className="sub">{askedText(r.requestedAt)}</div></div>
-                  <button type="button" className="link-btn" disabled={busy != null} onClick={() => yes(r)}>{t('acct.approve')}</button>
-                </div>
+                <SwipeToDelete key={r.userId} className="list-row request-row" label={t('acct.deleteReq')}
+                  confirm={() => sure(r)} onDelete={() => no(r)}
+                  extra={{ label: t('acct.approve'), icon: ICONS.check, run: () => yes(r) }}>
+                  <button type="button" className="request-open" onClick={() => setOpen({ email: r.email, at: r.requestedAt, request: r })}>
+                    {initial(r.email)}
+                    <div className="text"><div className="title ellipsis">{r.email}</div><div className="sub">{askedText(r.requestedAt)}</div></div>
+                  </button>
+                </SwipeToDelete>
               ))}
             </div>
           </Section>
           <Section title={t('acct.approvedRow')} aside={t('acct.ofMembers', { n: approved.length, max: MEMBERS_MAX })}>
             <div className="card list settings">
               {approved.slice(0, 5).map((m) => (
-                <div key={m.email} className="list-row request-row">
+                <button key={m.email} type="button" className="list-row request-row" onClick={() => setOpen({ email: m.email, at: m.approvedAt })}>
                   {initial(m.email)}
                   <div className="text"><div className="title ellipsis">{m.email}</div><div className="sub">{askedText(m.approvedAt)}</div></div>
-                </div>
+                </button>
               ))}
             </div>
             <p className="settings-note">{t('acct.reqFoot')}</p>
           </Section>
         </>
       )}
+      <Sheet open={open != null} onClose={() => setOpen(null)} title={t(open?.request ? 'acct.request' : 'acct.member')}>
+        {open && (
+          <>
+            <div className="card list request-detail">
+              <div className="list-row"><div className="text"><div className="sub">{t('acct.email')}</div><div className="title">{open.email}</div></div></div>
+              <div className="list-row"><div className="text">
+                <div className="sub">{t(open.request ? 'acct.asked' : 'acct.approvedOn')}</div><div className="title">{askedFull(open.at)}</div>
+              </div></div>
+            </div>
+            {open.request && (
+              <div className="sheet-actions column">
+                <button className="btn primary block" disabled={busy} onClick={() => yes(open.request!)}>{t('acct.approve')}</button>
+                <button className="btn danger block" disabled={busy} onClick={() => sure(open.request!) && no(open.request!)}>{t('acct.deleteReq')}</button>
+              </div>
+            )}
+          </>
+        )}
+      </Sheet>
     </Screen>
   )
 }

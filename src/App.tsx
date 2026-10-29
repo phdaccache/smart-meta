@@ -14,7 +14,7 @@ import { NewGoalScreen } from './screens/GoalForm'
 import { GoalsScreen } from './screens/Goals'
 import { NewProjectScreen, ProjectScreen } from './screens/Projects'
 import { openQuickAdd, QuickAdd } from './screens/QuickAdd'
-import { SettingsScreen, ValuesScreen } from './screens/Settings'
+import { AccountScreen, DeveloperScreen, SettingsScreen, ValuesScreen } from './screens/Settings'
 import { ReviewScreen } from './screens/Review'
 import { GoalInsightsScreen, InsightsScreen } from './screens/Insights'
 import { TodayScreen } from './screens/Today'
@@ -45,6 +45,8 @@ function route(path: string, query: URLSearchParams) {
   if ((m = match('/projects/:id', path))) return <ProjectScreen key={m.id} id={m.id} />
   if (path === '/settings') return <SettingsScreen />
   if (path === '/settings/values') return <ValuesScreen />
+  if (path === '/settings/account') return <AccountScreen />
+  if (path === '/settings/developer') return <DeveloperScreen />
   if (path === '/review') return <ReviewScreen />
   if (path === '/insights') return <InsightsScreen />
   if ((m = match('/insights/goals/:id', path))) return <GoalInsightsScreen key={m.id} id={m.id} />

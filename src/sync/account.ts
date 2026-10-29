@@ -77,3 +77,9 @@ export async function approve(userId: string): Promise<void> {
   const { error } = await supabase!.rpc('approve_member', { member: userId })
   if (error) throw new Error(/full/i.test(error.message) ? t('acct.errFull') : message(error as unknown as AuthError))
 }
+
+/** Swiped away in Requests: that sign-up is deleted; they can sign up again. */
+export async function rejectRequest(userId: string): Promise<void> {
+  const { error } = await supabase!.rpc('reject_request', { member: userId })
+  if (error) throw new Error(message(error as unknown as AuthError))
+}

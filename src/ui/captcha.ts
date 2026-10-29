@@ -2,9 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { getLang } from '../i18n'
 
 /**
- * Cloudflare Turnstile before every code is sent (spec AC-3). The widget stays invisible unless
- * Cloudflare wants a tap. Supabase checks each token with Cloudflare, and a token works once, so the
- * widget is reset after every send to have the next one ready for "Send a new code".
+ * Cloudflare Turnstile before every code is sent (spec AC-3). It runs only when a code is asked for, and
+ * stays invisible unless Cloudflare wants a tap: then its box shows under the field and the code goes
+ * once it's ticked. (Run ahead of time, its box could show where nothing was being sent.) Supabase checks
+ * each token with Cloudflare, and a token works once, so the widget is reset after every send.
  */
 
 /** Public by design; the secret half lives only in Supabase (Auth → Attack Protection). */
@@ -13,6 +14,7 @@ const SCRIPT = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=exp
 
 interface Turnstile {
   render(el: HTMLElement, options: Record<string, unknown>): string
+  execute(el: HTMLElement): void
   reset(id: string): void
   remove(id: string): void
 }
@@ -53,6 +55,7 @@ export function useCaptcha() {
       w.id = ts.render(ref.current, {
         sitekey: SITE_KEY,
         appearance: 'interaction-only',
+        execution: 'execute',
         theme: 'auto',
         language: getLang() === 'pt-BR' ? 'pt-br' : 'en',
         callback: (token: string) => {
@@ -67,6 +70,8 @@ export function useCaptcha() {
           return false
         },
       })
+      // Asked for before the widget was ready: run it now.
+      if (w.waiting.length && ref.current) ts.execute(ref.current)
     }).catch(() => !gone && setFailed(true))
     return () => {
       gone = true
@@ -92,8 +97,15 @@ export function useCaptcha() {
       const timeout = setTimeout(() => {
         w.waiting = w.waiting.filter((g) => g !== give)
         reject(new Error('captcha'))
-      }, 20_000)
+      }, 60_000)
       w.waiting.push(give)
+      if (w.waiting.length === 1 && w.id && ref.current) {
+        try {
+          window.turnstile?.execute(ref.current)
+        } catch {
+          // Not rendered yet: the timeout reports it.
+        }
+      }
     })
   }, [])
 

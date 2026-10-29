@@ -159,7 +159,7 @@ function Frame(props: {
       {props.nav && (
         <div className="wizard-nav intro-nav">
           {props.nav}
-          {props.below}
+          {props.below && <div className="intro-below">{props.below}</div>}
         </div>
       )}
     </div>
@@ -851,7 +851,9 @@ function IntroPieces() {
   const pieces = piecesFor(s.draft, s.example, habitText(s.draft))
   // 0–3: one piece large. 4: all four in the row. 5: inside the goal.
   const [stage, setStage] = useState(() => (reducedMotion() ? 5 : 0))
-  const label = stage >= 5 ? <PageText text={marked('intro.goToday')} /> : stage === 4 ? t('intro.pieces.join') : t('common.continue')
+  const signInNext = syncStatus().configured && syncStatus().phase === 'signed-out'
+  const label = stage >= 5 ? (signInNext ? t('common.next') : <PageText text={marked('intro.goToday')} />)
+    : stage === 4 ? t('intro.pieces.join') : t('common.continue')
 
   // Joining: each chip starts where it sat in the row and moves into the goal (FLIP).
   const chips = useRef(new Map<PieceKey, HTMLElement>())
