@@ -106,13 +106,17 @@ grant select, insert, update on public.profiles to authenticated;
 -- Security Advisor wants nothing in the API that runs with more rights than the caller.
 
 
--- Where this account stands: 'member', 'waiting', or 'full' (waiting, and the list is at the cap).
--- The owner is let in the first time they ask.
+-- Where this account stands: 'member', 'waiting', 'full' (waiting, and the list is at the cap), or 'removed'
+-- (the owner removed it: the phone keeps its data and says so). The owner is let in the first time they ask.
 create or replace function private.my_access() returns text
 language plpgsql security definer set search_path = '' as $$
 begin
   if auth.uid() is null then
     raise exception 'not signed in' using errcode = '42501';
+  end if;
+  -- A session still running for an account the owner removed.
+  if not exists (select 1 from auth.users u where u.id = auth.uid()) then
+    return 'removed';
   end if;
   if private.is_member() then
     return 'member';
@@ -144,15 +148,18 @@ begin
 end $$;
 
 -- The rest of Requests: who's in, newest first (at most the cap, so all of them).
+-- Its columns grew (user_id, for removing someone): an older copy has to go first.
+drop function if exists public.members_overview();
+drop function if exists private.members_overview();
 create or replace function private.members_overview()
-returns table (email text, approved_at timestamptz)
+returns table (user_id uuid, email text, approved_at timestamptz)
 language plpgsql stable security definer set search_path = '' as $$
 begin
   if not private.is_owner() then
     raise exception 'only the owner can see members' using errcode = '42501';
   end if;
   return query
-    select u.email::text, m.approved_at
+    select u.id, u.email::text, m.approved_at
     from public.members m join auth.users u on u.id = m.user_id
     order by m.approved_at desc;
 end $$;
@@ -189,6 +196,20 @@ begin
   where u.id = member and not exists (select 1 from public.members m where m.user_id = u.id);
 end $$;
 
+-- Swiping a member away in Requests: their account and everything synced go (`on delete cascade`); their
+-- phone keeps its own copy and works on without sync. The owner can't remove themselves this way.
+create or replace function private.remove_member(member uuid) returns void
+language plpgsql security definer set search_path = '' as $$
+begin
+  if not private.is_owner() then
+    raise exception 'only the owner can remove members' using errcode = '42501';
+  end if;
+  if member = auth.uid() then
+    raise exception 'the owner can''t remove themselves' using errcode = 'P0001';
+  end if;
+  delete from auth.users u where u.id = member;
+end $$;
+
 -- Settings → Delete account: the account and, by `on delete cascade`, its records, membership and
 -- profile. Later tables (keys, push) cascade from auth.users too.
 create or replace function private.delete_my_account() returns void
@@ -207,24 +228,28 @@ create or replace function public.pending_requests()
 returns table (user_id uuid, email text, requested_at timestamptz)
 language sql stable security invoker set search_path = '' as $$ select * from private.pending_requests() $$;
 create or replace function public.members_overview()
-returns table (email text, approved_at timestamptz)
+returns table (user_id uuid, email text, approved_at timestamptz)
 language sql stable security invoker set search_path = '' as $$ select * from private.members_overview() $$;
 create or replace function public.approve_member(member uuid) returns void
 language sql security invoker set search_path = '' as $$ select private.approve_member(member) $$;
 create or replace function public.reject_request(member uuid) returns void
 language sql security invoker set search_path = '' as $$ select private.reject_request(member) $$;
+create or replace function public.remove_member(member uuid) returns void
+language sql security invoker set search_path = '' as $$ select private.remove_member(member) $$;
 create or replace function public.delete_my_account() returns void
 language sql security invoker set search_path = '' as $$ select private.delete_my_account() $$;
 
 revoke all on function private.members_max(), private.is_owner(), private.is_member(), private.my_access(),
-  private.pending_requests(), private.members_overview(), private.approve_member(uuid), private.reject_request(uuid), private.delete_my_account()
+  private.pending_requests(), private.members_overview(), private.approve_member(uuid), private.reject_request(uuid), private.remove_member(uuid),
+  private.delete_my_account()
   from public, anon;
 grant execute on function private.members_max(), private.is_owner(), private.is_member(), private.my_access(),
-  private.pending_requests(), private.members_overview(), private.approve_member(uuid), private.reject_request(uuid), private.delete_my_account()
+  private.pending_requests(), private.members_overview(), private.approve_member(uuid), private.reject_request(uuid), private.remove_member(uuid),
+  private.delete_my_account()
   to authenticated;
 revoke all on function public.my_access(), public.pending_requests(), public.members_overview(), public.approve_member(uuid),
-  public.reject_request(uuid), public.delete_my_account()
+  public.reject_request(uuid), public.remove_member(uuid), public.delete_my_account()
   from public, anon;
 grant execute on function public.my_access(), public.pending_requests(), public.members_overview(), public.approve_member(uuid),
-  public.reject_request(uuid), public.delete_my_account()
+  public.reject_request(uuid), public.remove_member(uuid), public.delete_my_account()
   to authenticated;

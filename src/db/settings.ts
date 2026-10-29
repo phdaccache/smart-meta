@@ -20,8 +20,10 @@ export interface Settings {
   /** Times the "Sync and get notifications" banner was swiped away, and the day it may come back. */
   syncBannerHides: number
   syncBannerUntil: string | null
-  /** The green "You've been accepted" banner on Today, from approval until it's swiped away. */
+  /** The green "You've been accepted" banner on Today, from approval until it's closed. */
   acceptedBanner: boolean
+  /** The red "removed from sync" banner, after the owner removed this account, until it's closed. */
+  removedBanner: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -37,6 +39,7 @@ export const DEFAULT_SETTINGS: Settings = {
   syncBannerHides: 0,
   syncBannerUntil: null,
   acceptedBanner: false,
+  removedBanner: false,
 }
 
 export async function getSettings(): Promise<Settings> {

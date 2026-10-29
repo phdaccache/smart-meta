@@ -21,6 +21,7 @@ import { TodayScreen } from './screens/Today'
 import { WhatsNew } from './screens/WhatsNew'
 import { introRoute, IntroStart } from './screens/Intro'
 import { accountRoute } from './screens/Account'
+import { DeveloperOnly } from './ui/developer'
 import { Screen } from './ui/components'
 
 const TABS: { path: string; label: Key; Icon: typeof IconToday }[] = [
@@ -46,7 +47,7 @@ function route(path: string, query: URLSearchParams) {
   if (path === '/settings') return <SettingsScreen />
   if (path === '/settings/values') return <ValuesScreen />
   if (path === '/settings/account') return <AccountScreen />
-  if (path === '/settings/developer') return <DeveloperScreen />
+  if (path === '/settings/developer') return <DeveloperOnly><DeveloperScreen /></DeveloperOnly>
   if (path === '/review') return <ReviewScreen />
   if (path === '/insights') return <InsightsScreen />
   if ((m = match('/insights/goals/:id', path))) return <GoalInsightsScreen key={m.id} id={m.id} />

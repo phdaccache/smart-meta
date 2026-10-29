@@ -67,10 +67,18 @@ export async function pendingRequests(): Promise<Request[]> {
   }))
 }
 
-export async function members(): Promise<{ email: string; approvedAt: string }[]> {
+export interface Member {
+  userId: string
+  email: string
+  approvedAt: string
+}
+
+export async function members(): Promise<Member[]> {
   const { data, error } = await supabase!.rpc('members_overview')
   if (error) throw new Error(message(error as unknown as AuthError))
-  return (data as { email: string; approved_at: string }[]).map((r) => ({ email: r.email, approvedAt: r.approved_at }))
+  return (data as { user_id: string; email: string; approved_at: string }[]).map((r) => ({
+    userId: r.user_id, email: r.email, approvedAt: r.approved_at,
+  }))
 }
 
 export async function approve(userId: string): Promise<void> {
@@ -81,5 +89,11 @@ export async function approve(userId: string): Promise<void> {
 /** Swiped away in Requests: that sign-up is deleted; they can sign up again. */
 export async function rejectRequest(userId: string): Promise<void> {
   const { error } = await supabase!.rpc('reject_request', { member: userId })
+  if (error) throw new Error(message(error as unknown as AuthError))
+}
+
+/** Swiped away from the members in Requests: their account and synced data go; their phone keeps its copy. */
+export async function removeMember(userId: string): Promise<void> {
+  const { error } = await supabase!.rpc('remove_member', { member: userId })
   if (error) throw new Error(message(error as unknown as AuthError))
 }

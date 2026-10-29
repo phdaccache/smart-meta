@@ -170,7 +170,7 @@ export function passKeyboard(find: () => HTMLElement | null | undefined): (() =>
  * With `done`, it has ✕ at the left to leave without saving and ✓ at the right to save, as in iPhone's Reminders.
  * `large`: nearly full height, its top fixed just under the status bar whether the keyboard is up or not.
  * `typing`: opened ready to type (holdKeyboard), it rises a little softer, alongside the keyboard.
- * `dirty`: it holds typing not saved yet, so pulling it down (or tapping outside) asks before throwing that away.
+ * `dirty`: it holds typing not saved yet, so pulling it down, tapping outside or its ✕ asks before throwing that away.
  */
 export function Sheet(props: {
   open: boolean; onClose: () => void; title?: string; label?: string; children: ReactNode
@@ -324,7 +324,7 @@ export function Sheet(props: {
         {!props.done && <div className="sheet-grabber" aria-hidden="true" />}
         {props.done ? (
           <div className="sheet-head bar">
-            <button type="button" className="round-btn" aria-label={t('nav.close')} onClick={props.onClose}>
+            <button type="button" className="round-btn" aria-label={t('nav.close')} onClick={() => leave.current() && props.onClose()}>
               <IconClose width={20} height={20} />
             </button>
             {props.title ? <h2 id={titleId}>{props.title}</h2> : <span />}

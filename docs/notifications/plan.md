@@ -954,7 +954,7 @@ Built on 2026-10-29, waiting for the owner's test on the preview (ticked once it
       2026-10-29). The owner is recognized by the same email hash as the Developer section, so the
       address isn't in the public repo, and gets in by themselves on the first sign-in. The file is
       safe to run again: the existing-users backfill only runs when `members` is created. Tested
-      before pasting on a local Postgres with a stand-in for Supabase's auth (43 checks: who can read
+      before pasting on a local Postgres with a stand-in for Supabase's auth (47 checks: who can read
       and write what, the cap, approving, deleting).
 - [ ] Waiting for access screen; Requests screen with Approve (Settings → Developer → Requests, with
       the number waiting). **No push to the owner in S2:** it needs S5's pieces (see S5).
@@ -998,6 +998,15 @@ Choices made while building (tell the owner; change if they disagree):
   opens **Account**: "Edit name and avatar", Sync, Backup, and one card with Erase all data and Delete
   account, each confirmed in a sheet. Name and avatar exist without an account too (kept on the phone).
   Developer is its own page (Settings → Developer, developers only), with Requests in it.
+- Owner's second round (2026-10-29), done: the Developer page and Requests send anyone who isn't a developer
+  back to Settings (`DeveloperOnly`; the server refuses them anyway); the green banner has a ✕; name and
+  avatar are edited from a pencil at the top right of Account, and the profile row there opens a sheet with
+  the whole email and the day the account was made; a sheet's ✕ now asks before throwing typing away, as
+  pulling it down does (Quick add and the task sheet too); **the owner can remove a member** (swipe in
+  Requests, or from their sheet): `remove_member()` deletes the account and its synced data, the person's
+  phone keeps everything and works on without sync, and Today shows a red "You were removed from sync"
+  banner (`my_access()` answers `removed` for a session whose account is gone). Signing in again with the
+  same email takes the data on the phone back as theirs.
 - Local testing against staging: `npm run dev -- --mode staging` with `.env.staging.local` (ignored by
   git), or the `dev-staging` entry in `.claude/launch.json`. `.env.local` points at production.
 - **Done when:** a test friend can sign up on the preview, wait, get approved with one tap, and sync.

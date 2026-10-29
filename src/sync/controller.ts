@@ -107,7 +107,12 @@ async function onSession(user: User | null) {
     set({ phase: 'signed-out', email: null, userId: null, requestedAt: null, access: null })
     return
   }
-  const owner = await phoneOwner()
+  let owner = await phoneOwner()
+  // The same person with a new account (theirs was removed, or deleted elsewhere): the data is theirs.
+  if (owner && owner.id !== user.id && owner.email.toLowerCase() === (user.email ?? '').toLowerCase()) {
+    await db.meta.delete(OWNER_KEY)
+    owner = null
+  }
   if (owner && owner.id !== user.id) {
     // Someone else's data is on this phone: never upload it into this account, nor mix the two.
     // Sending the code already refuses this (see sendCode); this catches a session from elsewhere.
@@ -136,6 +141,10 @@ export async function refreshAccess(): Promise<Access | null> {
   const before = await getMeta<Access | null>(accessKey(userId), null)
   let access = before
   const { data, error } = await supabase.rpc('my_access')
+  if (!error && data === 'removed') {
+    await removedFromSync(userId)
+    return null
+  }
   if (!error && (data === 'member' || data === 'waiting' || data === 'full')) {
     access = data
     if (access !== before) await setMeta(accessKey(userId), access)
@@ -158,6 +167,21 @@ export async function refreshAccess(): Promise<Access | null> {
     clearTimeout(timer)
   }
   return access
+}
+
+/**
+ * The owner removed this account: its server data is gone, but this phone keeps everything and goes on
+ * without sync, with a red banner on Today saying so. The phone has no owner again, so they can sign up anew.
+ */
+async function removedFromSync(userId: string) {
+  engine = null
+  stopProfileSync()
+  clearTimeout(timer)
+  await db.meta.bulkDelete([OWNER_KEY, accessKey(userId), syncKey(userId)])
+  // Their name and avatar go up again if they're let back in.
+  await setMeta('profileDirty', true)
+  await setSettings({ removedBanner: true, acceptedBanner: false })
+  await supabase?.auth.signOut({ scope: 'local' }).catch(() => {})
 }
 
 /** Resolves once the session for `userId` is set up and its access known (or after a while, offline). */

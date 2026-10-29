@@ -3,7 +3,7 @@ import { exportData, importData, parseBackup, shareOrDownload } from '../db/back
 import { deleteValue, restoreValue, saveValues, setValueLook } from '../db/repo'
 import { setSettings } from '../db/settings'
 import { langSetting, setLangSetting, t, tlist, tn, type LangSetting } from '../i18n'
-import { formatTime } from '../lib/dates'
+import { dayMonth, formatTime, toDateStr } from '../lib/dates'
 import { loadSampleData } from '../dev/sample'
 import { loadWorstCaseData } from '../dev/worst'
 import { canSignOut, deleteAccount, eraseAllData, signOut, syncNow, useSyncStatus } from '../sync/controller'
@@ -121,18 +121,38 @@ function ProfileRow({ onClick }: { onClick?: () => void }) {
   ) : <div className="list-row profile-row">{inner}</div>
 }
 
-/** Settings → the profile row: name and avatar, sync, backup, and erasing. */
+const IconEdit = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M4 20h4L19 9l-4-4L4 16z" /><path d="m13.5 6.5 4 4" />
+  </svg>
+)
+
+/** Settings → the profile row: name and avatar (edited from the top right), sync, backup, and erasing. */
 export function AccountScreen() {
   const settings = useSettings()
+  const s = useSyncStatus()
+  const profile = useProfile()
   const [editing, setEditing] = useState(false)
+  const [info, setInfo] = useState(false)
+  const signedIn = s.phase !== 'signed-out'
   return (
-    <Screen back="/settings" backLabel={t('set.title')} title={t('set.accountTitle')}>
+    <Screen back="/settings" backLabel={t('set.title')} title={t('set.accountTitle')}
+      actions={<button type="button" className="icon-btn" aria-label={t('set.profileEdit')} onClick={() => setEditing(true)}><IconEdit /></button>}>
       <Section>
         <div className="card list settings">
-          <ProfileRow />
-          <LinkRow title={t('set.profileEdit')} onClick={() => setEditing(true)} />
+          {/* Signed in, it opens the whole email and when the account was made; otherwise the editor. */}
+          <ProfileRow onClick={() => (signedIn ? setInfo(true) : setEditing(true))} />
         </div>
         <ProfileSheet open={editing} onClose={() => setEditing(false)} />
+        <Sheet open={info} onClose={() => setInfo(false)} title={t('set.accountTitle')}>
+          <div className="card list request-detail">
+            {profile?.name && <div className="list-row"><div className="text"><div className="sub">{t('prof.name')}</div><div className="title">{profile.name}</div></div></div>}
+            <div className="list-row"><div className="text"><div className="sub">{t('acct.email')}</div><div className="title">{s.email}</div></div></div>
+            {s.requestedAt && (
+              <div className="list-row"><div className="text"><div className="sub">{t('set.joined')}</div><div className="title">{fullDate(s.requestedAt)}</div></div></div>
+            )}
+          </div>
+        </Sheet>
       </Section>
       <SyncSection />
       <DataSection lastExportAt={settings.lastExportAt} />
@@ -176,6 +196,12 @@ function SelectRow<V extends string>({ id, title, info, value, options, onChange
       </select>
     </div>
   )
+}
+
+/** "29 October 2026", for when an account was made. */
+function fullDate(iso: string): string {
+  const d = new Date(iso)
+  return `${dayMonth(toDateStr(d))} ${d.getFullYear()}`
 }
 
 function ago(iso: string | null): string {

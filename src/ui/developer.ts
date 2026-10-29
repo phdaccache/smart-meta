@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { navigate } from './router'
 import { useSyncStatus } from '../sync/controller'
 
 /**
@@ -13,16 +14,32 @@ async function sha256(text: string): Promise<string> {
   return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, '0')).join('')
 }
 
-export function useIsDeveloper(): boolean {
+/** True or false, or null while the email is still being checked. */
+export function useDeveloper(): boolean | null {
   const { email } = useSyncStatus()
-  const [match, setMatch] = useState(false)
+  const [checked, setChecked] = useState<{ email: string; ok: boolean } | null>(null)
   useEffect(() => {
+    if (!email) return
     let live = true
-    if (!email) setMatch(false)
-    else sha256(email.trim().toLowerCase()).then((h) => live && setMatch(h === DEVELOPER_EMAIL_SHA256)).catch(() => live && setMatch(false))
+    sha256(email.trim().toLowerCase())
+      .then((h) => live && setChecked({ email, ok: h === DEVELOPER_EMAIL_SHA256 }))
+      .catch(() => live && setChecked({ email, ok: false }))
     return () => {
       live = false
     }
   }, [email])
-  return import.meta.env.DEV || __APP_PREVIEW__ || match
+  if (import.meta.env.DEV || __APP_PREVIEW__) return true
+  if (!email) return false
+  return checked?.email === email ? checked.ok : null
+}
+
+export const useIsDeveloper = (): boolean => useDeveloper() === true
+
+/** A developer page: anyone else who reaches its address (typed, or an old link) is sent to Settings. */
+export function DeveloperOnly({ children }: { children: ReactNode }): ReactNode {
+  const developer = useDeveloper()
+  useEffect(() => {
+    if (developer === false) navigate('/settings', { replace: true })
+  }, [developer])
+  return developer ? children : null
 }

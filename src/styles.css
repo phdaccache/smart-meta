@@ -1719,7 +1719,11 @@ button, a, summary, [role='button'], .chip {
 .sync-banner, .sync-banner.swipeable[data-swipe] { background: var(--accent-soft); }
 .sync-banner.green, .sync-banner.green.swipeable[data-swipe] { background: color-mix(in srgb, var(--on-track) 14%, var(--surface)); }
 .sync-banner.green .sync-banner-icon { background: var(--on-track); }
-.sync-banner.green .sync-banner-text { font-size: 15px; line-height: 1.3; }
+.sync-banner.red, .sync-banner.red.swipeable[data-swipe] { background: color-mix(in srgb, var(--danger) 14%, var(--surface)); }
+.sync-banner.red .sync-banner-icon { background: var(--danger); }
+.sync-banner.green .sync-banner-text, .sync-banner.red .sync-banner-text { font-size: 15px; line-height: 1.3; }
+.banner-close { flex: none; width: 32px; height: 32px; margin: -6px -4px -6px 0; display: grid; place-items: center; color: var(--ink-2); }
+.banner-close svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 .sync-banner-btn { display: flex; gap: 12px; align-items: center; width: 100%; padding: 12px 12px 12px 14px; text-align: left; }
 .sync-banner-icon {
   width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; background: var(--accent); color: #fff; flex: none;

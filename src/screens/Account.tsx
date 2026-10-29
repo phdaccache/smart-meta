@@ -4,8 +4,8 @@ import { marked, t, tk, type Key } from '../i18n'
 import { addDays, dayMonth, formatTime, toDateStr } from '../lib/dates'
 import type { DateStr } from '../lib/types'
 import {
-  approve, CODE_LENGTH, looksLikeEmail, members, pendingRequests, rejectRequest, RESEND_SECONDS, sendCode, verifyCode,
-  type Request,
+  approve, CODE_LENGTH, looksLikeEmail, members, pendingRequests, rejectRequest, removeMember, RESEND_SECONDS, sendCode,
+  verifyCode, type Member, type Request,
 } from '../sync/account'
 import { useSyncStatus, type Access } from '../sync/controller'
 import { useCaptcha } from '../ui/captcha'
@@ -14,6 +14,7 @@ import { IconChevronLeft, IconChevronRight } from '../ui/icons'
 import { goBack, navigate, openOver, useLocation } from '../ui/router'
 import { SwipeToDelete } from '../ui/SwipeToDelete'
 import { inIosBrowser } from './Intro'
+import { DeveloperOnly } from '../ui/developer'
 
 /**
  * Signing in (spec AC-1 to AC-10), the screens picked in S0: full screens like the intro, the bar's title
@@ -29,7 +30,7 @@ export function accountRoute(path: string): ReactNode | null {
   if (path === '/account/email') return inIosBrowser() ? <SafariScreen /> : <EmailScreen />
   if (path === '/account/code') return <CodeScreen />
   if (path === '/account/waiting') return <WaitingScreen />
-  if (path === '/settings/requests') return <RequestsScreen />
+  if (path === '/settings/requests') return <DeveloperOnly><RequestsScreen /></DeveloperOnly>
   return null
 }
 
@@ -57,6 +58,7 @@ const ICONS = {
   share: <Icon d={<><path d="M12 15V3.5M8 7.5l4-4 4 4" /><path d="M8.5 10.5H7A2.5 2.5 0 0 0 4.5 13v6A2.5 2.5 0 0 0 7 21.5h10a2.5 2.5 0 0 0 2.5-2.5v-6a2.5 2.5 0 0 0-2.5-2.5h-1.5" /></>} />,
   x: <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" /></svg>,
   check: <Icon d={<path d="m5 12.5 4.5 4.5L19 7.5" />} />,
+  cloudOff: <Icon d={<><path d="M7 18a4 4 0 0 1-.6-7.95A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9H7z" /><path d="m10 11 4 4M14 11l-4 4" /></>} />,
 }
 
 /** The sign-in steps, as dots under each: the one shown is long. */
@@ -379,25 +381,37 @@ export function SyncBanner({ settings, today }: { settings: Settings; today: Dat
   )
 }
 
-/** After the owner approves (spec AC-7): green, until swiped away. */
-export function AcceptedBanner({ settings }: { settings: Settings }) {
+/** A notice on Today that stays until it's closed: its ✕, or swiped away like the sync banner. */
+function Notice({ tone, icon, text, onClose }: { tone: 'green' | 'red'; icon: ReactNode; text: string; onClose: () => void }) {
   const [gone, setGone] = useState(false)
-  if (!settings.acceptedBanner || gone) return null
-  const hide = () => {
+  if (gone) return null
+  const close = () => {
     setGone(true)
-    setSettings({ acceptedBanner: false })
+    onClose()
   }
   return (
     <div className="card list sync-banner-card">
-      <SwipeToDelete className="sync-banner green" label={t('acct.hideBanner')} onDelete={hide}
-        verb={{ label: t('acct.hide'), icon: ICONS.x }}>
+      <SwipeToDelete className={`sync-banner ${tone}`} label={t('acct.hideBanner')} onDelete={close} verb={{ label: t('acct.hide'), icon: ICONS.x }}>
         <div className="sync-banner-btn">
-          <span className="sync-banner-icon">{ICONS.check}</span>
-          <span className="sync-banner-text">{t('acct.accepted')}</span>
+          <span className="sync-banner-icon">{icon}</span>
+          <span className="sync-banner-text">{text}</span>
+          <button type="button" className="banner-close" aria-label={t('nav.close')} onClick={close}>{ICONS.x}</button>
         </div>
       </SwipeToDelete>
     </div>
   )
+}
+
+/** After the owner approves (spec AC-7). */
+export function AcceptedBanner({ settings }: { settings: Settings }) {
+  if (!settings.acceptedBanner) return null
+  return <Notice tone="green" icon={ICONS.check} text={t('acct.accepted')} onClose={() => setSettings({ acceptedBanner: false })} />
+}
+
+/** After the owner removed this account: the data is still all here, only sync stopped. */
+export function RemovedBanner({ settings }: { settings: Settings }) {
+  if (!settings.removedBanner) return null
+  return <Notice tone="red" icon={ICONS.cloudOff} text={t('acct.removed')} onClose={() => setSettings({ removedBanner: false })} />
 }
 
 // ——— 13 · Requests, for the owner ———
@@ -407,11 +421,12 @@ const MEMBERS_MAX = 100 // spec N-1; the server holds the real cap (private.memb
 function RequestsScreen() {
   const { query } = useLocation()
   const [waiting, setWaiting] = useState<Request[] | null>(null)
-  const [approved, setApproved] = useState<{ email: string; approvedAt: string }[]>([])
+  const [approved, setApproved] = useState<Member[]>([])
+  const me = useSyncStatus().userId
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   /** The person tapped, shown whole in a sheet (a long email is cut short in the list). */
-  const [open, setOpen] = useState<{ email: string; at: string; request?: Request } | null>(null)
+  const [open, setOpen] = useState<{ email: string; at: string; request?: Request; member?: Member } | null>(null)
   const load = async () => {
     try {
       const [w, m] = await Promise.all([pendingRequests(), members()])
@@ -451,6 +466,18 @@ function RequestsScreen() {
     await load()
   }
   const sure = (r: Request) => confirm(t('acct.deleteReqQ', { email: r.email }))
+  const out = async (m: Member) => {
+    setApproved((all) => all.filter((x) => x.userId !== m.userId))
+    setOpen(null)
+    try {
+      await removeMember(m.userId)
+      toast(t('acct.removedToast', { email: m.email }))
+    } catch (e) {
+      toast((e as Error).message)
+    }
+    await load()
+  }
+  const sureOut = (m: Member) => confirm(t('acct.removeQ', { email: m.email }))
 
   const initial = (email: string) => <span className="initial" aria-hidden="true">{email.charAt(0).toUpperCase()}</span>
   return (
@@ -476,12 +503,21 @@ function RequestsScreen() {
           </Section>
           <Section title={t('acct.approvedRow')} aside={t('acct.ofMembers', { n: approved.length, max: MEMBERS_MAX })}>
             <div className="card list settings">
-              {approved.slice(0, 5).map((m) => (
-                <button key={m.email} type="button" className="list-row request-row" onClick={() => setOpen({ email: m.email, at: m.approvedAt })}>
-                  {initial(m.email)}
-                  <div className="text"><div className="title ellipsis">{m.email}</div><div className="sub">{askedText(m.approvedAt)}</div></div>
-                </button>
-              ))}
+              {approved.map((m) => {
+                const row = (
+                  <button type="button" className="request-open" onClick={() => setOpen({ email: m.email, at: m.approvedAt, member: m })}>
+                    {initial(m.email)}
+                    <div className="text"><div className="title ellipsis">{m.email}</div><div className="sub">{askedText(m.approvedAt)}</div></div>
+                  </button>
+                )
+                // Swiped left: Delete removes them from sync; their phone keeps everything. Not the owner.
+                return m.userId === me ? <div key={m.userId} className="list-row request-row">{row}</div> : (
+                  <SwipeToDelete key={m.userId} className="list-row request-row" label={t('acct.removeMember')}
+                    confirm={() => sureOut(m)} onDelete={() => out(m)}>
+                    {row}
+                  </SwipeToDelete>
+                )
+              })}
             </div>
             <p className="settings-note">{t('acct.reqFoot')}</p>
           </Section>
@@ -496,6 +532,11 @@ function RequestsScreen() {
                 <div className="sub">{t(open.request ? 'acct.asked' : 'acct.approvedOn')}</div><div className="title">{askedFull(open.at)}</div>
               </div></div>
             </div>
+            {open.member && open.member.userId !== me && (
+              <div className="sheet-actions column">
+                <button className="btn danger block" onClick={() => sureOut(open.member!) && out(open.member!)}>{t('acct.removeMember')}</button>
+              </div>
+            )}
             {open.request && (
               <div className="sheet-actions column">
                 <button className="btn primary block" disabled={busy} onClick={() => yes(open.request!)}>{t('acct.approve')}</button>
