@@ -1,0 +1,837 @@
+<title>Smart Meta Notification Settings</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&display=swap">
+<style>
+/* Layout: desktop puts the views in a sidebar and the three layouts side by side as iPhones; a phone drops the frame and swipes between them. */
+:root {
+  /* The app's own tokens (src/styles.css). */
+  --bg: #f2f2f7; --surface: #ffffff; --surface-2: rgb(118 118 128 / 0.12); --surface-raised: #ffffff;
+  --ink: #000000; --ink-2: #6e6e73; --ink-3: #aeaeb2; --line: #e3e3e8; --line-strong: #c7c7cc;
+  --accent: #007aff; --accent-ink: #ffffff; --accent-soft: #e6f0ff; --seg-on: #ffffff;
+  --prep: #00879b; --on-track: #248a3d; --at-risk: #d70015; --danger: #d70015;
+  --c-pink: #ff2d55; --tile-mix: 16%; --glyph-ink: #000000; --glyph-mix: 88%;
+  --radius: 18px; --radius-sm: 12px;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1); --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', Roboto, system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', Roboto, system-ui, sans-serif;
+  /* iOS pieces drawn around the app: keyboard, alerts, the passkey sheet, Safari's bar. */
+  --kb: #d1d3d9; --kb-key: #ffffff; --kb-key-2: #acb1ba; --kb-shadow: rgb(0 0 0 / 0.3);
+  --sys: rgb(242 242 247 / 0.94); --alert: rgb(240 240 242 / 0.94); --alert-line: rgb(60 60 67 / 0.29);
+  --strong: #fdf5c4; --dim: rgb(0 0 0 / 0.35);
+  --frame: #1c1c1e; --frame-edge: #3a3a3c;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000; --surface: #1c1c1e; --surface-2: rgb(118 118 128 / 0.24); --surface-raised: #2c2c2e;
+    --ink: #ffffff; --ink-2: #98989f; --ink-3: #636366; --line: #38383a; --line-strong: #48484a;
+    --accent: #0a84ff; --accent-soft: #0b2a4a; --seg-on: #636366;
+    --prep: #40c8e0; --on-track: #30d158; --at-risk: #ff453a; --danger: #ff453a;
+    --c-pink: #ff375f; --tile-mix: 30%; --glyph-ink: #ffffff; --glyph-mix: 72%;
+    --kb: #2c2c2e; --kb-key: #6b6b6e; --kb-key-2: #464648; --kb-shadow: rgb(0 0 0 / 0.6);
+    --sys: rgb(28 28 30 / 0.94); --alert: rgb(44 44 46 / 0.94); --alert-line: rgb(84 84 88 / 0.6);
+    --strong: #3a3410; --dim: rgb(0 0 0 / 0.5);
+    --frame: #2c2c2e; --frame-edge: #48484a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000; --surface: #1c1c1e; --surface-2: rgb(118 118 128 / 0.24); --surface-raised: #2c2c2e;
+  --ink: #ffffff; --ink-2: #98989f; --ink-3: #636366; --line: #38383a; --line-strong: #48484a;
+  --accent: #0a84ff; --accent-soft: #0b2a4a; --seg-on: #636366;
+  --prep: #40c8e0; --on-track: #30d158; --at-risk: #ff453a; --danger: #ff453a;
+  --c-pink: #ff375f; --tile-mix: 30%; --glyph-ink: #ffffff; --glyph-mix: 72%;
+  --kb: #2c2c2e; --kb-key: #6b6b6e; --kb-key-2: #464648; --kb-shadow: rgb(0 0 0 / 0.6);
+  --sys: rgb(28 28 30 / 0.94); --alert: rgb(44 44 46 / 0.94); --alert-line: rgb(84 84 88 / 0.6);
+  --strong: #3a3410; --dim: rgb(0 0 0 / 0.5);
+  --frame: #2c2c2e; --frame-edge: #48484a;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 16px/1.4 var(--font); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+}
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+h1, h2, h3, p { margin: 0; }
+
+/* ——— review chrome ——— */
+.page {
+  max-width: 1200px; margin: 0 auto;
+  padding-left: max(24px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 120px; display: grid; gap: 20px;
+}
+.head { display: grid; gap: 6px; }
+.eyebrow { font-size: 13px; color: var(--ink-2); font-weight: 500; }
+.large-title { font: 700 34px/1.1 var(--font-display); letter-spacing: -0.02em; }
+.lede { color: var(--ink-2); font-size: 15px; max-width: 64ch; text-wrap: pretty; }
+.controls { display: grid; gap: 12px; }
+.steps { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  min-height: 34px; padding: 0 12px; border-radius: 999px; background: var(--surface-2);
+  font-size: 14px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out), transform 0.12s ease-out;
+}
+.chip:active { transform: scale(0.96); }
+.chip.on { background: var(--accent); color: var(--accent-ink); }
+.chip .n { font-variant-numeric: tabular-nums; opacity: 0.55; font-weight: 600; min-width: 1.2em; }
+.chip .pk { margin-left: auto; font-weight: 700; color: var(--on-track); }
+.chip.on .pk { color: var(--accent-ink); }
+.toggles { display: flex; gap: 10px; flex-wrap: wrap; }
+.segmented { display: flex; background: var(--surface-2); padding: 2px; border-radius: 9px; }
+.segmented button { min-height: 30px; padding: 0 12px; border-radius: 7px; font-size: 13px; font-weight: 500; transition: background 0.2s ease; }
+.segmented button.on { background: var(--seg-on); font-weight: 600; box-shadow: 0 3px 8px rgb(0 0 0 / 0.12), 0 1px 1px rgb(0 0 0 / 0.04); }
+.screens { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 28px 24px; align-items: start; }
+.opt { --dev-w: min(100%, 340px); display: grid; gap: 12px; justify-items: center; min-width: 0; }
+.opt-head { display: flex; align-items: baseline; gap: 8px; width: var(--dev-w); }
+.letter { flex: none; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: var(--surface-2); font-weight: 700; font-size: 14px; transform: translateY(-1px); }
+.opt-name { font: 600 17px/1.3 var(--font); letter-spacing: -0.01em; }
+.opt-note { width: var(--dev-w); font-size: 14px; color: var(--ink-2); line-height: 1.45; text-wrap: pretty; }
+.pick {
+  width: var(--dev-w); min-height: 44px; border-radius: 12px; font-weight: 600; font-size: 15px;
+  background: var(--surface-2); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out), transform 0.12s ease-out;
+}
+.pick:active { transform: scale(0.98); }
+.pick.on { background: var(--accent); color: var(--accent-ink); }
+.pick-all { width: var(--dev-w); font-size: 13px; color: var(--accent); font-weight: 500; min-height: 28px; margin-top: -6px; }
+.system-note { width: var(--dev-w); font-size: 13px; color: var(--ink-2); text-align: center; }
+
+.device {
+  width: var(--dev-w); aspect-ratio: 390 / 844; border-radius: 52px; padding: 11px;
+  background: var(--frame); box-shadow: inset 0 0 0 1.5px var(--frame-edge), 0 20px 50px rgb(0 0 0 / 0.18); position: relative;
+}
+.device::before { content: ''; position: absolute; top: 22px; left: 50%; width: 30%; height: 3.4%; transform: translateX(-50%); background: #000; border-radius: 99px; z-index: 30; }
+.scr { position: relative; height: 100%; border-radius: 42px; overflow: hidden; background: var(--bg); }
+.vp { position: absolute; top: 0; left: 0; width: 390px; height: 844px; transform-origin: 0 0; overflow: hidden; --st: 54px; --sb: 34px; }
+.vp.bare { --st: 14px; --sb: 10px; }
+
+.picks {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+  padding: 12px max(24px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(24px, env(safe-area-inset-left, 0px));
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8); backdrop-filter: blur(20px) saturate(1.8); border-top: 1px solid var(--line);
+}
+.picks-in { max-width: 1152px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+.picks-text { flex: 1; min-width: 0; font-size: 14px; color: var(--ink-2); }
+.picks-text b { color: var(--ink); font-weight: 600; }
+.copy { flex: none; min-height: 40px; padding: 0 16px; border-radius: 12px; font-weight: 600; font-size: 15px; background: var(--accent); color: var(--accent-ink); }
+.copy:disabled { opacity: 0.4; cursor: default; }
+.copy:active:not(:disabled) { opacity: 0.6; }
+.fallback { width: 100%; font: 13px/1.4 var(--font); padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); resize: none; }
+.dots { display: none; }
+.short { display: none; }
+
+@media (min-width: 1100px) {
+  .page {
+    max-width: 1560px; padding-block: 24px; column-gap: 44px; row-gap: 18px;
+    grid-template-columns: 250px 1fr; grid-template-rows: auto auto 1fr;
+    grid-template-areas: "head screens" "controls screens" "picks screens";
+  }
+  .head { grid-area: head; }
+  .controls { grid-area: controls; align-content: start; gap: 14px; }
+  .screens { grid-area: screens; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .opt { --dev-w: min(100%, 390px, calc((100dvh - 236px) * 0.4621)); }
+  .opt-note { min-height: 4.35em; }
+  .steps { flex-direction: column; align-items: stretch; gap: 4px; }
+  .chip { justify-content: flex-start; }
+  .toggles { flex-direction: column; }
+  .toggles .segmented button { flex: 1; }
+  .picks { grid-area: picks; position: static; padding: 0; background: none; border: 0; backdrop-filter: none; -webkit-backdrop-filter: none; align-self: end; }
+  .picks-in { flex-direction: column; align-items: stretch; gap: 10px; }
+}
+
+@media (max-width: 760px) {
+  html, body { overflow: hidden; }
+  .page { height: 100%; padding: 0; gap: 0; display: flex; flex-direction: column; }
+  .head { display: none; }
+  .screens { order: 1; flex: 1; min-height: 0; display: flex; gap: 0; overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none; }
+  .screens::-webkit-scrollbar { display: none; }
+  .opt { flex: 0 0 100%; scroll-snap-align: center; scroll-snap-stop: always; display: flex; flex-direction: column; gap: 0; height: 100%; }
+  .device { order: 1; width: 100%; flex: 1; min-height: 0; aspect-ratio: auto; border-radius: 0; padding: 0; background: none; box-shadow: none; }
+  .device::before { display: none; }
+  .scr { border-radius: 0; border-bottom: 1px solid var(--line); }
+  .opt-head, .opt-note, .pick, .pick-all, .system-note { order: 2; width: auto; align-self: stretch; margin-inline: 16px; }
+  .opt-head { margin-top: 10px; }
+  .opt-note { margin-top: 2px; font-size: 13px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .pick { margin-top: 8px; min-height: 40px; }
+  .pick-all { margin-top: 2px; }
+  .system-note { margin-block: 10px 4px; }
+  .dots { order: 2; display: flex; justify-content: center; gap: 7px; padding: 8px 0 2px; }
+  .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); transition: background 0.2s var(--ease-out), transform 0.2s var(--ease-out); }
+  .dots i.on { background: var(--ink); transform: scale(1.15); }
+  .controls { order: 3; padding: 6px 0 0; gap: 8px; }
+  .steps { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 0 16px; }
+  .steps::-webkit-scrollbar { display: none; }
+  .toggles { padding: 0 16px; flex-wrap: nowrap; }
+  .toggles .segmented { flex: 1; }
+  .toggles .segmented button { flex: 1; padding: 0 4px; }
+  .long { display: none; }
+  .short { display: inline; }
+  .picks { position: static; order: 4; border-top: 0; background: none; backdrop-filter: none; -webkit-backdrop-filter: none; padding: 8px 16px calc(10px + env(safe-area-inset-bottom, 0px)); }
+  .picks-text { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .copy { min-height: 36px; font-size: 14px; padding: 0 14px; }
+}
+
+/* ——— inside the phone: the app's own components ——— */
+.vp { font: 16px/1.4 var(--font); color: var(--ink); background: var(--bg); letter-spacing: normal; text-align: left; }
+.vp .layer { position: absolute; inset: 0; }
+.status {
+  position: absolute; top: 0; left: 0; right: 0; height: 54px; z-index: 25; display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 30px 0 52px; font: 600 17px/1 var(--font-display); color: var(--ink);
+}
+.status.light { color: #fff; }
+.status .icons { display: flex; gap: 6px; align-items: center; }
+.status svg { height: 12px; width: auto; fill: currentColor; }
+.vp.bare .status, .vp.bare .home { display: none; }
+.home { position: absolute; bottom: 8px; left: 50%; width: 140px; height: 5px; border-radius: 99px; transform: translateX(-50%); background: var(--ink); z-index: 40; }
+.home.light { background: #fff; }
+
+.screen { position: absolute; inset: 0; overflow: hidden; padding: calc(var(--st) + 14px) 16px 0; }
+.head-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.screen .eyebrow { margin-bottom: 2px; }
+.screen .large-title { overflow-wrap: anywhere; }
+.head-actions { display: flex; gap: 4px; margin-bottom: 2px; }
+.icon-btn { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 12px; color: var(--ink); }
+.icon-btn svg, .ico { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.card { background: var(--surface); border-radius: var(--radius); }
+.seg-app { display: flex; background: var(--surface-2); padding: 2px; border-radius: 9px; margin-bottom: 16px; }
+.seg-app span { flex: 1; min-height: 30px; display: grid; place-items: center; border-radius: 7px; font-size: 13px; font-weight: 500; }
+.seg-app span.on { background: var(--seg-on); font-weight: 600; box-shadow: 0 3px 8px rgb(0 0 0 / 0.12), 0 1px 1px rgb(0 0 0 / 0.04); }
+.group { overflow: hidden; margin-bottom: 12px; }
+.group-head { display: flex; gap: 12px; padding: 14px 12px 10px 16px; align-items: center; }
+.group-head .text { flex: 1; min-width: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+.chev { color: var(--ink-3); width: 20px; height: 20px; }
+.tile { flex: none; width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--c) var(--tile-mix), var(--surface)); color: color-mix(in srgb, var(--c) var(--glyph-mix), var(--glyph-ink)); }
+.tile svg { width: 15px; height: 15px; fill: currentColor; }
+.item { display: flex; align-items: center; gap: 2px; padding: 2px 14px 2px 6px; min-height: 52px; position: relative; }
+.item + .item::before, .group-head + .item::before { content: ''; position: absolute; top: 0; right: 0; left: 54px; border-top: 1px solid var(--line); }
+.check { width: 44px; height: 48px; display: grid; place-items: center; flex: none; }
+.check i { width: 24px; height: 24px; border: 1.5px solid var(--kc); border-radius: 50%; }
+.item-main { flex: 1; min-width: 0; padding: 11px 4px; }
+.item-title { font-size: 17px; line-height: 1.3; }
+.item-detail { font-size: 14px; color: var(--ink-2); margin-top: 1px; }
+.tabbar {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 10; padding-bottom: var(--sb);
+  background: color-mix(in srgb, var(--bg) 88%, transparent); -webkit-backdrop-filter: saturate(1.6) blur(18px); backdrop-filter: saturate(1.6) blur(18px);
+  border-top: 0.5px solid var(--line-strong);
+}
+.tabbar nav { display: flex; height: 58px; }
+.tabbar span { flex: 1; display: grid; place-items: center; align-content: center; gap: 2px; color: var(--ink-2); font-size: 10px; font-weight: 500; }
+.tabbar span.on { color: var(--accent); }
+.fab { position: absolute; z-index: 11; right: 16px; bottom: calc(58px + var(--sb) + 16px); width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; box-shadow: 0 4px 14px rgb(0 0 0 / 0.22); }
+.fab svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; }
+
+.btn { min-height: 44px; padding: 0 18px; border-radius: 12px; font-weight: 600; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: var(--surface-2); color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn.block { width: 100%; }
+.btn.big { min-height: 50px; font-size: 17px; border-radius: 14px; }
+.btn.ghost { background: none; padding: 0 8px; }
+.btn:disabled { opacity: 0.4; }
+.btn:active:not(:disabled) { opacity: 0.6; }
+.quiet { color: var(--accent); font-size: 15px; font-weight: 500; min-height: 44px; width: 100%; }
+.quiet.grey { color: var(--ink-2); }
+.field-label { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.input {
+  display: flex; align-items: center; min-height: 46px; padding: 10px 12px; border-radius: 12px; font-size: 17px;
+  border: 1px solid var(--line-strong); background: var(--surface);
+}
+.input.focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.caret { display: inline-block; width: 2px; height: 1.15em; background: var(--accent); margin-left: 1px; border-radius: 1px; animation: blink 1.1s steps(1) infinite; vertical-align: -0.15em; }
+@keyframes blink { 50% { opacity: 0; } }
+.input.strong { background: var(--strong); border-color: transparent; justify-content: space-between; gap: 8px; font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 15px; }
+.input.strong .badge { font-family: var(--font); font-size: 12px; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+.hint { font-size: 13px; color: var(--ink-2); line-height: 1.4; }
+.hint.lock { display: flex; gap: 6px; align-items: flex-start; }
+.hint.lock svg { flex: none; width: 14px; height: 14px; margin-top: 2px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.codes { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.codes span {
+  height: 56px; border-radius: 12px; border: 1px solid var(--line-strong); background: var(--surface);
+  display: grid; place-items: center; font: 600 26px/1 var(--font-display); font-variant-numeric: tabular-nums;
+}
+.codes span.focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.codes.gap span:nth-child(3) { margin-right: 6px; }
+.big-icon { width: 72px; height: 72px; border-radius: 18px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+.big-icon svg { width: 38px; height: 38px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.big-icon.green { background: color-mix(in srgb, var(--on-track) 16%, var(--surface)); color: var(--on-track); }
+.big-icon.round { border-radius: 50%; }
+.appicon { flex: none; width: 72px; height: 72px; border-radius: 17px; box-shadow: 0 6px 20px rgb(0 0 0 / 0.18); background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='rgb(44,93,143)'/%3E%3Cpath d='M29 52l14 14 29-30' fill='none' stroke='rgb(252,251,248)' stroke-width='10.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / cover; }
+.appicon.sm { width: 44px; height: 44px; border-radius: 10px; box-shadow: none; }
+
+/* A: the card on Today, and the sheet the steps run in */
+.signin-card { padding: 16px; margin-bottom: 12px; }
+.signin-card .row1 { display: flex; gap: 12px; align-items: flex-start; }
+.signin-card h3 { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
+.signin-card p { font-size: 15px; color: var(--ink-2); margin-top: 3px; line-height: 1.4; }
+.signin-card .actions { display: flex; gap: 8px; margin-top: 14px; align-items: center; }
+.signin-card .hint { margin-top: 12px; }
+.backdrop { position: absolute; inset: 0; background: var(--dim); z-index: 20; animation: fade 0.25s ease both; }
+@keyframes fade { from { opacity: 0; } }
+.sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 21; background: var(--bg); border-radius: 22px 22px 0 0;
+  display: flex; flex-direction: column; animation: sheet-in 0.42s var(--ease-drawer) both;
+}
+.sheet.large { top: calc(var(--st) + 10px); }
+.sheet.small { padding-bottom: calc(var(--sb) + 8px); }
+@keyframes sheet-in { from { transform: translateY(100%); } }
+.grabber { width: 36px; height: 5px; border-radius: 3px; background: var(--line-strong); margin: 6px auto 0; flex: none; }
+.sheet-bar { display: flex; align-items: center; gap: 8px; padding: 10px 8px 4px; }
+.sheet-bar .side { width: 84px; }
+.sheet-bar .side.r { text-align: right; }
+.sheet-bar h2 { flex: 1; text-align: center; font-size: 17px; font-weight: 600; }
+.sheet-bar .side button { color: var(--accent); font-size: 17px; min-height: 44px; padding: 0 8px; }
+.sheet-body { flex: 1; min-height: 0; overflow: hidden; padding: 16px 20px 0; display: flex; flex-direction: column; }
+.wizard-q { font: 700 24px/1.2 var(--font-display); letter-spacing: -0.01em; margin-bottom: 8px; }
+.wizard-lead { color: var(--ink-2); margin-bottom: 20px; line-height: 1.45; }
+.sheet-foot { padding: 12px 20px calc(var(--sb) + 8px); display: grid; gap: 2px; }
+.sheet-foot.on-kb { padding-bottom: 10px; }
+.sheet .stack { display: grid; gap: 14px; }
+.small-sheet { padding: 22px 20px 0; }
+.small-sheet h2 { font: 700 20px/1.25 var(--font-display); margin-bottom: 8px; }
+.small-sheet p { color: var(--ink-2); line-height: 1.45; }
+.small-sheet .actions { display: grid; gap: 4px; margin-top: 20px; }
+.toast { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(58px + var(--sb) + 84px); z-index: 30; background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 500; white-space: nowrap; animation: toast-in 0.3s var(--ease-out) both; }
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px) scale(0.96); } }
+
+/* B: full pages, like the intro */
+.page-b { position: absolute; inset: 0; display: flex; flex-direction: column; padding: calc(var(--st) + 6px) 24px 0; }
+.page-b .top { display: flex; justify-content: space-between; align-items: center; min-height: 44px; margin: 0 -8px 8px; }
+.page-b .back { color: var(--accent); font-size: 17px; display: inline-flex; align-items: center; gap: 0; min-height: 44px; padding: 0 6px 0 0; }
+.page-b .back svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.page-b .body { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.page-b .body.center { justify-content: center; padding-bottom: 40px; }
+.page-b .intro-title { font: 700 28px/1.15 var(--font-display); letter-spacing: -0.02em; text-wrap: balance; margin-top: 22px; }
+.page-b .intro-sub { color: var(--ink-2); font-size: 17px; line-height: 1.45; margin-top: 12px; max-width: 32ch; text-wrap: balance; }
+.page-b .form { width: 100%; text-align: left; margin-top: 28px; display: grid; gap: 12px; }
+.page-b .nav { display: grid; gap: 2px; padding: 16px 0 calc(var(--sb) + 10px); }
+.page-b .nav.on-kb { padding-bottom: 10px; }
+.page-b .nav .hint { text-align: center; margin-bottom: 10px; }
+.intro-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 16px; }
+.intro-dots i { width: 7px; height: 7px; border-radius: 4px; background: var(--line-strong); }
+.intro-dots i.on { width: 18px; background: var(--accent); }
+.intro-steps { list-style: none; margin: 28px 0 0; padding: 0; text-align: left; width: 100%; }
+.intro-steps li { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 16px; }
+.intro-steps li:first-child { border-top: 1px solid var(--line); }
+.intro-steps .n { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 14px; }
+.alert-wrap { position: absolute; inset: 0; z-index: 30; display: grid; place-items: center; background: var(--dim); animation: fade 0.2s ease both; }
+.alert { width: 270px; border-radius: 14px; background: var(--alert); -webkit-backdrop-filter: blur(30px); backdrop-filter: blur(30px); text-align: center; overflow: hidden; animation: pop 0.28s var(--ease-out) both; }
+@keyframes pop { from { opacity: 0; transform: scale(1.12); } }
+.alert .msg { padding: 19px 16px 18px; }
+.alert h3 { font-size: 17px; font-weight: 600; line-height: 1.3; }
+.alert p { font-size: 13px; line-height: 1.38; margin-top: 4px; }
+.alert .btns { border-top: 0.5px solid var(--alert-line); }
+.alert .btns button { display: block; width: 100%; min-height: 44px; font-size: 17px; color: var(--accent); }
+.alert .btns button + button { border-top: 0.5px solid var(--alert-line); }
+.alert .btns .b { font-weight: 600; }
+
+/* C: Settings style, like signing in to an Apple account */
+.page-c { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--bg); }
+.navbar { display: flex; align-items: center; padding: calc(var(--st) + 2px) 8px 6px; min-height: calc(var(--st) + 46px); }
+.navbar .side { width: 96px; display: flex; }
+.navbar .side.r { justify-content: flex-end; }
+.navbar .side button { color: var(--accent); font-size: 17px; min-height: 44px; padding: 0 8px; display: inline-flex; align-items: center; }
+.navbar .side button svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; margin-right: -2px; }
+.navbar .side button.b { font-weight: 600; }
+.navbar .side button:disabled { color: var(--ink-3); cursor: default; }
+.navbar h2 { flex: 1; text-align: center; font-size: 17px; font-weight: 600; }
+.page-c .content { flex: 1; min-height: 0; overflow: hidden; padding: 8px 16px 0; }
+.c-head { text-align: center; display: grid; justify-items: center; gap: 10px; padding: 8px 8px 22px; }
+.c-head .big-icon, .c-head .appicon { width: 64px; height: 64px; }
+.c-head h1 { font: 700 26px/1.2 var(--font-display); letter-spacing: -0.015em; text-wrap: balance; }
+.c-head p { color: var(--ink-2); font-size: 15px; line-height: 1.4; max-width: 34ch; text-wrap: balance; }
+.list { background: var(--surface); border-radius: 12px; overflow: hidden; }
+.lrow { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 11px 16px; position: relative; font-size: 17px; }
+.lrow + .lrow::before { content: ''; position: absolute; top: 0; right: 0; left: 16px; border-top: 0.5px solid var(--line-strong); }
+.lrow .k { flex: none; min-width: 92px; }
+.lrow .v { flex: 1; min-width: 0; text-align: right; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lrow .v.in { text-align: left; color: var(--ink); }
+.lrow.act { color: var(--accent); justify-content: center; }
+.lrow.act.left { justify-content: flex-start; }
+.lrow .sub { font-size: 13px; color: var(--ink-2); }
+.lrow .text { flex: 1; min-width: 0; }
+.lrow .approve { color: var(--accent); font-weight: 600; font-size: 15px; }
+.lrow .initials { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); font-size: 13px; font-weight: 600; color: var(--ink-2); flex: none; }
+.sec-head { font-size: 13px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.02em; margin: 22px 16px 7px; display: flex; justify-content: space-between; }
+.sec-foot { font-size: 13px; color: var(--ink-2); margin: 8px 16px 0; line-height: 1.4; }
+.banner { display: flex; gap: 12px; align-items: center; padding: 12px 12px 12px 14px; border-radius: var(--radius-sm); background: var(--accent-soft); margin-bottom: 12px; }
+.banner.green { background: color-mix(in srgb, var(--on-track) 14%, var(--surface)); }
+.banner .text { flex: 1; min-width: 0; }
+.banner b { display: block; font-size: 15px; font-weight: 600; }
+.banner span { display: block; font-size: 13px; color: var(--ink-2); margin-top: 1px; }
+.banner .ic { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; background: var(--accent); color: #fff; flex: none; }
+.banner.green .ic { background: var(--on-track); }
+.banner .ic svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.action-sheet { position: absolute; left: 8px; right: 8px; bottom: calc(var(--sb) + 4px); z-index: 30; display: grid; gap: 8px; animation: sheet-in 0.4s var(--ease-drawer) both; }
+.action-sheet .grp { border-radius: 14px; background: var(--alert); -webkit-backdrop-filter: blur(30px); backdrop-filter: blur(30px); overflow: hidden; text-align: center; }
+.action-sheet .msg { padding: 14px 16px; font-size: 13px; color: var(--ink-2); line-height: 1.38; }
+.action-sheet .msg b { display: block; font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+.action-sheet button { display: block; width: 100%; min-height: 57px; font-size: 20px; color: var(--accent); border-top: 0.5px solid var(--alert-line); }
+.action-sheet .cancel button { border-top: 0; font-weight: 600; background: var(--surface-raised); }
+
+/* B and A: Requests as cards */
+.req-card { display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 14px; }
+.req-card + .req-card { margin-top: 10px; }
+.req-card .text { flex: 1; min-width: 0; }
+.req-card .em { font-size: 16px; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.req-card .when { font-size: 13px; color: var(--ink-2); }
+.req-card .btn { min-height: 34px; padding: 0 14px; font-size: 14px; border-radius: 999px; }
+.big-count { display: flex; align-items: baseline; gap: 8px; margin: 4px 0 18px; }
+.big-count b { font: 700 40px/1 var(--font-display); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.big-count span { color: var(--ink-2); }
+.meter { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; margin: -8px 0 20px; }
+.meter i { display: block; height: 100%; width: 37%; background: var(--accent); border-radius: 3px; }
+.sec-title { font: 700 22px/1.2 var(--font-display); letter-spacing: -0.015em; margin: 6px 4px 10px; }
+
+/* iOS: keyboard, the passkey sheet and Safari's bar */
+.kb { position: absolute; left: 0; right: 0; bottom: 0; z-index: 22; background: var(--kb); padding: 0 3px var(--sb); }
+.kb-bar { height: 44px; display: flex; align-items: center; justify-content: center; gap: 0; font-size: 15px; }
+.kb-bar span { flex: 1; text-align: center; color: var(--ink); }
+.kb-bar span + span { border-left: 1px solid color-mix(in srgb, var(--ink) 15%, transparent); }
+.kb-bar .otp { line-height: 1.15; }
+.kb-bar .otp small { display: block; font-size: 12px; color: var(--ink-2); }
+.kb-row { display: flex; gap: 6px; justify-content: center; padding: 0 0 11px; }
+.kb-row:first-of-type { padding-top: 4px; }
+.kk { height: 42px; flex: 1; max-width: 34px; border-radius: 5px; background: var(--kb-key); box-shadow: 0 1px 0 var(--kb-shadow); display: grid; place-items: center; font-size: 22px; color: var(--ink); }
+.kk.s { background: var(--kb-key-2); max-width: 44px; font-size: 15px; }
+.kk.w { max-width: none; flex: 4; font-size: 15px; }
+.kk.m { max-width: 88px; flex: 1.6; font-size: 15px; }
+.kk.go { background: var(--accent); color: #fff; max-width: 88px; flex: 1.6; font-size: 15px; }
+.kb-row.pad { gap: 6px; padding: 0 3px 7px; }
+.kb-row.pad .kk { max-width: none; height: 46px; display: flex; flex-direction: column; justify-content: center; gap: 0; font-size: 24px; line-height: 1; }
+.kb-row.pad .kk small { font-size: 9px; font-weight: 600; letter-spacing: 0.15em; margin-top: 1px; }
+.kb-row.pad .kk.blank { background: none; box-shadow: none; }
+.kb-pad { padding-top: 6px; }
+.syssheet { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 30; border-radius: 38px; background: var(--sys); -webkit-backdrop-filter: blur(40px); backdrop-filter: blur(40px); padding: 18px 22px 22px; text-align: center; animation: sheet-in 0.45s var(--ease-drawer) both; }
+.syssheet .x { position: absolute; right: 16px; top: 16px; width: 30px; height: 30px; border-radius: 50%; background: var(--surface-2); display: grid; place-items: center; color: var(--ink-2); }
+.syssheet .x svg { width: 12px; height: 12px; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+.syssheet .site { font-size: 13px; color: var(--ink-2); margin-top: 6px; }
+.syssheet .key { width: 60px; height: 60px; margin: 12px auto 12px; color: var(--accent); }
+.syssheet .key svg { width: 60px; height: 60px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.syssheet h3 { font-size: 20px; font-weight: 700; line-height: 1.25; text-wrap: balance; }
+.syssheet p { font-size: 15px; color: var(--ink-2); line-height: 1.38; margin: 8px 6px 20px; }
+.syssheet .btn { min-height: 52px; border-radius: 16px; font-size: 17px; }
+.syssheet .other { color: var(--accent); font-size: 17px; min-height: 44px; margin-top: 4px; width: 100%; }
+.faceid-glyph { position: absolute; z-index: 31; left: 50%; top: 38%; width: 120px; height: 120px; transform: translate(-50%, -50%); border-radius: 26px; background: var(--alert); -webkit-backdrop-filter: blur(30px); backdrop-filter: blur(30px); display: grid; place-items: center; color: var(--ink); animation: pop 0.3s var(--ease-out) 0.5s both; }
+.faceid-glyph svg { width: 64px; height: 64px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.safari { position: absolute; left: 0; right: 0; bottom: 0; z-index: 12; padding: 8px 12px calc(var(--sb) + 2px); background: color-mix(in srgb, var(--bg) 92%, transparent); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border-top: 0.5px solid var(--line-strong); }
+.safari .addr { height: 46px; border-radius: 14px; background: var(--surface); box-shadow: 0 1px 6px rgb(0 0 0 / 0.08); display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 15px; }
+.safari .addr svg { width: 12px; height: 12px; fill: currentColor; color: var(--ink-2); }
+.safari .tools { display: flex; justify-content: space-between; padding: 10px 14px 0; color: var(--accent); }
+.safari .tools svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.vp.still .sheet, .vp.still > .backdrop { animation: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet, .action-sheet, .syssheet, .alert, .toast, .backdrop, .alert-wrap, .faceid-glyph { animation: fade 0.2s ease both; }
+  .caret { animation: none; }
+}
+
+/* ——— Settings → Notifications: the app's settings rows, switches, iOS time pickers ——— */
+:root { --c-green: #34c759; --c-red: #ff3b30; --c-orange: #ff9500; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --c-green: #30d158; --c-red: #ff453a; --c-orange: #ff9f0a; } }
+:root[data-theme="dark"] { --c-green: #30d158; --c-red: #ff453a; --c-orange: #ff9f0a; }
+.screen.scroll { overflow-y: auto; scrollbar-width: none; padding-bottom: 40px; }
+.screen.scroll::-webkit-scrollbar { display: none; }
+.sw { position: relative; flex: none; width: 51px; height: 31px; border-radius: 16px; background: var(--line-strong); transition: background 0.2s ease; }
+.sw::after { content: ''; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgb(0 0 0 / 0.2); transition: transform 0.3s var(--ease-drawer); }
+.sw.on { background: var(--c-green); }
+.sw.on::after { transform: translateX(20px); }
+.sw.dis { opacity: 0.45; }
+.lrow .text .sub { margin-top: 1px; }
+.lrow.child { padding-left: 32px; }
+.lrow.child::before { left: 32px !important; }
+.lrow .val { color: var(--ink-2); font-size: 17px; margin-left: auto; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+.lrow .val .chev { margin: 0; }
+.lrow.link { color: var(--accent); }
+.lrow.dim .text { opacity: 0.45; }
+.tpill { margin-left: auto; padding: 6px 11px; border-radius: 8px; background: var(--surface-2); font-size: 17px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tpill.on { color: var(--accent); }
+.ok { color: var(--on-track); }
+.wheel { position: relative; height: 196px; display: flex; justify-content: center; gap: 0; overflow: hidden; font-size: 22px; font-variant-numeric: tabular-nums; background: var(--surface); }
+.wheel::before { content: ''; position: absolute; left: 12px; right: 12px; top: 50%; height: 36px; transform: translateY(-50%); border-radius: 9px; background: var(--surface-2); }
+.wheel::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(var(--surface), transparent 38%, transparent 62%, var(--surface)); }
+.wheel .col { position: relative; width: 72px; display: grid; align-content: center; justify-items: center; gap: 0; }
+.wheel .col span { height: 36px; display: grid; place-items: center; color: var(--ink-2); }
+.wheel .col span.sel { color: var(--ink); font-weight: 500; }
+.wheel .col span.f1 { transform: perspective(200px) rotateX(28deg) scale(0.94); opacity: 0.75; }
+.wheel .col span.f2 { transform: perspective(200px) rotateX(48deg) scale(0.86); opacity: 0.45; }
+.wheel .col span.u1 { transform: perspective(200px) rotateX(-28deg) scale(0.94); opacity: 0.75; }
+.wheel .col span.u2 { transform: perspective(200px) rotateX(-48deg) scale(0.86); opacity: 0.45; }
+.wheel .colon { position: relative; align-self: center; font-weight: 500; }
+.nprev { display: flex; gap: 10px; align-items: center; padding: 12px 14px 12px 12px; border-radius: 20px; background: var(--surface); box-shadow: 0 1px 3px rgb(0 0 0 / 0.06); font-size: 15px; line-height: 1.3; }
+.nprev .ic { flex: none; width: 38px; height: 38px; border-radius: 9px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='rgb(44,93,143)'/%3E%3Cpath d='M29 52l14 14 29-30' fill='none' stroke='rgb(252,251,248)' stroke-width='10.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / cover; }
+.nprev .tx { flex: 1; min-width: 0; }
+.nprev .tp { display: flex; gap: 8px; align-items: baseline; }
+.nprev b { flex: 1; min-width: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nprev small { color: var(--ink-2); font-size: 13px; }
+.preview-wrap { padding: 14px; border-radius: var(--radius); background: linear-gradient(160deg, #6fa6e3, #8a7dd6 70%, #b98fd6); }
+.tomorrow { padding: 14px 16px 6px; }
+.tomorrow h3 { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; display: flex; justify-content: space-between; align-items: baseline; }
+.tomorrow h3 span { font-size: 13px; font-weight: 500; color: var(--ink-2); }
+.tl { list-style: none; margin: 10px 0 0; padding: 0; }
+.tl li { display: flex; gap: 12px; align-items: baseline; padding: 9px 0; border-top: 0.5px solid var(--line-strong); font-size: 15px; }
+.tl li:first-child { border-top: 0; }
+.tl .tm { width: 46px; flex: none; font-variant-numeric: tabular-nums; color: var(--ink-2); font-weight: 600; }
+.tl .what { flex: 1; min-width: 0; }
+.tl .what small { display: block; color: var(--ink-2); font-size: 13px; }
+.state-card { padding: 18px 16px; display: grid; gap: 10px; justify-items: start; }
+.state-card .ic { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+.state-card .ic.warn { background: color-mix(in srgb, var(--c-orange) 16%, var(--surface)); color: var(--c-orange); }
+.state-card .ic svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.state-card h3 { font-size: 18px; font-weight: 650; letter-spacing: -0.01em; }
+.state-card p { font-size: 15px; color: var(--ink-2); line-height: 1.4; }
+.state-card .btn { margin-top: 4px; }
+.state-card ol { margin: 2px 0 0; padding-left: 20px; font-size: 15px; line-height: 1.6; }
+.state-card ol b { font-weight: 600; }
+.center-state { text-align: center; justify-items: center; padding: 26px 20px 22px; }
+.center-state .ic { width: 64px; height: 64px; border-radius: 16px; }
+.center-state .ic svg { width: 34px; height: 34px; }
+.center-state h3 { font: 700 24px/1.2 var(--font-display); }
+.center-state ol { text-align: left; }
+.big-title-sub { color: var(--ink-2); font-size: 15px; margin: -10px 4px 18px; }
+.vp.still .sheet, .vp.still > .backdrop, .vp.still .alert-wrap, .vp.still .alert { animation: none; }
+</style>
+
+<div class="page">
+  <header class="head">
+    <p class="eyebrow">S0 mockups · 4 of 5</p>
+    <h1 class="large-title">Notification settings</h1>
+    <p class="lede">Settings → Notifications in three layouts, in five situations. Switches inside the phones work. Pick a layout per situation, or one for all.</p>
+  </header>
+  <div class="controls">
+    <nav class="steps" id="steps" aria-label="Situation"></nav>
+    <div class="toggles">
+      <div class="segmented" id="lang" role="group" aria-label="Language">
+        <button data-l="en"><span class="long">English</span><span class="short">EN</span></button><button data-l="pt"><span class="long">Português</span><span class="short">PT</span></button>
+      </div>
+      <div class="segmented" id="theme" role="group" aria-label="Appearance">
+        <button data-t="light">Light</button><button data-t="dark">Dark</button>
+      </div>
+    </div>
+  </div>
+  <section class="screens" id="screens" aria-live="polite"></section>
+  <div class="dots" id="dots" aria-hidden="true"></div>
+  <footer class="picks">
+    <div class="picks-in">
+      <p class="picks-text" id="picks-text"></p>
+      <button class="copy" id="copy">Copy picks</button>
+    </div>
+  </footer>
+</div>
+
+<script>
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('s0n2.' + k); return v === null ? d : JSON.parse(v) } catch { return d } },
+  set(k, v) { try { localStorage.setItem('s0n2.' + k, JSON.stringify(v)) } catch {} },
+}
+// The switches start as the plan says: types on, badge off, lock-screen details on, quiet hours off.
+const ON0 = { summary: true, weekdays: false, due: true, reminders: true, preps: true, review: true, goalReview: true, badge: false, details: true, quiet: false }
+const state = { view: store.get('view', 'main'), lang: store.get('lang', 'en'), theme: store.get('theme', null), picks: store.get('picks', {}), on: { ...ON0, ...store.get('on', {}) } }
+const t = (en, pt) => (state.lang === 'en' ? en : pt)
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+const I = {
+  signal: '<svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>',
+  wifi: '<svg viewBox="0 0 16 12"><path d="M8 2.2c2.3 0 4.4.9 6 2.4l1.2-1.3C13.3 1.5 10.8.4 8 .4S2.7 1.5.8 3.3L2 4.6c1.6-1.5 3.7-2.4 6-2.4zm0 3.6c1.3 0 2.5.5 3.4 1.3l1.2-1.3C11.4 4.7 9.8 4 8 4s-3.4.7-4.6 1.8l1.2 1.3c.9-.8 2.1-1.3 3.4-1.3zm0 3.6c.4 0 .8.2 1.1.4L8 11.6 6.9 9.8c.3-.2.7-.4 1.1-.4z"/></svg>',
+  battery: '<svg viewBox="0 0 27 12"><rect x=".5" y=".5" width="23" height="11" rx="3" fill="none" stroke="currentColor" opacity=".45"/><rect x="2" y="2" width="20" height="8" rx="1.8"/><path d="M25 4v4c.8-.3 1.3-1.1 1.3-2S25.8 4.3 25 4z" opacity=".45"/></svg>',
+  today: '<svg class="ico" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>',
+  goals: '<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/></svg>',
+  review: '<svg class="ico" viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>',
+  insights: '<svg class="ico" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  filter: '<svg class="ico" viewBox="0 0 24 24" style="stroke-width:2"><path d="M4 6.5h16M7 12h10M10 17.5h4"/></svg>',
+  calendar: '<svg class="ico" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4M8 14h2M14 14h2M8 17h2"/></svg>',
+  settings: '<svg class="ico" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>',
+  plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  chevR: '<svg class="ico chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>',
+  back: '<svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg>',
+  heart: '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.2 3.1 4.5 6.8 4.5c2.1 0 3.6 1.2 5.2 3 1.6-1.8 3.1-3 5.2-3 3.7 0 5.9 3.7 4.4 7.2C19.5 16.4 12 21 12 21z"/></svg>',
+  lock: '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  mail: '<svg viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4 7.5 8 6 8-6"/></svg>',
+  mailOpen: '<svg viewBox="0 0 24 24"><path d="M3 10.5 12 4l9 6.5V18a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 18z"/><path d="m3.5 11 8.5 6 8.5-6"/></svg>',
+  faceid: '<svg viewBox="0 0 24 24"><path d="M3 8V6a3 3 0 0 1 3-3h2M16 3h2a3 3 0 0 1 3 3v2M21 16v2a3 3 0 0 1-3 3h-2M8 21H6a3 3 0 0 1-3-3v-2"/><path d="M8.5 9v1.5M15.5 9v1.5M12 9v4.5h-1"/><path d="M9 16.2c1.7 1.3 4.3 1.3 6 0"/></svg>',
+  key: '<svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4.5"/><path d="m11.2 11.8 8.3-8.3M16.5 6.5l2.5 2.5M14.5 8.5l2 2"/></svg>',
+  hourglass: '<svg viewBox="0 0 24 24"><path d="M6.5 3h11M6.5 21h11M7.5 3c0 4.5 4.5 6 4.5 9s-4.5 4.5-4.5 9M16.5 3c0 4.5-4.5 6-4.5 9s4.5 4.5 4.5 9"/></svg>',
+  people: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 20c.6-3.4 3.3-5.5 6.5-5.5s5.9 2.1 6.5 5.5"/><circle cx="17" cy="9.5" r="2.7"/><path d="M17 14.5c2.4 0 4.2 1.6 4.6 4.3"/></svg>',
+  check: '<svg viewBox="0 0 24 24" style="stroke-width:2.6"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+  cloudLock: '<svg viewBox="0 0 24 24"><path d="M7 18a4 4 0 0 1-.6-7.95A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9H7z"/><path d="M10 13.5v-1a2 2 0 0 1 4 0v1"/><rect x="9.2" y="13.5" width="5.6" height="3.6" rx="1"/></svg>',
+  share: '<svg viewBox="0 0 24 24"><path d="M12 15V3.5M8 7.5l4-4 4 4"/><path d="M8.5 10.5H7A2.5 2.5 0 0 0 4.5 13v6A2.5 2.5 0 0 0 7 21.5h10a2.5 2.5 0 0 0 2.5-2.5v-6a2.5 2.5 0 0 0-2.5-2.5h-1.5"/></svg>',
+  x: '<svg viewBox="0 0 12 12"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9"/></svg>',
+  person: '<svg viewBox="0 0 24 24"><circle cx="10" cy="8" r="4"/><path d="M2.5 20.5c.6-3.8 3.6-6 7.5-6 1.4 0 2.7.3 3.8.8"/><circle cx="17.5" cy="16.5" r="2.2"/><path d="M17.5 18.7V22M17.5 20.5h1.5"/></svg>',
+  padlock: '<svg viewBox="0 0 14 18"><path d="M3 7V5a4 4 0 0 1 8 0v2h.5A2.5 2.5 0 0 1 14 9.5v6a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 0 15.5v-6A2.5 2.5 0 0 1 2.5 7H3zm1.8 0h4.4V5a2.2 2.2 0 0 0-4.4 0v2z"/></svg>',
+  book: '<svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/></svg>',
+  tabs: '<svg viewBox="0 0 24 24"><rect x="3" y="7" width="13" height="13" rx="2.5"/><path d="M8 4h10.5A2.5 2.5 0 0 1 21 6.5V17"/></svg>',
+}
+const svgIn = (name, cls = '') => I[name].replace('<svg', `<svg class="${cls}"`)
+
+// ——— shared pieces of the phone ———
+const status = (light) => `<div class="status ${light ? 'light' : ''}"><span>9:41</span><span class="icons">${I.signal}${I.wifi}${I.battery}</span></div>`
+const home = (light) => `<div class="home ${light ? 'light' : ''}"></div>`
+
+I.bell = '<svg viewBox="0 0 24 24"><path d="M6 10a6 6 0 0 1 12 0c0 4.5 1.6 6.3 2.3 7H3.7c.7-.7 2.3-2.5 2.3-7z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg>'
+I.bellOff = '<svg viewBox="0 0 24 24"><path d="M8.2 5.3A6 6 0 0 1 18 10c0 2.4.5 4 1 5.1M17 17H3.7c.7-.7 2.3-2.5 2.3-7 0-.6.1-1.2.3-1.8"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0M3 3l18 18"/></svg>'
+I.user = '<svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5c.8-3.8 3.8-6 7.5-6s6.7 2.2 7.5 6"/></svg>'
+
+const VIEWS = [
+  { key: 'main', label: 'Notifications on' },
+  { key: 'time', label: 'Changing the summary time' },
+  { key: 'ask', label: 'Not allowed yet' },
+  { key: 'denied', label: 'Turned off in iPhone Settings' },
+  { key: 'noaccount', label: 'No account' },
+]
+if (!VIEWS.some((v) => v.key === state.view)) state.view = 'main'
+const OPTIONS = [
+  { name: 'Everything on one page', note: 'Every switch on one page, like iPhone Settings. Times open a wheel right in the list.' },
+  { name: 'A page per kind', note: 'A short list with each kind’s state; each kind opens its own page with a live preview of the push.' },
+  { name: 'Tomorrow first', note: 'Starts with the pushes planned for tomorrow, so you see what’s coming; compact switches below.' },
+]
+const LETTERS = ['A', 'B', 'C']
+
+// ——— copy ———
+const L = () => ({
+  title: t('Notifications', 'Notificações'), back: t('Settings', 'Ajustes'),
+  what: t('What you get', 'O que você recebe'), phone: t('On this phone', 'Neste celular'), status: t('Status', 'Status'), dev: t('Developer', 'Desenvolvedor'),
+  summary: t('Morning summary', 'Resumo da manhã'), summarySub: t('Today’s items, every morning', 'Os itens do dia, toda manhã'),
+  time: t('Time', 'Horário'), weekdays: t('Weekdays only', 'Só em dias úteis'),
+  due: t('Items with a time', 'Itens com horário'), dueSub: t('A push at their time', 'Um aviso no horário deles'),
+  reminders: t('Reminders you set', 'Lembretes que você define'), remindersSub: t('At the time you chose', 'No horário que você escolheu'),
+  preps: t('Preps with a time', 'Preparos com horário'),
+  review: t('Weekly review', 'Revisão da semana'), reviewTime: t('Monday, 8:00', 'Segunda, 8:00'), reviewShort: t('Mon 8:00', 'Seg 8:00'),
+  goalReview: t('Goal review dates', 'Datas de revisão das metas'),
+  badge: t('App icon badge', 'Número no ícone'), badgeSub: t('Late and left today', 'Atrasados e restantes de hoje'),
+  details: t('Details on the lock screen', 'Detalhes na tela bloqueada'), detailsOff: t('Shows “You have a reminder” instead', 'Mostra “Você tem um lembrete” no lugar'),
+  quiet: t('Quiet hours', 'Horário silencioso'), quietSub: t('Nothing between these times', 'Nada entre esses horários'), from: t('From', 'De'), to: t('To', 'Até'),
+  permission: t('Permission', 'Permissão'), allowed: t('Allowed', 'Permitida'), thisPhone: t('This phone', 'Este celular'), receiving: t('Receiving', 'Recebendo'),
+  last: t('Last delivered', 'Última entregue'), lastVal: t('Today, 8:00', 'Hoje, 8:00'),
+  oneFoot: t('Notifications go to one phone: the last one where you turned them on.', 'As notificações vão para um celular só: o último em que você as ativou.'),
+  test: t('Send a test notification', 'Enviar notificação de teste'),
+  on: t('On', 'Ativado'), off: t('Off', 'Desativado'),
+  skipFoot: t('Skipped on days with nothing to do.', 'Pulado nos dias sem nada para fazer.'), preview: t('Preview', 'Prévia'),
+  askTitle: t('Turn on notifications', 'Ative as notificações'), askSub: t('Get your morning summary and reminders on this phone.', 'Receba o resumo da manhã e os lembretes neste celular.'), askBtn: t('Turn On', 'Ativar'),
+  allowRow: t('Allow notifications', 'Permitir notificações'),
+  alertT: t('“Smart Meta” Would Like to Send You Notifications', '“Smart Meta” Deseja Enviar Notificações'),
+  alertB: t('Notifications may include alerts, sounds and icon badges. These can be configured in Settings.', 'As notificações podem incluir alertas, sons e indicadores de ícone. Elas podem ser configuradas em Ajustes.'),
+  dont: t('Don’t Allow', 'Não Permitir'), allow: t('Allow', 'Permitir'),
+  deniedTitle: t('Notifications are off for Smart Meta', 'As notificações estão desativadas para o Smart Meta'),
+  deniedSub: t('Turn them back on in iPhone Settings:', 'Reative nos Ajustes do iPhone:'),
+  steps: [t('Open <b>Settings</b>', 'Abra <b>Ajustes</b>'), t('Tap <b>Notifications</b>', 'Toque em <b>Notificações</b>'), t('Tap <b>Smart Meta</b>', 'Toque em <b>Smart Meta</b>'), t('Turn on <b>Allow Notifications</b>', 'Ative <b>Permitir Notificações</b>')],
+  deniedRow: t('Off in iPhone Settings', 'Desativadas no iPhone'),
+  noTitle: t('Sign in to get notifications', 'Entre para receber notificações'),
+  noSub: t('Notifications need an account, so they can reach you while the app is closed.', 'As notificações precisam de uma conta para chegar até você com o app fechado.'),
+  signIn: t('Sign in', 'Entrar'),
+})
+
+// ——— pieces ———
+const sw = (key, dis) => `<span class="sw ${state.on[key] && !dis ? "on" : ""} ${dis ? "dis" : ""}"></span>`
+const row = (key, label, sub, { child = false, dis = false, extra = '' } = {}) =>
+  `<div class="lrow ${child ? 'child' : ''} ${dis ? 'dim' : ''}" ${dis ? '' : `data-tog="${key}"`} style="cursor:${dis ? 'default' : 'pointer'}"><div class="text"><div>${label}</div>${sub ? `<div class="sub">${sub}</div>` : ''}</div>${extra}${sw(key, dis)}</div>`
+const valRow = (label, val, { child = false, chev = false, accent = false } = {}) =>
+  `<div class="lrow ${child ? 'child' : ''}"><span class="text">${label}</span><span class="val ${accent ? 'ok' : ''}">${val}${chev ? I.chevR : ''}</span></div>`
+const timeRow = (label, val, { child = true, open = false } = {}) =>
+  `<div class="lrow ${child ? 'child' : ''}"><span class="text">${label}</span><span class="tpill ${open ? 'on' : ''}">${val}</span></div>`
+const head = (l, back = l.back, title = l.title) => `<button style="color:var(--accent);font-size:16px;display:inline-flex;align-items:center;min-height:44px;margin:0 0 4px -6px">${svgIn('back', 'ico').replace('class="ico"', 'class="ico" style="width:22px;height:22px;stroke-width:2.2"')}${back}</button><h1 class="large-title" style="margin-bottom:16px">${title}</h1>`
+const sec = (title, body, foot = '') => `<p class="sec-head"><span>${title}</span></p><div class="list">${body}</div>${foot ? `<p class="sec-foot">${foot}</p>` : ''}`
+
+function wheel() {
+  const col = (vals) => `<div class="col">${vals.map((v, i) => `<span class="${['u2', 'u1', 'sel', 'f1', 'f2'][i]}">${v}</span>`).join('')}</div>`
+  return `<div class="wheel">${col(['6', '7', '8', '9', '10'])}<span class="colon">:</span>${col(['50', '55', '00', '05', '10'])}</div>`
+}
+function preview(l) {
+  return `<div class="preview-wrap"><div class="nprev"><span class="ic"></span><div class="tx"><div class="tp"><b>${t('Today: 6 things', 'Hoje: 6 itens')}</b><small>8:00</small></div>
+    <div>${t('Dentist appointment at 14:30, Renew gym membership (late), Gym and 3 more', 'Consulta no dentista às 14:30, Renovar a academia (atrasada), Academia e mais 3')}</div></div></div></div>`
+}
+const iosAlert = (l) => `<div class="alert-wrap"><div class="alert"><div class="msg"><h3>${l.alertT}</h3><p>${l.alertB}</p></div>
+  <div class="btns" style="display:flex"><button style="border-right:0.5px solid var(--alert-line)">${l.dont}</button><button class="b" data-view-go="main" style="border-top:0">${l.allow}</button></div></div></div>`
+
+// The full list of switches, used by A and C (C without subtitles); `dis` greys them out when notifications can't be sent.
+function whatList(l, { subs = true, dis = false, timeOpen = false, pills = false } = {}) {
+  const on = state.on
+  let b = row('summary', l.summary, subs ? l.summarySub : '', { dis, extra: pills && on.summary ? `<span class="tpill ${timeOpen ? 'on' : ''}" style="margin-right:10px">8:00</span>` : '' })
+  if (on.summary && !dis) {
+    if (!pills) b += timeRow(l.time, '8:00', { open: timeOpen })
+    if (timeOpen) b += wheel()
+    b += row('weekdays', l.weekdays, '', { child: true })
+  }
+  b += row('due', l.due, subs ? l.dueSub : '', { dis })
+  b += row('reminders', l.reminders, subs ? l.remindersSub : '', { dis })
+  b += row('preps', l.preps, '', { dis })
+  b += row('review', l.review, '', { dis, extra: pills && on.review ? `<span class="tpill" style="margin-right:10px">${l.reviewShort}</span>` : '' })
+  if (on.review && !dis && !pills) b += timeRow(l.time, l.reviewTime)
+  b += row('goalReview', l.goalReview, '', { dis })
+  return sec(l.what, b)
+}
+function phoneList(l, { subs = true, dis = false } = {}) {
+  let b = row('badge', l.badge, subs ? l.badgeSub : '', { dis })
+  b += row('details', l.details, !state.on.details ? l.detailsOff : '', { dis })
+  b += row('quiet', l.quiet, subs ? l.quietSub : '', { dis })
+  if (state.on.quiet && !dis) b += timeRow(l.from, '22:00') + timeRow(l.to, '7:00')
+  return sec(l.phone, b)
+}
+const statusList = (l) => sec(l.status, valRow(l.permission, l.allowed) + valRow(l.thisPhone, l.receiving) + valRow(l.last, `<span class="ok">✓</span> ${l.lastVal}`), l.oneFoot)
+const devList = (l) => sec(l.dev, `<div class="lrow link">${l.test}</div>`)
+const screen = (inner) => `<div class="screen scroll" style="padding-top:calc(var(--st) + 4px)">${inner}</div>`
+const stateCard = (icon, title, sub, body, warn = false, center = false) =>
+  `<div class="card state-card ${center ? 'center-state' : ''}"><span class="ic ${warn ? 'warn' : ''}">${I[icon]}</span><h3>${title}</h3><p>${sub}</p>${body}</div>`
+const stepsOl = (l) => `<ol>${l.steps.map((s) => `<li>${s}</li>`).join('')}</ol>`
+
+// ——— A: everything on one page ———
+function renderA(view) {
+  const l = L()
+  if (view === 'main' || view === 'time') return screen(head(l) + whatList(l, { timeOpen: view === 'time' }) + phoneList(l) + statusList(l) + devList(l))
+  if (view === 'ask') return screen(head(l) + stateCard('bell', l.askTitle, l.askSub, `<button class="btn primary">${l.askBtn}</button>`) + whatList(l, { dis: true })) + iosAlert(l)
+  if (view === 'denied') return screen(head(l) + stateCard('bellOff', l.deniedTitle, l.deniedSub, stepsOl(l), true) + whatList(l, { dis: true }))
+  return screen(head(l) + stateCard('user', l.noTitle, l.noSub, `<button class="btn primary">${l.signIn}</button>`) + whatList(l, { dis: true }))
+}
+
+// ——— B: a page per kind ———
+function renderB(view) {
+  const l = L()
+  const on = state.on
+  if (view === 'main') {
+    const kinds = valRow(l.summary, on.summary ? (on.weekdays ? t('8:00, weekdays', '8:00, dias úteis') : '8:00') : l.off, { chev: true })
+      + valRow(l.due, on.due ? l.on : l.off, { chev: true }) + valRow(l.reminders, on.reminders ? l.on : l.off, { chev: true })
+      + valRow(l.preps, on.preps ? l.on : l.off, { chev: true }) + valRow(l.review, on.review ? l.reviewShort : l.off, { chev: true })
+      + valRow(l.goalReview, on.goalReview ? l.on : l.off, { chev: true })
+    return screen(head(l) + sec(l.what, kinds) + phoneList(l, { subs: false }) + sec(l.status, valRow(l.thisPhone, `<span class="ok">${l.receiving}</span>`, { chev: true }), l.oneFoot) + devList(l))
+  }
+  if (view === 'time') {
+    let b = row('summary', l.summary, '')
+    if (on.summary) b += timeRow(l.time, '8:00', { child: false, open: true }) + wheel() + row('weekdays', l.weekdays, '')
+    return screen(head(l, l.title, l.summary) + `<div class="list">${b}</div><p class="sec-foot">${l.skipFoot}</p>` + `<p class="sec-head"><span>${l.preview}</span></p>` + preview(l))
+  }
+  const page = (card) => `<div class="screen" style="padding-top:calc(var(--st) + 4px)">${head(l)}${card}</div>`
+  if (view === 'ask') return page(stateCard('bell', l.askTitle, l.askSub, `<button class="btn primary big block" style="min-height:50px;width:100%">${l.askBtn}</button>`, false, true)) + iosAlert(l)
+  if (view === 'denied') return page(stateCard('bellOff', l.deniedTitle, l.deniedSub, stepsOl(l), true, true))
+  return page(stateCard('user', l.noTitle, l.noSub, `<button class="btn primary big block" style="min-height:50px;width:100%">${l.signIn}</button>`, false, true))
+}
+
+// ——— C: tomorrow first ———
+function renderC(view) {
+  const l = L()
+  const on = state.on
+  if (view === 'main' || view === 'time') {
+    const items = []
+    if (on.summary) items.push(['8:00', l.summary, t('6 things', '6 itens')])
+    if (on.due) items.push(['14:30', t('Dentist appointment', 'Consulta no dentista'), l.due])
+    if (on.reminders) items.push(['19:00', t('Update the CV', 'Atualizar o currículo'), t('Reminder', 'Lembrete')])
+    if (on.preps) items.push(['21:00', t('Pack the gym bag', 'Arrumar a mochila'), t('Prep', 'Preparo')])
+    const tl = `<div class="card tomorrow"><h3>${t('Tomorrow', 'Amanhã')}<span>${t('Thursday · ', 'Quinta · ')}${items.length} ${t('pushes', 'avisos')}</span></h3>
+      <ul class="tl">${items.map(([tm, w, k]) => `<li><span class="tm">${tm}</span><span class="what">${w}<small>${k}</small></span></li>`).join('') || `<li><span class="what">${t('Nothing planned', 'Nada planejado')}</span></li>`}</ul></div>`
+    const status = `<p class="sec-foot" style="margin-top:10px"><span class="ok">✓</span> ${t('Receiving on this phone · last today, 8:00', 'Recebendo neste celular · última hoje, 8:00')}</p>`
+    return screen(head(l) + tl + status + whatList(l, { subs: false, pills: true, timeOpen: view === 'time' }) + phoneList(l, { subs: false }) + `<p class="sec-foot">${l.oneFoot}</p>` + devList(l))
+  }
+  const master = (val, foot) => sec('', `<div class="lrow"><span class="text">${l.allowRow}</span>${val}</div>`, foot).replace('<p class="sec-head"><span></span></p>', '')
+  if (view === 'ask') return screen(head(l) + master(`<span class="sw"></span>`, l.askSub)) + iosAlert(l)
+  if (view === 'denied') return screen(head(l) + master(`<span class="val">${l.deniedRow}</span>`, `${l.deniedSub} ${l.steps.map((s) => s.replace(/<\/?b>/g, '')).join(' › ')}.`))
+  return screen(head(l) + sec('', `<div class="lrow link">${l.signIn}</div>`, l.noSub).replace('<p class="sec-head"><span></span></p>', ''))
+}
+const RENDER = [renderA, renderB, renderC]
+
+// ——— render ———
+const $ = (s) => document.querySelector(s)
+const isPhone = () => matchMedia('(max-width: 760px)').matches
+const phoneHtml = (i) => `${status()}${RENDER[i](state.view)}${home()}`
+function render() {
+  if (state.theme) document.documentElement.dataset.theme = state.theme
+  else delete document.documentElement.dataset.theme
+  document.documentElement.lang = state.lang === 'en' ? 'en' : 'pt-BR'
+  const dark = state.theme ? state.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
+  $('#steps').innerHTML = VIEWS.map((v, k) => `<button class="chip ${v.key === state.view ? 'on' : ''}" data-step="${v.key}" aria-pressed="${v.key === state.view}"><span class="n">${k + 1}</span>${v.label}${state.picks[v.key] ? `<span class="pk">${state.picks[v.key]}</span>` : ''}</button>`).join('')
+  for (const b of document.querySelectorAll('#lang button')) b.classList.toggle('on', b.dataset.l === state.lang)
+  for (const b of document.querySelectorAll('#theme button')) b.classList.toggle('on', b.dataset.t === (dark ? 'dark' : 'light'))
+  const scroller = $('#screens')
+  const keep = scroller.scrollLeft
+  scroller.innerHTML = OPTIONS.map((o, i) => {
+    const picked = state.picks[state.view] === LETTERS[i]
+    return `<article class="opt" data-i="${i}">
+      <div class="opt-head"><span class="letter">${LETTERS[i]}</span><h2 class="opt-name">${o.name}</h2></div>
+      <div class="device"><div class="scr"><div class="vp ${isPhone() ? 'bare' : ''}">${phoneHtml(i)}</div></div></div>
+      <p class="opt-note">${o.note}</p>
+      <button class="pick ${picked ? 'on' : ''}" data-pick="${LETTERS[i]}" aria-pressed="${picked}">${picked ? '✓ Picked' : 'Pick ' + LETTERS[i]}</button>
+      <button class="pick-all" data-all="${LETTERS[i]}">Use ${LETTERS[i]} for every situation</button>
+    </article>`
+  }).join('')
+  scroller.scrollLeft = keep
+  $('#dots').innerHTML = OPTIONS.map(() => '<i></i>').join('')
+  fit(); syncDots()
+  const done = VIEWS.filter((v) => state.picks[v.key])
+  $('#picks-text').innerHTML = done.length ? `<b>${done.length} of ${VIEWS.length} picked:</b> ` + done.map((v) => `${v.label} ${state.picks[v.key]}`).join(' · ') : 'No picks yet. Pick a layout per situation, or one for all.'
+  $('#copy').disabled = !done.length
+}
+// A switch flips on every phone at once, each keeping where it was scrolled.
+function refresh() {
+  OPTIONS.forEach((_, i) => {
+    const vp = document.querySelector(`.opt[data-i="${i}"] .vp`)
+    const sc = vp.querySelector('.screen')
+    const top = sc ? sc.scrollTop : 0
+    vp.classList.add('still')
+    vp.innerHTML = phoneHtml(i)
+    const ns = vp.querySelector('.screen')
+    if (ns) ns.scrollTop = top
+  })
+}
+function fit() {
+  for (const scr of document.querySelectorAll('.scr')) {
+    const vp = scr.querySelector('.vp')
+    const w = scr.clientWidth, h = scr.clientHeight
+    if (isPhone()) { vp.style.transform = 'none'; vp.style.width = w + 'px'; vp.style.height = h + 'px'; continue }
+    const s = w / 390
+    vp.style.width = '390px'; vp.style.height = h / s + 'px'; vp.style.transform = `scale(${s})`
+  }
+}
+function syncDots() {
+  const s = $('#screens')
+  const i = Math.round(s.scrollLeft / Math.max(1, s.clientWidth))
+  document.querySelectorAll('#dots i').forEach((d, k) => d.classList.toggle('on', k === i))
+}
+function setView(key) {
+  if (!VIEWS.some((v) => v.key === key)) return
+  state.view = key; store.set('view', key); render()
+  $('#steps').querySelector(`[data-step="${key}"]`)?.scrollIntoView({ inline: 'nearest', block: 'nearest' })
+}
+
+// ——— events ———
+$('#steps').addEventListener('click', (e) => { const b = e.target.closest('[data-step]'); if (b) setView(b.dataset.step) })
+$('#lang').addEventListener('click', (e) => { const b = e.target.closest('[data-l]'); if (!b) return; state.lang = b.dataset.l; store.set('lang', state.lang); render() })
+$('#theme').addEventListener('click', (e) => { const b = e.target.closest('[data-t]'); if (!b) return; state.theme = b.dataset.t; store.set('theme', state.theme); render() })
+$('#screens').addEventListener('click', (e) => {
+  const pick = e.target.closest('[data-pick]')
+  if (pick) {
+    if (state.picks[state.view] === pick.dataset.pick) delete state.picks[state.view]
+    else state.picks[state.view] = pick.dataset.pick
+    store.set('picks', state.picks); render(); return
+  }
+  const all = e.target.closest('[data-all]')
+  if (all) { for (const v of VIEWS) state.picks[v.key] = all.dataset.all; store.set('picks', state.picks); render(); return }
+  const tog = e.target.closest('[data-tog]')
+  if (tog) { state.on[tog.dataset.tog] = !state.on[tog.dataset.tog]; store.set('on', state.on); refresh(); return }
+  const g = e.target.closest('[data-view-go]')
+  if (g) setView(g.dataset.viewGo)
+})
+$('#screens').addEventListener('scroll', syncDots, { passive: true })
+$('#copy').addEventListener('click', async () => {
+  const text = 'S0 notification settings picks: ' + VIEWS.filter((v) => state.picks[v.key]).map((v) => `${v.label} ${state.picks[v.key]}`).join(', ')
+  const btn = $('#copy')
+  try {
+    await navigator.clipboard.writeText(text)
+    btn.textContent = 'Copied'
+    setTimeout(() => (btn.textContent = 'Copy picks'), 1600)
+  } catch {
+    const box = document.createElement('textarea')
+    box.className = 'fallback'; box.rows = 3; box.readOnly = true; box.value = text
+    $('#picks-text').replaceChildren(box); box.select()
+  }
+})
+let resizeTimer, wasPhone = isPhone()
+addEventListener('resize', () => {
+  clearTimeout(resizeTimer)
+  resizeTimer = setTimeout(() => { if (isPhone() !== wasPhone) { wasPhone = isPhone(); render() } else fit() }, 60)
+})
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', render)
+render()
+$('#steps .chip.on')?.scrollIntoView({ inline: 'center', block: 'nearest' })
+</script>
