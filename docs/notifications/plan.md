@@ -933,9 +933,14 @@ the guards in §7.2. The certificate trust setting on iPhone isn't needed (the p
 certificate).
 
 ### S2. Accounts
-- [ ] Owner: create the app Gmail (2-Step Verification, app password); paste the SMTP app password and
+- [x] Owner: create the app Gmail (2-Step Verification, app password); paste the SMTP app password and
       the Turnstile secret into Supabase (staging first). The Cloudflare account and Turnstile widget
-      already exist (made in S1, §13).
+      already exist (made in S1, §13). Done 2026-10-29: the app Gmail is `smartmeta.codes@gmail.com`;
+      staging has custom SMTP (smtp.gmail.com:465), sign-ups on, anonymous sign-ins off, confirm email
+      on, 6-digit codes valid 1 hour, Turnstile captcha, 30 emails an hour, and the "Confirm signup"
+      and "Magic Link" templates show only the code, in English and Portuguese together. Cloudflare
+      flags "siteverify isn't being called" and Supabase flags Gmail as a personal provider: both
+      expected (Supabase calls siteverify once the app sends tokens; Gmail is the §6.2 choice).
 - [x] Claude: add the staging Preview variables for `notifications-s2` (done 2026-10-29). Owner: add
       the S2 preview hostname `smart-meta-h2ur-git-notifications-s2-daccache.vercel.app` to the
       Turnstile widget. S2 is tested on its own preview (§16.2).
