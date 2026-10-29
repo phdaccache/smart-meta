@@ -435,9 +435,15 @@ password manager creates and the owner never sees.)
 
 - **Name** (editable).
 - **Built-in avatars**, no photo uploads for now, with **many options** so friends are easy to tell
-  apart: for example background color, shape or pattern, a symbol or emoji, initials on/off, accent
-  ring. Stored as a tiny settings object (about 100 bytes), so **no storage worry**.
-- **Mockups first** for the owner to pick a style (§12).
+  apart. **Picked in S0 (2026-10-29), style C:** a circle with **any emoji** on one of Apple's 12
+  system colors (the values' palette), a **look** (gradient, solid or soft) and a light **pattern**
+  (none, dots, stripes, grid, waves, sunburst). **No ring, no initials.** The editor ("Name and avatar"
+  in Settings) has a field that takes any emoji from the emoji keyboard, plus 30 suggestions. Stored as
+  `{ emoji, color, look, pattern }`, about 60 bytes, so **no storage worry**. The server checks it
+  like any input (§8.5): the emoji is one grapheme that is a pictograph or flag, the rest come from
+  fixed lists. Mockup: [avatars](mockups/avatars.html), artifact
+  [Smart Meta Avatars](https://claude.ai/artifact/Hoae5axi2rXjnCm2a97XCm).
+- **Mockups first** for the owner to pick a style (§12): done.
 - The profile lives in its own table, separate from data, ready for social features.
 - **Name and avatar are visible to the owner** (decided), like the email.
 
@@ -841,7 +847,7 @@ done (owner's rule, 2026-10-21). The merge to `main` comes after S6 (§13).
       review, prep, goal review date), on an iPhone lock screen and in a stack, English and Portuguese.
       Picked 2026-10-21, see §2 "Notification wording".
 - [ ] Settings → Notifications screen.
-- [ ] Avatars: several styles with many options, shown as a friend list.
+- [x] Avatars: several styles with many options, shown as a friend list. Picked 2026-10-29, see §6.4.
 - [x] Sign-in (email, code), passkey or data-password setup, Waiting for access, Requests (approve).
       Picked 2026-10-23, see §2 "Sign-in flow".
 - [ ] "Not synced yet" indicator.
@@ -999,3 +1005,5 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   replaces the email step. Spec AC-8 and AC-9 updated with the owner's changes. `origin/main` merged in.
   Then: tapping the banner goes straight to the email step; "Go to Today" on screen 9 too; no bar title
   on screens 8, 9 and 11. The mockup is final for S0; smaller changes happen while building.
+- **2026-10-29 (1):** avatar picked (§6.4): any emoji on a system color, gradient, solid or soft, with
+  a light pattern; no ring, no initials.

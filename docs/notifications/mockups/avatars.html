@@ -459,13 +459,23 @@ h1, h2, h3, p { margin: 0; }
 .av.soft { background: color-mix(in srgb, var(--c) var(--av-soft), var(--surface)); color: color-mix(in srgb, var(--c) 88%, var(--ink)); }
 .av svg { width: 52%; height: 52%; }
 .av .emo { font-size: calc(var(--s) * 0.56); line-height: 1; font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif; }
-.av.ring { box-shadow: 0 0 0 calc(var(--s) * 0.045) var(--bg), 0 0 0 calc(var(--s) * 0.095) var(--c); }
-.av.ring.on-card { box-shadow: 0 0 0 calc(var(--s) * 0.045) var(--surface), 0 0 0 calc(var(--s) * 0.095) var(--c); }
-.av.p-dots { background-image: radial-gradient(var(--pattern) 18%, transparent 20%); background-size: 22% 22%; }
-.av.p-stripes { background-image: repeating-linear-gradient(135deg, var(--pattern) 0 9%, transparent 9% 18%); }
-.av.p-grid { background-image: linear-gradient(var(--pattern) 0 6%, transparent 6%), linear-gradient(90deg, var(--pattern) 0 6%, transparent 6%); background-size: 25% 25%; }
-.av.p-waves { background-image: radial-gradient(circle at 50% 0, transparent 34%, var(--pattern) 35% 44%, transparent 45%); background-size: 34% 22%; }
-.av.p-sun { background-image: repeating-conic-gradient(var(--pattern) 0 15deg, transparent 15deg 30deg); }
+/* The pattern is its own layer, so it sits on any look: gradient, solid or soft. */
+.av::before { content: ''; position: absolute; inset: 0; }
+.av.soft { --pattern: color-mix(in srgb, var(--c) 26%, transparent); }
+.av.p-dots::before { background-image: radial-gradient(var(--pattern) 18%, transparent 20%); background-size: 22% 22%; }
+.av.p-stripes::before { background-image: repeating-linear-gradient(135deg, var(--pattern) 0 9%, transparent 9% 18%); }
+.av.p-grid::before { background-image: linear-gradient(var(--pattern) 0 6%, transparent 6%), linear-gradient(90deg, var(--pattern) 0 6%, transparent 6%); background-size: 25% 25%; }
+.av.p-waves::before { background-image: radial-gradient(circle at 50% 0, transparent 34%, var(--pattern) 35% 44%, transparent 45%); background-size: 34% 22%; }
+.av.p-sun::before { background-image: repeating-conic-gradient(var(--pattern) 0 15deg, transparent 15deg 30deg); }
+.av .emo { position: relative; }
+.emoji-row { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 6px 16px 6px 8px; border-radius: 12px; background: var(--surface); cursor: text; margin-bottom: 10px; }
+.emoji-row input {
+  width: 48px; height: 44px; border: 0; border-radius: 10px; background: var(--surface-2); text-align: center; outline: none;
+  font: 28px/1 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif; caret-color: var(--accent); padding: 0;
+}
+.emoji-row input:focus { box-shadow: 0 0 0 2px var(--accent); }
+.emoji-row span { font-size: 15px; color: var(--ink-2); line-height: 1.3; }
+.opt-head .opt-name { font-size: 17px; }
 .av-stack { display: flex; }
 .av-stack .av { box-shadow: 0 0 0 2px var(--surface); }
 .av-stack .av + .av { margin-left: -8px; }
@@ -514,10 +524,9 @@ h1, h2, h3, p { margin: 0; }
   <header class="head">
     <p class="eyebrow">S0 mockups · 3 of 5</p>
     <h1 class="large-title">Avatars</h1>
-    <p class="lede">Three avatar styles, each with its own options, on made-up friends. Edit yours in “Edit your avatar”; the other views follow. Lu Martins and Lucas Melo share initials on purpose.</p>
+    <p class="lede">Style C, as picked: any emoji on a color with a pattern, in a gradient, solid or soft look. Edit yours in the middle phone; the other two follow.</p>
   </header>
   <div class="controls">
-    <nav class="steps" id="steps" aria-label="View"></nav>
     <div class="toggles">
       <div class="segmented" id="lang" role="group" aria-label="Language">
         <button data-l="en"><span class="long">English</span><span class="short">EN</span></button><button data-l="pt"><span class="long">Português</span><span class="short">PT</span></button>
@@ -529,21 +538,15 @@ h1, h2, h3, p { margin: 0; }
   </div>
   <section class="screens" id="screens" aria-live="polite"></section>
   <div class="dots" id="dots" aria-hidden="true"></div>
-  <footer class="picks">
-    <div class="picks-in">
-      <p class="picks-text" id="picks-text"></p>
-      <button class="copy" id="copy">Copy pick</button>
-    </div>
-  </footer>
 </div>
 
 <script>
 const store = {
-  get(k, d) { try { const v = localStorage.getItem('s0a.' + k); return v === null ? d : JSON.parse(v) } catch { return d } },
-  set(k, v) { try { localStorage.setItem('s0a.' + k, JSON.stringify(v)) } catch {} },
+  get(k, d) { try { const v = localStorage.getItem('s0c.' + k); return v === null ? d : JSON.parse(v) } catch { return d } },
+  set(k, v) { try { localStorage.setItem('s0c.' + k, JSON.stringify(v)) } catch {} },
 }
-const ME0 = [{ color: 'blue', look: 'gradient' }, { color: 'pink', glyph: 'heart', fill: 'soft', ring: false }, { emoji: '🦊', color: 'orange', pattern: 'dots', ring: false }]
-const state = { view: store.get('view', 'list'), lang: store.get('lang', 'en'), theme: store.get('theme', null), pick: store.get('pick', null), me: store.get('me', ME0) }
+const ME0 = { emoji: '🦊', color: 'orange', look: 'gradient', pattern: 'dots' }
+const state = { lang: store.get('lang', 'en'), theme: store.get('theme', null), me: { ...ME0, ...store.get('me', {}) } }
 const t = (en, pt) => (state.lang === 'en' ? en : pt)
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
 const EMAIL = 'ana.souza@gmail.com'
@@ -586,172 +589,134 @@ const svgIn = (name, cls = '') => I[name].replace('<svg', `<svg class="${cls}"`)
 const status = (light) => `<div class="status ${light ? 'light' : ''}"><span>9:41</span><span class="icons">${I.signal}${I.wifi}${I.battery}</span></div>`
 const home = (light) => `<div class="home ${light ? 'light' : ''}"></div>`
 
-// ——— the choices: the app's own value glyphs and Apple's system colors ———
+// ——— the choices: any emoji (30 suggested), Apple's system colors, three looks, six patterns ———
 const COLORS = ['blue', 'orange', 'green', 'purple', 'red', 'teal', 'pink', 'indigo', 'yellow', 'mint', 'brown', 'gray']
-const G = {
-  star: 'M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z',
-  heart: 'M12 20.5s-7.6-4.5-9.4-9.4C1.3 7.5 3.6 4 7 4c2.1 0 3.6 1.1 5 2.9C13.4 5.1 14.9 4 17 4c3.4 0 5.7 3.5 4.4 7.1-1.8 4.9-9.4 9.4-9.4 9.4z',
-  moon: 'M20.5 14.8A8.6 8.6 0 0 1 9.2 3.5a8.6 8.6 0 1 0 11.3 11.3z',
-  bolt: 'M13.6 2.2 4.3 13.4h6.4l-1.3 8.4 9.3-11.2h-6.4z',
-  leaf: 'M20.5 3.5C9.4 3.6 4 9 4 15.6c0 1.5.3 2.8.9 4l1.7-1.6c1.6-4.7 5-7.6 9.4-9.2-3.9 2.3-6.8 5.5-8.4 10 1.2.6 2.6.9 4.2.9 6.7 0 8.7-7.3 8.7-16.2z',
-  flame: 'M12 22c4.4 0 7.5-3 7.5-7.2 0-3.8-2.5-6.3-4.3-8.6-.3 1.8-1.2 3-2.4 3.6.3-3.3-1.2-6.3-3.8-7.8.2 3.2-1.5 5.4-3.2 7.4-1.2 1.8-1.3 3.6-1.3 5.4C4.5 19 7.6 22 12 22z',
-  mountain: 'M1.8 20 9 7.6l4.1 7 2.6-3.7L22.2 20z',
-  drop: 'M12 2.5S5 10 5 14.6a7 7 0 0 0 14 0C19 10 12 2.5 12 2.5z',
-  music: 'M20 2.8v12.7a3 3 0 1 1-2-2.8V7.3l-8 1.8v8.4a3 3 0 1 1-2-2.8V5.5z',
-  palette: 'M12 2.5C6.8 2.5 2.5 6.6 2.5 11.7c0 5.1 4 9.3 9 9.3 1.2 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.3-.3-.3-.5-.8-.5-1.3 0-1 .8-1.8 1.8-1.8h2.2c3 0 5.5-2.5 5.5-5.6 0-4.5-4.3-8.2-9.5-8.2zM7.2 12.8a1.6 1.6 0 1 0 0-3.2 1.6 1.6 0 0 0 0 3.2zm3.3-4.5a1.6 1.6 0 1 0 0-3.2 1.6 1.6 0 0 0 0 3.2zm5 0a1.6 1.6 0 1 0 0-3.2 1.6 1.6 0 0 0 0 3.2z',
-  book: 'M11 5.6C9.1 4.4 6.5 4 3.4 4.2a.9.9 0 0 0-.9.9v12.7a.9.9 0 0 0 1 .9c2.9-.2 5.3.2 7.5 1.5zM13 5.6c1.9-1.2 4.5-1.6 7.6-1.4a.9.9 0 0 1 .9.9v12.7a.9.9 0 0 1-1 .9c-2.9-.2-5.3.2-7.5 1.5z',
-  plane: 'M21.5 15.6v-2l-8-5V3.8a1.5 1.5 0 0 0-3 0v4.8l-8 5v2l8-2.5v4.6L8 19.6v1.8l4-1.1 4 1.1v-1.8l-2.5-1.9v-4.6z',
-  camera: 'M8.6 4h6.8l1.6 2.5h3A1.5 1.5 0 0 1 21.5 8v10.5A1.5 1.5 0 0 1 20 20H4a1.5 1.5 0 0 1-1.5-1.5V8A1.5 1.5 0 0 1 4 6.5h3zM12 16.6a3.8 3.8 0 1 0 0-7.6 3.8 3.8 0 0 0 0 7.6z',
-  sparkles: 'M10 3.5l1.9 5.6 5.6 1.9-5.6 1.9L10 18.5l-1.9-5.6L2.5 11l5.6-1.9zM18.5 14l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9z',
-  smile: 'M12 2.5a9.5 9.5 0 1 0 0 19 9.5 9.5 0 0 0 0-19zM9 10.9a1.3 1.3 0 1 0 0-2.6 1.3 1.3 0 0 0 0 2.6zm6 0a1.3 1.3 0 1 0 0-2.6 1.3 1.3 0 0 0 0 2.6zM7.8 13.4h8.4a4.2 4.2 0 0 1-8.4 0z',
-  dumbbell: 'M2 10.2a1 1 0 0 1 1-1h1v5.6H3a1 1 0 0 1-1-1zM5 7.5a1 1 0 0 1 1-1h1.5a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1zM9.5 11h5v2h-5zM15.5 7.5a1 1 0 0 1 1-1H18a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-1.5a1 1 0 0 1-1-1zM20 9.2h1a1 1 0 0 1 1 1v3.6a1 1 0 0 1-1 1h-1z',
-  house: 'M12 2.8 2.3 11h2.6v9.2h5.3v-6h3.6v6h5.3V11h2.6z',
-  bulb: 'M12 2a7 7 0 0 0-4 12.7V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.3A7 7 0 0 0 12 2zM9 19.4h6v1.1a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 20.5z',
-  chat: 'M12 3.5c-5.2 0-9.5 3.5-9.5 7.8 0 2.4 1.3 4.5 3.4 5.9-.2 1.5-.9 2.9-2 3.8 2.2 0 4.1-.8 5.5-2 .8.2 1.7.3 2.6.3 5.2 0 9.5-3.5 9.5-7.9S17.2 3.5 12 3.5z',
-  pencil: 'M15.6 3.4a2.1 2.1 0 0 1 3 0l2 2a2.1 2.1 0 0 1 0 3L9.1 19.9l-5.6 1.1 1.1-5.6z',
-  cap: 'M12 3.2 1 8.6l11 5.5 9-4.5v6.2h2V8.6zM5.4 12.4v3.8c0 1.9 3 3.5 6.6 3.5s6.6-1.6 6.6-3.5v-3.8L12 15.7z',
-  money: 'M3.5 5h17A1.5 1.5 0 0 1 22 6.5v11a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 2 17.5v-11A1.5 1.5 0 0 1 3.5 5zM12 15.6a3.6 3.6 0 1 0 0-7.2 3.6 3.6 0 0 0 0 7.2z',
-  person: 'M12 11.6a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20c0-3.9 3.6-6.6 8-6.6s8 2.7 8 6.6v.6H4z',
-  people: 'M9 11.2a3.6 3.6 0 1 0 0-7.2 3.6 3.6 0 0 0 0 7.2zM1.8 19.2c0-3.4 3.2-6 7.2-6s7.2 2.6 7.2 6v.8H1.8zM17 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM17.8 13.1c2.6.4 4.4 2.5 4.4 5.1V20h-4.4v-.8c0-2.4-1-4.5-2.8-5.8.9-.3 1.8-.4 2.8-.3z',
-}
 const EMOJI = ['🦊', '🐻', '🐼', '🐸', '🐙', '🦉', '🐢', '🦋', '🐝', '🌵', '🌻', '🍄', '🌊', '🔥', '⭐', '🌙', '🍉', '🥑', '🍩', '☕', '🎸', '🎨', '📚', '🚲', '⚽', '🏔️', '🚀', '🎧', '🪴', '🧩']
+const LOOKS = ['gradient', 'solid', 'soft']
 const PATTERNS = ['none', 'dots', 'stripes', 'grid', 'waves', 'sun']
-const glyphSvg = (k) => `<svg viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd"><path d="${G[k]}"/></svg>`
-const initials = (name) => name.split(' ').filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase()
+const HEART = 'M12 20.5s-7.6-4.5-9.4-9.4C1.3 7.5 3.6 4 7 4c2.1 0 3.6 1.1 5 2.9C13.4 5.1 14.9 4 17 4c3.4 0 5.7 3.5 4.4 7.1-1.8 4.9-9.4 9.4-9.4 9.4z'
 
-/** One avatar: `style` 0, 1 or 2 (A, B, C), a tiny settings object, a size in points. */
-function avatar(style, cfg, size, name, onCard = false) {
-  const base = `--s:${size}px; --c: var(--c-${cfg.color})`
-  if (style === 0) return `<span class="av ${cfg.look}" style="${base}">${initials(name)}</span>`
-  const ring = cfg.ring ? ` ring ${onCard ? 'on-card' : ''}` : ''
-  if (style === 1) return `<span class="av ${cfg.fill}${ring}" style="${base}">${glyphSvg(cfg.glyph)}</span>`
-  return `<span class="av p-${cfg.pattern}${ring}" style="${base}"><span class="emo">${cfg.emoji}</span></span>`
+/** Any single emoji, as the server will check it too: one grapheme, and a pictograph or a flag. */
+function lastEmoji(text) {
+  const parts = [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(text)].map((s) => s.segment)
+  return parts.reverse().find((g) => /\p{Extended_Pictographic}|\p{Regional_Indicator}/u.test(g)) || null
 }
 
-// Made-up friends, each set up as someone might in each style.
+/** One avatar from its tiny settings object, about 60 bytes: { emoji, color, look, pattern }. */
+function avatar(cfg, size) {
+
+  return `<span class="av ${cfg.look} p-${cfg.pattern}" style="--s:${size}px; --c: var(--c-${cfg.color})"><span class="emo">${cfg.emoji}</span></span>`
+}
+
+// Made-up friends, set up the way people might.
 const FRIENDS = [
-  { name: 'João Pereira', a: { color: 'green', look: 'gradient' }, b: { color: 'green', glyph: 'leaf', fill: 'soft' }, c: { emoji: '🐢', color: 'green', pattern: 'waves' } },
-  { name: 'Lu Martins', a: { color: 'purple', look: 'gradient' }, b: { color: 'purple', glyph: 'music', fill: 'solid' }, c: { emoji: '🎸', color: 'purple', pattern: 'stripes' } },
-  { name: 'Lucas Melo', a: { color: 'orange', look: 'gradient' }, b: { color: 'orange', glyph: 'bolt', fill: 'soft', ring: true }, c: { emoji: '⚽', color: 'teal', pattern: 'grid' } },
-  { name: 'Marina Costa', a: { color: 'teal', look: 'gradient' }, b: { color: 'teal', glyph: 'book', fill: 'soft' }, c: { emoji: '📚', color: 'yellow', pattern: 'none' } },
-  { name: 'Rafa Lima', a: { color: 'red', look: 'gradient' }, b: { color: 'red', glyph: 'flame', fill: 'solid' }, c: { emoji: '🔥', color: 'red', pattern: 'sun', ring: true } },
-  { name: 'Bia Rocha', a: { color: 'indigo', look: 'gradient' }, b: { color: 'indigo', glyph: 'moon', fill: 'solid', ring: true }, c: { emoji: '🌙', color: 'indigo', pattern: 'dots' } },
+  { name: 'João Pereira', c: { emoji: '🐢', color: 'green', look: 'soft', pattern: 'waves' } },
+  { name: 'Lu Martins', c: { emoji: '🎸', color: 'purple', look: 'gradient', pattern: 'stripes' } },
+  { name: 'Lucas Melo', c: { emoji: '⚽', color: 'teal', look: 'solid', pattern: 'grid' } },
+  { name: 'Marina Costa', c: { emoji: '📚', color: 'yellow', look: 'soft', pattern: 'none' } },
+  { name: 'Rafa Lima', c: { emoji: '🌶️', color: 'red', look: 'gradient', pattern: 'sun' } },
+  { name: 'Bia Rocha', c: { emoji: '🌙', color: 'indigo', look: 'solid', pattern: 'dots' } },
 ]
 const ME_NAME = 'Ana Souza'
-const friendCfg = (f, i) => [f.a, f.b, f.c][i]
-
 const VIEWS = [
-  { key: 'list', label: 'Friend list' },
-  { key: 'edit', label: 'Edit your avatar' },
-  { key: 'around', label: 'Settings and Requests' },
+  { key: 'list', name: 'Friend list', note: 'You at the top, then friends. The shared goal shows them small, in a stack.' },
+  { key: 'edit', name: 'Edit your avatar', note: 'Type or paste any emoji, or pick a suggestion. Look, color and pattern below.' },
+  { key: 'around', name: 'Settings and Requests', note: 'Your account row, and the avatars you see when people ask to join.' },
 ]
-if (!VIEWS.some((v) => v.key === state.view)) state.view = 'list'
-const OPTIONS = [
-  { name: 'Initials', note: 'Like Contacts: initials on a color. Clear and familiar, but two people with the same initials look alike.' },
-  { name: 'Symbol', note: 'The app’s own value icons, in a circle, soft or solid, with an optional ring. Fits the rest of the app.' },
-  { name: 'Emoji on a pattern', note: 'An emoji on a color with a light pattern, with an optional ring. The most playful and the easiest to tell apart.' },
-]
-const LETTERS = ['A', 'B', 'C']
 
-// ——— the views ———
+// ——— the three views ———
 const back = (label) => `<button style="color:var(--accent);font-size:16px;display:inline-flex;align-items:center;min-height:44px;margin:0 0 4px -6px">${svgIn('back', 'ico').replace('class="ico"', 'class="ico" style="width:22px;height:22px;stroke-width:2.2"')}${label}</button>`
 
-function friendList(i) {
-  const me = state.me[i]
-  const rows = FRIENDS.map((f) => `<div class="lrow">${avatar(i, friendCfg(f, i), 40, f.name, true)}<span class="name">${f.name}</span></div>`).join('')
-  const stack = [state.me[i], ...FRIENDS.slice(0, 3).map((f) => friendCfg(f, i))]
-  const names = [ME_NAME, ...FRIENDS.slice(0, 3).map((f) => f.name)]
+function friendList() {
+  const rows = FRIENDS.map((f) => `<div class="lrow">${avatar(f.c, 40)}<span class="name">${f.name}</span></div>`).join('')
+  const stack = [state.me, ...FRIENDS.slice(0, 3).map((f) => f.c)]
   return `<div class="screen scroll" style="padding-top:calc(var(--st) + 4px)">${back(t('Settings', 'Ajustes'))}
     <h1 class="large-title" style="margin-bottom:16px">${t('Friends', 'Amigos')}</h1>
-    <div class="list"><div class="lrow me" data-view="edit" style="cursor:pointer">${avatar(i, me, 56, ME_NAME, true)}<div class="text"><div class="name">${ME_NAME}</div><div class="sub">${t('You · Edit name and avatar', 'Você · Editar nome e avatar')}</div></div>${I.chevR}</div></div>
+    <div class="list"><div class="lrow me">${avatar(state.me, 56)}<div class="text"><div class="name">${ME_NAME}</div><div class="sub">${t('You · Edit name and avatar', 'Você · Editar nome e avatar')}</div></div>${I.chevR}</div></div>
     <p class="sec-head"><span>${t('Friends', 'Amigos')} · ${FRIENDS.length}</span></p>
     <div class="list">${rows}</div>
     <p class="sec-head"><span>${t('A shared goal, later', 'Uma meta compartilhada, no futuro')}</span></p>
-    <div class="card shared-card"><div class="row"><span class="tile" style="--c: var(--c-pink); width:26px; height:26px; border-radius:7px; display:grid; place-items:center; background: color-mix(in srgb, var(--c) var(--tile-mix), var(--surface)); color: color-mix(in srgb, var(--c) var(--glyph-mix), var(--glyph-ink))"><svg viewBox="0 0 24 24" style="width:15px;height:15px" fill="currentColor"><path d="${G.heart}"/></svg></span><h3>${t('Run a 10k', 'Correr 10 km')}</h3>
-      <span class="av-stack">${stack.map((c, k) => avatar(i, c, 26, names[k], true)).join('')}</span></div>
+    <div class="card shared-card"><div class="row"><span style="--c: var(--c-pink); width:26px; height:26px; border-radius:7px; display:grid; place-items:center; background: color-mix(in srgb, var(--c) var(--tile-mix), var(--surface)); color: color-mix(in srgb, var(--c) var(--glyph-mix), var(--glyph-ink))"><svg viewBox="0 0 24 24" style="width:15px;height:15px" fill="currentColor"><path d="${HEART}"/></svg></span><h3>${t('Run a 10k', 'Correr 10 km')}</h3>
+      <span class="av-stack">${stack.map((c) => avatar(c, 26)).join('')}</span></div>
       <p>${t('Ana, João, Lu and Lucas', 'Ana, João, Lu e Lucas')}</p></div>
   </div>`
 }
 
-function settingsBehind(i) {
+function settingsBehind() {
   return `<div class="screen" style="padding-top:calc(var(--st) + 4px)">${back(t('Today', 'Hoje'))}<h1 class="large-title" style="margin-bottom:16px">${t('Settings', 'Ajustes')}</h1>
-    <div class="list"><div class="lrow me">${avatar(i, state.me[i], 56, ME_NAME, true)}<div class="text"><div class="name">${ME_NAME}</div><div class="sub">${EMAIL}</div></div>${I.chevR}</div></div></div>`
+    <div class="list"><div class="lrow me">${avatar(state.me, 56)}<div class="text"><div class="name">${ME_NAME}</div><div class="sub">${EMAIL}</div></div>${I.chevR}</div></div></div>`
 }
 
-function editor(i) {
-  const me = state.me[i]
-  const sw = COLORS.map((c) => `<button class="swatch ${me.color === c ? 'on' : ''}" style="--c: var(--c-${c})" data-set="color:${c}" aria-label="${c}"></button>`).join('')
-  let opts = `<p class="ed-label">${t('Color', 'Cor')}</p><div class="swatches">${sw}</div>`
-  if (i === 0) {
-    const looks = [['gradient', t('Gradient', 'Degradê')], ['solid', t('Solid', 'Sólido')], ['soft', t('Soft', 'Suave')]]
-    opts += `<p class="ed-label">${t('Look', 'Aparência')}</p><div class="seg-row">${looks.map(([k, l]) => `<button class="${me.look === k ? 'on' : ''}" data-set="look:${k}">${l}</button>`).join('')}</div>`
-  }
-  if (i === 1) {
-    opts = `<p class="ed-label">${t('Symbol', 'Símbolo')}</p><div class="picker" style="--c: var(--c-${me.color})">${Object.keys(G).map((k) => `<button class="${me.glyph === k ? 'on' : ''}" data-set="glyph:${k}" aria-label="${k}">${glyphSvg(k)}</button>`).join('')}</div>` + opts
-    const fills = [['soft', t('Soft', 'Suave')], ['solid', t('Solid', 'Sólido')]]
-    opts += `<p class="ed-label">${t('Fill', 'Preenchimento')}</p><div class="seg-row">${fills.map(([k, l]) => `<button class="${me.fill === k ? 'on' : ''}" data-set="fill:${k}">${l}</button>`).join('')}</div>`
-    opts += `<div class="toggle-row" data-set="ring:${!me.ring}" style="cursor:pointer">${t('Ring', 'Anel')}<span class="switch ${me.ring ? 'on' : ''}"></span></div>`
-  }
-  if (i === 2) {
-    opts = `<p class="ed-label">Emoji</p><div class="picker" style="--c: var(--c-${me.color})">${EMOJI.map((e) => `<button class="${me.emoji === e ? 'on' : ''}" data-set="emoji:${e}"><span class="emo">${e}</span></button>`).join('')}</div>` + opts
-    opts += `<p class="ed-label">${t('Pattern', 'Padrão')}</p><div class="picker patterns" style="--c: var(--c-${me.color})">${PATTERNS.map((p) => `<button class="${me.pattern === p ? 'on' : ''}" data-set="pattern:${p}" aria-label="${p}">${avatar(2, { ...me, pattern: p, ring: false }, 36, ME_NAME).replace(/<span class="emo">.*?<\/span>/, '')}</button>`).join('')}</div>`
-    opts += `<div class="toggle-row" data-set="ring:${!me.ring}" style="cursor:pointer">${t('Ring', 'Anel')}<span class="switch ${me.ring ? 'on' : ''}"></span></div>`
-  }
-  return settingsBehind(i) + `<div class="backdrop"></div><div class="sheet large ed">
-    <div class="sheet-bar"><span class="side"><button>${t('Cancel', 'Cancelar')}</button></span><h2>${t('Name and avatar', 'Nome e avatar')}</h2><span class="side r"><button style="font-weight:600" data-view="list">${t('Done', 'OK')}</button></span></div>
-    <div class="sheet-body"><div class="ed-preview">${avatar(i, me, 96, ME_NAME)}<div class="ed-name">${ME_NAME}</div></div>${opts}</div>
+function editor() {
+  const me = state.me
+  const looks = [['gradient', t('Gradient', 'Degradê')], ['solid', t('Solid', 'Sólido')], ['soft', t('Soft', 'Suave')]]
+  return settingsBehind() + `<div class="backdrop"></div><div class="sheet large ed">
+    <div class="sheet-bar"><span class="side"><button>${t('Cancel', 'Cancelar')}</button></span><h2>${t('Name and avatar', 'Nome e avatar')}</h2><span class="side r"><button style="font-weight:600">${t('Done', 'OK')}</button></span></div>
+    <div class="sheet-body">
+      <div class="ed-preview">${avatar(me, 96)}<div class="ed-name">${ME_NAME}</div></div>
+      <p class="ed-label">Emoji</p>
+      <label class="emoji-row"><input id="emoji-in" value="${me.emoji}" autocomplete="off" aria-label="${t('Any emoji', 'Qualquer emoji')}"><span>${t('Tap and type any emoji from the emoji keyboard, or pick one below.', 'Toque e digite qualquer emoji pelo teclado de emoji, ou escolha um abaixo.')}</span></label>
+      <div class="picker" style="--c: var(--c-${me.color})">${EMOJI.map((e) => `<button class="${me.emoji === e ? 'on' : ''}" data-set="emoji:${e}"><span class="emo">${e}</span></button>`).join('')}</div>
+      <p class="ed-label">${t('Look', 'Aparência')}</p>
+      <div class="seg-row">${looks.map(([k, l]) => `<button class="${me.look === k ? 'on' : ''}" data-set="look:${k}">${l}</button>`).join('')}</div>
+      <p class="ed-label">${t('Color', 'Cor')}</p>
+      <div class="swatches">${COLORS.map((c) => `<button class="swatch ${me.color === c ? 'on' : ''}" style="--c: var(--c-${c})" data-set="color:${c}" aria-label="${c}"></button>`).join('')}</div>
+      <p class="ed-label">${t('Pattern', 'Padrão')}</p>
+      <div class="picker patterns" style="--c: var(--c-${me.color})">${PATTERNS.map((p) => `<button class="${me.pattern === p ? 'on' : ''}" data-set="pattern:${p}" aria-label="${p}">${avatar({ ...me, pattern: p }, 36).replace(/<span class="emo">.*?<\/span>/, '')}</button>`).join('')}</div>
+    </div>
   </div>`
 }
 
-function around(i) {
-  const people = [['joao.pereira@hotmail.com', 'João Pereira', t('Yesterday', 'Ontem')], ['lu.martins@icloud.com', 'Lu Martins', t('Monday', 'Segunda')], ['lucas.melo@gmail.com', 'Lucas Melo', t('Oct 18', '18 de out.')]]
+function around() {
+  const people = [['joao.pereira@hotmail.com', 0, t('Yesterday', 'Ontem')], ['lu.martins@icloud.com', 1, t('Monday', 'Segunda')], ['lucas.melo@gmail.com', 2, t('Oct 18', '18 de out.')]]
   return `<div class="screen scroll" style="padding-top:calc(var(--st) + 4px)">${back(t('Today', 'Hoje'))}<h1 class="large-title" style="margin-bottom:16px">${t('Settings', 'Ajustes')}</h1>
-    <div class="list"><div class="lrow me" data-view="edit" style="cursor:pointer">${avatar(i, state.me[i], 56, ME_NAME, true)}<div class="text"><div class="name">${ME_NAME}</div><div class="sub">${EMAIL}</div></div>${I.chevR}</div>
+    <div class="list"><div class="lrow me">${avatar(state.me, 56)}<div class="text"><div class="name">${ME_NAME}</div><div class="sub">${EMAIL}</div></div>${I.chevR}</div>
       <div class="lrow"><span class="text">${t('Sync', 'Sincronização')}</span><span class="tag" style="color:var(--on-track)">${t('Up to date', 'Em dia')}</span></div>
       <div class="lrow"><span class="text">${t('Notifications', 'Notificações')}</span>${I.chevR}</div></div>
     <p class="sec-head" style="margin-top:26px"><span>${t('Developer · Requests', 'Desenvolvedor · Pedidos')}</span></p>
-    <div class="list">${people.map(([e, n, w], k) => `<div class="lrow">${avatar(i, friendCfg(FRIENDS[[0, 1, 2][k]], i), 36, n, true)}<div class="text"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${n}</div><div class="sub">${e} · ${w}</div></div><button class="approve">${t('Approve', 'Aprovar')}</button></div>`).join('')}</div>  </div>`
+    <div class="list">${people.map(([e, k, w]) => `<div class="lrow">${avatar(FRIENDS[k].c, 36)}<div class="text"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${FRIENDS[k].name}</div><div class="sub">${e} · ${w}</div></div><button class="approve">${t('Approve', 'Aprovar')}</button></div>`).join('')}</div>
+  </div>`
 }
 const VIEW_FN = { list: friendList, edit: editor, around }
 
 // ——— render ———
 const $ = (s) => document.querySelector(s)
 const isPhone = () => matchMedia('(max-width: 760px)').matches
-function phoneHtml(i) { return `${status()}${VIEW_FN[state.view](i)}${home()}` }
+const phoneHtml = (key) => `${status()}${VIEW_FN[key]()}${home()}`
 function render() {
   if (state.theme) document.documentElement.dataset.theme = state.theme
   else delete document.documentElement.dataset.theme
   document.documentElement.lang = state.lang === 'en' ? 'en' : 'pt-BR'
   const dark = state.theme ? state.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
-  $('#steps').innerHTML = VIEWS.map((v, k) => `<button class="chip ${v.key === state.view ? 'on' : ''}" data-step="${v.key}" aria-pressed="${v.key === state.view}"><span class="n">${k + 1}</span>${v.label}</button>`).join('')
   for (const b of document.querySelectorAll('#lang button')) b.classList.toggle('on', b.dataset.l === state.lang)
   for (const b of document.querySelectorAll('#theme button')) b.classList.toggle('on', b.dataset.t === (dark ? 'dark' : 'light'))
   const scroller = $('#screens')
   const keep = scroller.scrollLeft
-  scroller.innerHTML = OPTIONS.map((o, i) => {
-    const picked = state.pick === LETTERS[i]
-    return `<article class="opt" data-i="${i}">
-      <div class="opt-head"><span class="letter">${LETTERS[i]}</span><h2 class="opt-name">${o.name}</h2></div>
-      <div class="device"><div class="scr"><div class="vp ${isPhone() ? 'bare' : ''}">${phoneHtml(i)}</div></div></div>
-      <p class="opt-note">${o.note}</p>
-      <button class="pick ${picked ? 'on' : ''}" data-pick="${LETTERS[i]}" aria-pressed="${picked}">${picked ? '✓ Picked' : 'Pick ' + LETTERS[i]}</button>
-    </article>`
-  }).join('')
+  scroller.innerHTML = VIEWS.map((v) => `<article class="opt" data-view="${v.key}">
+      <div class="opt-head"><h2 class="opt-name">${v.name}</h2></div>
+      <div class="device"><div class="scr"><div class="vp ${isPhone() ? 'bare' : ''}">${phoneHtml(v.key)}</div></div></div>
+      <p class="opt-note">${v.note}</p>
+    </article>`).join('')
   scroller.scrollLeft = keep
-  $('#dots').innerHTML = OPTIONS.map(() => '<i></i>').join('')
+  $('#dots').innerHTML = VIEWS.map(() => '<i></i>').join('')
   fit(); syncDots()
-  $('#picks-text').innerHTML = state.pick ? `<b>Picked:</b> ${state.pick}, ${OPTIONS[LETTERS.indexOf(state.pick)].name}` : 'No pick yet. Pick a style, and tell me what to borrow from the others.'
-  $('#copy').disabled = !state.pick
 }
-// One phone again after an edit, keeping its scroll and without sliding the sheet in again.
-function renderPhone(i) {
-  const vp = document.querySelector(`.opt[data-i="${i}"] .vp`)
-  const body = vp.querySelector('.sheet-body')
-  const top = body ? body.scrollTop : 0
-  vp.classList.add('still')
-  vp.innerHTML = phoneHtml(i)
-  const nb = vp.querySelector('.sheet-body')
-  if (nb) nb.scrollTop = top
+// After an edit: every phone again, the editor keeping its scroll and the sheet staying put.
+function refresh({ keepInput = false } = {}) {
+  for (const v of VIEWS) {
+    const vp = document.querySelector(`.opt[data-view="${v.key}"] .vp`)
+    if (v.key === 'edit' && keepInput) {
+      vp.querySelector('.ed-preview .av').outerHTML = avatar(state.me, 96)
+      vp.querySelectorAll('[data-set^="emoji:"]').forEach((b) => b.classList.toggle('on', b.dataset.set === 'emoji:' + state.me.emoji))
+      continue
+    }
+    const body = vp.querySelector('.sheet-body')
+    const top = body ? body.scrollTop : 0
+    vp.classList.add('still')
+    vp.innerHTML = phoneHtml(v.key)
+    const nb = vp.querySelector('.sheet-body')
+    if (nb) nb.scrollTop = top
+  }
 }
 function fit() {
   for (const scr of document.querySelectorAll('.scr')) {
@@ -767,47 +732,27 @@ function syncDots() {
   const i = Math.round(s.scrollLeft / Math.max(1, s.clientWidth))
   document.querySelectorAll('#dots i').forEach((d, k) => d.classList.toggle('on', k === i))
 }
-function setView(key) {
-  if (!VIEWS.some((v) => v.key === key)) return
-  state.view = key; store.set('view', key); render()
-}
+const save = () => store.set('me', state.me)
 
 // ——— events ———
-$('#steps').addEventListener('click', (e) => { const b = e.target.closest('[data-step]'); if (b) setView(b.dataset.step) })
 $('#lang').addEventListener('click', (e) => { const b = e.target.closest('[data-l]'); if (!b) return; state.lang = b.dataset.l; store.set('lang', state.lang); render() })
 $('#theme').addEventListener('click', (e) => { const b = e.target.closest('[data-t]'); if (!b) return; state.theme = b.dataset.t; store.set('theme', state.theme); render() })
 $('#screens').addEventListener('click', (e) => {
-  const pick = e.target.closest('[data-pick]')
-  if (pick) { state.pick = state.pick === pick.dataset.pick ? null : pick.dataset.pick; store.set('pick', state.pick); render(); return }
   const set = e.target.closest('[data-set]')
-  if (set) {
-    const i = +set.closest('.opt').dataset.i
-    const [k, ...rest] = set.dataset.set.split(':')
-    const v = rest.join(':')
-    state.me[i] = { ...state.me[i], [k]: v === 'true' ? true : v === 'false' ? false : v }
-    store.set('me', state.me)
-    renderPhone(i)
-    return
-  }
-  const v = e.target.closest('[data-view]')
-  if (v) setView(v.dataset.view)
+  if (!set) return
+  const [k, ...rest] = set.dataset.set.split(':')
+  const v = rest.join(':')
+  state.me = { ...state.me, [k]: v }
+  save(); refresh()
+})
+// Typing keeps the newest emoji; anything that isn't one is ignored.
+$('#screens').addEventListener('input', (e) => {
+  if (e.target.id !== 'emoji-in') return
+  const emo = lastEmoji(e.target.value)
+  if (emo) { state.me = { ...state.me, emoji: emo }; save(); refresh({ keepInput: true }) }
+  e.target.value = state.me.emoji
 })
 $('#screens').addEventListener('scroll', syncDots, { passive: true })
-$('#copy').addEventListener('click', async () => {
-  if (!state.pick) return
-  const i = LETTERS.indexOf(state.pick)
-  const text = `S0 avatar pick: ${state.pick} (${OPTIONS[i].name}). My example: ${JSON.stringify(state.me[i])}`
-  const btn = $('#copy')
-  try {
-    await navigator.clipboard.writeText(text)
-    btn.textContent = 'Copied'
-    setTimeout(() => (btn.textContent = 'Copy pick'), 1600)
-  } catch {
-    const box = document.createElement('textarea')
-    box.className = 'fallback'; box.rows = 3; box.readOnly = true; box.value = text
-    $('#picks-text').replaceChildren(box); box.select()
-  }
-})
 let resizeTimer, wasPhone = isPhone()
 addEventListener('resize', () => {
   clearTimeout(resizeTimer)
