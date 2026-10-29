@@ -512,10 +512,12 @@ Allowing several devices is cheap (blocking would cost more and hurt recovery).
   Settings already shows pending changes. Mockup first; keep it subtle (few badges).
   **Picked in S0 (2026-10-29), option A:** at the right end of Today's date line ("21 October · 3
   items"), a small cloud and "Not synced yet" (grey, offline) or "Couldn't sync" (orange, server
-  failing); a brief "Synced" when the changes arrive, then nothing. Nothing shows during the normal
-  2-second wait (N-15), so it never flickers. **Settings → Sync** gets shorter: the "Synced" row shows
-  only the last sync time and a status icon (synced, syncing, offline, failing); tapping the icon
-  explains ("1 change waiting. You're offline…"). Mockup: [not synced](mockups/not-synced.html), artifact
+  failing); a brief "Synced" only when coming back from offline or a failing server, not after every
+  normal sync. Nothing shows during the normal 2-second wait (N-15), so it never flickers.
+  **Settings → Sync** gets shorter: the "Synced" row shows only the last sync time and a status icon
+  (synced, syncing, offline, failing); tapping the icon explains: "Everything is synced"; offline "1
+  change waiting. You're offline. It syncs automatically when you're back online."; failing "Couldn't
+  sync 1 change. Trying again soon." Mockup: [not synced](mockups/not-synced.html), artifact
   [Smart Meta Sync Status](https://claude.ai/artifact/2HvhRdmFx4b1cyUEH565is).
 - The owner's rule: **the user must never lose data.** Every conflict keeps the newest version, the
   phone never deletes local data on its own, and backups cover the rest.

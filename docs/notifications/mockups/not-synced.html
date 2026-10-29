@@ -584,14 +584,16 @@ function attempt() {
   if (!state.pending) { state.phase = 'synced'; return refresh() }
   if (state.net === 'offline') { state.phase = 'offline'; return refresh() }
   if (state.srv === 'fail') { state.phase = 'error'; retryTimer = setTimeout(attempt, 8000); return refresh() }
-  state.phase = 'syncing'; refresh()
+  // "Synced" shows only when coming back from offline or a failing server, not after every normal sync.
+  const recovering = waitingNow() || state.recovering
+  state.phase = 'syncing'; state.recovering = recovering; refresh()
   setTimeout(() => {
     if (state.net === 'offline' || state.srv === 'fail') return attempt()
     state.pending = 0; clock.m++; state.last = `9:${clock.m}`
-    state.phase = 'synced'; state.flash = true
+    state.phase = 'synced'; state.flash = state.recovering; state.recovering = false
     refresh()
     clearTimeout(flashTimer)
-    flashTimer = setTimeout(() => { state.flash = false; refresh() }, 1800)
+    if (state.flash) flashTimer = setTimeout(() => { state.flash = false; refresh() }, 1800)
   }, 700)
 }
 const waitingNow = () => state.phase === 'offline' || state.phase === 'error'
@@ -601,11 +603,11 @@ const changes = (n) => t(`${n} ${n === 1 ? 'change' : 'changes'}`, `${n} ${n ===
 const C = () => ({
   notSynced: t('Not synced yet', 'Ainda não sincronizado'), cant: t('Couldn’t sync', 'Não foi possível sincronizar'), synced: t('Synced', 'Sincronizado'),
   info: {
-    synced: [t('Everything is synced', 'Tudo sincronizado'), t(`Last synced at ${state.last}.`, `Última sincronização às ${state.last}.`)],
+    synced: [t('Everything is synced', 'Tudo sincronizado'), ''],
     pending: [t('Syncing in a moment', 'Sincronizando em instantes'), t(`${changes(state.pending)} waiting.`, `${changes(state.pending)} aguardando.`)],
     syncing: [t('Syncing…', 'Sincronizando…'), t(`${changes(state.pending)} on the way.`, `${changes(state.pending)} a caminho.`)],
-    offline: [t(`${changes(state.pending)} waiting`, `${changes(state.pending)} aguardando`), t('You’re offline. They sync when you’re back, and they’re safe on this phone.', 'Você está offline. Elas sincronizam quando você voltar, e estão seguras neste celular.')],
-    error: [t(`Couldn’t sync ${changes(state.pending)}`, `Não foi possível sincronizar ${changes(state.pending)}`), t('Trying again soon. They’re safe on this phone.', 'Tentando de novo em breve. Estão seguras neste celular.')],
+    offline: [t(`${changes(state.pending)} waiting`, `${changes(state.pending)} aguardando`), t('You’re offline. It syncs automatically when you’re back online.', 'Você está offline. Sincroniza automaticamente quando você voltar a ficar online.')],
+    error: [t(`Couldn’t sync ${changes(state.pending)}`, `Não foi possível sincronizar ${changes(state.pending)}`), t('Trying again soon.', 'Tentando de novo em breve.')],
   },
 })
 
@@ -652,7 +654,7 @@ function settings() {
     <div class="list" style="position:relative; overflow:visible">
       <div class="lrow"><span class="k">${t('Account', 'Conta')}</span><span class="v">ana.souza@gmail.com</span></div>
       <div class="lrow"><span class="k">${t('Synced', 'Sincronizado')}</span><span class="sync-val">${state.last}<span class="sync-ic ${cls}" data-info aria-label="${it}">${icon}</span></span></div>
-      ${state.info ? `<div class="info-pop" style="top:100px"><b>${it}</b><span>${ib}</span></div>` : ''}
+      ${state.info ? `<div class="info-pop" style="top:100px"><b>${it}</b>${ib ? `<span>${ib}</span>` : ''}</div>` : ''}
       <div class="lrow act left" data-try style="cursor:pointer">${t('Sync now', 'Sincronizar agora')}</div>
     </div>
   </div>`
