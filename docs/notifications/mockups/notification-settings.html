@@ -432,77 +432,62 @@ h1, h2, h3, p { margin: 0; }
   .caret { animation: none; }
 }
 
-/* ——— Settings → Notifications: the app's settings rows, switches, iOS time pickers ——— */
-:root { --c-green: #34c759; --c-red: #ff3b30; --c-orange: #ff9500; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --c-green: #30d158; --c-red: #ff453a; --c-orange: #ff9f0a; } }
-:root[data-theme="dark"] { --c-green: #30d158; --c-red: #ff453a; --c-orange: #ff9f0a; }
+/* ——— Settings → Notifications as picked: one page, switches that open their options, as in Quick Add ——— */
+:root { --c-green: #34c759; --c-orange: #ff9500; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --c-green: #30d158; --c-orange: #ff9f0a; } }
+:root[data-theme="dark"] { --c-green: #30d158; --c-orange: #ff9f0a; }
 .screen.scroll { overflow-y: auto; scrollbar-width: none; padding-bottom: 40px; }
 .screen.scroll::-webkit-scrollbar { display: none; }
-.sw { position: relative; flex: none; width: 51px; height: 31px; border-radius: 16px; background: var(--line-strong); transition: background 0.2s ease; }
+.sw { position: relative; flex: none; width: 51px; height: 31px; border-radius: 16px; background: var(--line-strong); transition: background 0.2s ease; cursor: pointer; }
 .sw::after { content: ''; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgb(0 0 0 / 0.2); transition: transform 0.3s var(--ease-drawer); }
 .sw.on { background: var(--c-green); }
 .sw.on::after { transform: translateX(20px); }
-.sw.dis { opacity: 0.45; }
-.lrow .text .sub { margin-top: 1px; }
+.sw.dis { opacity: 0.45; cursor: default; }
+.lrow.dim .text, .lrow.dim .dt-text { opacity: 0.45; }
+.lrow.link { color: var(--accent); cursor: pointer; }
 .lrow.child { padding-left: 32px; }
 .lrow.child::before { left: 32px !important; }
-.lrow .val { color: var(--ink-2); font-size: 17px; margin-left: auto; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
-.lrow .val .chev { margin: 0; }
-.lrow.link { color: var(--accent); }
-.lrow.dim .text { opacity: 0.45; }
-.tpill { margin-left: auto; padding: 6px 11px; border-radius: 8px; background: var(--surface-2); font-size: 17px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.tpill.on { color: var(--accent); }
-.ok { color: var(--on-track); }
-.wheel { position: relative; height: 196px; display: flex; justify-content: center; gap: 0; overflow: hidden; font-size: 22px; font-variant-numeric: tabular-nums; background: var(--surface); }
-.wheel::before { content: ''; position: absolute; left: 12px; right: 12px; top: 50%; height: 36px; transform: translateY(-50%); border-radius: 9px; background: var(--surface-2); }
-.wheel::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(var(--surface), transparent 38%, transparent 62%, var(--surface)); }
-.wheel .col { position: relative; width: 72px; display: grid; align-content: center; justify-items: center; gap: 0; }
-.wheel .col span { height: 36px; display: grid; place-items: center; color: var(--ink-2); }
-.wheel .col span.sel { color: var(--ink); font-weight: 500; }
-.wheel .col span.f1 { transform: perspective(200px) rotateX(28deg) scale(0.94); opacity: 0.75; }
-.wheel .col span.f2 { transform: perspective(200px) rotateX(48deg) scale(0.86); opacity: 0.45; }
-.wheel .col span.u1 { transform: perspective(200px) rotateX(-28deg) scale(0.94); opacity: 0.75; }
-.wheel .col span.u2 { transform: perspective(200px) rotateX(-48deg) scale(0.86); opacity: 0.45; }
-.wheel .colon { position: relative; align-self: center; font-weight: 500; }
-.nprev { display: flex; gap: 10px; align-items: center; padding: 12px 14px 12px 12px; border-radius: 20px; background: var(--surface); box-shadow: 0 1px 3px rgb(0 0 0 / 0.06); font-size: 15px; line-height: 1.3; }
-.nprev .ic { flex: none; width: 38px; height: 38px; border-radius: 9px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='rgb(44,93,143)'/%3E%3Cpath d='M29 52l14 14 29-30' fill='none' stroke='rgb(252,251,248)' stroke-width='10.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / cover; }
-.nprev .tx { flex: 1; min-width: 0; }
-.nprev .tp { display: flex; gap: 8px; align-items: baseline; }
-.nprev b { flex: 1; min-width: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.nprev small { color: var(--ink-2); font-size: 13px; }
-.preview-wrap { padding: 14px; border-radius: var(--radius); background: linear-gradient(160deg, #6fa6e3, #8a7dd6 70%, #b98fd6); }
-.tomorrow { padding: 14px 16px 6px; }
-.tomorrow h3 { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; display: flex; justify-content: space-between; align-items: baseline; }
-.tomorrow h3 span { font-size: 13px; font-weight: 500; color: var(--ink-2); }
-.tl { list-style: none; margin: 10px 0 0; padding: 0; }
-.tl li { display: flex; gap: 12px; align-items: baseline; padding: 9px 0; border-top: 0.5px solid var(--line-strong); font-size: 15px; }
-.tl li:first-child { border-top: 0; }
-.tl .tm { width: 46px; flex: none; font-variant-numeric: tabular-nums; color: var(--ink-2); font-weight: 600; }
-.tl .what { flex: 1; min-width: 0; }
-.tl .what small { display: block; color: var(--ink-2); font-size: 13px; }
-.state-card { padding: 18px 16px; display: grid; gap: 10px; justify-items: start; }
-.state-card .ic { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
-.state-card .ic.warn { background: color-mix(in srgb, var(--c-orange) 16%, var(--surface)); color: var(--c-orange); }
+/* A switch with options: its value in blue under the label; the label opens and closes them. */
+.dt-text { flex: 1; min-width: 0; align-self: stretch; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; text-align: left; margin: -11px 0; padding: 11px 0; font-size: 17px; }
+.dt-text:disabled { cursor: default; }
+.dt-value { font-size: 14px; font-weight: 600; color: var(--accent); margin-top: 1px; }
+.dt-picker { position: relative; border-top: 0.5px solid var(--line-strong); padding: 8px 12px 12px; display: grid; gap: 8px; animation: open 0.3s var(--ease-out) both; }
+@keyframes open { from { opacity: 0; transform: translateY(-6px); } }
+.dt-picker .sub-row { display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 0 4px; font-size: 17px; border-top: 0.5px solid var(--line-strong); padding-top: 6px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.pair p { text-align: center; font-size: 13px; color: var(--ink-2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em; }
+.wheels { position: relative; display: flex; justify-content: center; align-items: center; gap: 4px; }
+.wheels::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 36px; transform: translateY(-50%); border-radius: 10px; background: var(--surface-2); pointer-events: none; }
+.wheel { position: relative; width: 72px; height: 180px; overflow-y: scroll; scroll-snap-type: y mandatory; padding: 72px 0; scrollbar-width: none; overscroll-behavior: contain;
+  mask-image: linear-gradient(transparent, #000 35%, #000 65%, transparent); -webkit-mask-image: linear-gradient(transparent, #000 35%, #000 65%, transparent); }
+.pair .wheel { width: 56px; }
+.wheel::-webkit-scrollbar { display: none; }
+.wheel-item { height: 36px; line-height: 36px; text-align: center; scroll-snap-align: center; font-size: 22px; font-variant-numeric: tabular-nums; color: var(--ink-2); cursor: pointer; }
+.wheel-item.on { color: var(--ink); font-weight: 600; }
+.wheels-colon { position: relative; font-size: 22px; font-weight: 600; }
+.banner { cursor: pointer; }
+.banner b { font-size: 16px; }
+.banner.static { cursor: default; }
+.state-card { padding: 18px 16px; display: grid; gap: 10px; justify-items: start; margin-bottom: 4px; }
+.state-card .ic { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: color-mix(in srgb, var(--c-orange) 16%, var(--surface)); color: var(--c-orange); }
 .state-card .ic svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .state-card h3 { font-size: 18px; font-weight: 650; letter-spacing: -0.01em; }
 .state-card p { font-size: 15px; color: var(--ink-2); line-height: 1.4; }
-.state-card .btn { margin-top: 4px; }
 .state-card ol { margin: 2px 0 0; padding-left: 20px; font-size: 15px; line-height: 1.6; }
 .state-card ol b { font-weight: 600; }
-.center-state { text-align: center; justify-items: center; padding: 26px 20px 22px; }
-.center-state .ic { width: 64px; height: 64px; border-radius: 16px; }
-.center-state .ic svg { width: 34px; height: 34px; }
-.center-state h3 { font: 700 24px/1.2 var(--font-display); }
-.center-state ol { text-align: left; }
-.big-title-sub { color: var(--ink-2); font-size: 15px; margin: -10px 4px 18px; }
-.vp.still .sheet, .vp.still > .backdrop, .vp.still .alert-wrap, .vp.still .alert { animation: none; }
+.caption { width: var(--dev-w); font-size: 14px; color: var(--ink-2); line-height: 1.45; text-wrap: pretty; }
+.caption b { color: var(--ink); font-weight: 600; }
+@media (max-width: 760px) { .caption { order: 2; width: auto; align-self: stretch; margin: 10px 16px 0; font-size: 13px; } }
+@media (min-width: 1100px) { .screens { grid-template-columns: minmax(0, 390px) !important; justify-content: center; } }
+.vp.still .dt-picker, .vp.still .alert-wrap, .vp.still .alert { animation: none; }
+@media (prefers-reduced-motion: reduce) { .dt-picker { animation: none; } }
 </style>
 
 <div class="page">
   <header class="head">
     <p class="eyebrow">S0 mockups · 4 of 5</p>
     <h1 class="large-title">Notification settings</h1>
-    <p class="lede">Settings → Notifications in three layouts, in five situations. Switches inside the phones work. Pick a layout per situation, or one for all.</p>
+    <p class="lede">Settings → Notifications as you picked it on 29 October, with your changes. The switches and time wheels work.</p>
   </header>
   <div class="controls">
     <nav class="steps" id="steps" aria-label="Situation"></nav>
@@ -516,23 +501,17 @@ h1, h2, h3, p { margin: 0; }
     </div>
   </div>
   <section class="screens" id="screens" aria-live="polite"></section>
-  <div class="dots" id="dots" aria-hidden="true"></div>
-  <footer class="picks">
-    <div class="picks-in">
-      <p class="picks-text" id="picks-text"></p>
-      <button class="copy" id="copy">Copy picks</button>
-    </div>
-  </footer>
 </div>
 
 <script>
 const store = {
-  get(k, d) { try { const v = localStorage.getItem('s0n2.' + k); return v === null ? d : JSON.parse(v) } catch { return d } },
-  set(k, v) { try { localStorage.setItem('s0n2.' + k, JSON.stringify(v)) } catch {} },
+  get(k, d) { try { const v = localStorage.getItem('s0n3.' + k); return v === null ? d : JSON.parse(v) } catch { return d } },
+  set(k, v) { try { localStorage.setItem('s0n3.' + k, JSON.stringify(v)) } catch {} },
 }
-// The switches start as the plan says: types on, badge off, lock-screen details on, quiet hours off.
 const ON0 = { summary: true, weekdays: false, due: true, reminders: true, preps: true, review: true, goalReview: true, badge: false, details: true, quiet: false }
-const state = { view: store.get('view', 'main'), lang: store.get('lang', 'en'), theme: store.get('theme', null), picks: store.get('picks', {}), on: { ...ON0, ...store.get('on', {}) } }
+const TIMES0 = { summary: [8, 0], review: [8, 0], quietFrom: [22, 0], quietTo: [7, 0] }
+const state = { view: store.get('view', 'on'), lang: store.get('lang', 'en'), theme: store.get('theme', null),
+  on: { ...ON0, ...store.get('on', {}) }, times: { ...TIMES0, ...store.get('times', {}) }, open: null, alert: false }
 const t = (en, pt) => (state.lang === 'en' ? en : pt)
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
 const I = {
@@ -577,202 +556,114 @@ I.bellOff = '<svg viewBox="0 0 24 24"><path d="M8.2 5.3A6 6 0 0 1 18 10c0 2.4.5 
 I.user = '<svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5c.8-3.8 3.8-6 7.5-6s6.7 2.2 7.5 6"/></svg>'
 
 const VIEWS = [
-  { key: 'main', label: 'Notifications on' },
-  { key: 'time', label: 'Changing the summary time' },
-  { key: 'ask', label: 'Not allowed yet' },
-  { key: 'denied', label: 'Turned off in iPhone Settings' },
-  { key: 'noaccount', label: 'No account' },
+  { key: 'on', label: 'Notifications on', cap: 'Turn on a switch with options and they open under it. Tap the blue value to change it again, or to close it.' },
+  { key: 'ask', label: 'Not allowed yet', cap: 'Behind the card, the switches wait, greyed out. Tapping the card asks iOS for permission.' },
+  { key: 'denied', label: 'Turned off in iPhone Settings', cap: 'Only after someone tapped Don’t Allow, or turned it off in iPhone Settings.' },
+  { key: 'noaccount', label: 'No account', cap: 'Tapping the card opens sign-in at the email step.' },
 ]
-if (!VIEWS.some((v) => v.key === state.view)) state.view = 'main'
-const OPTIONS = [
-  { name: 'Everything on one page', note: 'Every switch on one page, like iPhone Settings. Times open a wheel right in the list.' },
-  { name: 'A page per kind', note: 'A short list with each kind’s state; each kind opens its own page with a live preview of the push.' },
-  { name: 'Tomorrow first', note: 'Starts with the pushes planned for tomorrow, so you see what’s coming; compact switches below.' },
-]
-const LETTERS = ['A', 'B', 'C']
+if (!VIEWS.some((v) => v.key === state.view)) state.view = 'on'
 
 // ——— copy ———
 const L = () => ({
   title: t('Notifications', 'Notificações'), back: t('Settings', 'Ajustes'),
-  what: t('What you get', 'O que você recebe'), phone: t('On this phone', 'Neste celular'), status: t('Status', 'Status'), dev: t('Developer', 'Desenvolvedor'),
-  summary: t('Morning summary', 'Resumo da manhã'), summarySub: t('Today’s items, every morning', 'Os itens do dia, toda manhã'),
-  time: t('Time', 'Horário'), weekdays: t('Weekdays only', 'Só em dias úteis'),
-  due: t('Items with a time', 'Itens com horário'), dueSub: t('A push at their time', 'Um aviso no horário deles'),
-  reminders: t('Reminders you set', 'Lembretes que você define'), remindersSub: t('At the time you chose', 'No horário que você escolheu'),
-  preps: t('Preps with a time', 'Preparos com horário'),
-  review: t('Weekly review', 'Revisão da semana'), reviewTime: t('Monday, 8:00', 'Segunda, 8:00'), reviewShort: t('Mon 8:00', 'Seg 8:00'),
-  goalReview: t('Goal review dates', 'Datas de revisão das metas'),
-  badge: t('App icon badge', 'Número no ícone'), badgeSub: t('Late and left today', 'Atrasados e restantes de hoje'),
-  details: t('Details on the lock screen', 'Detalhes na tela bloqueada'), detailsOff: t('Shows “You have a reminder” instead', 'Mostra “Você tem um lembrete” no lugar'),
-  quiet: t('Quiet hours', 'Horário silencioso'), quietSub: t('Nothing between these times', 'Nada entre esses horários'), from: t('From', 'De'), to: t('To', 'Até'),
-  permission: t('Permission', 'Permissão'), allowed: t('Allowed', 'Permitida'), thisPhone: t('This phone', 'Este celular'), receiving: t('Receiving', 'Recebendo'),
-  last: t('Last delivered', 'Última entregue'), lastVal: t('Today, 8:00', 'Hoje, 8:00'),
-  oneFoot: t('Notifications go to one phone: the last one where you turned them on.', 'As notificações vão para um celular só: o último em que você as ativou.'),
+  what: t('What you get', 'O que você recebe'), phone: t('On this phone', 'Neste celular'), dev: t('Developer', 'Desenvolvedor'),
+  summary: t('Morning summary', 'Resumo da manhã'), weekdays: t('Weekdays only', 'Só em dias úteis'),
+  due: t('Items with a time', 'Itens com horário'), reminders: t('Reminders you set', 'Lembretes que você define'),
+  preps: t('Preps with a time', 'Preparos com horário'), review: t('Weekly review', 'Revisão da semana'),
+  monday: t('Monday', 'Segunda'), goalReview: t('Goal review dates', 'Datas de revisão das metas'),
+  badge: t('App icon badge', 'Número no ícone'), details: t('Details on the lock screen', 'Detalhes na tela bloqueada'),
+  quiet: t('Quiet hours', 'Horário silencioso'), from: t('From', 'De'), to: t('To', 'Até'), toWord: t('to', 'às'),
+  weekdaysShort: t('weekdays only', 'só dias úteis'),
   test: t('Send a test notification', 'Enviar notificação de teste'),
-  on: t('On', 'Ativado'), off: t('Off', 'Desativado'),
-  skipFoot: t('Skipped on days with nothing to do.', 'Pulado nos dias sem nada para fazer.'), preview: t('Preview', 'Prévia'),
-  askTitle: t('Turn on notifications', 'Ative as notificações'), askSub: t('Get your morning summary and reminders on this phone.', 'Receba o resumo da manhã e os lembretes neste celular.'), askBtn: t('Turn On', 'Ativar'),
-  allowRow: t('Allow notifications', 'Permitir notificações'),
+  ask: t('Turn on notifications', 'Ative as notificações'),
   alertT: t('“Smart Meta” Would Like to Send You Notifications', '“Smart Meta” Deseja Enviar Notificações'),
   alertB: t('Notifications may include alerts, sounds and icon badges. These can be configured in Settings.', 'As notificações podem incluir alertas, sons e indicadores de ícone. Elas podem ser configuradas em Ajustes.'),
   dont: t('Don’t Allow', 'Não Permitir'), allow: t('Allow', 'Permitir'),
   deniedTitle: t('Notifications are off for Smart Meta', 'As notificações estão desativadas para o Smart Meta'),
   deniedSub: t('Turn them back on in iPhone Settings:', 'Reative nos Ajustes do iPhone:'),
   steps: [t('Open <b>Settings</b>', 'Abra <b>Ajustes</b>'), t('Tap <b>Notifications</b>', 'Toque em <b>Notificações</b>'), t('Tap <b>Smart Meta</b>', 'Toque em <b>Smart Meta</b>'), t('Turn on <b>Allow Notifications</b>', 'Ative <b>Permitir Notificações</b>')],
-  deniedRow: t('Off in iPhone Settings', 'Desativadas no iPhone'),
-  noTitle: t('Sign in to get notifications', 'Entre para receber notificações'),
-  noSub: t('Notifications need an account, so they can reach you while the app is closed.', 'As notificações precisam de uma conta para chegar até você com o app fechado.'),
-  signIn: t('Sign in', 'Entrar'),
+  signIn: t('Sign in to get notifications', 'Entre para receber notificações'),
 })
+const hm = ([h, m]) => `${h}:${String(m).padStart(2, '0')}`
+const HOURS = [...Array(24).keys()]
+const MINUTES = [...Array(12).keys()].map((i) => i * 5)
 
 // ——— pieces ———
-const sw = (key, dis) => `<span class="sw ${state.on[key] && !dis ? "on" : ""} ${dis ? "dis" : ""}"></span>`
-const row = (key, label, sub, { child = false, dis = false, extra = '' } = {}) =>
-  `<div class="lrow ${child ? 'child' : ''} ${dis ? 'dim' : ''}" ${dis ? '' : `data-tog="${key}"`} style="cursor:${dis ? 'default' : 'pointer'}"><div class="text"><div>${label}</div>${sub ? `<div class="sub">${sub}</div>` : ''}</div>${extra}${sw(key, dis)}</div>`
-const valRow = (label, val, { child = false, chev = false, accent = false } = {}) =>
-  `<div class="lrow ${child ? 'child' : ''}"><span class="text">${label}</span><span class="val ${accent ? 'ok' : ''}">${val}${chev ? I.chevR : ''}</span></div>`
-const timeRow = (label, val, { child = true, open = false } = {}) =>
-  `<div class="lrow ${child ? 'child' : ''}"><span class="text">${label}</span><span class="tpill ${open ? 'on' : ''}">${val}</span></div>`
-const head = (l, back = l.back, title = l.title) => `<button style="color:var(--accent);font-size:16px;display:inline-flex;align-items:center;min-height:44px;margin:0 0 4px -6px">${svgIn('back', 'ico').replace('class="ico"', 'class="ico" style="width:22px;height:22px;stroke-width:2.2"')}${back}</button><h1 class="large-title" style="margin-bottom:16px">${title}</h1>`
-const sec = (title, body, foot = '') => `<p class="sec-head"><span>${title}</span></p><div class="list">${body}</div>${foot ? `<p class="sec-foot">${foot}</p>` : ''}`
-
-function wheel() {
-  const col = (vals) => `<div class="col">${vals.map((v, i) => `<span class="${['u2', 'u1', 'sel', 'f1', 'f2'][i]}">${v}</span>`).join('')}</div>`
-  return `<div class="wheel">${col(['6', '7', '8', '9', '10'])}<span class="colon">:</span>${col(['50', '55', '00', '05', '10'])}</div>`
+const sw = (key, dis) => `<span class="sw ${state.on[key] && !dis ? 'on' : ''} ${dis ? 'dis' : ''}" ${dis ? '' : `data-tog="${key}"`} role="switch" aria-checked="${!!state.on[key] && !dis}"></span>`
+const row = (key, label, dis) => `<div class="lrow ${dis ? 'dim' : ''}"><span class="text">${label}</span>${sw(key, dis)}</div>`
+const sec = (title, body) => `<p class="sec-head"><span>${title}</span></p><div class="list">${body}</div>`
+const head = (l) => `<button style="color:var(--accent);font-size:16px;display:inline-flex;align-items:center;min-height:44px;margin:0 0 4px -6px">${svgIn('back', 'ico').replace('class="ico"', 'class="ico" style="width:22px;height:22px;stroke-width:2.2"')}${l.back}</button><h1 class="large-title" style="margin-bottom:16px">${l.title}</h1>`
+const wheels = (key) => {
+  const [h, m] = state.times[key]
+  const col = (part, vals, sel) => `<div class="wheel" data-wheel="${key}:${part}" data-sel="${vals.indexOf(sel)}">${vals.map((v) => `<div class="wheel-item ${v === sel ? 'on' : ''}">${part === 'm' ? String(v).padStart(2, '0') : v}</div>`).join('')}</div>`
+  return `<div class="wheels">${col('h', HOURS, h)}<span class="wheels-colon">:</span>${col('m', MINUTES, m)}</div>`
 }
-function preview(l) {
-  return `<div class="preview-wrap"><div class="nprev"><span class="ic"></span><div class="tx"><div class="tp"><b>${t('Today: 6 things', 'Hoje: 6 itens')}</b><small>8:00</small></div>
-    <div>${t('Dentist appointment at 14:30, Renew gym membership (late), Gym and 3 more', 'Consulta no dentista às 14:30, Renovar a academia (atrasada), Academia e mais 3')}</div></div></div></div>`
+function valueOf(key, l) {
+  if (key === 'summary') return hm(state.times.summary) + (state.on.weekdays ? `, ${l.weekdaysShort}` : '')
+  if (key === 'review') return `${l.monday}, ${hm(state.times.review)}`
+  return `${hm(state.times.quietFrom)} ${l.toWord} ${hm(state.times.quietTo)}`
 }
-const iosAlert = (l) => `<div class="alert-wrap"><div class="alert"><div class="msg"><h3>${l.alertT}</h3><p>${l.alertB}</p></div>
-  <div class="btns" style="display:flex"><button style="border-right:0.5px solid var(--alert-line)">${l.dont}</button><button class="b" data-view-go="main" style="border-top:0">${l.allow}</button></div></div></div>`
-
-// The full list of switches, used by A and C (C without subtitles); `dis` greys them out when notifications can't be sent.
-function whatList(l, { subs = true, dis = false, timeOpen = false, pills = false } = {}) {
-  const on = state.on
-  let b = row('summary', l.summary, subs ? l.summarySub : '', { dis, extra: pills && on.summary ? `<span class="tpill ${timeOpen ? 'on' : ''}" style="margin-right:10px">8:00</span>` : '' })
-  if (on.summary && !dis) {
-    if (!pills) b += timeRow(l.time, '8:00', { open: timeOpen })
-    if (timeOpen) b += wheel()
-    b += row('weekdays', l.weekdays, '', { child: true })
+// A switch that has options: the value under the label when on, the options under the row when open.
+function optRow(key, label, l, dis) {
+  const on = state.on[key] && !dis
+  const open = on && state.open === key
+  let html = `<div class="lrow ${dis ? 'dim' : ''}"><button class="dt-text" ${on ? `data-open="${key}"` : 'disabled'}><span>${label}</span>${on ? `<span class="dt-value" data-value="${key}">${valueOf(key, l)}</span>` : ''}</button>${sw(key, dis)}</div>`
+  if (open) {
+    let inner = key === 'quiet'
+      ? `<div class="pair"><div><p>${l.from}</p>${wheels('quietFrom')}</div><div><p>${l.to}</p>${wheels('quietTo')}</div></div>`
+      : wheels(key)
+    if (key === 'summary') inner += `<div class="sub-row">${l.weekdays}${sw('weekdays')}</div>`
+    html += `<div class="dt-picker">${inner}</div>`
   }
-  b += row('due', l.due, subs ? l.dueSub : '', { dis })
-  b += row('reminders', l.reminders, subs ? l.remindersSub : '', { dis })
-  b += row('preps', l.preps, '', { dis })
-  b += row('review', l.review, '', { dis, extra: pills && on.review ? `<span class="tpill" style="margin-right:10px">${l.reviewShort}</span>` : '' })
-  if (on.review && !dis && !pills) b += timeRow(l.time, l.reviewTime)
-  b += row('goalReview', l.goalReview, '', { dis })
-  return sec(l.what, b)
+  return html
 }
-function phoneList(l, { subs = true, dis = false } = {}) {
-  let b = row('badge', l.badge, subs ? l.badgeSub : '', { dis })
-  b += row('details', l.details, !state.on.details ? l.detailsOff : '', { dis })
-  b += row('quiet', l.quiet, subs ? l.quietSub : '', { dis })
-  if (state.on.quiet && !dis) b += timeRow(l.from, '22:00') + timeRow(l.to, '7:00')
-  return sec(l.phone, b)
+function whatList(l, dis = false) {
+  return sec(l.what, optRow('summary', l.summary, l, dis) + row('due', l.due, dis) + row('reminders', l.reminders, dis) + row('preps', l.preps, dis)
+    + optRow('review', l.review, l, dis) + row('goalReview', l.goalReview, dis))
 }
-const statusList = (l) => sec(l.status, valRow(l.permission, l.allowed) + valRow(l.thisPhone, l.receiving) + valRow(l.last, `<span class="ok">✓</span> ${l.lastVal}`), l.oneFoot)
-const devList = (l) => sec(l.dev, `<div class="lrow link">${l.test}</div>`)
+const phoneList = (l, dis = false) => sec(l.phone, row('badge', l.badge, dis) + row('details', l.details, dis) + optRow('quiet', l.quiet, l, dis))
+const banner = (icon, text, act) => `<div class="banner" ${act}><span class="ic">${I[icon]}</span><div class="text"><b>${text}</b></div>${I.chevR}</div>`
 const screen = (inner) => `<div class="screen scroll" style="padding-top:calc(var(--st) + 4px)">${inner}</div>`
-const stateCard = (icon, title, sub, body, warn = false, center = false) =>
-  `<div class="card state-card ${center ? 'center-state' : ''}"><span class="ic ${warn ? 'warn' : ''}">${I[icon]}</span><h3>${title}</h3><p>${sub}</p>${body}</div>`
-const stepsOl = (l) => `<ol>${l.steps.map((s) => `<li>${s}</li>`).join('')}</ol>`
+const iosAlert = (l) => `<div class="alert-wrap"><div class="alert"><div class="msg"><h3>${l.alertT}</h3><p>${l.alertB}</p></div>
+  <div class="btns" style="display:flex"><button style="border-right:0.5px solid var(--alert-line)" data-go-view="denied">${l.dont}</button><button class="b" style="border-top:0" data-go-view="on">${l.allow}</button></div></div></div>`
 
-// ——— A: everything on one page ———
-function renderA(view) {
+function page(view) {
   const l = L()
-  if (view === 'main' || view === 'time') return screen(head(l) + whatList(l, { timeOpen: view === 'time' }) + phoneList(l) + statusList(l) + devList(l))
-  if (view === 'ask') return screen(head(l) + stateCard('bell', l.askTitle, l.askSub, `<button class="btn primary">${l.askBtn}</button>`) + whatList(l, { dis: true })) + iosAlert(l)
-  if (view === 'denied') return screen(head(l) + stateCard('bellOff', l.deniedTitle, l.deniedSub, stepsOl(l), true) + whatList(l, { dis: true }))
-  return screen(head(l) + stateCard('user', l.noTitle, l.noSub, `<button class="btn primary">${l.signIn}</button>`) + whatList(l, { dis: true }))
+  if (view === 'on') return screen(head(l) + whatList(l) + phoneList(l) + sec(l.dev, `<div class="lrow link">${l.test}</div>`))
+  if (view === 'ask') return screen(head(l) + banner('bell', l.ask, 'data-ask') + whatList(l, true) + phoneList(l, true)) + (state.alert ? iosAlert(l) : '')
+  if (view === 'denied') return screen(head(l) + `<div class="card state-card"><span class="ic">${I.bellOff}</span><h3>${l.deniedTitle}</h3><p>${l.deniedSub}</p><ol>${l.steps.map((s) => `<li>${s}</li>`).join('')}</ol></div>` + whatList(l, true) + phoneList(l, true))
+  return screen(head(l) + banner('user', l.signIn, '') + whatList(l, true) + phoneList(l, true))
 }
-
-// ——— B: a page per kind ———
-function renderB(view) {
-  const l = L()
-  const on = state.on
-  if (view === 'main') {
-    const kinds = valRow(l.summary, on.summary ? (on.weekdays ? t('8:00, weekdays', '8:00, dias úteis') : '8:00') : l.off, { chev: true })
-      + valRow(l.due, on.due ? l.on : l.off, { chev: true }) + valRow(l.reminders, on.reminders ? l.on : l.off, { chev: true })
-      + valRow(l.preps, on.preps ? l.on : l.off, { chev: true }) + valRow(l.review, on.review ? l.reviewShort : l.off, { chev: true })
-      + valRow(l.goalReview, on.goalReview ? l.on : l.off, { chev: true })
-    return screen(head(l) + sec(l.what, kinds) + phoneList(l, { subs: false }) + sec(l.status, valRow(l.thisPhone, `<span class="ok">${l.receiving}</span>`, { chev: true }), l.oneFoot) + devList(l))
-  }
-  if (view === 'time') {
-    let b = row('summary', l.summary, '')
-    if (on.summary) b += timeRow(l.time, '8:00', { child: false, open: true }) + wheel() + row('weekdays', l.weekdays, '')
-    return screen(head(l, l.title, l.summary) + `<div class="list">${b}</div><p class="sec-foot">${l.skipFoot}</p>` + `<p class="sec-head"><span>${l.preview}</span></p>` + preview(l))
-  }
-  const page = (card) => `<div class="screen" style="padding-top:calc(var(--st) + 4px)">${head(l)}${card}</div>`
-  if (view === 'ask') return page(stateCard('bell', l.askTitle, l.askSub, `<button class="btn primary big block" style="min-height:50px;width:100%">${l.askBtn}</button>`, false, true)) + iosAlert(l)
-  if (view === 'denied') return page(stateCard('bellOff', l.deniedTitle, l.deniedSub, stepsOl(l), true, true))
-  return page(stateCard('user', l.noTitle, l.noSub, `<button class="btn primary big block" style="min-height:50px;width:100%">${l.signIn}</button>`, false, true))
-}
-
-// ——— C: tomorrow first ———
-function renderC(view) {
-  const l = L()
-  const on = state.on
-  if (view === 'main' || view === 'time') {
-    const items = []
-    if (on.summary) items.push(['8:00', l.summary, t('6 things', '6 itens')])
-    if (on.due) items.push(['14:30', t('Dentist appointment', 'Consulta no dentista'), l.due])
-    if (on.reminders) items.push(['19:00', t('Update the CV', 'Atualizar o currículo'), t('Reminder', 'Lembrete')])
-    if (on.preps) items.push(['21:00', t('Pack the gym bag', 'Arrumar a mochila'), t('Prep', 'Preparo')])
-    const tl = `<div class="card tomorrow"><h3>${t('Tomorrow', 'Amanhã')}<span>${t('Thursday · ', 'Quinta · ')}${items.length} ${t('pushes', 'avisos')}</span></h3>
-      <ul class="tl">${items.map(([tm, w, k]) => `<li><span class="tm">${tm}</span><span class="what">${w}<small>${k}</small></span></li>`).join('') || `<li><span class="what">${t('Nothing planned', 'Nada planejado')}</span></li>`}</ul></div>`
-    const status = `<p class="sec-foot" style="margin-top:10px"><span class="ok">✓</span> ${t('Receiving on this phone · last today, 8:00', 'Recebendo neste celular · última hoje, 8:00')}</p>`
-    return screen(head(l) + tl + status + whatList(l, { subs: false, pills: true, timeOpen: view === 'time' }) + phoneList(l, { subs: false }) + `<p class="sec-foot">${l.oneFoot}</p>` + devList(l))
-  }
-  const master = (val, foot) => sec('', `<div class="lrow"><span class="text">${l.allowRow}</span>${val}</div>`, foot).replace('<p class="sec-head"><span></span></p>', '')
-  if (view === 'ask') return screen(head(l) + master(`<span class="sw"></span>`, l.askSub)) + iosAlert(l)
-  if (view === 'denied') return screen(head(l) + master(`<span class="val">${l.deniedRow}</span>`, `${l.deniedSub} ${l.steps.map((s) => s.replace(/<\/?b>/g, '')).join(' › ')}.`))
-  return screen(head(l) + sec('', `<div class="lrow link">${l.signIn}</div>`, l.noSub).replace('<p class="sec-head"><span></span></p>', ''))
-}
-const RENDER = [renderA, renderB, renderC]
 
 // ——— render ———
 const $ = (s) => document.querySelector(s)
 const isPhone = () => matchMedia('(max-width: 760px)').matches
-const phoneHtml = (i) => `${status()}${RENDER[i](state.view)}${home()}`
+const view = () => VIEWS.find((v) => v.key === state.view)
 function render() {
   if (state.theme) document.documentElement.dataset.theme = state.theme
   else delete document.documentElement.dataset.theme
   document.documentElement.lang = state.lang === 'en' ? 'en' : 'pt-BR'
   const dark = state.theme ? state.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
-  $('#steps').innerHTML = VIEWS.map((v, k) => `<button class="chip ${v.key === state.view ? 'on' : ''}" data-step="${v.key}" aria-pressed="${v.key === state.view}"><span class="n">${k + 1}</span>${v.label}${state.picks[v.key] ? `<span class="pk">${state.picks[v.key]}</span>` : ''}</button>`).join('')
+  $('#steps').innerHTML = VIEWS.map((v, k) => `<button class="chip ${v.key === state.view ? 'on' : ''}" data-step="${v.key}" aria-pressed="${v.key === state.view}"><span class="n">${k + 1}</span>${v.label}</button>`).join('')
   for (const b of document.querySelectorAll('#lang button')) b.classList.toggle('on', b.dataset.l === state.lang)
   for (const b of document.querySelectorAll('#theme button')) b.classList.toggle('on', b.dataset.t === (dark ? 'dark' : 'light'))
-  const scroller = $('#screens')
-  const keep = scroller.scrollLeft
-  scroller.innerHTML = OPTIONS.map((o, i) => {
-    const picked = state.picks[state.view] === LETTERS[i]
-    return `<article class="opt" data-i="${i}">
-      <div class="opt-head"><span class="letter">${LETTERS[i]}</span><h2 class="opt-name">${o.name}</h2></div>
-      <div class="device"><div class="scr"><div class="vp ${isPhone() ? 'bare' : ''}">${phoneHtml(i)}</div></div></div>
-      <p class="opt-note">${o.note}</p>
-      <button class="pick ${picked ? 'on' : ''}" data-pick="${LETTERS[i]}" aria-pressed="${picked}">${picked ? '✓ Picked' : 'Pick ' + LETTERS[i]}</button>
-      <button class="pick-all" data-all="${LETTERS[i]}">Use ${LETTERS[i]} for every situation</button>
-    </article>`
-  }).join('')
-  scroller.scrollLeft = keep
-  $('#dots').innerHTML = OPTIONS.map(() => '<i></i>').join('')
-  fit(); syncDots()
-  const done = VIEWS.filter((v) => state.picks[v.key])
-  $('#picks-text').innerHTML = done.length ? `<b>${done.length} of ${VIEWS.length} picked:</b> ` + done.map((v) => `${v.label} ${state.picks[v.key]}`).join(' · ') : 'No picks yet. Pick a layout per situation, or one for all.'
-  $('#copy').disabled = !done.length
+  $('#screens').innerHTML = `<article class="opt">
+    <div class="device"><div class="scr"><div class="vp ${isPhone() ? 'bare' : ''}">${status()}${page(state.view)}${home()}</div></div></div>
+    <p class="caption">${view().cap}</p></article>`
+  fit(); setWheels()
 }
-// A switch flips on every phone at once, each keeping where it was scrolled.
-function refresh() {
-  OPTIONS.forEach((_, i) => {
-    const vp = document.querySelector(`.opt[data-i="${i}"] .vp`)
-    const sc = vp.querySelector('.screen')
-    const top = sc ? sc.scrollTop : 0
-    vp.classList.add('still')
-    vp.innerHTML = phoneHtml(i)
-    const ns = vp.querySelector('.screen')
-    if (ns) ns.scrollTop = top
-  })
+// The phone again after a change, keeping its scroll and not replaying what already opened.
+function refresh(animateOpen = false) {
+  const vp = document.querySelector('.vp')
+  const top = vp.querySelector('.screen')?.scrollTop || 0
+  vp.classList.toggle('still', !animateOpen)
+  vp.innerHTML = `${status()}${page(state.view)}${home()}`
+  const sc = vp.querySelector('.screen')
+  if (sc) sc.scrollTop = top
+  setWheels()
+}
+function setWheels() {
+  for (const w of document.querySelectorAll('.wheel')) w.scrollTop = +w.dataset.sel * 36
 }
 function fit() {
   for (const scr of document.querySelectorAll('.scr')) {
@@ -783,49 +674,55 @@ function fit() {
     vp.style.width = '390px'; vp.style.height = h / s + 'px'; vp.style.transform = `scale(${s})`
   }
 }
-function syncDots() {
-  const s = $('#screens')
-  const i = Math.round(s.scrollLeft / Math.max(1, s.clientWidth))
-  document.querySelectorAll('#dots i').forEach((d, k) => d.classList.toggle('on', k === i))
-}
 function setView(key) {
   if (!VIEWS.some((v) => v.key === key)) return
-  state.view = key; store.set('view', key); render()
-  $('#steps').querySelector(`[data-step="${key}"]`)?.scrollIntoView({ inline: 'nearest', block: 'nearest' })
+  state.view = key; state.alert = false; store.set('view', key); render()
 }
+const save = () => { store.set('on', state.on); store.set('times', state.times) }
 
 // ——— events ———
 $('#steps').addEventListener('click', (e) => { const b = e.target.closest('[data-step]'); if (b) setView(b.dataset.step) })
 $('#lang').addEventListener('click', (e) => { const b = e.target.closest('[data-l]'); if (!b) return; state.lang = b.dataset.l; store.set('lang', state.lang); render() })
 $('#theme').addEventListener('click', (e) => { const b = e.target.closest('[data-t]'); if (!b) return; state.theme = b.dataset.t; store.set('theme', state.theme); render() })
 $('#screens').addEventListener('click', (e) => {
-  const pick = e.target.closest('[data-pick]')
-  if (pick) {
-    if (state.picks[state.view] === pick.dataset.pick) delete state.picks[state.view]
-    else state.picks[state.view] = pick.dataset.pick
-    store.set('picks', state.picks); render(); return
-  }
-  const all = e.target.closest('[data-all]')
-  if (all) { for (const v of VIEWS) state.picks[v.key] = all.dataset.all; store.set('picks', state.picks); render(); return }
   const tog = e.target.closest('[data-tog]')
-  if (tog) { state.on[tog.dataset.tog] = !state.on[tog.dataset.tog]; store.set('on', state.on); refresh(); return }
-  const g = e.target.closest('[data-view-go]')
-  if (g) setView(g.dataset.viewGo)
-})
-$('#screens').addEventListener('scroll', syncDots, { passive: true })
-$('#copy').addEventListener('click', async () => {
-  const text = 'S0 notification settings picks: ' + VIEWS.filter((v) => state.picks[v.key]).map((v) => `${v.label} ${state.picks[v.key]}`).join(', ')
-  const btn = $('#copy')
-  try {
-    await navigator.clipboard.writeText(text)
-    btn.textContent = 'Copied'
-    setTimeout(() => (btn.textContent = 'Copy picks'), 1600)
-  } catch {
-    const box = document.createElement('textarea')
-    box.className = 'fallback'; box.rows = 3; box.readOnly = true; box.value = text
-    $('#picks-text').replaceChildren(box); box.select()
+  if (tog) {
+    const key = tog.dataset.tog
+    state.on[key] = !state.on[key]
+    // As in Quick Add: turning on a switch with options opens them; turning it off closes them.
+    const opens = ['summary', 'review', 'quiet'].includes(key)
+    if (opens) state.open = state.on[key] ? key : state.open === key ? null : state.open
+    save(); refresh(opens && state.on[key]); return
   }
+  const open = e.target.closest('[data-open]')
+  if (open) { const k = open.dataset.open; const opening = state.open !== k; state.open = opening ? k : null; refresh(opening); return }
+  const item = e.target.closest('.wheel-item')
+  if (item) { const w = item.parentElement; w.scrollTo({ top: [...w.children].indexOf(item) * 36, behavior: 'smooth' }); return }
+  if (e.target.closest('[data-ask]')) { state.alert = true; refresh(true); return }
+  const g = e.target.closest('[data-go-view]')
+  if (g) setView(g.dataset.goView)
 })
+// A wheel settles on a value: the time and the blue value under the label follow.
+const wheelTimers = new Map()
+$('#screens').addEventListener('scroll', (e) => {
+  const w = e.target
+  if (!(w instanceof Element) || !w.classList.contains('wheel')) return
+  clearTimeout(wheelTimers.get(w))
+  wheelTimers.set(w, setTimeout(() => {
+    const i = Math.max(0, Math.min(w.children.length - 1, Math.round(w.scrollTop / 36)))
+    const [key, part] = w.dataset.wheel.split(':')
+    const vals = part === 'h' ? HOURS : MINUTES
+    const cur = [...state.times[key]]
+    cur[part === 'h' ? 0 : 1] = vals[i]
+    state.times[key] = cur
+    w.dataset.sel = i
+    ;[...w.children].forEach((c, k) => c.classList.toggle('on', k === i))
+    const vk = key.startsWith('quiet') ? 'quiet' : key
+    const v = document.querySelector(`[data-value="${vk}"]`)
+    if (v) v.textContent = valueOf(vk, L())
+    save()
+  }, 90))
+}, true)
 let resizeTimer, wasPhone = isPhone()
 addEventListener('resize', () => {
   clearTimeout(resizeTimer)
@@ -833,5 +730,4 @@ addEventListener('resize', () => {
 })
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', render)
 render()
-$('#steps .chip.on')?.scrollIntoView({ inline: 'center', block: 'nearest' })
 </script>

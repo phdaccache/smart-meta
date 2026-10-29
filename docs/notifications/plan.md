@@ -179,6 +179,18 @@ toast on Today; Requests is a Settings-style list. Numbers are the owner's scree
 
 - **No bell icon, no inbox.** Today is the inbox; any history stays on the server.
 - **Settings → Notifications** with a toggle per type, plus morning summary time and weekdays-only.
+  **Picked in S0 (2026-10-29), layout A:** one page, rows without subtitles. "What you get": Morning
+  summary, Items with a time, Reminders you set, Preps with a time, Weekly review, Goal review dates.
+  "On this phone": App icon badge, Details on the lock screen, Quiet hours. "Developer": Send a test
+  notification. **Switches with options work like Quick Add:** turning one on opens its options under
+  the row (summary: time wheel and Weekdays only; weekly review: time; quiet hours: from and to); its
+  value shows in blue under the label ("8:00, weekdays only", "Monday, 8:00", "22:00 to 7:00"), and
+  tapping the label opens or closes the options. No status section and no "one phone" note. Not
+  allowed yet: a "Turn on notifications" card like the sync banner (not dismissable), switches greyed
+  behind it; tapping it asks iOS. Turned off in iPhone Settings: a card with the four steps to turn
+  them back on. No account: a "Sign in to get notifications" card like the sync banner, opening the
+  email step. Mockup: [notification settings](mockups/notification-settings.html), artifact
+  [Smart Meta Notification Settings](https://claude.ai/artifact/4gN8wJzt7pzg5sXiKGzXTU).
 - **App icon badge:** toggle, **off by default**, counts **late + left today**. **Review not included.**
 - **Lock-screen details:** shown by default, can be turned off.
 - **Quiet hours:** available, off by default.
@@ -846,7 +858,7 @@ done (owner's rule, 2026-10-21). The merge to `main` comes after S6 (§13).
 - [x] Notification options: 2 to 3 per type (morning summary, due at a time, custom reminder, weekly
       review, prep, goal review date), on an iPhone lock screen and in a stack, English and Portuguese.
       Picked 2026-10-21, see §2 "Notification wording".
-- [ ] Settings → Notifications screen.
+- [x] Settings → Notifications screen. Picked 2026-10-29, see §2 "UI decisions".
 - [x] Avatars: several styles with many options, shown as a friend list. Picked 2026-10-29, see §6.4.
 - [x] Sign-in (email, code), passkey or data-password setup, Waiting for access, Requests (approve).
       Picked 2026-10-23, see §2 "Sign-in flow".
@@ -958,6 +970,9 @@ done (owner's rule, 2026-10-21). The merge to `main` comes after S6 (§13).
    shows a stage after it merges back. Options: test each stage on its own preview (a new Home Screen
    icon per stage), or merge into `notifications` before testing on the phone. Staging environment
    variables should then apply to all preview branches, not just `notifications`.
+3. **Diagnostics (spec NO-23):** the owner removed the status rows from Settings → Notifications.
+   Drop diagnostics, or keep them only in the Developer section (permission, subscription, last push
+   delivered)?
 
 Answered on 2026-10-21 (kept for the record): push the branch (done); a time set on a task or prep
 counts as asked for; commitments get once-only reminders for now; late items aren't re-sent; weekly
@@ -1007,3 +1022,6 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   on screens 8, 9 and 11. The mockup is final for S0; smaller changes happen while building.
 - **2026-10-29 (1):** avatar picked (§6.4): any emoji on a system color, gradient, solid or soft, with
   a light pattern; no ring, no initials.
+- **2026-10-29 (2):** Settings → Notifications picked (§2 "UI decisions"): one page, switches that open
+  their options like Quick Add, banner-style cards for "not allowed yet" and "no account". The owner
+  removed the status rows; where diagnostics (spec NO-23) go is an open question (§16).
