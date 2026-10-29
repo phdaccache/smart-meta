@@ -61,7 +61,7 @@ These are the contracts between stages. Changing one affects others.
 
 | Stage | Goal | Status |
 |---|---|---|
-| S0 | Mockups: notifications, avatars, sign-in screens, "Not synced yet" | In progress (notifications picked) |
+| S0 | Mockups: notifications, avatars, sign-in screens, "Not synced yet" | In progress (notifications and sign-in picked) |
 | S1 | Tests on the owner's iPhone (passkey, push, captcha) + staging setup | Not started |
 | S2 | Accounts | Not started |
 | S3 | Encryption | Not started |

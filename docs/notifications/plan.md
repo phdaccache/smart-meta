@@ -150,6 +150,31 @@ icon and name; the title is one line on the lock screen (cut with "…"), the bo
 Not settled by the mockup (decide in S5, ask the owner if unclear): the reminder body for a prep,
 a project as a whole, and a task with no goal and no due date.
 
+### Sign-in flow (picked in S0, 2026-10-23)
+
+Picked from the [sign-in mockup](mockups/sign-in.html) (artifact:
+[Smart Meta Sign-in](https://claude.ai/artifact/9PVnMWvUbiqxLbjPRZzqnf)), which now shows only the
+picked flow. Style: **full screens like the intro** (option B) with the bar's title ("Sign in", "Your
+data") on the sign-in and data steps; the "Not now" popup is an iOS action sheet; "You're in" is only a
+toast on Today; Requests is a Settings-style list. Numbers are the owner's screen numbers.
+
+| # | Screen | Wording (EN / PT) |
+|---|---|---|
+| 1 | **Activate notifications**, full screen right after "Not only goals", bell icon | "Activate notifications" / "Ative as notificações"; "Sign in with your email to back up your goals and get reminders."; above the button "Your goals are end-to-end encrypted." / "Suas metas são criptografadas de ponta a ponta."; "Continue with email", "Not now" |
+| 1 | **Banner on Today** until the person syncs: cloud icon, no subtitle | "Sync and get notifications" / "Sincronize e receba notificações". **Swipe left** uncovers a grey "Hide" pill (like deleting a task). Hidden, it comes back after **a day**, then **a week**, then **a month**, then never (Settings still offers sign-in) |
+| 2 | "Not now": action sheet over screen 1 | "Continue without an account?"; "You get no reminders and no backup. You can sign in later in Settings." / "Você fica sem lembretes e sem backup. Pode entrar depois em Ajustes."; Sign in, Continue without an account, Cancel |
+| 12 | **In Safari on iPhone**, instead of screen 3 | "Sign in from the app"; "Open Smart Meta from your Home Screen to sign in there."; a card with 1 Tap Share (with the share icon), 2 Add to Home Screen, 3 Open Smart Meta and sign in |
+| 3 | Email, bar "Sign in" | Title only: "What's your email?"; "Send code" |
+| 4 | Code, bar "Sign in" | "Enter the code"; sent to + check spam; iOS offers the code from Mail; resend timer; "Use a different email" |
+| 5 | Face ID, bar "Your data" | "Lock your data with Face ID"; "Face ID keeps your goals encrypted when they sync. Without it, they can't be synced safely." (Claude's wording for the owner's idea); "Face ID isn't working?" |
+| 6 | iOS passkey sheet | Drawn by iOS |
+| 7 | Data password, bar "Your data" | "Couldn't use Face ID. Set up a password with your password manager to encrypt your data."; email field above the password field; no warning line |
+| 8 | Waiting for access | "Smart Meta is invite-only for now. We'll let you know when you're accepted."; above the button "Meanwhile you can still use the app."; "Go to Today". Approval then shows only screen 10 |
+| 9 | List is full | "Smart Meta is invite-only for now. You're on the waiting list and get in when a spot opens."; same line and button as 8 |
+| 10 | You're in | Toast on Today: "You're in. Your goals are backed up." |
+| 11 | New phone | "Use Face ID to open your goals. Your passkey came along with your iCloud Keychain." |
+| 13 | Requests (owner) | Settings style; "Approving lets them sync and turn on reminders." |
+
 ### UI decisions
 
 - **No bell icon, no inbox.** Today is the inbox; any history stays on the server.
@@ -344,8 +369,10 @@ Sign-up and sign-in are **the same screen**: the user types an email and gets a 
 no account yet, Supabase creates one; that is the sign-up.
 
 1. Onboarding as today → the user creates their **first goal**.
-2. Card: "Keep your goals safe". Email field, or "Not now" (popup: no notifications without an account;
-   data only on this phone).
+2. After the last onboarding screen ("Not only goals"): a full screen, "Activate notifications", with
+   "Continue with email" or "Not now" (popup: no reminders and no backup without an account). Until the
+   person syncs, Today shows a **"Sync and get notifications" banner** they can swipe away. Screens and
+   wording: §2 "Sign-in flow".
 3. **Captcha** (Cloudflare Turnstile, usually invisible) checks it's a person.
 4. Supabase sends a **6-digit code** from the app's Gmail account. The user types it in the app (no
    link, so nothing opens Safari).
@@ -418,11 +445,12 @@ password manager creates and the owner never sees.)
 
 1. Tutorial as today, including the install screen.
 2. First goal.
-3. "Keep your goals safe" → email code → passkey → waiting or in.
+3. "Activate notifications" (after "Not only goals") → email code → passkey → waiting or in.
 4. Notifications permission asked later, at a useful moment (first time a time or reminder is set, or
    from Settings).
-5. In Safari on iPhone (not installed), the sign-in card says "Open Smart Meta from your Home Screen to
-   sign in" (Safari and the Home Screen app keep separate data).
+5. In Safari on iPhone (not installed), "Continue with email" opens "Sign in from the app" instead of the
+   email step: open Smart Meta from the Home Screen (push only works there, and Safari and the Home
+   Screen app keep separate data).
 
 ### 6.6 Recovery after losing the phone
 
@@ -814,7 +842,8 @@ done (owner's rule, 2026-10-21). The merge to `main` comes after S6 (§13).
       Picked 2026-10-21, see §2 "Notification wording".
 - [ ] Settings → Notifications screen.
 - [ ] Avatars: several styles with many options, shown as a friend list.
-- [ ] Sign-in (email, code), passkey or data-password setup, Waiting for access, Requests (approve).
+- [x] Sign-in (email, code), passkey or data-password setup, Waiting for access, Requests (approve).
+      Picked 2026-10-23, see §2 "Sign-in flow".
 - [ ] "Not synced yet" indicator.
 - **Done when:** the owner has picked an option for each.
 
@@ -964,3 +993,7 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   cut from `notifications` and merged back. Mockup order set (notifications, sign-in, avatars,
   Settings → Notifications, "Not synced yet"). Notification wording picked (§2): summary A, due A,
   reminder C with the goal for goal items and no why, weekly review B, prep A, goal review B.
+- **2026-10-23 (1):** sign-in flow picked (§2 "Sign-in flow"): full screens like the intro, starting
+  with "Activate notifications" after "Not only goals", plus a swipe-away "Sync and get notifications"
+  banner on Today (back after a day, a week, a month, then never). In Safari, "Sign in from the app"
+  replaces the email step. Spec AC-8 and AC-9 updated with the owner's changes. `origin/main` merged in.

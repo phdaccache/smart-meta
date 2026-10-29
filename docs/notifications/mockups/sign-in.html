@@ -92,16 +92,8 @@ h1, h2, h3, p { margin: 0; }
 .letter { flex: none; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: var(--surface-2); font-weight: 700; font-size: 14px; transform: translateY(-1px); }
 .opt-name { font: 600 17px/1.3 var(--font); letter-spacing: -0.01em; }
 .opt-note { width: var(--dev-w); font-size: 14px; color: var(--ink-2); line-height: 1.45; text-wrap: pretty; }
-.pick {
-  width: var(--dev-w); min-height: 44px; border-radius: 12px; font-weight: 600; font-size: 15px;
-  background: var(--surface-2); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out), transform 0.12s ease-out;
-}
-.pick:active { transform: scale(0.98); }
-.pick.on { background: var(--accent); color: var(--accent-ink); }
-.pick-all { width: var(--dev-w); font-size: 13px; color: var(--accent); font-weight: 500; min-height: 28px; margin-top: -6px; }
-.system-note { width: var(--dev-w); font-size: 13px; color: var(--ink-2); text-align: center; }
-
+.dots { display: none; }
+.short { display: none; }
 .device {
   width: var(--dev-w); aspect-ratio: 390 / 844; border-radius: 52px; padding: 11px;
   background: var(--frame); box-shadow: inset 0 0 0 1.5px var(--frame-edge), 0 20px 50px rgb(0 0 0 / 0.18); position: relative;
@@ -111,22 +103,6 @@ h1, h2, h3, p { margin: 0; }
 .vp { position: absolute; top: 0; left: 0; width: 390px; height: 844px; transform-origin: 0 0; overflow: hidden; --st: 54px; --sb: 34px; }
 .vp.bare { --st: 14px; --sb: 10px; }
 
-.picks {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
-  padding: 12px max(24px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(24px, env(safe-area-inset-left, 0px));
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
-  -webkit-backdrop-filter: blur(20px) saturate(1.8); backdrop-filter: blur(20px) saturate(1.8); border-top: 1px solid var(--line);
-}
-.picks-in { max-width: 1152px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
-.picks-text { flex: 1; min-width: 0; font-size: 14px; color: var(--ink-2); }
-.picks-text b { color: var(--ink); font-weight: 600; }
-.copy { flex: none; min-height: 40px; padding: 0 16px; border-radius: 12px; font-weight: 600; font-size: 15px; background: var(--accent); color: var(--accent-ink); }
-.copy:disabled { opacity: 0.4; cursor: default; }
-.copy:active:not(:disabled) { opacity: 0.6; }
-.fallback { width: 100%; font: 13px/1.4 var(--font); padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); resize: none; }
-.dots { display: none; }
-.short { display: none; }
-
 @media (min-width: 1100px) {
   .page {
     max-width: 1560px; padding-block: 24px; column-gap: 44px; row-gap: 18px;
@@ -135,15 +111,13 @@ h1, h2, h3, p { margin: 0; }
   }
   .head { grid-area: head; }
   .controls { grid-area: controls; align-content: start; gap: 14px; }
-  .screens { grid-area: screens; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .screens { grid-area: screens; grid-template-columns: repeat(var(--n, 1), minmax(0, 390px)); justify-content: center; column-gap: 40px; }
   .opt { --dev-w: min(100%, 390px, calc((100dvh - 236px) * 0.4621)); }
   .opt-note { min-height: 4.35em; }
   .steps { flex-direction: column; align-items: stretch; gap: 4px; }
   .chip { justify-content: flex-start; }
   .toggles { flex-direction: column; }
   .toggles .segmented button { flex: 1; }
-  .picks { grid-area: picks; position: static; padding: 0; background: none; border: 0; backdrop-filter: none; -webkit-backdrop-filter: none; align-self: end; }
-  .picks-in { flex-direction: column; align-items: stretch; gap: 10px; }
 }
 
 @media (max-width: 760px) {
@@ -156,12 +130,9 @@ h1, h2, h3, p { margin: 0; }
   .device { order: 1; width: 100%; flex: 1; min-height: 0; aspect-ratio: auto; border-radius: 0; padding: 0; background: none; box-shadow: none; }
   .device::before { display: none; }
   .scr { border-radius: 0; border-bottom: 1px solid var(--line); }
-  .opt-head, .opt-note, .pick, .pick-all, .system-note { order: 2; width: auto; align-self: stretch; margin-inline: 16px; }
+  .opt-head, .opt-note { order: 2; width: auto; align-self: stretch; margin-inline: 16px; }
   .opt-head { margin-top: 10px; }
   .opt-note { margin-top: 2px; font-size: 13px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
-  .pick { margin-top: 8px; min-height: 40px; }
-  .pick-all { margin-top: 2px; }
-  .system-note { margin-block: 10px 4px; }
   .dots { order: 2; display: flex; justify-content: center; gap: 7px; padding: 8px 0 2px; }
   .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); transition: background 0.2s var(--ease-out), transform 0.2s var(--ease-out); }
   .dots i.on { background: var(--ink); transform: scale(1.15); }
@@ -173,9 +144,6 @@ h1, h2, h3, p { margin: 0; }
   .toggles .segmented button { flex: 1; padding: 0 4px; }
   .long { display: none; }
   .short { display: inline; }
-  .picks { position: static; order: 4; border-top: 0; background: none; backdrop-filter: none; -webkit-backdrop-filter: none; padding: 8px 16px calc(10px + env(safe-area-inset-bottom, 0px)); }
-  .picks-text { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .copy { min-height: 36px; font-size: 14px; padding: 0 14px; }
 }
 
 /* ——— inside the phone: the app's own components ——— */
@@ -431,13 +399,41 @@ h1, h2, h3, p { margin: 0; }
   .sheet, .action-sheet, .syssheet, .alert, .toast, .backdrop, .alert-wrap, .faceid-glyph { animation: fade 0.2s ease both; }
   .caret { animation: none; }
 }
+
+/* ——— the picked flow: B pages with a title in the bar, the sync banner that swipes away ——— */
+.page-b .top.bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+.page-b .top.bar > :last-child { justify-self: end; }
+.page-b .top .ttl { font-size: 17px; font-weight: 600; }
+.page-b .form .input.ro { color: var(--ink-2); background: var(--surface); }
+.list.steps-card { width: 100%; margin-top: 28px; text-align: left; }
+.lrow .inline-ic { display: inline-flex; vertical-align: -3px; margin-left: 6px; color: var(--accent); }
+.lrow .inline-ic svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.swipe-wrap { display: grid; grid-template-rows: 1fr; margin-bottom: 12px; transition: grid-template-rows 0.3s var(--ease-out), margin-bottom 0.3s var(--ease-out), opacity 0.2s ease; }
+.swipe-wrap > .in { position: relative; overflow: hidden; min-height: 0; border-radius: var(--radius-sm); }
+.swipe-wrap.gone { grid-template-rows: 0fr; margin-bottom: 0; opacity: 0; }
+.banner.sw { margin: 0; position: relative; z-index: 1; touch-action: pan-y; -webkit-user-select: none; user-select: none; cursor: grab;
+  transform: translateX(var(--x, 0px)); transition: transform 0.35s var(--ease-drawer); }
+.banner.sw.dragging { transition: none; cursor: grabbing; }
+.banner.sw b { font-size: 16px; }
+.hide-act { position: absolute; top: 0; bottom: 0; right: 0; width: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; opacity: var(--bin, 0); transform: scale(calc(0.6 + 0.4 * var(--bin, 0))); }
+.hide-pill { width: 60px; height: 34px; border-radius: 17px; background: #8e8e93; color: #fff; display: grid; place-items: center; }
+.hide-pill svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.4; fill: none; stroke-linecap: round; }
+.hide-lbl { font-size: 12px; color: var(--ink-2); line-height: 1; }
+.caption { width: var(--dev-w); font-size: 14px; color: var(--ink-2); line-height: 1.45; text-wrap: pretty; }
+.caption b { color: var(--ink); font-weight: 600; }
+.again { width: var(--dev-w); font-size: 14px; color: var(--accent); font-weight: 500; min-height: 32px; margin-top: -6px; }
+@media (max-width: 760px) {
+  .caption, .again { order: 2; width: auto; align-self: stretch; margin-inline: 16px; }
+  .caption { margin-top: 10px; font-size: 13px; }
+  .again { margin-top: 0; text-align: left; }
+}
 </style>
 
 <div class="page">
   <header class="head">
     <p class="eyebrow">S0 mockups · 2 of 5</p>
     <h1 class="large-title">Sign-in</h1>
-    <p class="lede">Every step of signing in, in three styles. Pick a style per step, or one for all. Buttons inside the phones move to the next step.</p>
+    <p class="lede">The flow as you picked it on 23 October, with your changes. Buttons inside the phones move to the next step.</p>
   </header>
   <div class="controls">
     <nav class="steps" id="steps" aria-label="Step"></nav>
@@ -452,106 +448,87 @@ h1, h2, h3, p { margin: 0; }
   </div>
   <section class="screens" id="screens" aria-live="polite"></section>
   <div class="dots" id="dots" aria-hidden="true"></div>
-  <footer class="picks">
-    <div class="picks-in">
-      <p class="picks-text" id="picks-text"></p>
-      <button class="copy" id="copy">Copy picks</button>
-    </div>
-  </footer>
 </div>
 
 <script>
 // ——— state ———
 const store = {
-  get(k, d) { try { const v = localStorage.getItem('s0s.' + k); return v === null ? d : JSON.parse(v) } catch { return d } },
-  set(k, v) { try { localStorage.setItem('s0s.' + k, JSON.stringify(v)) } catch {} },
+  get(k, d) { try { const v = localStorage.getItem('s0f.' + k); return v === null ? d : JSON.parse(v) } catch { return d } },
+  set(k, v) { try { localStorage.setItem('s0f.' + k, JSON.stringify(v)) } catch {} },
 }
-const state = { step: store.get('step', 'prompt'), lang: store.get('lang', 'en'), theme: store.get('theme', null), picks: store.get('picks', {}) }
+const state = { step: store.get('step', 'prompt'), lang: store.get('lang', 'en'), theme: store.get('theme', null) }
 const t = (en, pt) => (state.lang === 'en' ? en : pt)
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
 const EMAIL = 'ana.souza@gmail.com'
 
+// The owner's numbering from the first round, kept so feedback can point at "screen 7".
 const STEPS = [
-  { key: 'prompt', label: 'Keep your goals safe' },
-  { key: 'notnow', label: '“Not now” popup' },
-  { key: 'email', label: 'Email' },
-  { key: 'code', label: 'Code' },
-  { key: 'passkey', label: 'Face ID setup' },
-  { key: 'faceid', label: 'Face ID prompt (iOS)', system: true },
-  { key: 'datapw', label: 'Data password (fallback)' },
-  { key: 'waiting', label: 'Waiting for access' },
-  { key: 'full', label: 'List is full' },
-  { key: 'in', label: 'You’re in' },
-  { key: 'unlock', label: 'New phone: unlock' },
-  { key: 'safari', label: 'Opened in Safari' },
-  { key: 'requests', label: 'Requests (you)' },
+  { key: 'prompt', n: 1, label: 'Activate notifications' },
+  { key: 'notnow', n: 2, label: '“Not now”' },
+  { key: 'safari', n: 12, label: 'In Safari (instead of 3)' },
+  { key: 'email', n: 3, label: 'Email' },
+  { key: 'code', n: 4, label: 'Code' },
+  { key: 'passkey', n: 5, label: 'Face ID setup' },
+  { key: 'faceid', n: 6, label: 'Face ID prompt (iOS)' },
+  { key: 'datapw', n: 7, label: 'Data password' },
+  { key: 'waiting', n: 8, label: 'Waiting for access' },
+  { key: 'full', n: 9, label: 'List is full' },
+  { key: 'in', n: 10, label: 'You’re in' },
+  { key: 'unlock', n: 11, label: 'New phone: unlock' },
+  { key: 'requests', n: 13, label: 'Requests (you)' },
 ]
 if (!STEPS.some((s) => s.key === state.step)) state.step = 'prompt'
-const OPTIONS = [
-  { name: 'Sheet over Today', note: 'A card on Today starts it; the steps run in a sheet, like adding a goal, with Today behind.' },
-  { name: 'Full screen, like the intro', note: 'Each step is its own centered page with one big button, like the rest of onboarding.' },
-  { name: 'Settings style', note: 'Like signing in to an Apple account: grouped rows, Next at the top right, quiet text below.' },
-]
-const LETTERS = ['A', 'B', 'C']
-// Where each screen's main and second button lead, so the phones can be tapped through.
-const NEXT = { prompt: ['email', 'notnow'], notnow: ['email', 'prompt'], email: ['code'], code: ['passkey', 'email'], passkey: ['faceid', 'datapw'], faceid: ['waiting'], datapw: ['waiting'], waiting: ['in'], full: ['in'], in: ['unlock'], unlock: ['faceid', 'datapw'], safari: ['requests'], requests: ['prompt'] }
+const NEXT = { prompt: ['email', 'notnow'], notnow: ['email', 'prompt'], safari: ['email'], email: ['code'], code: ['passkey', 'email'], passkey: ['faceid', 'datapw'], faceid: ['waiting'], datapw: ['waiting'], waiting: ['in'], full: ['in'], in: ['unlock'], unlock: ['faceid', 'datapw'], requests: ['prompt'] }
 
 // ——— copy, English and Portuguese ———
 const C = {
-  prompt: () => ({ title: t('Keep your goals safe', 'Proteja suas metas'),
+  prompt: () => ({ title: t('Activate notifications', 'Ative as notificações'),
     sub: t('Sign in with your email to back up your goals and get reminders.', 'Entre com seu e-mail para guardar suas metas e receber lembretes.'),
-    foot: t('Encrypted on your phone. Only you can read them, not even the app’s creator.', 'Criptografadas no seu celular. Só você consegue ler, nem quem criou o app.'),
+    foot: t('Your goals are end-to-end encrypted.', 'Suas metas são criptografadas de ponta a ponta.'),
     primary: t('Continue with email', 'Continuar com e-mail'), secondary: t('Not now', 'Agora não') }),
+  banner: () => t('Sync and get notifications', 'Sincronize e receba notificações'),
+  hide: () => t('Hide', 'Ocultar'),
   notnow: () => ({ title: t('Continue without an account?', 'Continuar sem conta?'),
-    sub: t('Without an account there are no reminders, and your goals stay only on this phone. You can sign in later in Settings.', 'Sem uma conta não há lembretes, e suas metas ficam só neste celular. Você pode entrar depois em Ajustes.'),
-    primary: t('Sign in', 'Entrar'), secondary: t('Continue without an account', 'Continuar sem conta') }),
-  email: () => ({ title: t('What’s your email?', 'Qual é o seu e-mail?'),
-    sub: t('We’ll send you a 6-digit code. No password.', 'Vamos enviar um código de 6 dígitos. Sem senha.'),
-    label: t('Email', 'E-mail'), primary: t('Send code', 'Enviar código') }),
+    sub: t('You get no reminders and no backup. You can sign in later in Settings.', 'Você fica sem lembretes e sem backup. Pode entrar depois em Ajustes.'),
+    primary: t('Sign in', 'Entrar'), secondary: t('Continue without an account', 'Continuar sem conta'), cancel: t('Cancel', 'Cancelar') }),
+  email: () => ({ title: t('What’s your email?', 'Qual é o seu e-mail?'), label: t('Email', 'E-mail'), primary: t('Send code', 'Enviar código') }),
   code: () => ({ title: t('Enter the code', 'Digite o código'),
     sub: t(`Sent to ${EMAIL}. If it’s not there in a minute, check spam.`, `Enviado para ${EMAIL}. Se não chegar em um minuto, confira o spam.`),
-    label: t('Code', 'Código'), primary: t('Continue', 'Continuar'), resend: t('Send a new code in 0:42', 'Enviar novo código em 0:42'), other: t('Use a different email', 'Usar outro e-mail') }),
+    primary: t('Continue', 'Continuar'), resend: t('Send a new code in 0:42', 'Enviar novo código em 0:42'), other: t('Use a different email', 'Usar outro e-mail') }),
   passkey: () => ({ title: t('Lock your data with Face ID', 'Proteja seus dados com Face ID'),
-    sub: t('Your goals are encrypted on this phone. Face ID makes a passkey that unlocks them, kept in your iCloud Keychain, so a new iPhone can open them too.', 'Suas metas são criptografadas neste celular. O Face ID cria uma chave-senha que as desbloqueia, guardada nas Chaves do iCloud, então um iPhone novo também consegue abrir.'),
-    foot: t('Not even the app’s creator can read your data.', 'Nem quem criou o app consegue ler seus dados.'),
+    sub: t('Face ID keeps your goals encrypted when they sync. Without it, they can’t be synced safely.', 'O Face ID mantém suas metas criptografadas na sincronização. Sem ele, não dá para sincronizar com segurança.'),
     primary: t('Continue with Face ID', 'Continuar com Face ID'), secondary: t('Face ID isn’t working?', 'O Face ID não funciona?') }),
   datapw: () => ({ title: t('Save a data password', 'Salve uma senha de dados'),
-    sub: t('Face ID can’t be used here, so your password manager makes a strong password that unlocks your data, and keeps it. You never type or remember it.', 'O Face ID não pode ser usado aqui, então seu gerenciador de senhas cria uma senha forte que desbloqueia seus dados e guarda para você. Você nunca precisa digitar nem lembrar.'),
-    label: t('Data password', 'Senha de dados'), strong: t('Strong Password', 'Senha Forte'),
-    foot: t('Save it when asked. Without it, a new phone can’t open your data.', 'Salve quando pedir. Sem ela, um celular novo não abre seus dados.'),
+    sub: t('Couldn’t use Face ID. Set up a password with your password manager to encrypt your data.', 'Não foi possível usar o Face ID. Crie uma senha com seu gerenciador de senhas para criptografar seus dados.'),
+    email: t('Email', 'E-mail'), label: t('Data password', 'Senha de dados'), strong: t('Strong Password', 'Senha Forte'),
     primary: t('Save and continue', 'Salvar e continuar') }),
   waiting: () => ({ title: t('Waiting for access', 'Aguardando acesso'),
-    sub: t('Smart Meta is invite-only for now. As soon as you’re let in, the app tells you.', 'O Smart Meta é só para convidados por enquanto. Assim que seu acesso for liberado, o app avisa.'),
-    foot: t('Meanwhile everything keeps working on this phone.', 'Enquanto isso, tudo continua funcionando neste celular.'),
+    sub: t('Smart Meta is invite-only for now. We’ll let you know when you’re accepted.', 'O Smart Meta é só para convidados por enquanto. Avisamos quando seu acesso for liberado.'),
+    foot: t('Meanwhile you can still use the app.', 'Enquanto isso, você pode continuar usando o app.'),
     rows: [[t('Email', 'E-mail'), EMAIL], [t('Asked', 'Pedido em'), t('Today, 9:41', 'Hoje, 9:41')], [t('Status', 'Situação'), t('Waiting', 'Aguardando')]],
-    primary: t('Back to my goals', 'Voltar às minhas metas') }),
+    primary: t('Go to Today', 'Ir para Hoje') }),
   full: () => ({ title: t('The list is full for now', 'A lista está cheia por enquanto'),
-    sub: t('Smart Meta has room for 100 people right now. You’re on the waiting list and get in when a spot opens.', 'O Smart Meta tem espaço para 100 pessoas agora. Você está na fila e entra quando abrir uma vaga.'),
-    foot: t('Meanwhile everything keeps working on this phone.', 'Enquanto isso, tudo continua funcionando neste celular.'),
+    sub: t('Smart Meta is invite-only for now. You’re on the waiting list and get in when a spot opens.', 'O Smart Meta é só para convidados por enquanto. Você está na fila e entra quando abrir uma vaga.'),
+    foot: t('Meanwhile you can still use the app.', 'Enquanto isso, você pode continuar usando o app.'),
     rows: [[t('Email', 'E-mail'), EMAIL], [t('Asked', 'Pedido em'), t('Today, 9:41', 'Hoje, 9:41')], [t('Status', 'Situação'), t('On the waiting list', 'Na fila')]],
-    primary: t('Back to my goals', 'Voltar às minhas metas') }),
-  in: () => ({ title: t('You’re in', 'Acesso liberado'),
-    sub: t('Your goals are backed up and encrypted. Turn on reminders whenever you like, in Settings.', 'Suas metas estão guardadas e criptografadas. Ative os lembretes quando quiser, em Ajustes.'),
-    toast: t('You’re in. Your goals are backed up.', 'Acesso liberado. Suas metas estão guardadas.'),
-    primary: t('Done', 'Pronto') }),
+    primary: t('Go to Today', 'Ir para Hoje') }),
+  in: () => ({ toast: t('You’re in. Your goals are backed up.', 'Acesso liberado. Suas metas estão guardadas.') }),
   unlock: () => ({ title: t('Unlock your data', 'Desbloqueie seus dados'),
-    sub: t('Use Face ID to open your goals on this phone. Your passkey came along with your iCloud Keychain.', 'Use o Face ID para abrir suas metas neste celular. Sua chave-senha veio junto com as Chaves do iCloud.'),
+    sub: t('Use Face ID to open your goals. Your passkey came along with your iCloud Keychain.', 'Use o Face ID para abrir suas metas. Sua chave-senha veio junto com as Chaves do iCloud.'),
     primary: t('Unlock with Face ID', 'Desbloquear com Face ID'), secondary: t('Use the data password instead', 'Usar a senha de dados') }),
   safari: () => ({ title: t('Sign in from the app', 'Entre pelo app'),
-    sub: t('Safari and the app on your Home Screen keep separate data. Open Smart Meta from your Home Screen to sign in there.', 'O Safari e o app da Tela de Início guardam dados separados. Abra o Smart Meta pela Tela de Início para entrar por lá.'),
+    sub: t('Open Smart Meta from your Home Screen to sign in there.', 'Abra o Smart Meta pela Tela de Início para entrar por lá.'),
     steps: [t('Tap Share', 'Toque em Compartilhar'), t('Add to Home Screen', 'Adicionar à Tela de Início'), t('Open Smart Meta and sign in', 'Abra o Smart Meta e entre')] }),
   requests: () => ({ title: t('Requests', 'Pedidos'), waiting: t('Waiting', 'Aguardando'), approved: t('Approved', 'Aprovados'),
     approve: t('Approve', 'Aprovar'), of: t('of 100 members', 'de 100 membros'),
     people: [['ana.souza@gmail.com', t('2 min ago', 'há 2 min')], ['joao.pereira@hotmail.com', t('Yesterday', 'Ontem')], ['lu.martins@icloud.com', t('Monday', 'Segunda')]],
     recent: [['marina.costa@gmail.com', t('Oct 18', '18 de out.')], ['rafa.lima@outlook.com', t('Oct 15', '15 de out.')]],
-    foot: t('Approving lets them sync and turn on reminders. Only you see this, in Developer mode.', 'Aprovar libera a sincronização e os lembretes. Só você vê isto, no modo Desenvolvedor.'),
+    foot: t('Approving lets them sync and turn on reminders.', 'Aprovar libera a sincronização e os lembretes.'),
     back: t('Settings', 'Ajustes') }),
   faceid: () => ({ title: t(`Save a passkey for “${EMAIL}”?`, `Salvar uma chave-senha para “${EMAIL}”?`),
     sub: t('Passkeys are saved in your iCloud Keychain and are available for signing in on all your devices.', 'As chaves-senha são salvas nas Chaves do iCloud e ficam disponíveis para entrar em todos os seus dispositivos.'),
     primary: t('Continue', 'Continuar'), other: t('Other Options', 'Outras Opções') }),
 }
-
-// ——— icons ———
 const I = {
   signal: '<svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>',
   wifi: '<svg viewBox="0 0 16 12"><path d="M8 2.2c2.3 0 4.4.9 6 2.4l1.2-1.3C13.3 1.5 10.8.4 8 .4S2.7 1.5.8 3.3L2 4.6c1.6-1.5 3.7-2.4 6-2.4zm0 3.6c1.3 0 2.5.5 3.4 1.3l1.2-1.3C11.4 4.7 9.8 4 8 4s-3.4.7-4.6 1.8l1.2 1.3c.9-.8 2.1-1.3 3.4-1.3zm0 3.6c.4 0 .8.2 1.1.4L8 11.6 6.9 9.8c.3-.2.7-.4 1.1-.4z"/></svg>',
@@ -629,19 +606,6 @@ function keyboard(kind) {
 }
 const hasKb = (step) => step === 'email' || step === 'code'
 
-function field(step, c) {
-  if (step === 'email') return `<div><p class="field-label">${c.label}</p><div class="input focus">${EMAIL}<span class="caret"></span></div></div>`
-  if (step === 'code') return `<div class="codes gap">${['4', '8', '2', '9', '', ''].map((d, i) => `<span class="${i === 4 ? 'focus' : ''}">${d}${i === 4 ? '<span class="caret"></span>' : ''}</span>`).join('')}</div>`
-  if (step === 'datapw') return `<div><p class="field-label">${c.label}</p><div class="input strong">kifzuv-7nykha-Bodpej<span class="badge">${c.strong}</span></div></div>`
-  return ''
-}
-
-const stepIcon = { prompt: 'cloudLock', email: 'mail', code: 'mailOpen', passkey: 'faceid', datapw: 'key', waiting: 'hourglass', full: 'people', in: 'check', unlock: 'faceid', faceid: 'faceid' }
-const bigIcon = (step) => step === 'in'
-  ? `<div class="big-icon green round">${I.check}</div>`
-  : step === 'safari' ? '<div class="appicon"></div>' : `<div class="big-icon">${I[stepIcon[step]]}</div>`
-
-// The passkey sheet iOS shows over whatever is on screen.
 function sysSheet() {
   const c = C.faceid()
   return `<div class="backdrop" style="z-index:29"></div><div class="syssheet">
@@ -656,111 +620,94 @@ function sysSheet() {
 }
 const safariBar = () => `<div class="safari"><div class="addr">${I.padlock}smart-meta-h2ur.vercel.app</div><div class="tools">${I.back}${svgIn('back', '').replace('m15 6-6 6 6 6', 'm9 6 6 6-6 6')}${I.share}${I.book}${I.tabs}</div></div>`
 
-// ——— A: sheet over Today ———
-function renderA(step) {
-  const k = step === 'faceid' ? 'passkey' : step
-  const c = C[k] ? C[k]() : null
-  const card = (cc) => `<div class="card signin-card">
-      <div class="row1"><span class="tile" style="--c: var(--accent); width:36px; height:36px; border-radius:10px">${svgIn('cloudLock')}</span>
-        <div><h3>${cc.title}</h3><p>${cc.sub}</p></div></div>
-      <p class="hint lock">${I.lock}<span>${cc.foot}</span></p>
-      <div class="actions"><button class="btn primary" ${go('prompt', 0)}>${cc.primary}</button><button class="btn ghost" ${go('prompt', 1)}>${cc.secondary}</button></div>
-    </div>`
-  if (step === 'prompt') return today({ top: card(c) })
-  if (step === 'notnow') {
-    return today({ top: card(C.prompt()) }) + `<div class="backdrop"></div><div class="sheet small"><div class="grabber"></div><div class="small-sheet">
-      <h2>${c.title}</h2><p>${c.sub}</p>
-      <div class="actions"><button class="btn primary big block" ${go('notnow', 0)}>${c.primary}</button><button class="quiet" ${go('notnow', 1)}>${c.secondary}</button></div></div></div>`
-  }
-  if (step === 'in') return today() + `<div class="toast">${c.toast}</div>`
-  if (step === 'safari') {
-    const s = C.safari()
-    return today({ tabbar: false, top: `<div class="card signin-card">
-      <div class="row1"><span class="appicon sm"></span><div><h3>${s.title}</h3><p>${s.sub}</p></div></div>
-      <ol class="intro-steps" style="margin-top:10px">${s.steps.map((x, i) => `<li><span class="n">${i + 1}</span>${x}</li>`).join('')}</ol>
-    </div>` }) + safariBar()
-  }
-  if (step === 'requests') return requestsCards(C.requests(), 'A')
-  const kb = hasKb(step)
-  const sheetTitle = { email: t('Sign in', 'Entrar'), code: t('Sign in', 'Entrar'), passkey: t('Your data', 'Seus dados'), datapw: t('Your data', 'Seus dados'), waiting: t('Account', 'Conta'), full: t('Account', 'Conta'), unlock: t('Your data', 'Seus dados') }[k]
-  const left = ['waiting', 'full'].includes(k) ? '' : `<button>${t('Cancel', 'Cancelar')}</button>`
-  const right = ['waiting', 'full'].includes(k) ? `<button style="font-weight:600" ${go(k)}>${t('Done', 'OK')}</button>` : ''
-  let body = `<h2 class="wizard-q">${c.title}</h2><p class="wizard-lead">${c.sub}</p>`
-  if (c.rows) body += `<div class="card" style="border-radius:12px">${c.rows.map(([a, b]) => `<div class="lrow"><span class="k">${a}</span><span class="v">${b}</span></div>`).join('')}</div>`
-  body += field(k, c)
-  if (k === 'code') body += `<p class="hint" style="margin-top:14px">${c.resend}</p>`
-  let foot = ''
-  if (c.foot && !c.rows) foot += `<p class="hint lock" style="margin-bottom:10px">${I.lock}<span>${c.foot}</span></p>`
-  if (c.rows) foot += `<p class="hint" style="margin-bottom:10px">${c.foot}</p>`
-  if (c.primary && !['waiting', 'full'].includes(k)) foot += `<button class="btn primary big block" ${go(k, 0)}>${c.primary}</button>`
-  if (c.secondary) foot += `<button class="quiet" ${go(k, 1)}>${c.secondary}</button>`
-  if (k === 'code') foot += `<button class="quiet" ${go(k, 1)}>${c.other}</button>`
-  return today() + `<div class="backdrop"></div><div class="sheet large" ${kb ? 'data-kb' : ''}>
-    <div class="sheet-bar"><span class="side">${left}</span><h2>${sheetTitle}</h2><span class="side r">${right}</span></div>
-    <div class="sheet-body"><div class="big-icon" style="width:44px;height:44px;border-radius:11px;margin-bottom:14px">${svgIn(stepIcon[k], '').replace('<svg', '<svg style="width:24px;height:24px"')}</div>${body}</div>
-    <div class="sheet-foot ${kb ? 'on-kb' : ''}">${foot}</div>
-  </div>${kb ? keyboard(step) : ''}${step === 'faceid' ? sysSheet() : ''}`
+I.bell = '<svg viewBox="0 0 24 24"><path d="M6 10a6 6 0 0 1 12 0c0 4.5 1.6 6.3 2.3 7H3.7c.7-.7 2.3-2.5 2.3-7z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg>'
+
+// ——— B: a full page, with the bar's title where the other styles had one ———
+const FLOW = ['prompt', 'email', 'code', 'passkey']
+function pageB(o) {
+  const top = `<div class="top bar">${o.back ? `<button class="back">${I.back}${t('Back', 'Voltar')}</button>` : '<span></span>'}<span class="ttl">${o.bar || ''}</span>${o.right || '<span></span>'}</div>`
+  const icon = o.kb ? '' : o.icon === 'app' ? '<div class="appicon"></div>' : o.icon ? `<div class="big-icon">${I[o.icon]}</div>` : ''
+  let body = `${icon}<h1 class="intro-title" style="${o.kb ? 'margin-top:4px' : ''}">${o.title}</h1>${o.sub ? `<p class="intro-sub">${o.sub}</p>` : ''}`
+  if (o.form) body += `<div class="form">${o.form}</div>`
+  if (o.rows) body += `<div class="form"><div class="card" style="border-radius:12px">${o.rows.map(([a, b]) => `<div class="lrow"><span class="k">${a}</span><span class="v">${b}</span></div>`).join('')}</div></div>`
+  if (o.extra) body += o.extra
+  let nav = o.dots ? `<div class="intro-dots">${FLOW.map((s) => `<i class="${s === o.dots ? 'on' : ''}"></i>`).join('')}</div>` : ''
+  if (o.foot) nav += o.foot
+  if (o.primary) nav += `<button class="btn primary big block" ${go(o.step, 0)}>${o.primary}</button>`
+  for (const [label, i] of o.secondary || []) nav += `<button class="quiet grey" ${go(o.step, i)}>${label}</button>`
+  return `<div class="page-b" ${o.kb ? 'data-kb' : ''}>${top}<div class="body ${o.kb ? '' : 'center'}">${body}</div>${o.safari ? '<div style="height:96px"></div>' : `<div class="nav ${o.kb ? 'on-kb' : ''}">${nav}</div>`}</div>`
+    + (o.kb ? keyboard(o.kb) : '') + (o.safari ? safariBar() : '')
+}
+const lockLine = (text) => `<p class="hint lock" style="justify-content:center">${I.lock}<span>${text}</span></p>`
+const fieldEmail = (label, focus) => `<div><p class="field-label">${label}</p><div class="input ${focus ? 'focus' : 'ro'}">${EMAIL}${focus ? '<span class="caret"></span>' : ''}</div></div>`
+
+function onboarding() {
+  const c = C.prompt()
+  return pageB({ step: 'prompt', right: `<button class="btn ghost" ${go('prompt', 1)}>${t('Skip', 'Pular')}</button>`, icon: 'bell',
+    title: c.title, sub: c.sub, dots: 'prompt', foot: lockLine(c.foot), primary: c.primary, secondary: [[c.secondary, 1]] })
 }
 
-// ——— B: full screen, like the intro ———
-function renderB(step) {
-  const k = step === 'faceid' ? 'passkey' : step
-  const c = C[k]()
-  if (step === 'requests') return requestsCards(C.requests(), 'B')
-  if (step === 'in') {
-    return `<div class="page-b"><div class="top"></div><div class="body center">${bigIcon('in')}<h1 class="intro-title">${c.title}</h1><p class="intro-sub">${c.sub}</p></div>
-      <div class="nav"><button class="btn primary big block" ${go('in')}>${c.primary}</button></div></div>`
-  }
-  const flow = ['prompt', 'email', 'code', 'passkey']
-  const dots = flow.includes(k) || k === 'datapw' ? `<div class="intro-dots">${flow.map((s) => `<i class="${s === (k === 'datapw' ? 'passkey' : k) ? 'on' : ''}"></i>`).join('')}</div>` : ''
-  const kb = hasKb(step)
-  const backed = !['prompt', 'notnow', 'waiting', 'full', 'unlock', 'safari'].includes(k)
-  const top = `<div class="top">${backed ? `<button class="back">${I.back}${t('Back', 'Voltar')}</button>` : '<span></span>'}${k === 'prompt' || k === 'notnow' ? `<button class="btn ghost" ${go('prompt', 1)}>${t('Skip', 'Pular')}</button>` : ''}</div>`
-  let body = `${kb ? '' : bigIcon(k)}<h1 class="intro-title" style="${kb ? 'margin-top:4px' : ''}">${c.title}</h1><p class="intro-sub">${c.sub}</p>`
-  const f = field(k, c)
-  if (f) body += `<div class="form">${f}${k === 'code' ? `<p class="hint" style="text-align:center">${c.resend}</p>` : ''}</div>`
-  if (c.rows) body += `<div class="form"><div class="card" style="border-radius:12px">${c.rows.map(([a, b]) => `<div class="lrow"><span class="k">${a}</span><span class="v">${b}</span></div>`).join('')}</div></div>`
-  if (k === 'safari') body += `<ol class="intro-steps">${c.steps.map((x, i) => `<li><span class="n">${i + 1}</span>${x}</li>`).join('')}</ol>`
-  let nav = dots
-  if (c.foot) nav += `<p class="hint">${c.foot}</p>`
-  if (k === 'prompt' || k === 'notnow') {
-    const p = C.prompt()
-    nav = dots + `<p class="hint">${p.foot}</p><button class="btn primary big block" ${go('prompt', 0)}>${p.primary}</button><button class="quiet grey" ${go('prompt', 1)}>${p.secondary}</button>`
-  } else if (k !== 'safari') {
-    nav += `<button class="btn primary big block" ${go(k, 0)}>${c.primary}</button>`
-    if (c.secondary) nav += `<button class="quiet grey" ${go(k, 1)}>${c.secondary}</button>`
-    if (k === 'code') nav += `<button class="quiet grey" ${go(k, 1)}>${c.other}</button>`
-  }
-  let html = `<div class="page-b" ${kb ? 'data-kb' : ''}>${top}<div class="body ${kb ? '' : 'center'}">${k === 'prompt' || k === 'notnow' ? '<div class="appicon"></div>' + body.replace(bigIcon(k), '') : body}</div><div class="nav ${kb ? 'on-kb' : ''}">${nav}</div></div>`
-  if (kb) html += keyboard(step)
-  if (k === 'safari') html = html.replace('<div class="nav ', '<div style="height:96px"></div><div class="nav ') + safariBar()
-  if (step === 'notnow') {
-    html += `<div class="alert-wrap"><div class="alert"><div class="msg"><h3>${c.title}</h3><p>${c.sub}</p></div>
-      <div class="btns"><button class="b" ${go('notnow', 0)}>${c.primary}</button><button ${go('notnow', 1)}>${c.secondary}</button></div></div></div>`
-  }
-  if (step === 'faceid') html += sysSheet()
-  return html
+// The banner on Today until the person syncs; swiping it left uncovers Hide, as swiping a task uncovers Delete.
+function todayBanner() {
+  return today({ top: `<div class="swipe-wrap" id="sync-banner"><div class="in">
+    <button class="hide-act" data-hide aria-label="${C.hide()}"><span class="hide-pill">${svgIn('x')}</span><span class="hide-lbl">${C.hide()}</span></button>
+    <div class="banner sw"><span class="ic">${I.cloudLock}</span><div class="text"><b>${C.banner()}</b></div>${I.chevR}</div>
+  </div></div>` })
 }
 
-// ——— C: Settings style ———
-function renderC(step) {
-  const k = step === 'faceid' ? 'passkey' : step
-  const c = C[k]()
-  if (step === 'prompt' || step === 'notnow' || step === 'in') {
-    const banner = step === 'in'
-      ? `<div class="banner green"><span class="ic">${I.check}</span><div class="text"><b>${C.in().title}</b><span>${t('Backed up and encrypted.', 'Guardadas e criptografadas.')}</span></div></div>`
-      : `<div class="banner" ${go('prompt', 0)} style="cursor:pointer"><span class="ic">${I.cloudLock}</span><div class="text"><b>${C.prompt().title}</b><span>${t('Back up your goals and get reminders.', 'Guarde suas metas e receba lembretes.')}</span></div>${I.chevR}</div>`
-    let html = today({ top: banner })
-    if (step === 'notnow') {
-      html += `<div class="backdrop"></div><div class="action-sheet"><div class="grp"><div class="msg"><b>${c.title}</b>${c.sub}</div>
-        <button ${go('notnow', 0)}>${c.primary}</button><button ${go('notnow', 1)}>${c.secondary}</button></div>
-        <div class="grp cancel"><button>${t('Cancel', 'Cancelar')}</button></div></div>`
-    }
-    return html
-  }
-  if (step === 'requests') {
+const SCREENS = {
+  prompt: () => [
+    { html: onboarding(), cap: '<b>Onboarding</b>, right after “Not only goals”.' },
+    { html: todayBanner(), banner: true, cap: '<b>Today</b>, until the person syncs. Swipe it left to hide it: it comes back after a day, then a week, then a month, then only Settings offers it.' },
+  ],
+  notnow: () => {
+    const c = C.notnow()
+    return [{ html: onboarding() + `<div class="backdrop"></div><div class="action-sheet"><div class="grp"><div class="msg"><b>${c.title}</b>${c.sub}</div>
+      <button ${go('notnow', 0)}>${c.primary}</button><button ${go('notnow', 1)}>${c.secondary}</button></div>
+      <div class="grp cancel"><button ${go('notnow', 1)}>${c.cancel}</button></div></div>`, cap: 'Over the onboarding screen, from “Not now”.' }]
+  },
+  safari: () => {
+    const c = C.safari()
+    const share = `<span class="inline-ic">${I.share}</span>`
+    const steps = `<div class="list steps-card">${c.steps.map((x, i) => `<div class="lrow"><span class="initials" style="background:var(--accent-soft);color:var(--accent)">${i + 1}</span><span class="text">${x}${i === 0 ? share : ''}</span></div>`).join('')}</div>`
+    return [{ html: pageB({ step: 'safari', icon: 'app', title: c.title, sub: c.sub, extra: steps, safari: true }),
+      cap: 'In Safari on iPhone, “Continue with email” and the banner open this <b>instead of the email step</b>: push only works in the Home Screen app.' }]
+  },
+  email: () => {
+    const c = C.email()
+    return [{ html: pageB({ step: 'email', back: true, bar: t('Sign in', 'Entrar'), title: c.title, form: fieldEmail(c.label, true), dots: 'email', primary: c.primary, kb: 'email' }) }]
+  },
+  code: () => {
+    const c = C.code()
+    const codes = `<div class="codes gap">${['4', '8', '2', '9', '', ''].map((d, i) => `<span class="${i === 4 ? 'focus' : ''}">${d}${i === 4 ? '<span class="caret"></span>' : ''}</span>`).join('')}</div><p class="hint" style="text-align:center">${c.resend}</p>`
+    return [{ html: pageB({ step: 'code', back: true, bar: t('Sign in', 'Entrar'), title: c.title, sub: c.sub, form: codes, dots: 'code', primary: c.primary, secondary: [[c.other, 1]], kb: 'code' }),
+      cap: 'iOS offers the code from Mail above the keyboard.' }]
+  },
+  passkey: () => [{ html: passkeyPage() }],
+  faceid: () => [{ html: passkeyPage() + sysSheet(), cap: 'iOS draws this sheet itself.' }],
+  datapw: () => {
+    const c = C.datapw()
+    const form = fieldEmail(c.email, false) + `<div><p class="field-label">${c.label}</p><div class="input strong">kifzuv-7nykha-Bodpej<span class="badge">${c.strong}</span></div></div>`
+    return [{ html: pageB({ step: 'datapw', back: true, bar: t('Your data', 'Seus dados'), icon: 'key', title: c.title, sub: c.sub, form, dots: 'passkey', primary: c.primary }),
+      cap: 'Only when Face ID can’t be used. The password manager fills in the strong password and saves it with the email.' }]
+  },
+  waiting: () => {
+    const c = C.waiting()
+    return [{ html: pageB({ step: 'waiting', icon: 'hourglass', title: c.title, sub: c.sub, rows: c.rows, foot: `<p class="hint">${c.foot}</p>`, primary: c.primary }),
+      cap: 'Once approved, the next open shows only the toast in step 10.' }]
+  },
+  full: () => {
+    const c = C.full()
+    return [{ html: pageB({ step: 'full', icon: 'people', title: c.title, sub: c.sub, rows: c.rows, foot: `<p class="hint">${c.foot}</p>`, primary: c.primary }) }]
+  },
+  in: () => [{ html: today() + `<div class="toast">${C.in().toast}</div>`, cap: 'After approval, the next time the app opens. No screen of its own.' }],
+  unlock: () => {
+    const c = C.unlock()
+    return [{ html: pageB({ step: 'unlock', icon: 'faceid', title: c.title, sub: c.sub, primary: c.primary, secondary: [[c.secondary, 1]] }), cap: 'A new phone, after the email code.' }]
+  },
+  requests: () => {
     const r = C.requests()
-    return `<div class="page-c">
+    return [{ html: `<div class="page-c">
       <div class="navbar"><span class="side"><button>${I.back}${r.back}</button></span><h2>${r.title}</h2><span class="side r"></span></div>
       <div class="content">
         <p class="sec-head" style="margin-top:6px"><span>${r.waiting} · 3</span></p>
@@ -768,45 +715,13 @@ function renderC(step) {
         <p class="sec-head"><span>${r.approved}</span><span>37 ${r.of}</span></p>
         <div class="list">${r.recent.map(([e, w]) => `<div class="lrow"><span class="initials">${e[0].toUpperCase()}</span><div class="text"><div>${e}</div><div class="sub">${w}</div></div></div>`).join('')}</div>
         <p class="sec-foot">${r.foot}</p>
-      </div></div>`
-  }
-  const kb = hasKb(step)
-  const left = ['waiting', 'full', 'unlock', 'safari'].includes(k) ? '' : `<button>${I.back}${t('Back', 'Voltar')}</button>`
-  const right = { email: `<button class="b" ${go('email')}>${t('Next', 'Seguir')}</button>`, code: `<button class="b" disabled>${t('Next', 'Seguir')}</button>`,
-    datapw: `<button class="b" ${go('datapw')}>${t('Next', 'Seguir')}</button>`, waiting: `<button class="b" ${go('waiting')}>${t('Done', 'OK')}</button>`, full: `<button class="b" ${go('full')}>${t('Done', 'OK')}</button>` }[k] || ''
-  const navTitle = { email: t('Sign In', 'Entrar'), code: t('Sign In', 'Entrar'), passkey: t('Your Data', 'Seus Dados'), datapw: t('Your Data', 'Seus Dados'), waiting: t('Account', 'Conta'), full: t('Account', 'Conta'), unlock: t('Your Data', 'Seus Dados'), safari: 'Smart Meta' }[k]
-  let content = kb ? `<div class="c-head" style="padding-bottom:16px"><h1 style="font-size:22px">${c.title}</h1><p>${c.sub}</p></div>` : `<div class="c-head">${bigIcon(k)}<h1>${c.title}</h1><p>${c.sub}</p></div>`
-  if (k === 'email') content += `<div class="list"><div class="lrow"><span class="k">${c.label}</span><span class="v in">${EMAIL}<span class="caret"></span></span></div></div>`
-  if (k === 'code') content += `<div class="list"><div class="lrow"><span class="k">${c.label}</span><span class="v in" style="letter-spacing:0.3em;font-variant-numeric:tabular-nums">4829<span class="caret"></span></span></div></div><p class="sec-foot">${c.resend}</p><div class="list" style="margin-top:22px"><div class="lrow act" ${go('code', 1)}>${c.other}</div></div>`
-  if (k === 'datapw') content += `<div class="list"><div class="lrow"><span class="k">${t('Email', 'E-mail')}</span><span class="v">${EMAIL}</span></div><div class="lrow" style="background:var(--strong)"><span class="k">${t('Password', 'Senha')}</span><span class="v in" style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:15px">kifzuv-7nykha-Bodpej</span></div></div><p class="sec-foot">${c.foot}</p>`
-  if (c.rows) content += `<div class="list">${c.rows.map(([a, b]) => `<div class="lrow"><span class="k">${a}</span><span class="v">${b}</span></div>`).join('')}</div><p class="sec-foot">${c.foot}</p>`
-  if (k === 'passkey' || k === 'unlock') content += `<div class="list"><div class="lrow act" ${go(k, 0)}>${c.primary}</div></div>${c.foot ? `<p class="sec-foot">${c.foot}</p>` : ''}<div class="list" style="margin-top:22px"><div class="lrow act" ${go(k, 1)}>${c.secondary}</div></div>`
-  if (k === 'safari') content += `<div class="list">${c.steps.map((x, i) => `<div class="lrow"><span class="initials" style="background:var(--accent-soft);color:var(--accent)">${i + 1}</span><span class="text">${x}</span></div>`).join('')}</div>`
-  let html = `<div class="page-c" ${kb ? 'data-kb' : ''}><div class="navbar"><span class="side">${left}</span><h2>${navTitle}</h2><span class="side r">${right}</span></div><div class="content">${content}</div></div>`
-  if (kb) html += keyboard(step)
-  if (k === 'safari') html += safariBar()
-  if (step === 'faceid') html += sysSheet()
-  return html
+      </div></div>`, cap: 'Settings → Developer → Requests. The “New request” push opens it.' }]
+  },
 }
-
-// Requests in A and B: cards on the app's grouped background.
-function requestsCards(r, style) {
-  const head = style === 'A'
-    ? `<button class="back" style="color:var(--accent);font-size:16px;display:inline-flex;align-items:center;min-height:44px;margin:0 0 4px -6px">${svgIn('back', 'ico').replace('class="ico"', 'class="ico" style="width:22px;height:22px;stroke-width:2.2"')}${r.back}</button><h1 class="large-title" style="margin-bottom:16px">${r.title}</h1>`
-    : `<h1 class="large-title" style="margin:4px 0 6px">${r.title}</h1>`
-  const count = style === 'B'
-    ? `<div class="big-count"><b>37</b><span>${r.of}</span></div><div class="meter"><i></i></div>` : ''
-  const rows = r.people.map(([e, w]) => `<div class="card req-card"><span class="initials" style="width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);font-weight:600;color:var(--ink-2);flex:none">${e[0].toUpperCase()}</span><div class="text"><p class="em">${e}</p><p class="when">${w}</p></div><button class="btn primary">${r.approve}</button></div>`).join('')
-  const approved = style === 'A'
-    ? `<p class="sec-title" style="margin-top:26px;display:flex;justify-content:space-between;align-items:baseline">${r.approved}<span style="font:400 15px var(--font);color:var(--ink-2)">37 ${r.of}</span></p>` : `<p class="sec-title" style="margin-top:26px">${r.approved}</p>`
-  return `<div class="screen" style="padding-top:calc(var(--st) + ${style === 'A' ? 4 : 14}px)">${head}${count}
-    <p class="sec-title">${r.waiting}</p>${rows}${approved}
-    <div class="card" style="border-radius:var(--radius)">${r.recent.map(([e, w]) => `<div class="lrow"><span class="text"><span style="display:block">${e}</span><span class="sub">${w}</span></span></div>`).join('')}</div>
-    <p class="hint" style="margin:10px 4px 0">${r.foot}</p></div>`
+function passkeyPage() {
+  const c = C.passkey()
+  return pageB({ step: 'passkey', back: true, bar: t('Your data', 'Seus dados'), icon: 'faceid', title: c.title, sub: c.sub, dots: 'passkey', primary: c.primary, secondary: [[c.secondary, 1]] })
 }
-
-const RENDER = [renderA, renderB, renderC]
-const darkStatus = () => false
 
 // ——— render ———
 const $ = (s) => document.querySelector(s)
@@ -816,37 +731,23 @@ function render() {
   else delete document.documentElement.dataset.theme
   document.documentElement.lang = state.lang === 'en' ? 'en' : 'pt-BR'
   const dark = state.theme ? state.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
-  const step = STEPS.find((s) => s.key === state.step)
 
-  $('#steps').innerHTML = STEPS.map((s, i) => `<button class="chip ${s.key === state.step ? 'on' : ''}" data-step="${s.key}" aria-pressed="${s.key === state.step}"><span class="n">${i + 1}</span>${esc(s.label)}${state.picks[s.key] ? `<span class="pk">${state.picks[s.key]}</span>` : ''}</button>`).join('')
+  $('#steps').innerHTML = STEPS.map((s) => `<button class="chip ${s.key === state.step ? 'on' : ''}" data-step="${s.key}" aria-pressed="${s.key === state.step}"><span class="n">${s.n}</span>${esc(s.label)}</button>`).join('')
   for (const b of document.querySelectorAll('#lang button')) b.classList.toggle('on', b.dataset.l === state.lang)
   for (const b of document.querySelectorAll('#theme button')) b.classList.toggle('on', b.dataset.t === (dark ? 'dark' : 'light'))
 
+  const phones = SCREENS[state.step]()
   const scroller = $('#screens')
-  const keep = scroller.scrollLeft
-  scroller.innerHTML = OPTIONS.map((o, i) => {
-    const picked = state.picks[step.key] === LETTERS[i]
-    const actions = step.system
-      ? `<p class="system-note">iOS draws this sheet itself, so it looks the same in every style.</p>`
-      : `<button class="pick ${picked ? 'on' : ''}" data-pick="${LETTERS[i]}" aria-pressed="${picked}">${picked ? '✓ Picked' : 'Pick ' + LETTERS[i]}</button>
-         <button class="pick-all" data-all="${LETTERS[i]}">Use ${LETTERS[i]} for every step</button>`
-    return `<article class="opt">
-      <div class="opt-head"><span class="letter">${LETTERS[i]}</span><h2 class="opt-name">${o.name}</h2></div>
-      <div class="device"><div class="scr"><div class="vp ${isPhone() ? 'bare' : ''}">${status()}${RENDER[i](step.key)}${home()}</div></div></div>
-      <p class="opt-note">${o.note}</p>${actions}
-    </article>`
-  }).join('')
-  scroller.scrollLeft = keep
-  $('#dots').innerHTML = OPTIONS.map(() => '<i></i>').join('')
+  scroller.style.setProperty('--n', phones.length)
+  scroller.innerHTML = phones.map((p) => `<article class="opt">
+      <div class="device"><div class="scr"><div class="vp ${isPhone() ? 'bare' : ''}">${status()}${p.html}${home()}</div></div></div>
+      ${p.cap ? `<p class="caption">${p.cap}</p>` : ''}
+      ${p.banner ? `<button class="again" data-again hidden>Show the banner again</button>` : ''}
+    </article>`).join('')
+  scroller.scrollLeft = 0
+  $('#dots').innerHTML = phones.length > 1 ? phones.map(() => '<i></i>').join('') : ''
   fit()
   syncDots()
-
-  const stepsPicked = STEPS.filter((s) => !s.system)
-  const done = stepsPicked.filter((s) => state.picks[s.key])
-  $('#picks-text').innerHTML = done.length
-    ? `<b>${done.length} of ${stepsPicked.length} picked:</b> ` + done.map((s) => `${esc(s.label)} ${state.picks[s.key]}`).join(' · ')
-    : 'No picks yet. Pick a style per step, or one for every step.'
-  $('#copy').disabled = !done.length
 }
 
 // Each phone draws the app at iPhone width (390 points) and scales it to the frame; a real phone shows it 1:1.
@@ -869,46 +770,62 @@ function syncDots() {
   const i = Math.round(s.scrollLeft / Math.max(1, s.clientWidth))
   document.querySelectorAll('#dots i').forEach((d, k) => d.classList.toggle('on', k === i))
 }
-// Steps that happen inside A's sheet: moving between two of them keeps the sheet where it is instead of sliding it up again.
-const IN_SHEET = ['email', 'code', 'passkey', 'faceid', 'datapw', 'waiting', 'full', 'unlock']
 function setStep(key) {
   if (!key || !STEPS.some((s) => s.key === key)) return
-  const still = IN_SHEET.includes(state.step) && IN_SHEET.includes(key)
   state.step = key; store.set('step', key); render()
-  if (still) document.querySelectorAll('.vp').forEach((vp) => vp.classList.add('still'))
   $('#steps').querySelector(`[data-step="${key}"]`)?.scrollIntoView({ inline: 'nearest', block: 'nearest' })
 }
+
+// ——— the banner's swipe: follows the finger, settles open or closed, with the iPhone's resistance past the pill ———
+const REVEAL = 84
+let drag = null
+function setX(banner, x) {
+  banner.style.setProperty('--x', x + 'px')
+  banner.closest('.swipe-wrap').style.setProperty('--bin', Math.min(1, -x / REVEAL).toFixed(3))
+}
+document.addEventListener('pointerdown', (e) => {
+  const banner = e.target.closest('.banner.sw')
+  document.querySelectorAll('.banner.sw').forEach((b) => { if (b !== banner && !e.target.closest('[data-hide]')) setX(b, 0) })
+  if (!banner) return
+  const vp = banner.closest('.vp')
+  const scale = vp.getBoundingClientRect().width / vp.offsetWidth
+  const x0 = parseFloat(getComputedStyle(banner).getPropertyValue('--x')) || 0
+  drag = { banner, scale, startX: e.clientX, x0, x: x0, moved: false }
+  try { banner.setPointerCapture(e.pointerId) } catch {}
+})
+document.addEventListener('pointermove', (e) => {
+  if (!drag) return
+  const dx = (e.clientX - drag.startX) / drag.scale
+  if (Math.abs(dx) > 6) drag.moved = true
+  if (!drag.moved) return
+  drag.banner.classList.add('dragging')
+  let x = Math.min(0, drag.x0 + dx)
+  if (x < -REVEAL) x = -REVEAL + (x + REVEAL) * 0.3
+  drag.x = x
+  setX(drag.banner, x)
+})
+document.addEventListener('pointerup', () => {
+  if (!drag) return
+  drag.banner.classList.remove('dragging')
+  setX(drag.banner, drag.x < -REVEAL / 2 ? -REVEAL : 0)
+  drag = null
+})
 
 // ——— events ———
 $('#steps').addEventListener('click', (e) => { const b = e.target.closest('[data-step]'); if (b) setStep(b.dataset.step) })
 $('#lang').addEventListener('click', (e) => { const b = e.target.closest('[data-l]'); if (!b) return; state.lang = b.dataset.l; store.set('lang', state.lang); render() })
 $('#theme').addEventListener('click', (e) => { const b = e.target.closest('[data-t]'); if (!b) return; state.theme = b.dataset.t; store.set('theme', state.theme); render() })
 $('#screens').addEventListener('click', (e) => {
-  const pick = e.target.closest('[data-pick]')
-  if (pick) {
-    if (state.picks[state.step] === pick.dataset.pick) delete state.picks[state.step]
-    else state.picks[state.step] = pick.dataset.pick
-    store.set('picks', state.picks); render(); return
+  if (e.target.closest('[data-hide]')) {
+    $('#sync-banner').classList.add('gone')
+    $('[data-again]').hidden = false
+    return
   }
-  const all = e.target.closest('[data-all]')
-  if (all) { for (const s of STEPS) if (!s.system) state.picks[s.key] = all.dataset.all; store.set('picks', state.picks); render(); return }
+  if (e.target.closest('[data-again]')) { render(); return }
   const g = e.target.closest('[data-go]')
   if (g && g.dataset.go) setStep(g.dataset.go)
 })
 $('#screens').addEventListener('scroll', syncDots, { passive: true })
-$('#copy').addEventListener('click', async () => {
-  const text = 'S0 sign-in picks: ' + STEPS.filter((s) => state.picks[s.key]).map((s) => `${s.label} ${state.picks[s.key]}`).join(', ')
-  const btn = $('#copy')
-  try {
-    await navigator.clipboard.writeText(text)
-    btn.textContent = 'Copied'
-    setTimeout(() => (btn.textContent = 'Copy picks'), 1600)
-  } catch {
-    const box = document.createElement('textarea')
-    box.className = 'fallback'; box.rows = 3; box.readOnly = true; box.value = text
-    $('#picks-text').replaceChildren(box); box.select()
-  }
-})
 let resizeTimer, wasPhone = isPhone()
 addEventListener('resize', () => {
   clearTimeout(resizeTimer)

@@ -42,9 +42,12 @@ and projects; photo avatars; Google sign-in if it becomes reliable on iPhone.
   Requests screen in Developer mode. Only the owner can approve.
 - **AC-6** [S2] At most `N-1` members. Past that, new users see that the list is full and keep waiting.
 - **AC-7** [S2] On approval, everything the user created locally uploads, and "You're in" shows once.
-- **AC-8** [S2] The sign-in card appears **after the user creates their first goal**, with "Not now".
-- **AC-9** [S2] "Not now" shows a popup: without an account there are **no notifications** and data
-  stays only on this phone. Sign-in stays available in Settings.
+- **AC-8** [S2] An **"Activate notifications"** screen appears **after the last onboarding screen**
+  (after the first goal), with "Not now". Until the person syncs, Today shows a **"Sync and get
+  notifications"** banner; swiping it away hides it for a day, then a week, then a month, then for good
+  (sign-in stays in Settings). ([plan §2](plan.md), changed by the owner 2026-10-23)
+- **AC-9** [S2] "Not now" shows a popup: without an account there are **no reminders and no backup**,
+  and data stays only on this phone. Sign-in stays available in Settings.
 - **AC-10** [S2] In Safari on iPhone (not installed), sign-in asks to open the app from the Home Screen.
 - **AC-11** [S2] Profile: **name** and a **built-in avatar** with many options, enough to tell friends
   apart (style chosen from S0 mockups). No photo uploads.
