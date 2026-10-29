@@ -100,7 +100,7 @@ export function SettingsScreen() {
  * Who you are, at the top of Settings as on the iPhone: name and avatar (kept on the phone, signed in or
  * not), and the email once signed in.
  */
-function ProfileRow({ onClick }: { onClick?: () => void }) {
+function ProfileRow({ onClick, onEdit }: { onClick: () => void; onEdit?: () => void }) {
   const s = useSyncStatus()
   const profile = useProfile()
   if (!profile) return null
@@ -113,12 +113,18 @@ function ProfileRow({ onClick }: { onClick?: () => void }) {
       </div>
     </>
   )
-  return onClick ? (
+  // On Account, a pencil in the row edits name and avatar; in Settings the row leads on to Account.
+  return onEdit ? (
+    <div className="list-row profile-row">
+      <button type="button" className="profile-main" onClick={onClick}>{inner}</button>
+      <button type="button" className="icon-btn profile-edit" aria-label={t('set.profileEdit')} onClick={onEdit}><IconEdit /></button>
+    </div>
+  ) : (
     <button className="list-row profile-row" onClick={onClick}>
       {inner}
       <IconChevronRight className="chev" width={18} />
     </button>
-  ) : <div className="list-row profile-row">{inner}</div>
+  )
 }
 
 const IconEdit = () => (
@@ -127,7 +133,7 @@ const IconEdit = () => (
   </svg>
 )
 
-/** Settings → the profile row: name and avatar (edited from the top right), sync, backup, and erasing. */
+/** Settings → the profile row: name and avatar (the row's pencil), sync, backup, and erasing. */
 export function AccountScreen() {
   const settings = useSettings()
   const s = useSyncStatus()
@@ -136,12 +142,11 @@ export function AccountScreen() {
   const [info, setInfo] = useState(false)
   const signedIn = s.phase !== 'signed-out'
   return (
-    <Screen back="/settings" backLabel={t('set.title')} title={t('set.accountTitle')}
-      actions={<button type="button" className="icon-btn" aria-label={t('set.profileEdit')} onClick={() => setEditing(true)}><IconEdit /></button>}>
+    <Screen back="/settings" backLabel={t('set.title')} title={t('set.accountTitle')}>
       <Section>
         <div className="card list settings">
           {/* Signed in, it opens the whole email and when the account was made; otherwise the editor. */}
-          <ProfileRow onClick={() => (signedIn ? setInfo(true) : setEditing(true))} />
+          <ProfileRow onClick={() => (signedIn ? setInfo(true) : setEditing(true))} onEdit={() => setEditing(true)} />
         </div>
         <ProfileSheet open={editing} onClose={() => setEditing(false)} />
         <Sheet open={info} onClose={() => setInfo(false)} title={t('set.accountTitle')}>

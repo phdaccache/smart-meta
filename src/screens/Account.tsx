@@ -58,6 +58,7 @@ const ICONS = {
   share: <Icon d={<><path d="M12 15V3.5M8 7.5l4-4 4 4" /><path d="M8.5 10.5H7A2.5 2.5 0 0 0 4.5 13v6A2.5 2.5 0 0 0 7 21.5h10a2.5 2.5 0 0 0 2.5-2.5v-6a2.5 2.5 0 0 0-2.5-2.5h-1.5" /></>} />,
   x: <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" /></svg>,
   check: <Icon d={<path d="m5 12.5 4.5 4.5L19 7.5" />} />,
+  cloud: <Icon d={<path d="M7 18a4 4 0 0 1-.6-7.95A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9H7z" />} />,
   cloudOff: <Icon d={<><path d="M7 18a4 4 0 0 1-.6-7.95A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9H7z" /><path d="m10 11 4 4M14 11l-4 4" /></>} />,
 }
 
@@ -381,7 +382,7 @@ export function SyncBanner({ settings, today }: { settings: Settings; today: Dat
   )
 }
 
-/** A notice on Today that stays until it's closed: its ✕, or swiped away like the sync banner. */
+/** A notice on Today that stays until it's swiped away, like the sync banner. */
 function Notice({ tone, icon, text, onClose }: { tone: 'green' | 'red'; icon: ReactNode; text: string; onClose: () => void }) {
   const [gone, setGone] = useState(false)
   if (gone) return null
@@ -395,7 +396,6 @@ function Notice({ tone, icon, text, onClose }: { tone: 'green' | 'red'; icon: Re
         <div className="sync-banner-btn">
           <span className="sync-banner-icon">{icon}</span>
           <span className="sync-banner-text">{text}</span>
-          <button type="button" className="banner-close" aria-label={t('nav.close')} onClick={close}>{ICONS.x}</button>
         </div>
       </SwipeToDelete>
     </div>
@@ -405,7 +405,7 @@ function Notice({ tone, icon, text, onClose }: { tone: 'green' | 'red'; icon: Re
 /** After the owner approves (spec AC-7). */
 export function AcceptedBanner({ settings }: { settings: Settings }) {
   if (!settings.acceptedBanner) return null
-  return <Notice tone="green" icon={ICONS.check} text={t('acct.accepted')} onClose={() => setSettings({ acceptedBanner: false })} />
+  return <Notice tone="green" icon={ICONS.cloud} text={t('acct.accepted')} onClose={() => setSettings({ acceptedBanner: false })} />
 }
 
 /** After the owner removed this account: the data is still all here, only sync stopped. */
