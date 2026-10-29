@@ -1,13 +1,13 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import { t, tk, type Key } from '../i18n'
 import {
-  AVATAR_COLORS, AVATAR_LOOKS, AVATAR_PATTERNS, AVATAR_SUGGESTIONS, DEFAULT_AVATAR, lastEmoji, NAME_MAX, type Avatar,
+  AVATAR_COLORS, AVATAR_LOOKS, AVATAR_PATTERNS, DEFAULT_AVATAR, lastEmoji, NAME_MAX, type Avatar,
 } from '../lib/avatar'
 import { saveProfile, useProfile } from '../sync/profile'
 import { Segmented, Sheet } from './components'
 import { IconCheck } from './icons'
 
-/** One avatar from its four settings; with none yet, the default fox. */
+/** One avatar from its four settings; with none yet, the default smiley. */
 export function AvatarView({ avatar, size }: { avatar: Avatar | null; size: number }) {
   const a = avatar ?? DEFAULT_AVATAR
   return (
@@ -57,14 +57,6 @@ export function ProfileSheet({ open, onClose }: { open: boolean; onClose: () => 
           onBlur={() => setEmojiText(avatar.emoji)} />
         <span>{t('prof.emojiHint')}</span>
       </label>
-      <div className="av-picker" style={style} role="radiogroup" aria-label={t('prof.emoji')}>
-        {AVATAR_SUGGESTIONS.map((e) => (
-          <button key={e} type="button" role="radio" aria-checked={avatar.emoji === e} className={avatar.emoji === e ? 'on' : ''}
-            onClick={() => { set({ emoji: e }); setEmojiText(e) }}>
-            <span className="emo">{e}</span>
-          </button>
-        ))}
-      </div>
 
       <p className="ed-label">{t('prof.look')}</p>
       <Segmented label={t('prof.look')} value={avatar.look} onChange={(look) => set({ look })}

@@ -148,19 +148,21 @@ begin
 end $$;
 
 -- The rest of Requests: who's in, newest first (at most the cap, so all of them).
--- Its columns grew (user_id, for removing someone): an older copy has to go first.
+-- Its columns grew (user_id for removing someone; name and avatar, which the owner may see): an older
+-- copy has to go first.
 drop function if exists public.members_overview();
 drop function if exists private.members_overview();
 create or replace function private.members_overview()
-returns table (user_id uuid, email text, approved_at timestamptz)
+returns table (user_id uuid, email text, approved_at timestamptz, name text, avatar jsonb)
 language plpgsql stable security definer set search_path = '' as $$
 begin
   if not private.is_owner() then
     raise exception 'only the owner can see members' using errcode = '42501';
   end if;
   return query
-    select u.id, u.email::text, m.approved_at
+    select u.id, u.email::text, m.approved_at, p.name, p.avatar
     from public.members m join auth.users u on u.id = m.user_id
+    left join public.profiles p on p.user_id = m.user_id
     order by m.approved_at desc;
 end $$;
 
@@ -228,7 +230,7 @@ create or replace function public.pending_requests()
 returns table (user_id uuid, email text, requested_at timestamptz)
 language sql stable security invoker set search_path = '' as $$ select * from private.pending_requests() $$;
 create or replace function public.members_overview()
-returns table (user_id uuid, email text, approved_at timestamptz)
+returns table (user_id uuid, email text, approved_at timestamptz, name text, avatar jsonb)
 language sql stable security invoker set search_path = '' as $$ select * from private.members_overview() $$;
 create or replace function public.approve_member(member uuid) returns void
 language sql security invoker set search_path = '' as $$ select private.approve_member(member) $$;

@@ -1181,7 +1181,7 @@ export const en = {
   'prof.noName': 'Add your name',
   'prof.emoji': 'Emoji',
   'prof.anyEmoji': 'Any emoji',
-  'prof.emojiHint': 'Tap and type any emoji from the emoji keyboard, or pick one below.',
+  'prof.emojiHint': 'Tap and type any emoji from the emoji keyboard.',
   'prof.look': 'Look',
   'prof.look.gradient': 'Gradient',
   'prof.look.solid': 'Solid',

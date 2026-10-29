@@ -1176,7 +1176,7 @@ export const ptBR: Messages = {
   'prof.noName': 'Adicione seu nome',
   'prof.emoji': 'Emoji',
   'prof.anyEmoji': 'Qualquer emoji',
-  'prof.emojiHint': 'Toque e digite qualquer emoji pelo teclado de emoji, ou escolha um abaixo.',
+  'prof.emojiHint': 'Toque e digite qualquer emoji pelo teclado de emoji.',
   'prof.look': 'Aparência',
   'prof.look.gradient': 'Degradê',
   'prof.look.solid': 'Sólido',

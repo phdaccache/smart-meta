@@ -15,6 +15,7 @@ import { goBack, navigate, openOver, useLocation } from '../ui/router'
 import { SwipeToDelete } from '../ui/SwipeToDelete'
 import { inIosBrowser } from './Intro'
 import { DeveloperOnly } from '../ui/developer'
+import { AvatarView } from '../ui/Avatar'
 
 /**
  * Signing in (spec AC-1 to AC-10), the screens picked in S0: full screens like the intro, the bar's title
@@ -517,8 +518,11 @@ function RequestsScreen() {
               {approved.map((m) => {
                 const row = (
                   <button type="button" className="request-open" onClick={() => setOpen({ email: m.email, at: m.approvedAt, member: m })}>
-                    {initial(m.email)}
-                    <div className="text"><div className="title ellipsis">{m.email}</div><div className="sub">{askedText(m.approvedAt)}</div></div>
+                    {m.avatar ? <AvatarView avatar={m.avatar} size={32} /> : initial(m.email)}
+                    <div className="text">
+                      <div className="title ellipsis">{m.name || m.email}</div>
+                      <div className="sub ellipsis">{m.name ? `${m.email} · ${askedText(m.approvedAt)}` : askedText(m.approvedAt)}</div>
+                    </div>
                   </button>
                 )
                 // Swiped left: Delete removes them from sync; their phone keeps everything. Not the owner.
@@ -537,7 +541,9 @@ function RequestsScreen() {
       <Sheet open={open != null} onClose={() => setOpen(null)} title={t(open?.request ? 'acct.request' : 'acct.member')}>
         {open && (
           <>
+            {open.member?.avatar && <div className="request-face"><AvatarView avatar={open.member.avatar} size={72} /></div>}
             <div className="card list request-detail">
+              {open.member?.name && <div className="list-row"><div className="text"><div className="sub">{t('prof.name')}</div><div className="title">{open.member.name}</div></div></div>}
               <div className="list-row"><div className="text"><div className="sub">{t('acct.email')}</div><div className="title">{open.email}</div></div></div>
               <div className="list-row"><div className="text">
                 <div className="sub">{t(open.request ? 'acct.asked' : 'acct.approvedOn')}</div><div className="title">{askedFull(open.at)}</div>

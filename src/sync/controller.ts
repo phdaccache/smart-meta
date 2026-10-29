@@ -171,13 +171,14 @@ export async function refreshAccess(): Promise<Access | null> {
 
 /**
  * The owner removed this account: its server data is gone, but this phone keeps everything and goes on
- * without sync, with a red banner on Today saying so. The phone has no owner again, so they can sign up anew.
+ * without sync, with a red banner on Today saying so. The phone stays theirs (spec AC-13): signing up again
+ * with the same email takes the data back; anyone else is asked to save a copy and remove it first.
  */
 async function removedFromSync(userId: string) {
   engine = null
   stopProfileSync()
   clearTimeout(timer)
-  await db.meta.bulkDelete([OWNER_KEY, accessKey(userId), syncKey(userId)])
+  await db.meta.bulkDelete([accessKey(userId), syncKey(userId)])
   // Their name and avatar go up again if they're let back in.
   await setMeta('profileDirty', true)
   await setSettings({ removedBanner: true, acceptedBanner: false })

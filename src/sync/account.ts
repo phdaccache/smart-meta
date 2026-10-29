@@ -2,6 +2,7 @@ import type { AuthError } from '@supabase/supabase-js'
 import { exportData, shareOrDownload, wipeLocal } from '../db/backup'
 import { db } from '../db/db'
 import { t } from '../i18n'
+import { asAvatar, cleanName, type Avatar } from '../lib/avatar'
 import { phoneOwner, sessionReady, type Access } from './controller'
 import { supabase } from './supabase'
 
@@ -88,13 +89,16 @@ export interface Member {
   userId: string
   email: string
   approvedAt: string
+  /** Their profile, once they set one (members only send it: spec AC-4). */
+  name: string
+  avatar: Avatar | null
 }
 
 export async function members(): Promise<Member[]> {
   const { data, error } = await supabase!.rpc('members_overview')
   if (error) throw new Error(message(error as unknown as AuthError))
-  return (data as { user_id: string; email: string; approved_at: string }[]).map((r) => ({
-    userId: r.user_id, email: r.email, approvedAt: r.approved_at,
+  return (data as { user_id: string; email: string; approved_at: string; name: string | null; avatar: unknown }[]).map((r) => ({
+    userId: r.user_id, email: r.email, approvedAt: r.approved_at, name: cleanName(r.name ?? ''), avatar: asAvatar(r.avatar),
   }))
 }
 

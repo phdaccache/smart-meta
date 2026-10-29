@@ -15,13 +15,8 @@ export interface Avatar {
   pattern: (typeof AVATAR_PATTERNS)[number]
 }
 
-/** Suggested under the emoji field; any other emoji works too. */
-export const AVATAR_SUGGESTIONS = [
-  '🦊', '🐻', '🐼', '🐸', '🐙', '🦉', '🐢', '🦋', '🐝', '🌵', '🌻', '🍄', '🌊', '🔥', '⭐',
-  '🌙', '🍉', '🥑', '🍩', '☕', '🎸', '🎨', '📚', '🚲', '⚽', '🏔️', '🚀', '🎧', '🪴', '🧩',
-]
-
-export const DEFAULT_AVATAR: Avatar = { emoji: '🦊', color: 'orange', look: 'gradient', pattern: 'dots' }
+/** Until they pick their own (owner, 2026-10-29: no suggestions, just the field). */
+export const DEFAULT_AVATAR: Avatar = { emoji: '🙂', color: 'orange', look: 'gradient', pattern: 'dots' }
 
 /** Longest name, as the server allows. */
 export const NAME_MAX = 40
