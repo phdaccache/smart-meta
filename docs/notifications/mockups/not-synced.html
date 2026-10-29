@@ -450,13 +450,11 @@ h1, h2, h3, p { margin: 0; }
 .sync-note svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .sync-note.err { color: var(--warn); }
 .sync-note.ok { color: var(--on-track); }
-.icon-btn.cloud { display: inline-grid; width: 34px; height: 34px; margin-left: 6px; vertical-align: 2px; color: var(--ink-2); cursor: pointer; animation: fade 0.3s ease both; }
-.icon-btn.cloud svg { width: 26px; height: 26px; }
-.sync-note { white-space: nowrap; }
+.icon-btn.cloud { color: var(--ink-2); position: relative; cursor: pointer; animation: fade 0.3s ease both; }
 .icon-btn.cloud.err { color: var(--warn); }
 .icon-btn.cloud.ok { color: var(--on-track); }
-.pop { position: absolute; z-index: 15; top: calc(var(--st) + 86px); left: 16px; width: 270px; padding: 14px 16px; border-radius: 14px; background: var(--surface-raised);
-  box-shadow: 0 12px 32px rgb(0 0 0 / 0.16), 0 2px 6px rgb(0 0 0 / 0.08); transform-origin: 70% 0; animation: pop-in 0.25s var(--ease-out) both; }
+.pop { position: absolute; z-index: 15; top: calc(var(--st) + 66px); right: 12px; width: 270px; padding: 14px 16px; border-radius: 14px; background: var(--surface-raised);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.16), 0 2px 6px rgb(0 0 0 / 0.08); transform-origin: 85% 0; animation: pop-in 0.25s var(--ease-out) both; }
 @keyframes pop-in { from { opacity: 0; transform: scale(0.92); } }
 .pop b { display: block; font-size: 15px; font-weight: 600; }
 .pop p { font-size: 14px; color: var(--ink-2); margin-top: 3px; line-height: 1.4; }
@@ -468,16 +466,36 @@ h1, h2, h3, p { margin: 0; }
 .sim .state { font-size: 14px; color: var(--ink-2); text-transform: none; letter-spacing: 0; font-weight: 400; }
 .sim .state b { color: var(--ink); font-weight: 600; }
 @media (max-width: 760px) { .sim { padding: 0 16px; } .sim p:first-child { display: none; } }
+/* The picked design: the status at the right end of Today's date line; in Settings, the time and an icon that explains. */
+.date-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 2px; }
+.date-row .eyebrow { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sync-note { white-space: nowrap; font-size: 13px; font-weight: 500; }
+.screen .head-row { margin-bottom: 18px; }
+.sync-val { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; color: var(--ink-2); font-size: 17px; font-variant-numeric: tabular-nums; }
+.sync-ic { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; cursor: pointer; color: var(--on-track); }
+.sync-ic:active { background: var(--surface-2); }
+.sync-ic.off { color: var(--ink-2); }
+.sync-ic.err { color: var(--warn); }
+.sync-ic.busy { color: var(--accent); }
+.sync-ic.busy svg { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.sync-ic svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.info-pop { position: absolute; z-index: 15; right: 16px; width: 260px; padding: 12px 14px; border-radius: 14px; background: var(--surface-raised);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.16), 0 2px 6px rgb(0 0 0 / 0.08); transform-origin: 90% 0; animation: pop-in 0.25s var(--ease-out) both; font-size: 14px; line-height: 1.4; }
+.info-pop b { display: block; font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+.info-pop span { color: var(--ink-2); }
+.opt-head .opt-name { font-size: 17px; }
+@media (min-width: 1100px) { .screens { grid-template-columns: repeat(2, minmax(0, 390px)) !important; justify-content: center; column-gap: 40px; } }
+@media (prefers-reduced-motion: reduce) { .sync-ic.busy svg { animation: none; } }
 </style>
 
 <div class="page">
   <header class="head">
     <p class="eyebrow">S0 mockups · 5 of 5</p>
     <h1 class="large-title">Not synced yet</h1>
-    <p class="lede">Three ways to show changes the server doesn’t have yet. Tap items in the phones to check them in; go offline or make the server fail below.</p>
+    <p class="lede">Option A as picked, with the status at the right of Today’s date line, and a shorter sync row in Settings. Tap items to check them in; go offline or make the server fail below.</p>
   </header>
   <div class="controls">
-    <nav class="steps" id="steps" aria-label="Screen"></nav>
     <div class="sim">
       <p>Simulate</p>
       <div class="segmented" id="net" role="group" aria-label="Connection"><button data-net="online" style="flex:1">Online</button><button data-net="offline" style="flex:1">Offline</button></div>
@@ -495,21 +513,15 @@ h1, h2, h3, p { margin: 0; }
   </div>
   <section class="screens" id="screens" aria-live="polite"></section>
   <div class="dots" id="dots" aria-hidden="true"></div>
-  <footer class="picks">
-    <div class="picks-in">
-      <p class="picks-text" id="picks-text"></p>
-      <button class="copy" id="copy">Copy pick</button>
-    </div>
-  </footer>
 </div>
 
 <script>
 const store = {
-  get(k, d) { try { const v = localStorage.getItem('s0y.' + k); return v === null ? d : JSON.parse(v) } catch { return d } },
-  set(k, v) { try { localStorage.setItem('s0y.' + k, JSON.stringify(v)) } catch {} },
+  get(k, d) { try { const v = localStorage.getItem('s0y2.' + k); return v === null ? d : JSON.parse(v) } catch { return d } },
+  set(k, v) { try { localStorage.setItem('s0y2.' + k, JSON.stringify(v)) } catch {} },
 }
-const state = { view: 'today', lang: store.get('lang', 'en'), theme: store.get('theme', null), pick: store.get('pick', null),
-  net: 'online', srv: 'ok', pending: 0, phase: 'synced', last: '9:41', flash: false, pop: -1, toast: null, done: { h: false, p: false, t: false } }
+const state = { lang: store.get('lang', 'en'), theme: store.get('theme', null),
+  net: 'online', srv: 'ok', pending: 0, phase: 'synced', last: '9:41', flash: false, info: false, done: { h: false, p: false, t: false } }
 const t = (en, pt) => (state.lang === 'en' ? en : pt)
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
 const I = {
@@ -552,53 +564,35 @@ const home = (light) => `<div class="home ${light ? 'light' : ''}"></div>`
 I.cloudOff = '<svg viewBox="0 0 24 24"><path d="M7 18a4 4 0 0 1-.6-7.95A6 6 0 0 1 9 6.6M12.5 4.1A6 6 0 0 1 18 9a4.5 4.5 0 0 1 2.2 8.1M17 18H7"/><path d="M3 3l18 18"/></svg>'
 I.cloudAlert = '<svg viewBox="0 0 24 24"><path d="M7 18a4 4 0 0 1-.6-7.95A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9H7z"/><path d="M12 9.5v3.5M12 15.6v.1"/></svg>'
 I.cloudCheck = '<svg viewBox="0 0 24 24"><path d="M7 18a4 4 0 0 1-.6-7.95A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9H7z"/><path d="m9.5 13 2 2 3.5-4"/></svg>'
+I.syncing = '<svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-14.2 5M4 12a8 8 0 0 1 14.2-5"/><path d="M18.5 3v4h-4M5.5 21v-4h4"/></svg>'
 const TICK = '<svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>'
-
-const VIEWS = [{ key: 'today', label: 'Today' }, { key: 'settings', label: 'Settings → Sync' }]
-const OPTIONS = [
-  { name: 'Next to the date', note: 'A quiet line in Today’s date row while changes wait; a short “Synced” when they arrive.' },
-  { name: 'A cloud by the day', note: 'A small cloud after the day’s name while changes wait; tapping it explains.' },
-  { name: 'A toast, then Settings', note: 'One toast when a change can’t sync; after that only Settings shows what’s waiting.' },
-]
-const LETTERS = ['A', 'B', 'C']
+const PHONES = [{ kind: 'today', name: 'Today' }, { kind: 'settings', name: 'Settings → Sync' }]
 
 // ——— the simulated sync: about 2 seconds after a change (N-15), right away on reconnect, retries when the server fails ———
-let syncTimer, retryTimer, flashTimer, toastTimer
+let syncTimer, retryTimer, flashTimer
 const clock = { m: 41 }
 function change() {
   state.pending++
   clearTimeout(syncTimer)
-  if (state.net === 'offline') return setPhase('offline')
+  if (state.net === 'offline') { state.phase = 'offline'; return refresh() }
   if (state.phase !== 'error') state.phase = 'pending'
   syncTimer = setTimeout(attempt, 2000)
   refresh()
 }
 function attempt() {
   clearTimeout(retryTimer)
-  if (!state.pending) return setPhase('synced')
-  if (state.net === 'offline') return setPhase('offline')
-  if (state.srv === 'fail') { setPhase('error'); retryTimer = setTimeout(attempt, 8000); return }
+  if (!state.pending) { state.phase = 'synced'; return refresh() }
+  if (state.net === 'offline') { state.phase = 'offline'; return refresh() }
+  if (state.srv === 'fail') { state.phase = 'error'; retryTimer = setTimeout(attempt, 8000); return refresh() }
   state.phase = 'syncing'; refresh()
   setTimeout(() => {
     if (state.net === 'offline' || state.srv === 'fail') return attempt()
     state.pending = 0; clock.m++; state.last = `9:${clock.m}`
-    state.flash = true; state.pop = -1
-    setPhase('synced')
+    state.phase = 'synced'; state.flash = true
+    refresh()
     clearTimeout(flashTimer)
     flashTimer = setTimeout(() => { state.flash = false; refresh() }, 1800)
   }, 700)
-}
-// C's toast: once when changes start waiting, not again until they've synced.
-function setPhase(p) {
-  const waiting = (x) => x === 'offline' || x === 'error'
-  if (waiting(p) && !waiting(state.phase)) {
-    state.toast = p
-    clearTimeout(toastTimer)
-    toastTimer = setTimeout(() => { state.toast = null; refresh() }, 3200)
-  }
-  if (!waiting(p)) state.toast = null
-  state.phase = p
-  refresh()
 }
 const waitingNow = () => state.phase === 'offline' || state.phase === 'error'
 
@@ -606,29 +600,23 @@ const waitingNow = () => state.phase === 'offline' || state.phase === 'error'
 const changes = (n) => t(`${n} ${n === 1 ? 'change' : 'changes'}`, `${n} ${n === 1 ? 'alteração' : 'alterações'}`)
 const C = () => ({
   notSynced: t('Not synced yet', 'Ainda não sincronizado'), cant: t('Couldn’t sync', 'Não foi possível sincronizar'), synced: t('Synced', 'Sincronizado'),
-  popOffT: t(`${changes(state.pending)} not synced yet`, `${changes(state.pending)} ainda não sincronizada${state.pending === 1 ? '' : 's'}`),
-  popOffB: t('They sync when you’re back online. They’re safe on this phone.', 'Elas sincronizam quando você voltar a ficar online. Estão seguras neste celular.'),
-  popErrT: t(`Couldn’t sync ${changes(state.pending)}`, `Não foi possível sincronizar ${changes(state.pending)}`),
-  popErrB: t('Trying again soon. They’re safe on this phone.', 'Tentando de novo em breve. Estão seguras neste celular.'),
-  tryNow: t('Try now', 'Tentar agora'),
-  toastOff: t('Saved on this phone. It syncs when you’re online.', 'Salvo neste celular. Sincroniza quando você estiver online.'),
-  toastErr: t('Couldn’t sync. Trying again soon.', 'Não foi possível sincronizar. Tentando de novo em breve.'),
+  info: {
+    synced: [t('Everything is synced', 'Tudo sincronizado'), t(`Last synced at ${state.last}.`, `Última sincronização às ${state.last}.`)],
+    pending: [t('Syncing in a moment', 'Sincronizando em instantes'), t(`${changes(state.pending)} waiting.`, `${changes(state.pending)} aguardando.`)],
+    syncing: [t('Syncing…', 'Sincronizando…'), t(`${changes(state.pending)} on the way.`, `${changes(state.pending)} a caminho.`)],
+    offline: [t(`${changes(state.pending)} waiting`, `${changes(state.pending)} aguardando`), t('You’re offline. They sync when you’re back, and they’re safe on this phone.', 'Você está offline. Elas sincronizam quando você voltar, e estão seguras neste celular.')],
+    error: [t(`Couldn’t sync ${changes(state.pending)}`, `Não foi possível sincronizar ${changes(state.pending)}`), t('Trying again soon. They’re safe on this phone.', 'Tentando de novo em breve. Estão seguras neste celular.')],
+  },
 })
 
-// ——— Today ———
-function indicatorA(c) {
-  if (waitingNow()) return state.phase === 'error'
-    ? ` <span class="sync-note err">· ${I.cloudAlert}${c.cant}</span>`
-    : ` <span class="sync-note">· ${I.cloudOff}${c.notSynced}</span>`
-  if (state.flash) return ` <span class="sync-note ok">· ${I.cloudCheck}${c.synced}</span>`
+// ——— Today: the status sits at the right end of the date line ———
+function note(c) {
+  if (state.phase === 'error') return `<span class="sync-note err">${I.cloudAlert}${c.cant}</span>`
+  if (state.phase === 'offline') return `<span class="sync-note">${I.cloudOff}${c.notSynced}</span>`
+  if (state.flash) return `<span class="sync-note ok">${I.cloudCheck}${c.synced}</span>`
   return ''
 }
-function cloudB(i) {
-  if (waitingNow()) return `<span class="icon-btn cloud ${state.phase === 'error' ? 'err' : ''}" data-pop="${i}" aria-label="${C().notSynced}">${state.phase === 'error' ? I.cloudAlert : I.cloudOff}</span>`
-  if (state.flash) return `<span class="icon-btn cloud ok">${I.cloudCheck}</span>`
-  return ''
-}
-function today(i) {
+function today() {
   const c = C()
   const items = [
     ['h', 'var(--accent)', t('At least 45 minutes of exercise', 'Pelo menos 45 minutos de exercício'), state.done.h ? t('1 of 3 this week', '1 de 3 nesta semana') : t('0 of 3 this week', '0 de 3 nesta semana'), ''],
@@ -637,10 +625,11 @@ function today(i) {
   ]
   const rows = items.map(([k, kc, title, detail, sq]) => `<div class="item ${state.done[k] ? 'done' : ''}" style="--kc:${kc}"><span class="check ${sq} ${state.done[k] ? 'on' : ''}" data-check="${k}"><i>${TICK}</i></span><div class="item-main"><p class="item-title">${title}</p><p class="item-detail">${detail}</p></div></div>`).join('')
   const tabs = [[I.today, t('Today', 'Hoje'), 1], [I.goals, t('Plan', 'Plano')], [I.review, t('Review', 'Revisão')], [I.insights, t('Insights', 'Análises')]]
-  let html = `<div class="screen scroll">
+  return `<div class="screen scroll">
+    <div class="date-row"><p class="eyebrow">${t('21 October · 3 items', '21 de outubro · 3 itens')}</p>${note(c)}</div>
     <div class="head-row">
-      <div><p class="eyebrow">${t('21 October · 3 items', '21 de outubro · 3 itens')}${i === 0 ? indicatorA(c) : ''}</p><h1 class="large-title">${t('Wednesday', 'Quarta')}${i === 1 ? cloudB(i) : ''}</h1></div>
-      <div class="head-actions"><span class="icon-btn">${I.filter}</span><span class="icon-btn">${I.calendar}</span><span class="icon-btn" data-view-go="settings" style="cursor:pointer">${I.settings}</span></div>
+      <h1 class="large-title">${t('Wednesday', 'Quarta')}</h1>
+      <div class="head-actions"><span class="icon-btn">${I.filter}</span><span class="icon-btn">${I.calendar}</span><span class="icon-btn">${I.settings}</span></div>
     </div>
     <div class="seg-app"><span class="on">${t('All', 'Tudo')}</span><span>${t('Goals', 'Metas')}</span><span>${t('Projects', 'Projetos')}</span><span>${t('Tasks', 'Tarefas')}</span></div>
     <div class="card group">
@@ -649,25 +638,21 @@ function today(i) {
     </div>
   </div>
   <div class="fab">${I.plus}</div><div class="tabbar"><nav>${tabs.map(([ic, l, on]) => `<span class="${on ? 'on' : ''}">${ic}${l}</span>`).join('')}</nav></div>`
-  if (i === 1 && state.pop === 1 && waitingNow()) {
-    html += `<div class="pop"><b>${state.phase === 'error' ? c.popErrT : c.popOffT}</b><p>${state.phase === 'error' ? c.popErrB : c.popOffB}</p>${state.phase === 'error' ? `<button class="btn primary" data-try>${c.tryNow}</button>` : ''}</div>`
-  }
-  if (i === 2 && state.toast) html += `<div class="toast">${state.toast === 'error' ? c.toastErr : c.toastOff}</div>`
-  return html
 }
 
-// ——— Settings → Sync, as the app shows it today ———
+// ——— Settings → Sync: the last sync time and an icon; the icon explains ———
 function settings() {
-  const value = state.phase === 'syncing' ? t('Syncing…', 'Sincronizando…')
-    : waitingNow() ? t(`${state.last} · offline, will retry`, `${state.last} · sem conexão, vai tentar de novo`) : state.last
-  const waiting = state.pending ? ` · ${t('Waiting', 'Aguardando')} ${state.pending}` : ''
+  const c = C()
+  const [cls, icon] = { synced: ['', I.cloudCheck], pending: ['', I.cloudCheck], syncing: ['busy', I.syncing], offline: ['off', I.cloudOff], error: ['err', I.cloudAlert] }[state.phase]
+  const [it, ib] = c.info[state.phase]
   return `<div class="screen scroll" style="padding-top:calc(var(--st) + 4px)">
-    <button data-view-go="today" style="color:var(--accent);font-size:16px;display:inline-flex;align-items:center;min-height:44px;margin:0 0 4px -6px">${svgIn('back', 'ico').replace('class="ico"', 'class="ico" style="width:22px;height:22px;stroke-width:2.2"')}${t('Today', 'Hoje')}</button>
+    <button style="color:var(--accent);font-size:16px;display:inline-flex;align-items:center;min-height:44px;margin:0 0 4px -6px">${svgIn('back', 'ico').replace('class="ico"', 'class="ico" style="width:22px;height:22px;stroke-width:2.2"')}${t('Today', 'Hoje')}</button>
     <h1 class="large-title" style="margin-bottom:16px">${t('Settings', 'Ajustes')}</h1>
     <p class="sec-head"><span>${t('Sync', 'Sincronização')}</span></p>
-    <div class="list">
+    <div class="list" style="position:relative; overflow:visible">
       <div class="lrow"><span class="k">${t('Account', 'Conta')}</span><span class="v">ana.souza@gmail.com</span></div>
-      <div class="lrow"><span class="k">${t('Synced', 'Sincronizado')}</span><span class="v" style="${waitingNow() && state.phase === 'error' ? 'color:var(--warn)' : ''}">${value}${waiting}</span></div>
+      <div class="lrow"><span class="k">${t('Synced', 'Sincronizado')}</span><span class="sync-val">${state.last}<span class="sync-ic ${cls}" data-info aria-label="${it}">${icon}</span></span></div>
+      ${state.info ? `<div class="info-pop" style="top:100px"><b>${it}</b><span>${ib}</span></div>` : ''}
       <div class="lrow act left" data-try style="cursor:pointer">${t('Sync now', 'Sincronizar agora')}</div>
     </div>
   </div>`
@@ -676,47 +661,36 @@ function settings() {
 // ——— render ———
 const $ = (s) => document.querySelector(s)
 const isPhone = () => matchMedia('(max-width: 760px)').matches
-const phoneHtml = (i) => `${status()}${state.view === 'today' ? today(i) : settings()}${home()}`
+const phoneHtml = (p) => `${status()}${p.kind === 'today' ? today() : settings()}${home()}`
 function chrome() {
   if (state.theme) document.documentElement.dataset.theme = state.theme
   else delete document.documentElement.dataset.theme
   document.documentElement.lang = state.lang === 'en' ? 'en' : 'pt-BR'
   const dark = state.theme ? state.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
-  $('#steps').innerHTML = VIEWS.map((v, k) => `<button class="chip ${v.key === state.view ? 'on' : ''}" data-step="${v.key}"><span class="n">${k + 1}</span>${v.label}</button>`).join('')
   for (const b of document.querySelectorAll('#lang button')) b.classList.toggle('on', b.dataset.l === state.lang)
   for (const b of document.querySelectorAll('#theme button')) b.classList.toggle('on', b.dataset.t === (dark ? 'dark' : 'light'))
   for (const b of document.querySelectorAll('#net button')) b.classList.toggle('on', b.dataset.net === state.net)
   for (const b of document.querySelectorAll('#srv button')) b.classList.toggle('on', b.dataset.srv === state.srv)
   const phase = { synced: 'everything synced', pending: 'syncing in about 2 seconds', syncing: 'syncing now', offline: 'offline, changes waiting', error: 'server failing, retrying' }[state.phase]
   $('#sim-state').innerHTML = `<b>${state.pending} waiting</b> · ${phase}`
-  $('#picks-text').innerHTML = state.pick ? `<b>Picked:</b> ${state.pick}, ${OPTIONS[LETTERS.indexOf(state.pick)].name}` : 'No pick yet.'
-  $('#copy').disabled = !state.pick
 }
 function render() {
   chrome()
   const scroller = $('#screens')
-  const keep = scroller.scrollLeft
-  scroller.innerHTML = OPTIONS.map((o, i) => {
-    const picked = state.pick === LETTERS[i]
-    return `<article class="opt" data-i="${i}">
-      <div class="opt-head"><span class="letter">${LETTERS[i]}</span><h2 class="opt-name">${o.name}</h2></div>
-      <div class="device"><div class="scr"><div class="vp ${isPhone() ? 'bare' : ''}">${phoneHtml(i)}</div></div></div>
-      <p class="opt-note">${o.note}</p>
-      <button class="pick ${picked ? 'on' : ''}" data-pick="${LETTERS[i]}" aria-pressed="${picked}">${picked ? '✓ Picked' : 'Pick ' + LETTERS[i]}</button>
-    </article>`
-  }).join('')
-  scroller.scrollLeft = keep
-  $('#dots').innerHTML = OPTIONS.map(() => '<i></i>').join('')
+  scroller.innerHTML = PHONES.map((p, i) => `<article class="opt" data-i="${i}">
+      <div class="opt-head"><h2 class="opt-name">${p.name}</h2></div>
+      <div class="device"><div class="scr"><div class="vp ${isPhone() ? 'bare' : ''}">${phoneHtml(p)}</div></div></div>
+    </article>`).join('')
+  $('#dots').innerHTML = PHONES.map(() => '<i></i>').join('')
   fit(); syncDots()
 }
-// The three phones again, each keeping its scroll.
 function refresh() {
   chrome()
-  OPTIONS.forEach((_, i) => {
+  PHONES.forEach((p, i) => {
     const vp = document.querySelector(`.opt[data-i="${i}"] .vp`)
     if (!vp) return
     const top = vp.querySelector('.screen')?.scrollTop || 0
-    vp.innerHTML = phoneHtml(i)
+    vp.innerHTML = phoneHtml(p)
     const sc = vp.querySelector('.screen')
     if (sc) sc.scrollTop = top
   })
@@ -735,16 +709,14 @@ function syncDots() {
   const i = Math.round(s.scrollLeft / Math.max(1, s.clientWidth))
   document.querySelectorAll('#dots i').forEach((d, k) => d.classList.toggle('on', k === i))
 }
-const setView = (key) => { state.view = key; state.pop = -1; render() }
 
 // ——— events ———
-$('#steps').addEventListener('click', (e) => { const b = e.target.closest('[data-step]'); if (b) setView(b.dataset.step) })
 $('#lang').addEventListener('click', (e) => { const b = e.target.closest('[data-l]'); if (!b) return; state.lang = b.dataset.l; store.set('lang', state.lang); render() })
 $('#theme').addEventListener('click', (e) => { const b = e.target.closest('[data-t]'); if (!b) return; state.theme = b.dataset.t; store.set('theme', state.theme); render() })
 $('#net').addEventListener('click', (e) => {
   const b = e.target.closest('[data-net]'); if (!b || b.dataset.net === state.net) return
   state.net = b.dataset.net
-  if (state.net === 'offline') { clearTimeout(syncTimer); if (state.pending) return setPhase('offline'); return refresh() }
+  if (state.net === 'offline') { clearTimeout(syncTimer); if (state.pending) state.phase = 'offline'; return refresh() }
   if (state.pending) attempt(); else refresh()
 })
 $('#srv').addEventListener('click', (e) => {
@@ -754,32 +726,13 @@ $('#srv').addEventListener('click', (e) => {
   refresh()
 })
 $('#screens').addEventListener('click', (e) => {
-  const pick = e.target.closest('[data-pick]')
-  if (pick) { state.pick = state.pick === pick.dataset.pick ? null : pick.dataset.pick; store.set('pick', state.pick); chrome(); render(); return }
   const chk = e.target.closest('[data-check]')
   if (chk) { state.done[chk.dataset.check] = !state.done[chk.dataset.check]; change(); return }
-  const pop = e.target.closest('[data-pop]')
-  if (pop) { state.pop = state.pop === 1 ? -1 : 1; refresh(); return }
-  if (e.target.closest('[data-try]')) { state.pop = -1; attempt(); return }
-  const g = e.target.closest('[data-view-go]')
-  if (g) { setView(g.dataset.viewGo); return }
-  if (state.pop !== -1 && !e.target.closest('.pop')) { state.pop = -1; refresh() }
+  if (e.target.closest('[data-info]')) { state.info = !state.info; refresh(); return }
+  if (e.target.closest('[data-try]')) { state.info = false; attempt(); return }
+  if (state.info && !e.target.closest('.info-pop')) { state.info = false; refresh() }
 })
 $('#screens').addEventListener('scroll', syncDots, { passive: true })
-$('#copy').addEventListener('click', async () => {
-  if (!state.pick) return
-  const text = `S0 "Not synced yet" pick: ${state.pick} (${OPTIONS[LETTERS.indexOf(state.pick)].name})`
-  const btn = $('#copy')
-  try {
-    await navigator.clipboard.writeText(text)
-    btn.textContent = 'Copied'
-    setTimeout(() => (btn.textContent = 'Copy pick'), 1600)
-  } catch {
-    const box = document.createElement('textarea')
-    box.className = 'fallback'; box.rows = 2; box.readOnly = true; box.value = text
-    $('#picks-text').replaceChildren(box); box.select()
-  }
-})
 let resizeTimer, wasPhone = isPhone()
 addEventListener('resize', () => {
   clearTimeout(resizeTimer)

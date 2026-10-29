@@ -510,6 +510,13 @@ Allowing several devices is cheap (blocking would cost more and hurt recovery).
   hasn't received (offline, or sync failing), a small quiet status shows "Not synced yet", for example
   near the screen title or in a toast after an edit made offline, and clears once sync catches up.
   Settings already shows pending changes. Mockup first; keep it subtle (few badges).
+  **Picked in S0 (2026-10-29), option A:** at the right end of Today's date line ("21 October · 3
+  items"), a small cloud and "Not synced yet" (grey, offline) or "Couldn't sync" (orange, server
+  failing); a brief "Synced" when the changes arrive, then nothing. Nothing shows during the normal
+  2-second wait (N-15), so it never flickers. **Settings → Sync** gets shorter: the "Synced" row shows
+  only the last sync time and a status icon (synced, syncing, offline, failing); tapping the icon
+  explains ("1 change waiting. You're offline…"). Mockup: [not synced](mockups/not-synced.html), artifact
+  [Smart Meta Sync Status](https://claude.ai/artifact/2HvhRdmFx4b1cyUEH565is).
 - The owner's rule: **the user must never lose data.** Every conflict keeps the newest version, the
   phone never deletes local data on its own, and backups cover the rest.
 
@@ -863,8 +870,8 @@ done (owner's rule, 2026-10-21). The merge to `main` comes after S6 (§13).
 - [x] Avatars: several styles with many options, shown as a friend list. Picked 2026-10-29, see §6.4.
 - [x] Sign-in (email, code), passkey or data-password setup, Waiting for access, Requests (approve).
       Picked 2026-10-23, see §2 "Sign-in flow".
-- [ ] "Not synced yet" indicator.
-- **Done when:** the owner has picked an option for each.
+- [x] "Not synced yet" indicator. Picked 2026-10-29, see §6.9.
+- **Done when:** the owner has picked an option for each. **Done 2026-10-29.**
 
 ### S1. Spikes and test setup
 - [ ] Owner: create the staging Supabase project; turn off Vercel preview protection; Claude adds the
@@ -1023,3 +1030,6 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
 - **2026-10-29 (2):** Settings → Notifications picked (§2 "UI decisions"): one page, switches that open
   their options like Quick Add, banner-style cards for "not allowed yet" and "no account". The owner
   removed the status rows. Diagnostics become logs users don't see (spec NO-23 changed).
+- **2026-10-29 (3):** "Not synced yet" picked (§6.9): a quiet status at the right of Today's date line;
+  Settings → Sync shows the last sync time and an icon that explains. **S0 done:** every mockup
+  picked; the mockups live in `docs/notifications/mockups/` and the picks in §2, §6.4 and §6.9.
