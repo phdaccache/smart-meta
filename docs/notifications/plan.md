@@ -954,7 +954,7 @@ Built on 2026-10-29; the owner tested everything on two phones on the preview th
       2026-10-29). The owner is recognized by the same email hash as the Developer section, so the
       address isn't in the public repo, and gets in by themselves on the first sign-in. The file is
       safe to run again: the existing-users backfill only runs when `members` is created. Tested
-      before pasting on a local Postgres with a stand-in for Supabase's auth (47 checks: who can read
+      before pasting on a local Postgres with a stand-in for Supabase's auth (48 checks: who can read
       and write what, the cap, approving, deleting).
 - [x] Waiting for access screen; Requests screen with Approve (Settings → Developer → Requests, with
       the number waiting). **No push to the owner in S2:** it needs S5's pieces (see S5).
@@ -1016,8 +1016,12 @@ Choices made while building (tell the owner; change if they disagree):
   (HaveIBeenPwned) needs a paid Supabase plan, and the app uses no passwords at all.
 - Mockup leftovers, by stage: Face ID, data password and new-phone unlock (sign-in screens 5, 6, 7, 11)
   are S3; "Not synced yet" and the Sync row's status are S4; the friend list is for social, later. The
-  avatars mockup shows names and avatars in Requests; S2 shows the email's initial, since a waiting
-  person's profile stays on their phone (AC-4). Approved members could show theirs: ask the owner.
+  avatars mockup shows names and avatars in Requests: approved members show theirs (owner's choice;
+  `members_overview()` returns them, visible to the owner as spec PR-7 says); people waiting show the
+  email's initial, since their profile stays on their phone (AC-4).
+- After S2 (2026-10-29): the avatar editor has no suggestion panel, only the emoji field, starting as 🙂
+  (owner); a removed member's phone keeps its owner, so a different person signing in there is asked to
+  save a copy and remove the data first instead of taking it into their account (AC-13).
 - Local testing against staging: `npm run dev -- --mode staging` with `.env.staging.local` (ignored by
   git), or the `dev-staging` entry in `.claude/launch.json`. `.env.local` points at production.
 - **Done when:** a test friend can sign up on the preview, wait, get approved with one tap, and sync.
