@@ -72,7 +72,7 @@ These are the contracts between stages. Changing one affects others.
 | S0 | Mockups: notifications, avatars, sign-in screens, "Not synced yet" | Done 2026-10-29 (every mockup picked) |
 | S1 | Tests on the owner's iPhone (passkey, push, captcha) + staging setup | Done 2026-10-29 (passkey chosen; push and captcha proven on iPhone and Android) |
 | S2 | Accounts | Done 2026-10-29 (tested on two phones; members, requests, profile, one person per phone) |
-| S3 | Encryption | Tested 2026-10-29 on both phones; the "open twice" warning added after |
+| S3 | Encryption | Done 2026-10-29 (tested on both phones; data encrypted on staging; "open twice" warning) |
 | S4 | Safety and operations (backups, alarm, limits, sync timing, privacy note) | Not started |
 | S5 | Core notifications | Not started |
 | S6 | The rest, then merge to `main` | Not started |

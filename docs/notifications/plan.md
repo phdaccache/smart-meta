@@ -1057,7 +1057,7 @@ Built on 2026-10-29; the owner tested every step below on the iPhone and Android
       dismissed while another copy is open on the device, gone by itself once it closes.
       `src/ui/OpenTwice.tsx`.
 - **Done when:** on staging, the dashboard shows only ciphertext and a second phone unlocks with Face ID
-  (or autofill).
+  (or autofill). **Done 2026-10-29.**
 
 How it works (details for later stages):
 - **Keys.** A random 256-bit data key (AES-GCM) per account, made on the phone. Each way to open it is a
@@ -1319,3 +1319,4 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   Chrome tab left open after installing shares the database with the app and, frozen in the background,
   blocks it. Added the "open twice" warning (can't be dismissed, owner's choice), one access check at a
   time, and a diagnostics log in Developer.
+- **2026-10-29 (10):** **S3 done.** The owner confirmed it; `notifications-s3` merged into `notifications`.
