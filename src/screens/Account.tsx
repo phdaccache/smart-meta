@@ -7,7 +7,12 @@ import {
   approve, CODE_LENGTH, looksLikeEmail, members, OtherOwnerError, pendingRequests, rejectRequest, removeMember, RESEND_SECONDS,
   saveAndRemove, sendCode, verifyCode, type Member, type Request,
 } from '../sync/account'
-import { useSyncStatus, type Access } from '../sync/controller'
+import { keysReady, syncStatus, useSyncStatus, type Access } from '../sync/controller'
+import { WrongKeyError } from '../sync/crypto'
+import type { KeyRow } from '../sync/crypto'
+import {
+  localRow, NoPrfError, passkeysWork, setUpWithPasskey, setUpWithPassword, unlockWithPasskey, unlockWithPassword,
+} from '../sync/keys'
 import { useCaptcha } from '../ui/captcha'
 import { holdKeyboard, PageText, passKeyboard, Screen, Section, Sheet, toast } from '../ui/components'
 import { IconChevronLeft, IconChevronRight } from '../ui/icons'
@@ -19,17 +24,17 @@ import { AvatarView } from '../ui/Avatar'
 
 /**
  * Signing in (spec AC-1 to AC-10), the screens picked in S0: full screens like the intro, the bar's title
- * on the steps that ask for something. In S3 the Face ID step comes in after the code.
+ * on the steps that ask for something. After the code, Face ID locks the data (spec PR-2, PR-3).
  */
-
-/** The "end-to-end encrypted" line waits for S3: until then it wouldn't be true. */
-const ENCRYPTED = false
 
 export function accountRoute(path: string): ReactNode | null {
   if (path === '/account') return <ActivateScreen />
   // In Safari on an iPhone, the Home Screen app and Safari keep separate data, and push only works there.
   if (path === '/account/email') return inIosBrowser() ? <SafariScreen /> : <EmailScreen />
   if (path === '/account/code') return <CodeScreen />
+  if (path === '/account/lock') return <LockScreen />
+  if (path === '/account/password') return <PasswordScreen />
+  if (path === '/account/unlock') return <UnlockScreen />
   if (path === '/account/waiting') return <WaitingScreen />
   if (path === '/settings/requests') return <DeveloperOnly><RequestsScreen /></DeveloperOnly>
   return null
@@ -37,10 +42,13 @@ export function accountRoute(path: string): ReactNode | null {
 
 /** Whether this sign-in began at Activate notifications: its dots then count that step too. */
 let fromActivate = false
+/** Whether the Face ID step is part of a sign-in (with dots), or shown on its own, as the app opens. */
+let signingIn = false
 
 /** Opens the email step, ready to type. Called in the tap, for the keyboard (see holdKeyboard). */
 export function openSignIn(activate = false) {
   fromActivate = activate
+  signingIn = true
   if (!inIosBrowser()) holdKeyboard()
   navigate('/account/email')
 }
@@ -59,17 +67,20 @@ const ICONS = {
   share: <Icon d={<><path d="M12 15V3.5M8 7.5l4-4 4 4" /><path d="M8.5 10.5H7A2.5 2.5 0 0 0 4.5 13v6A2.5 2.5 0 0 0 7 21.5h10a2.5 2.5 0 0 0 2.5-2.5v-6a2.5 2.5 0 0 0-2.5-2.5h-1.5" /></>} />,
   x: <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" /></svg>,
   check: <Icon d={<path d="m5 12.5 4.5 4.5L19 7.5" />} />,
+  faceId: <Icon d={<><path d="M3 8V6a3 3 0 0 1 3-3h2M16 3h2a3 3 0 0 1 3 3v2M21 16v2a3 3 0 0 1-3 3h-2M8 21H6a3 3 0 0 1-3-3v-2" /><path d="M8.5 9v1.5M15.5 9v1.5M12 9v4.5h-1" /><path d="M9 16.2c1.7 1.3 4.3 1.3 6 0" /></>} />,
   cloud: <Icon d={<path d="M7 18a4 4 0 0 1-.6-7.95A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9H7z" />} />,
   cloudOff: <Icon d={<><path d="M7 18a4 4 0 0 1-.6-7.95A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9H7z" /><path d="m10 11 4 4M14 11l-4 4" /></>} />,
 }
 
 /** The sign-in steps, as dots under each: the one shown is long. */
-const STEPS = ['activate', 'email', 'code'] as const
+const STEPS = ['activate', 'email', 'code', 'lock'] as const
 
 function Page(props: {
   /** The bar's title, on the steps that ask for something. */
   bar?: string
   back?: string
+  /** Instead of going back: where the screen's Back leads when it isn't the screen before. */
+  onBack?: () => void
   right?: ReactNode
   icon?: ReactNode
   /** The app's own icon instead, where the person is asked to open the app. */
@@ -88,8 +99,8 @@ function Page(props: {
   return (
     <div className={`screen intro account ${props.form ? 'form' : 'centered'}`}>
       <div className="intro-top account-bar">
-        {props.back ? (
-          <button type="button" className="back" onClick={() => goBack(props.back!)}>
+        {props.back || props.onBack ? (
+          <button type="button" className="back" onClick={() => (props.onBack ? props.onBack() : goBack(props.back!))}>
             <IconChevronLeft width={20} height={20} /> {t('nav.back')}
           </button>
         ) : <span />}
@@ -128,7 +139,7 @@ function ActivateScreen() {
     <>
       <Page icon={ICONS.bell} title={t('acct.activateTitle')} sub={t('acct.activateSub')} step="activate"
         right={<button type="button" className="btn ghost" onClick={() => setAsking(true)}>{t('common.skip')}</button>}
-        foot={ENCRYPTED && <p className="account-lock">{ICONS.lock}<span>{t('acct.encrypted')}</span></p>}
+        foot={<p className="account-lock">{ICONS.lock}<span>{t('acct.encrypted')}</span></p>}
         nav={<button className="btn primary block" onClick={() => openSignIn(true)}>{t('acct.continueEmail')}</button>}
         below={<button className="quiet-link" onClick={() => setAsking(true)}>{t('acct.notNow')}</button>} />
       {/* 2 · "Not now": no reminders and no backup without an account (spec AC-9). */}
@@ -312,12 +323,237 @@ function CodeScreen() {
   )
 }
 
-/** After the code: a member goes on to Today (sync brings their data); anyone else waits. */
+/**
+ * After the code: first the data key, made with Face ID or opened with it (on a new phone); then a member
+ * goes on to Today (sync brings their data) and anyone else waits.
+ */
 function done(access: Access | null) {
   typedEmail = ''
   sentAt = 0
+  const lock = syncStatus().lock
+  if (lock) navigate(lock === 'setup' ? '/account/lock' : '/account/unlock', { replace: true })
+  else finish(access)
+}
+
+function finish(access: Access | null) {
+  signingIn = false
   if (access === 'waiting' || access === 'full') openOver('/', '/account/waiting')
   else navigate('/')
+}
+
+/** With the data key on this phone: sync starts (for a member), and the sign-in goes on. */
+async function keysDone() {
+  await keysReady()
+  finish(syncStatus().access)
+}
+
+// ——— 5, 7 and 11 · Face ID, the data password, a new phone ———
+
+/** Face ID on an iPhone; Android's passkeys open with the screen lock. */
+const iphone = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+const byPhone = (ios: Key, other: Key, vars?: Record<string, string>) => tk(iphone() ? ios : other, vars)
+
+/** Shown once each time the app opens while sync waits for the key (see KeysPrompt). */
+let prompted = false
+
+/**
+ * Sync is waiting for Face ID: the screen for it opens once when the app opens, over Today. Back leaves it
+ * for now; Settings → Account keeps a row for it.
+ */
+export function KeysPrompt() {
+  const s = useSyncStatus()
+  const { path } = useLocation()
+  useEffect(() => {
+    if (!s.lock || prompted || path.startsWith('/account') || path.startsWith('/welcome')) return
+    prompted = true
+    openOver('/', s.lock === 'setup' ? '/account/lock' : '/account/unlock')
+  }, [s.lock, path])
+  return null
+}
+
+/** Leaves the key for later: sync waits, and the app goes on. */
+const later = () => {
+  signingIn = false
+  navigate('/')
+}
+
+function passkeyError(e: unknown): string {
+  const name = (e as Error)?.name
+  if (name === 'NotAllowedError' || name === 'AbortError') return t('acct.errNotFinished')
+  return t('acct.errOther')
+}
+
+// 5 · Lock your data with Face ID: makes the passkey and, with it, the keys.
+function LockScreen() {
+  const s = useSyncStatus()
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  /** Asked before the tap: Safari only allows a passkey right after one, with nothing slow in between. */
+  const works = useRef<boolean | null>(null)
+  useEffect(() => {
+    prompted = true
+    passkeysWork().then((w) => { works.current = w })
+  }, [])
+
+  const go = async () => {
+    if (busy || !s.userId) return
+    setError(null)
+    if (works.current === false) return navigate('/account/password', { replace: true })
+    setBusy(true)
+    try {
+      await setUpWithPasskey(s.userId, s.email ?? '')
+      await keysDone()
+    } catch (e) {
+      setBusy(false)
+      if (e instanceof NoPrfError) navigate('/account/password', { replace: true })
+      else setError(passkeyError(e))
+    }
+  }
+
+  return (
+    <Page onBack={later} bar={t('acct.yourData')} icon={ICONS.faceId} title={byPhone('acct.lockTitle', 'acct.lockTitleOther')}
+      sub={byPhone('acct.lockSub', 'acct.lockSubOther')} step={signingIn ? 'lock' : undefined}
+      foot={error && <p className="field-error account-hint">{error}</p>}
+      nav={<button className="btn primary block" disabled={busy} onClick={go}>{byPhone('acct.lockGo', 'acct.lockGoOther')}</button>}
+      below={<button className="quiet-link" onClick={() => navigate('/account/password')}>{byPhone('acct.lockTrouble', 'acct.lockTroubleOther')}</button>} />
+  )
+}
+
+/** Generated passwords are long (iPhone 20, Google 15): anything short was typed, and isn't the point. */
+const MIN_PASSWORD = 12
+
+/** The email above the password, so the password manager files and finds the password under it (S1). */
+function UsernameField({ email }: { email: string }) {
+  return (
+    <>
+      <label className="field-label" htmlFor="data-email">{t('acct.email')}</label>
+      <input id="data-email" name="email" type="email" autoComplete="username" value={email} readOnly />
+    </>
+  )
+}
+
+function PasswordField({ value, onChange, isNew }: { value: string; onChange: (v: string) => void; isNew: boolean }) {
+  return (
+    <>
+      <label className="field-label" htmlFor="data-password">{t('acct.pwLabel')}</label>
+      <input id="data-password" name="password" type="password" autoComplete={isNew ? 'new-password' : 'current-password'}
+        autoCapitalize="none" autoCorrect="off" spellCheck={false} enterKeyHint="done" value={value}
+        onChange={(e) => onChange(e.target.value)} />
+    </>
+  )
+}
+
+/**
+ * 7 · The data password, when passkeys can't be used (spec PR-2). The password manager makes it and saves
+ * it; then it's asked for again, by autofill, and only locks the data once it matches what was saved (S1:
+ * on one try the phone filled a different value than the one used to lock).
+ */
+function PasswordScreen() {
+  const s = useSyncStatus()
+  const email = s.email ?? ''
+  const [phase, setPhase] = useState<'save' | 'check'>('save')
+  const [password, setPassword] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const saved = useRef('')
+  useEffect(() => { prompted = true }, [])
+
+  const submit = async () => {
+    if (busy || !s.userId) return
+    setError(null)
+    if (phase === 'save') {
+      if (password.length < MIN_PASSWORD) return setError(t('acct.pwShort'))
+      saved.current = password
+      // A moment for the password manager to see the form sent and offer to save it, before the form changes.
+      setBusy(true)
+      setTimeout(() => { setBusy(false); setPassword(''); setPhase('check') }, 400)
+      return
+    }
+    if (password !== saved.current) return setError(t('acct.pwMismatch', { email }))
+    setBusy(true)
+    try {
+      await setUpWithPassword(s.userId, password)
+      await keysDone()
+    } catch {
+      setBusy(false)
+      setError(t('acct.errOther'))
+    }
+  }
+
+  const check = phase === 'check'
+  return (
+    <Page form onBack={later} bar={t('acct.yourData')} title={t(check ? 'acct.pwCheckTitle' : 'acct.pwTitle')}
+      sub={check ? t('acct.pwCheckSub', { email }) : byPhone('acct.pwSub', 'acct.pwSubOther')} step={signingIn ? 'lock' : undefined}
+      nav={<button className="btn primary block" disabled={busy || !password} onClick={submit}>
+        {t(check ? 'common.continue' : 'acct.pwSave')}
+      </button>}
+      below={check && <button className="quiet-link" onClick={() => { setPhase('save'); setPassword(''); setError(null) }}>{t('acct.pwAgain')}</button>}>
+      <form key={phase} className="account-form" onSubmit={(e) => { e.preventDefault(); submit() }}>
+        <UsernameField email={email} />
+        <PasswordField value={password} isNew={!check} onChange={(v) => { setPassword(v); setError(null) }} />
+        {error && <p className="field-error">{error}</p>}
+        {!iphone() && <p className="account-hint">{t('acct.pwKeyIcon')}</p>}
+      </form>
+    </Page>
+  )
+}
+
+/** 11 · A new phone, or after signing out: Face ID opens the data key; the data password if that's what locked it. */
+function UnlockScreen() {
+  const s = useSyncStatus()
+  const email = s.email ?? ''
+  const [row, setRow] = useState<KeyRow | null>(null)
+  const [usePassword, setUsePassword] = useState(false)
+  const [password, setPassword] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  useEffect(() => { prompted = true }, [])
+  // Read before the tap (see unlockWithPasskey).
+  useEffect(() => {
+    if (!s.userId) return
+    localRow(s.userId).then((r) => {
+      setRow(r)
+      if (r && !r.locks.some((l) => l.kind === 'passkey')) setUsePassword(true)
+    })
+  }, [s.userId])
+  const kinds = row && { passkey: row.locks.some((l) => l.kind === 'passkey'), password: row.locks.some((l) => l.kind === 'password') }
+
+  const open = async (how: 'passkey' | 'password') => {
+    if (busy || !s.userId || (how === 'password' && !password)) return
+    setError(null)
+    setBusy(true)
+    try {
+      if (how === 'passkey') await unlockWithPasskey(s.userId, row!)
+      else await unlockWithPassword(s.userId, password)
+      await keysDone()
+    } catch (e) {
+      setBusy(false)
+      if (how === 'password') setError(e instanceof WrongKeyError ? t('acct.pwWrong', { email }) : t('acct.errOther'))
+      else setError(e instanceof WrongKeyError || e instanceof NoPrfError ? byPhone('acct.unlockFailed', 'acct.unlockFailedOther') : passkeyError(e))
+    }
+  }
+
+  if (!kinds) return null
+  if (usePassword) {
+    return (
+      <Page form onBack={kinds.passkey ? () => { setUsePassword(false); setError(null) } : later} bar={t('acct.yourData')}
+        title={t('acct.unlockTitle')} sub={t('acct.unlockPwSub', { email })}
+        nav={<button className="btn primary block" disabled={busy || !password} onClick={() => open('password')}>{t('acct.unlockGoOther')}</button>}>
+        <form className="account-form" onSubmit={(e) => { e.preventDefault(); open('password') }}>
+          <UsernameField email={email} />
+          <PasswordField value={password} isNew={false} onChange={(v) => { setPassword(v); setError(null) }} />
+          {error && <p className="field-error">{error}</p>}
+          {!iphone() && <p className="account-hint">{t('acct.pwKeyIcon')}</p>}
+        </form>
+      </Page>
+    )
+  }
+  return (
+    <Page onBack={later} icon={ICONS.faceId} title={t('acct.unlockTitle')} sub={byPhone('acct.unlockSub', 'acct.unlockSubOther')}
+      foot={error && <p className="field-error account-hint">{error}</p>}
+      nav={<button className="btn primary block" disabled={busy} onClick={() => open('passkey')}>{byPhone('acct.unlockGo', 'acct.unlockGoOther')}</button>}
+      below={kinds.password && <button className="quiet-link" onClick={() => { setUsePassword(true); setError(null) }}>{t('acct.unlockUsePw')}</button>} />
+  )
 }
 
 // ——— 8 and 9 · Waiting for access, the list is full ———

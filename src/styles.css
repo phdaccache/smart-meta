@@ -262,7 +262,7 @@ a { color: var(--accent); }
 .link-btn { color: var(--accent); font-weight: 400; min-height: 44px; }
 .link-btn:active { opacity: 0.5; }
 
-input[type='text'], input[type='email'], input[type='number'], input[type='date'], input[type='time'],
+input[type='text'], input[type='email'], input[type='password'], input[type='number'], input[type='date'], input[type='time'],
 input:not([type]), textarea, select {
   width: 100%; min-height: 46px; padding: 10px 12px; border-radius: 12px;
   border: 1px solid var(--line-strong); background: var(--surface); font-size: 16px; outline: none;
@@ -1680,6 +1680,7 @@ button, a, summary, [role='button'], .chip {
 .intro-steps .share svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .account-form { width: 100%; text-align: left; margin-top: 28px; display: grid; gap: 8px; }
 .account-form .field-error, .account-form .account-hint { text-align: center; }
+.account-form input[readonly] { color: var(--ink-2); }
 .account-hint { font-size: 13px; color: var(--ink-2); line-height: 1.4; text-align: center; }
 .account-hint .link-btn { min-height: 0; font-size: 15px; font-weight: 500; }
 .intro-nav .account-hint { margin-bottom: 10px; }

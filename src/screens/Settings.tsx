@@ -262,7 +262,15 @@ function SyncSection() {
   return (
     <Section title={t('set.sync')}>
       <div className="card list settings">
-        {member ? (
+        {s.lock && (
+          // Sync waits for this phone to hold the data key (Face ID, or the data password).
+          <button className="list-row" onClick={() => navigate(s.lock === 'setup' ? '/account/lock' : '/account/unlock')}>
+            <div className="text"><div className="title">{t(s.lock === 'setup' ? 'set.lockRow' : 'set.unlockRow')}</div></div>
+            <span className="row-value">{t('set.syncPaused')}</span>
+            <IconChevronRight className="chev" width={18} />
+          </button>
+        )}
+        {member ? !s.lock && (
           <>
             <div className="list-row">
               <div className="text"><span className="title">{t('set.synced')}</span></div>

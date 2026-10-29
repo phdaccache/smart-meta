@@ -6,7 +6,9 @@ import { db } from '../db/db'
 import { writeListeners } from '../db/repo'
 import { getMeta, setMeta, setSettings } from '../db/settings'
 import { toast } from '../ui/components'
+import { EncryptedTarget } from './encrypted'
 import { queueEverything, SyncEngine } from './engine'
+import { forgetAll, forgetKey, keepKeys, localLockState, readyKey, type LockState } from './keys'
 import { startProfileSync, stopProfileSync } from './profile'
 import { SupabaseTarget, supabase } from './supabase'
 
@@ -28,11 +30,16 @@ export interface SyncStatus {
   lastSyncedAt: string | null
   pending: number
   error: string | null
+  /**
+   * Sync waits for this phone to hold the account's data key (spec PR-1): 'setup' makes it (Face ID, or
+   * the data password), 'unlock' opens the one already made. Null when ready, or not signed in.
+   */
+  lock: LockState | null
 }
 
 let status: SyncStatus = {
   configured: !!supabase, email: null, userId: null, requestedAt: null, access: null,
-  phase: 'signed-out', lastSyncedAt: null, pending: 0, error: null,
+  phase: 'signed-out', lastSyncedAt: null, pending: 0, error: null, lock: null,
 }
 const listeners = new Set<() => void>()
 const set = (patch: Partial<SyncStatus>) => {
@@ -104,7 +111,7 @@ async function onSession(user: User | null) {
     engine = null
     stopProfileSync()
     clearTimeout(timer)
-    set({ phase: 'signed-out', email: null, userId: null, requestedAt: null, access: null })
+    set({ phase: 'signed-out', email: null, userId: null, requestedAt: null, access: null, lock: null })
     return
   }
   let owner = await phoneOwner()
@@ -150,23 +157,44 @@ export async function refreshAccess(): Promise<Access | null> {
     if (access !== before) await setMeta(accessKey(userId), access)
   }
   if (status.userId !== userId) return null
-  set({ access })
+  // Access is said last, with the key's state already known: the sign-in reads both together.
   if (access === 'member') {
-    if (!engine) {
-      // Keep sync state per user, so signing in as someone else re-pulls from scratch.
-      engine = new SyncEngine(db, new SupabaseTarget(supabase, userId), syncKey(userId))
-      engine.lastSyncedAt().then((lastSyncedAt) => set({ lastSyncedAt }))
-      schedule(0)
-      startProfileSync(supabase, userId)
-    }
+    if (!engine) await startEngine(userId)
     // Approved while waiting: a green banner on Today says so until it's swiped away.
     if (before === 'waiting' || before === 'full') await setSettings({ acceptedBanner: true })
   } else {
     engine = null
     stopProfileSync()
     clearTimeout(timer)
+    if (access) {
+      const lock = await localLockState(userId)
+      if (status.userId === userId) set({ lock })
+    }
   }
+  if (status.userId === userId) set({ access })
   return access
+}
+
+/** Starts syncing once this phone holds the account's data key; until then, says what's missing. */
+async function startEngine(userId: string) {
+  const key = await readyKey(supabase!, userId)
+  if (status.userId !== userId || engine) return
+  if (!(key instanceof CryptoKey)) {
+    // Offline with nothing to go on: the next wake asks again.
+    if (key !== 'offline') set({ lock: key })
+    return
+  }
+  set({ lock: null })
+  // Keep sync state per user, so signing in as someone else re-pulls from scratch.
+  engine = new SyncEngine(db, new EncryptedTarget(new SupabaseTarget(supabase!, userId), key, userId), syncKey(userId))
+  engine.lastSyncedAt().then((lastSyncedAt) => set({ lastSyncedAt }))
+  schedule(0)
+  startProfileSync(supabase!, userId)
+}
+
+/** After Face ID or the data password: sync starts for a member; a waiting account is ready for later. */
+export async function keysReady() {
+  if (status.userId) await refreshAccess()
 }
 
 /**
@@ -179,6 +207,8 @@ async function removedFromSync(userId: string) {
   stopProfileSync()
   clearTimeout(timer)
   await db.meta.bulkDelete([accessKey(userId), syncKey(userId)])
+  // The keys went with the account.
+  await forgetAll(userId)
   // Their name and avatar go up again if they're let back in.
   await setMeta('profileDirty', true)
   await setSettings({ removedBanner: true, acceptedBanner: false })
@@ -242,7 +272,10 @@ export async function eraseAllData(): Promise<void> {
     await engine.clearRemote()
   }
   clearTimeout(timer)
+  // The account stays, and so do its keys: no Face ID needed to sync again.
+  const restore = status.userId ? await keepKeys(status.userId) : null
   await wipeLocal(db)
+  await restore?.()
 }
 
 /**
@@ -263,10 +296,13 @@ export async function canSignOut(): Promise<'ready' | 'offline' | 'unsynced' | '
 /** Run after canSignOut said 'ready' or 'keeps-data' (spec AC-13). */
 export async function signOut(): Promise<void> {
   const wipe = !!engine
+  const userId = status.userId
   engine = null
   clearTimeout(timer)
   await supabase?.auth.signOut({ scope: 'local' })
   if (wipe) await wipeLocal(db)
+  // Signed out, the phone is locked: signing in again asks for Face ID (spec PR-3).
+  else if (userId) await forgetKey(userId)
 }
 
 /** Settings → Delete account: the account and its server data, then this phone (spec AC-12). */

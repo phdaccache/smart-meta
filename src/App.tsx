@@ -20,7 +20,7 @@ import { GoalInsightsScreen, InsightsScreen } from './screens/Insights'
 import { TodayScreen } from './screens/Today'
 import { WhatsNew } from './screens/WhatsNew'
 import { introRoute, IntroStart } from './screens/Intro'
-import { accountRoute } from './screens/Account'
+import { accountRoute, KeysPrompt } from './screens/Account'
 import { DeveloperOnly } from './ui/developer'
 import { Screen } from './ui/components'
 
@@ -134,6 +134,7 @@ export function App() {
       <QuickAdd />
       <WhatsNew waiting={onboarding || path.startsWith('/welcome')} />
       <Toaster />
+      <KeysPrompt />
     </Fragment>
   )
 }
