@@ -651,14 +651,14 @@ function onboarding() {
 function todayBanner() {
   return today({ top: `<div class="swipe-wrap" id="sync-banner"><div class="in">
     <button class="hide-act" data-hide aria-label="${C.hide()}"><span class="hide-pill">${svgIn('x')}</span><span class="hide-lbl">${C.hide()}</span></button>
-    <div class="banner sw"><span class="ic">${I.cloudLock}</span><div class="text"><b>${C.banner()}</b></div>${I.chevR}</div>
+    <div class="banner sw" data-go="email"><span class="ic">${I.cloudLock}</span><div class="text"><b>${C.banner()}</b></div>${I.chevR}</div>
   </div></div>` })
 }
 
 const SCREENS = {
   prompt: () => [
     { html: onboarding(), cap: '<b>Onboarding</b>, right after “Not only goals”.' },
-    { html: todayBanner(), banner: true, cap: '<b>Today</b>, until the person syncs. Swipe it left to hide it: it comes back after a day, then a week, then a month, then only Settings offers it.' },
+    { html: todayBanner(), banner: true, cap: '<b>Today</b>, until the person syncs. Tapping it opens the email step. Swipe it left to hide it: it comes back after a day, then a week, then a month, then only Settings offers it.' },
   ],
   notnow: () => {
     const c = C.notnow()
@@ -804,10 +804,13 @@ document.addEventListener('pointermove', (e) => {
   drag.x = x
   setX(drag.banner, x)
 })
+// A swipe, or a tap that closes an open swipe, isn't also a tap that opens sign-in.
+let swallowClick = false
 document.addEventListener('pointerup', () => {
   if (!drag) return
   drag.banner.classList.remove('dragging')
   setX(drag.banner, drag.x < -REVEAL / 2 ? -REVEAL : 0)
+  swallowClick = drag.moved || drag.x0 < 0
   drag = null
 })
 
@@ -822,6 +825,7 @@ $('#screens').addEventListener('click', (e) => {
     return
   }
   if (e.target.closest('[data-again]')) { render(); return }
+  if (swallowClick && e.target.closest('.banner.sw')) { swallowClick = false; return }
   const g = e.target.closest('[data-go]')
   if (g && g.dataset.go) setStep(g.dataset.go)
 })

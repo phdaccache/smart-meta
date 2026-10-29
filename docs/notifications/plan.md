@@ -161,7 +161,7 @@ toast on Today; Requests is a Settings-style list. Numbers are the owner's scree
 | # | Screen | Wording (EN / PT) |
 |---|---|---|
 | 1 | **Activate notifications**, full screen right after "Not only goals", bell icon | "Activate notifications" / "Ative as notificações"; "Sign in with your email to back up your goals and get reminders."; above the button "Your goals are end-to-end encrypted." / "Suas metas são criptografadas de ponta a ponta."; "Continue with email", "Not now" |
-| 1 | **Banner on Today** until the person syncs: cloud icon, no subtitle | "Sync and get notifications" / "Sincronize e receba notificações". **Swipe left** uncovers a grey "Hide" pill (like deleting a task). Hidden, it comes back after **a day**, then **a week**, then **a month**, then never (Settings still offers sign-in) |
+| 1 | **Banner on Today** until the person syncs: cloud icon, no subtitle | "Sync and get notifications" / "Sincronize e receba notificações". **Tapping** opens the email step (screen 3; screen 12 in Safari). **Swipe left** uncovers a grey "Hide" pill (like deleting a task). Hidden, it comes back after **a day**, then **a week**, then **a month**, then never (Settings still offers sign-in) |
 | 2 | "Not now": action sheet over screen 1 | "Continue without an account?"; "You get no reminders and no backup. You can sign in later in Settings." / "Você fica sem lembretes e sem backup. Pode entrar depois em Ajustes."; Sign in, Continue without an account, Cancel |
 | 12 | **In Safari on iPhone**, instead of screen 3 | "Sign in from the app"; "Open Smart Meta from your Home Screen to sign in there."; a card with 1 Tap Share (with the share icon), 2 Add to Home Screen, 3 Open Smart Meta and sign in |
 | 3 | Email, bar "Sign in" | Title only: "What's your email?"; "Send code" |
@@ -997,3 +997,5 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   with "Activate notifications" after "Not only goals", plus a swipe-away "Sync and get notifications"
   banner on Today (back after a day, a week, a month, then never). In Safari, "Sign in from the app"
   replaces the email step. Spec AC-8 and AC-9 updated with the owner's changes. `origin/main` merged in.
+  Then: tapping the banner goes straight to the email step; "Go to Today" on screen 9 too; no bar title
+  on screens 8, 9 and 11. The mockup is final for S0; smaller changes happen while building.
