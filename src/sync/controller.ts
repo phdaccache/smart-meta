@@ -1,14 +1,29 @@
 import { useSyncExternalStore } from 'react'
+import type { User } from '@supabase/supabase-js'
 import { t } from '../i18n'
 import { wipeLocal } from '../db/backup'
 import { db } from '../db/db'
 import { writeListeners } from '../db/repo'
-import { SyncEngine } from './engine'
+import { getMeta, setMeta, setSettings } from '../db/settings'
+import { toast } from '../ui/components'
+import { queueEverything, SyncEngine } from './engine'
+import { startProfileSync, stopProfileSync } from './profile'
 import { SupabaseTarget, supabase } from './supabase'
+
+/**
+ * Where an account stands with the server: only members sync (spec AC-4). 'full' is waiting while the
+ * list is at its cap (N-1).
+ */
+export type Access = 'member' | 'waiting' | 'full'
 
 export interface SyncStatus {
   configured: boolean
   email: string | null
+  userId: string | null
+  /** When the account was made: the "Asked" line of Waiting for access. */
+  requestedAt: string | null
+  /** Null until known (signed out, or not asked yet). */
+  access: Access | null
   phase: 'signed-out' | 'idle' | 'syncing' | 'error'
   lastSyncedAt: string | null
   pending: number
@@ -16,7 +31,8 @@ export interface SyncStatus {
 }
 
 let status: SyncStatus = {
-  configured: !!supabase, email: null, phase: 'signed-out', lastSyncedAt: null, pending: 0, error: null,
+  configured: !!supabase, email: null, userId: null, requestedAt: null, access: null,
+  phase: 'signed-out', lastSyncedAt: null, pending: 0, error: null,
 }
 const listeners = new Set<() => void>()
 const set = (patch: Partial<SyncStatus>) => {
@@ -33,6 +49,18 @@ export function useSyncStatus(): SyncStatus {
     () => status,
   )
 }
+
+export const syncStatus = () => status
+
+/** Whose data this phone holds (spec AC-13): set at the first sign-in, cleared only when the phone is wiped. */
+export interface PhoneOwner {
+  id: string
+  email: string
+}
+const OWNER_KEY = 'phoneOwner'
+export const phoneOwner = () => getMeta<PhoneOwner | null>(OWNER_KEY, null)
+const accessKey = (userId: string) => `access:${userId}`
+const syncKey = (userId: string) => `sync:${userId}`
 
 let engine: SyncEngine | null = null
 let timer: ReturnType<typeof setTimeout> | undefined
@@ -67,6 +95,115 @@ export function syncNow() {
   schedule(0)
 }
 
+/** The user the latest session belongs to: a slower check for an older session gives way. */
+let current: string | null = null
+
+async function onSession(user: User | null) {
+  current = user?.id ?? null
+  if (!user) {
+    engine = null
+    stopProfileSync()
+    clearTimeout(timer)
+    set({ phase: 'signed-out', email: null, userId: null, requestedAt: null, access: null })
+    return
+  }
+  let owner = await phoneOwner()
+  // The same person with a new account (theirs was removed, or deleted elsewhere): the data is theirs.
+  if (owner && owner.id !== user.id && owner.email.toLowerCase() === (user.email ?? '').toLowerCase()) {
+    await db.meta.delete(OWNER_KEY)
+    owner = null
+  }
+  if (owner && owner.id !== user.id) {
+    // Someone else's data is on this phone: never upload it into this account, nor mix the two.
+    // Sending the code already refuses this (see sendCode); this catches a session from elsewhere.
+    await supabase!.auth.signOut({ scope: 'local' })
+    toast(t('acct.otherOwner', { email: owner.email }))
+    return
+  }
+  if (!owner) {
+    await setMeta(OWNER_KEY, { id: user.id, email: user.email ?? '' } satisfies PhoneOwner)
+    // What was made before signing in goes up with the first sync. A phone that already synced with
+    // this account (before phones had an owner) has nothing new to send.
+    if (!(await getMeta<{ lastSyncedAt?: string } | null>(syncKey(user.id), null))?.lastSyncedAt) await queueEverything(db)
+  }
+  if (current !== user.id) return
+  set({ email: user.email ?? null, userId: user.id, requestedAt: user.created_at, phase: 'idle', error: null })
+  await refreshAccess()
+}
+
+/**
+ * Asks the server whether this account may sync, and starts or stops sync to match. Offline, the
+ * last answer stands. Waiting turns into member on the first check after the owner approves.
+ */
+export async function refreshAccess(): Promise<Access | null> {
+  const userId = status.userId
+  if (!supabase || !userId) return null
+  const before = await getMeta<Access | null>(accessKey(userId), null)
+  let access = before
+  const { data, error } = await supabase.rpc('my_access')
+  if (!error && data === 'removed') {
+    await removedFromSync(userId)
+    return null
+  }
+  if (!error && (data === 'member' || data === 'waiting' || data === 'full')) {
+    access = data
+    if (access !== before) await setMeta(accessKey(userId), access)
+  }
+  if (status.userId !== userId) return null
+  set({ access })
+  if (access === 'member') {
+    if (!engine) {
+      // Keep sync state per user, so signing in as someone else re-pulls from scratch.
+      engine = new SyncEngine(db, new SupabaseTarget(supabase, userId), syncKey(userId))
+      engine.lastSyncedAt().then((lastSyncedAt) => set({ lastSyncedAt }))
+      schedule(0)
+      startProfileSync(supabase, userId)
+    }
+    // Approved while waiting: a green banner on Today says so until it's swiped away.
+    if (before === 'waiting' || before === 'full') await setSettings({ acceptedBanner: true })
+  } else {
+    engine = null
+    stopProfileSync()
+    clearTimeout(timer)
+  }
+  return access
+}
+
+/**
+ * The owner removed this account: its server data is gone, but this phone keeps everything and goes on
+ * without sync, with a red banner on Today saying so. The phone has no owner again, so they can sign up anew.
+ */
+async function removedFromSync(userId: string) {
+  engine = null
+  stopProfileSync()
+  clearTimeout(timer)
+  await db.meta.bulkDelete([OWNER_KEY, accessKey(userId), syncKey(userId)])
+  // Their name and avatar go up again if they're let back in.
+  await setMeta('profileDirty', true)
+  await setSettings({ removedBanner: true, acceptedBanner: false })
+  await supabase?.auth.signOut({ scope: 'local' }).catch(() => {})
+}
+
+/** Resolves once the session for `userId` is set up and its access known (or after a while, offline). */
+export function sessionReady(userId: string, ms = 15_000): Promise<Access | null> {
+  return new Promise((resolve) => {
+    const check = () => {
+      if (status.userId !== userId || status.access == null) return false
+      done(status.access)
+      return true
+    }
+    const done = (a: Access | null) => {
+      listeners.delete(onChange)
+      clearTimeout(timeout)
+      resolve(a)
+    }
+    const onChange = () => void check()
+    const timeout = setTimeout(() => done(status.userId === userId ? status.access : null), ms)
+    listeners.add(onChange)
+    check()
+  })
+}
+
 let started = false
 
 export function startSync() {
@@ -77,39 +214,21 @@ export function startSync() {
   })
   if (!supabase) return
 
+  // Supabase asks that nothing awaiting its own calls runs inside this callback: it would wait on itself.
   supabase.auth.onAuthStateChange((_event, session) => {
-    const user = session?.user
-    if (!user) {
-      engine = null
-      set({ phase: 'signed-out', email: null })
-      return
-    }
-    // Keep sync state per user, so signing in as someone else re-pulls from scratch.
-    engine = new SyncEngine(db, new SupabaseTarget(supabase!, user.id), `sync:${user.id}`)
-    set({ email: user.email ?? null, phase: 'idle' })
-    engine.lastSyncedAt().then((lastSyncedAt) => set({ lastSyncedAt }))
-    schedule(0)
+    setTimeout(() => void onSession(session?.user ?? null), 0)
   })
 
-  window.addEventListener('online', () => schedule(0))
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') schedule(500)
-  })
-  setInterval(() => schedule(0), 5 * 60_000)
-}
-
-/**
- * Email and password. Accounts are only ever made in the Supabase dashboard
- * (sign-ups stay off there), so no email is sent and nothing opens in Safari,
- * which on iOS doesn't share storage with the Home Screen app.
- */
-export async function signIn(email: string, password: string): Promise<void> {
-  if (!supabase) throw new Error(t('err.syncNotConfigured'))
-  const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
-  if (error) {
-    if (/invalid login credentials/i.test(error.message)) throw new Error(t('err.wrongLogin'))
-    throw new Error(error.message)
+  // Waiting for access, these look for the approval; a member syncs.
+  const wake = (delay: number) => {
+    if (engine) schedule(delay)
+    else if (status.userId) void refreshAccess()
   }
+  window.addEventListener('online', () => wake(0))
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') wake(500)
+  })
+  setInterval(() => wake(0), 5 * 60_000)
 }
 
 /**
@@ -125,7 +244,38 @@ export async function eraseAllData(): Promise<void> {
   await wipeLocal(db)
 }
 
-/** Local data stays: the device is the source of truth. */
+/**
+ * What signing out would do. A member's phone is wiped after a last sync, so only with nothing left
+ * to send; a waiting account has uploaded nothing, so its data stays on the phone, still theirs.
+ */
+export async function canSignOut(): Promise<'ready' | 'offline' | 'unsynced' | 'keeps-data'> {
+  if (!engine) return 'keeps-data'
+  if (!navigator.onLine) return 'offline'
+  try {
+    await engine.sync()
+  } catch {
+    return 'unsynced'
+  }
+  return (await engine.pending()) ? 'unsynced' : 'ready'
+}
+
+/** Run after canSignOut said 'ready' or 'keeps-data' (spec AC-13). */
 export async function signOut(): Promise<void> {
-  await supabase?.auth.signOut()
+  const wipe = !!engine
+  engine = null
+  clearTimeout(timer)
+  await supabase?.auth.signOut({ scope: 'local' })
+  if (wipe) await wipeLocal(db)
+}
+
+/** Settings → Delete account: the account and its server data, then this phone (spec AC-12). */
+export async function deleteAccount(): Promise<void> {
+  if (!supabase) return
+  if (!navigator.onLine) throw new Error(t('acct.errOffline'))
+  const { error } = await supabase.rpc('delete_my_account')
+  if (error) throw new Error(error.message)
+  engine = null
+  clearTimeout(timer)
+  await supabase.auth.signOut({ scope: 'local' }).catch(() => {})
+  await wipeLocal(db)
 }

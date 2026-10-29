@@ -3,11 +3,12 @@ import { exportData, importData, parseBackup, shareOrDownload } from '../db/back
 import { deleteValue, restoreValue, saveValues, setValueLook } from '../db/repo'
 import { setSettings } from '../db/settings'
 import { langSetting, setLangSetting, t, tlist, tn, type LangSetting } from '../i18n'
-import { formatTime } from '../lib/dates'
+import { dayMonth, formatTime, toDateStr } from '../lib/dates'
 import { loadSampleData } from '../dev/sample'
 import { loadWorstCaseData } from '../dev/worst'
-import { eraseAllData, signIn, signOut, syncNow, useSyncStatus } from '../sync/controller'
-import { DateField, Field, InfoTip, Screen, Section, Sheet, Stepper, Switch, toast, TypeToConfirm } from '../ui/components'
+import { canSignOut, deleteAccount, eraseAllData, signOut, syncNow, useSyncStatus } from '../sync/controller'
+import { pendingRequests } from '../sync/account'
+import { DateField, InfoTip, Screen, Section, Sheet, Stepper, Switch, toast, TypeToConfirm } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconChevronUpDown } from '../ui/icons'
 import { useInstall } from '../ui/install'
@@ -19,6 +20,9 @@ import { navigate, useLocation } from '../ui/router'
 import { ValueLookSheet, ValueTile, valueLook } from '../ui/valueLook'
 import type { Value } from '../lib/types'
 import { resetIntro } from './Intro'
+import { openSignIn } from './Account'
+import { AvatarView, ProfileSheet } from '../ui/Avatar'
+import { useProfile } from '../sync/profile'
 
 export function SettingsScreen() {
   const settings = useSettings()
@@ -33,8 +37,9 @@ export function SettingsScreen() {
   if (query.get('view') === 'restore') {
     return (
       <Screen back="/" title={t('set.restoreTitle')}>
+        <SyncSection />
         <DataSection lastExportAt={settings.lastExportAt} />
-        {developer && <DevSection devToday={settings.devToday} />}
+        {developer && <DeveloperRow />}
       </Screen>
     )
   }
@@ -44,6 +49,11 @@ export function SettingsScreen() {
   ]
   return (
     <Screen back="/" title={t('set.title')}>
+      <Section>
+        <div className="card list settings">
+          <ProfileRow onClick={() => navigate('/settings/account')} />
+        </div>
+      </Section>
       <Section title={t('set.secGoals')}>
         <div className="card list settings">
           <LinkRow title={t('set.values')} sub={values.length ? values.map((v) => v.name).join(' · ') : t('set.noneYet')}
@@ -69,9 +79,6 @@ export function SettingsScreen() {
         </div>
       </Section>
 
-      <SyncSection />
-      <DataSection lastExportAt={settings.lastExportAt} />
-
       <Section title={t('set.secAbout')}>
         <div className="card list settings">
           <LinkRow title={t('news.title')} onClick={() => setNews(true)} />
@@ -83,9 +90,78 @@ export function SettingsScreen() {
         <p className="settings-note">Smart Meta · {t('set.madeBy')}</p>
       </Section>
 
-      <EraseSection />
-      {developer && <DevSection devToday={settings.devToday} />}
+      {developer && <DeveloperRow />}
       <ReleaseNotes open={news} releases={RELEASES} onClose={() => setNews(false)} />
+    </Screen>
+  )
+}
+
+/**
+ * Who you are, at the top of Settings as on the iPhone: name and avatar (kept on the phone, signed in or
+ * not), and the email once signed in.
+ */
+function ProfileRow({ onClick, onEdit }: { onClick: () => void; onEdit?: () => void }) {
+  const s = useSyncStatus()
+  const profile = useProfile()
+  if (!profile) return null
+  const inner = (
+    <>
+      <AvatarView avatar={profile.avatar} size={56} />
+      <div className="text">
+        <div className={`title ellipsis ${profile.name ? '' : 'muted'}`}>{profile.name || t('prof.noName')}</div>
+        <div className="sub ellipsis">{s.email ?? t('set.notSignedIn')}</div>
+      </div>
+    </>
+  )
+  // On Account, a pencil in the row edits name and avatar; in Settings the row leads on to Account.
+  return onEdit ? (
+    <div className="list-row profile-row">
+      <button type="button" className="profile-main" onClick={onClick}>{inner}</button>
+      <button type="button" className="icon-btn profile-edit" aria-label={t('set.profileEdit')} onClick={onEdit}><IconEdit /></button>
+    </div>
+  ) : (
+    <button className="list-row profile-row" onClick={onClick}>
+      {inner}
+      <IconChevronRight className="chev" width={18} />
+    </button>
+  )
+}
+
+const IconEdit = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M4 20h4L19 9l-4-4L4 16z" /><path d="m13.5 6.5 4 4" />
+  </svg>
+)
+
+/** Settings → the profile row: name and avatar (the row's pencil), sync, backup, and erasing. */
+export function AccountScreen() {
+  const settings = useSettings()
+  const s = useSyncStatus()
+  const profile = useProfile()
+  const [editing, setEditing] = useState(false)
+  const [info, setInfo] = useState(false)
+  const signedIn = s.phase !== 'signed-out'
+  return (
+    <Screen back="/settings" backLabel={t('set.title')} title={t('set.accountTitle')}>
+      <Section>
+        <div className="card list settings">
+          {/* Signed in, it opens the whole email and when the account was made; otherwise the editor. */}
+          <ProfileRow onClick={() => (signedIn ? setInfo(true) : setEditing(true))} onEdit={() => setEditing(true)} />
+        </div>
+        <ProfileSheet open={editing} onClose={() => setEditing(false)} />
+        <Sheet open={info} onClose={() => setInfo(false)} title={t('set.accountTitle')}>
+          <div className="card list request-detail">
+            {profile?.name && <div className="list-row"><div className="text"><div className="sub">{t('prof.name')}</div><div className="title">{profile.name}</div></div></div>}
+            <div className="list-row"><div className="text"><div className="sub">{t('acct.email')}</div><div className="title">{s.email}</div></div></div>
+            {s.requestedAt && (
+              <div className="list-row"><div className="text"><div className="sub">{t('set.joined')}</div><div className="title">{fullDate(s.requestedAt)}</div></div></div>
+            )}
+          </div>
+        </Sheet>
+      </Section>
+      <SyncSection />
+      <DataSection lastExportAt={settings.lastExportAt} />
+      <DangerSection />
     </Screen>
   )
 }
@@ -127,6 +203,12 @@ function SelectRow<V extends string>({ id, title, info, value, options, onChange
   )
 }
 
+/** "29 October 2026", for when an account was made. */
+function fullDate(iso: string): string {
+  const d = new Date(iso)
+  return `${dayMonth(toDateStr(d))} ${d.getFullYear()}`
+}
+
 function ago(iso: string | null): string {
   if (!iso) return t('set.never')
   const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60_000)
@@ -139,24 +221,8 @@ function ago(iso: string | null): string {
 
 function SyncSection() {
   const s = useSyncStatus()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [leaving, setLeaving] = useState<Awaited<ReturnType<typeof canSignOut>> | null>(null)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [signingIn, setSigningIn] = useState(false)
-
-  const run = async (fn: () => Promise<void>) => {
-    setBusy(true)
-    setError(null)
-    try {
-      await fn()
-      setSigningIn(false)
-    } catch (e) {
-      setError((e as Error).message)
-    } finally {
-      setBusy(false)
-    }
-  }
 
   if (!s.configured) {
     return (
@@ -170,47 +236,72 @@ function SyncSection() {
     return (
       <Section title={t('set.sync')}>
         <div className="card list settings">
-          <LinkRow title={t('set.signInRow')} sub={t('set.signInSub')} onClick={() => setSigningIn(true)} />
+          <LinkRow title={t('set.signInRow')} sub={t('set.signInSub')} onClick={() => openSignIn()} />
         </div>
-        <Sheet open={signingIn} onClose={() => setSigningIn(false)} title={t('set.signIn')}>
-          <form onSubmit={(e) => { e.preventDefault(); run(() => signIn(email, password)) }}>
-            <Field label={t('set.email')} htmlFor="email" info={t('set.emailInfo')}>
-              <input id="email" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </Field>
-            <Field label={t('set.password')} htmlFor="password">
-              <input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
-            </Field>
-            {error && <p className="field-error" style={{ marginTop: 10 }}>{error}</p>}
-            <div className="sheet-actions">
-              <button className="btn primary" disabled={busy || !email.includes('@') || !password}>{t('set.signIn')}</button>
-            </div>
-          </form>
-        </Sheet>
       </Section>
     )
   }
 
+  // Signing out wipes a member's phone, so only once everything is up; it asks first (spec AC-13).
+  const askSignOut = async () => {
+    setBusy(true)
+    setLeaving(await canSignOut())
+    setBusy(false)
+  }
+  const leave = async () => {
+    setBusy(true)
+    try {
+      await signOut()
+      window.location.replace('/')
+    } catch (e) {
+      toast((e as Error).message)
+      setBusy(false)
+    }
+  }
+  const member = s.access === 'member'
   return (
     <Section title={t('set.sync')}>
       <div className="card list settings">
-        <div className="list-row">
+        <div className="list-row label-row">
           <div className="text"><span className="title">{t('set.account')}</span></div>
-          <span className="row-value">{s.email}</span>
+          <span className="row-value ellipsis">{s.email}</span>
         </div>
-        <div className="list-row">
-          <div className="text"><span className="title">{t('set.synced')}</span></div>
-          <span className="row-value">
-            {s.phase === 'syncing' ? t('set.syncing') : s.phase === 'error' ? t('set.offlineRetry', { when: ago(s.lastSyncedAt) }) : ago(s.lastSyncedAt)}
-            {s.pending > 0 && ` · ${t('set.waiting')} ${s.pending}`}
-          </span>
-        </div>
-        <button className="list-row accent" onClick={syncNow} disabled={s.phase === 'syncing'}>
-          <div className="text"><div className="title">{t('set.syncNow')}</div></div>
-        </button>
-        <button className="list-row accent" onClick={() => signOut()}>
+        {member ? (
+          <>
+            <div className="list-row">
+              <div className="text"><span className="title">{t('set.synced')}</span></div>
+              <span className="row-value">
+                {s.phase === 'syncing' ? t('set.syncing') : s.phase === 'error' ? t('set.offlineRetry', { when: ago(s.lastSyncedAt) }) : ago(s.lastSyncedAt)}
+                {s.pending > 0 && ` · ${t('set.waiting')} ${s.pending}`}
+              </span>
+            </div>
+            <button className="list-row accent" onClick={syncNow} disabled={s.phase === 'syncing'}>
+              <div className="text"><div className="title">{t('set.syncNow')}</div></div>
+            </button>
+          </>
+        ) : s.access && (
+          <button className="list-row" onClick={() => navigate('/account/waiting')}>
+            <div className="text"><div className="title">{t('set.access')}</div></div>
+            <span className="row-value">{t(s.access === 'full' ? 'acct.statusFull' : 'acct.statusWaiting')}</span>
+            <IconChevronRight className="chev" width={18} />
+          </button>
+        )}
+        <button className="list-row accent" onClick={askSignOut} disabled={busy}>
           <div className="text"><div className="title">{t('set.signOut')}</div></div>
         </button>
       </div>
+      <Sheet open={leaving != null} onClose={() => setLeaving(null)} title={t('set.signOutQ')}>
+        <p className="small muted" style={{ marginBottom: 14 }}>
+          {leaving === 'ready' ? t('set.signOutText') : leaving === 'keeps-data' ? t('set.signOutKeeps')
+            : leaving === 'offline' ? t('set.signOutOffline') : t('set.signOutUnsynced')}
+          {leaving === 'ready' && <>{' '}<button className="link-btn" style={{ minHeight: 0 }} onClick={doExport}>{t('set.exportFirst')}</button></>}
+        </p>
+        <div className="sheet-actions">
+          {leaving === 'ready' || leaving === 'keeps-data'
+            ? <button className="btn primary" disabled={busy} onClick={leave}>{t('set.signOut')}</button>
+            : <button className="btn primary" onClick={() => setLeaving(null)}>{t('news.ok')}</button>}
+        </div>
+      </Sheet>
     </Section>
   )
 }
@@ -254,49 +345,87 @@ function DataSection({ lastExportAt }: { lastExportAt: string | null }) {
   )
 }
 
-function EraseSection() {
+/** The two that can't be undone, together at the bottom of Account: each asks in a sheet first. */
+function DangerSection() {
   const sync = useSyncStatus()
-  const [open, setOpen] = useState(false)
-  const synced = sync.configured && sync.phase !== 'signed-out'
-
-  const erase = async () => {
+  const [asking, setAsking] = useState<'erase' | 'delete' | null>(null)
+  const signedIn = sync.configured && sync.phase !== 'signed-out'
+  const run = async (fn: () => Promise<void>) => {
     try {
-      await eraseAllData()
+      await fn()
       window.location.replace('/')
     } catch (e) {
       toast((e as Error).message)
     }
   }
-
+  const erase = asking === 'erase'
   return (
     <Section>
-      {!open ? (
-        <div className="card list settings">
-          <LinkRow title={t('set.eraseAll')} tone="danger" onClick={() => setOpen(true)} />
-        </div>
-      ) : (
-        <div className="card pad">
-          <p style={{ fontWeight: 650, marginBottom: 6 }}>{t('set.eraseQ')}</p>
-          <p className="small muted" style={{ marginBottom: 14 }}>
-            {synced ? t('set.eraseTextSync') : t('set.eraseText')}{' '}
-            <button className="link-btn" style={{ minHeight: 0 }} onClick={doExport}>{t('set.exportFirst')}</button>
-          </p>
-          <TypeToConfirm phrase={t('set.erasePhrase')} action={t('set.eraseButton')} onConfirm={erase} />
-          <button className="btn ghost block" style={{ marginTop: 8 }} onClick={() => setOpen(false)}>{t('common.cancel')}</button>
-        </div>
-      )}
+      <div className="card list settings">
+        <LinkRow title={t('set.eraseAll')} tone="danger" onClick={() => setAsking('erase')} />
+        {signedIn && <LinkRow title={t('set.deleteAccount')} tone="danger" onClick={() => setAsking('delete')} />}
+      </div>
+      <Sheet open={asking != null} onClose={() => setAsking(null)} title={t(erase ? 'set.eraseQ' : 'set.deleteQ')}>
+        <p className="small muted" style={{ marginBottom: 14 }}>
+          {erase ? (signedIn ? t('set.eraseTextSync') : t('set.eraseText')) : t('set.deleteText')}{' '}
+          <button className="link-btn" style={{ minHeight: 0 }} onClick={doExport}>{t('set.exportFirst')}</button>
+        </p>
+        <TypeToConfirm key={asking ?? ''} phrase={t(erase ? 'set.erasePhrase' : 'set.deletePhrase')}
+          action={t(erase ? 'set.eraseButton' : 'set.deleteButton')} onConfirm={() => run(erase ? eraseAllData : deleteAccount)} />
+      </Sheet>
     </Section>
   )
 }
 
 // ——— developer (temporary) ———
 
+/** Settings → Developer, for testing only. */
+function DeveloperRow() {
+  return (
+    <Section>
+      <div className="card list settings">
+        <LinkRow title="Developer" sub="Just for testing the app." onClick={() => navigate('/settings/developer')} />
+      </div>
+    </Section>
+  )
+}
+
+export function DeveloperScreen() {
+  const settings = useSettings()
+  return (
+    <Screen back="/settings" backLabel={t('set.title')} title="Developer">
+      <DevSection devToday={settings.devToday} />
+    </Screen>
+  )
+}
+
+/**
+ * Developer → Requests, for the owner: how many wait. Read again each time this page is the one shown: it
+ * stays drawn under Requests, so approving there would otherwise leave the old count here.
+ */
+function useWaitingCount(signedIn: boolean): number | null {
+  const [n, setN] = useState<number | null>(null)
+  const { path } = useLocation()
+  const shown = path === '/settings/developer'
+  useEffect(() => {
+    if (!signedIn || !shown) return
+    let live = true
+    pendingRequests().then((r) => live && setN(r.length)).catch(() => live && setN(null))
+    return () => {
+      live = false
+    }
+  }, [signedIn, shown])
+  return n
+}
+
 function DevSection({ devToday }: { devToday: string | null }) {
   const settings = useSettings()
   const today = useToday(settings.rolloverHour)
   const [busy, setBusy] = useState(false)
   const [debugPaint, setDebugPaint] = useState(() => document.documentElement.classList.contains('debug-paint'))
-  const { email } = useSyncStatus()
+  const { email, access } = useSyncStatus()
+  // Only the owner's account can list requests; anyone else's Developer section has no row for it.
+  const waiting = useWaitingCount(access === 'member')
   const load = async (fill: (today: string) => Promise<void>) => {
     // Signed in, the erase would reach the synced copy and every device using it.
     if (email) return toast('Sign out of sync first. Sample data then stays on this device only.')
@@ -311,8 +440,11 @@ function DevSection({ devToday }: { devToday: string | null }) {
     }
   }
   return (
-    <Section title={<span className="title-row">Developer<InfoTip label="About Developer">Just for testing the app. Nothing here is needed day to day.</InfoTip></span>}>
+    <Section>
       <div className="card list settings">
+        {waiting != null && (
+          <LinkRow title={t('set.requests')} sub={tn('set.requestsSub', waiting)} onClick={() => navigate('/settings/requests')} />
+        )}
         <div className="list-row">
           <div className="text">
             <span className="title title-row">

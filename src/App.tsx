@@ -14,12 +14,14 @@ import { NewGoalScreen } from './screens/GoalForm'
 import { GoalsScreen } from './screens/Goals'
 import { NewProjectScreen, ProjectScreen } from './screens/Projects'
 import { openQuickAdd, QuickAdd } from './screens/QuickAdd'
-import { SettingsScreen, ValuesScreen } from './screens/Settings'
+import { AccountScreen, DeveloperScreen, SettingsScreen, ValuesScreen } from './screens/Settings'
 import { ReviewScreen } from './screens/Review'
 import { GoalInsightsScreen, InsightsScreen } from './screens/Insights'
 import { TodayScreen } from './screens/Today'
 import { WhatsNew } from './screens/WhatsNew'
 import { introRoute, IntroStart } from './screens/Intro'
+import { accountRoute } from './screens/Account'
+import { DeveloperOnly } from './ui/developer'
 import { Screen } from './ui/components'
 
 const TABS: { path: string; label: Key; Icon: typeof IconToday }[] = [
@@ -44,10 +46,12 @@ function route(path: string, query: URLSearchParams) {
   if ((m = match('/projects/:id', path))) return <ProjectScreen key={m.id} id={m.id} />
   if (path === '/settings') return <SettingsScreen />
   if (path === '/settings/values') return <ValuesScreen />
+  if (path === '/settings/account') return <AccountScreen />
+  if (path === '/settings/developer') return <DeveloperOnly><DeveloperScreen /></DeveloperOnly>
   if (path === '/review') return <ReviewScreen />
   if (path === '/insights') return <InsightsScreen />
   if ((m = match('/insights/goals/:id', path))) return <GoalInsightsScreen key={m.id} id={m.id} />
-  return introRoute(path) ?? <NotFound />
+  return introRoute(path) ?? accountRoute(path) ?? <NotFound />
 }
 
 function NotFound() {
@@ -72,7 +76,9 @@ export function App() {
 
   // Settings live on the device; goals arrive with sync, so a restored phone skips first run.
   const onboarding = !settings.onboarded && goalCount === 0
-  const content = onboarding && !path.startsWith('/welcome') && path !== '/settings' ? <IntroStart /> : route(path, query)
+  // Signing in from the intro's "Restore" (a new phone) happens before any goal is here.
+  const firstRunPage = path.startsWith('/welcome') || path.startsWith('/account') || path === '/settings'
+  const content = onboarding && !firstRunPage ? <IntroStart /> : route(path, query)
   const tabbed = !onboarding && hasTabs(path)
   // Each screen scrolls in a layer of its own, and the ones it was opened from stay drawn underneath,
   // each where it was, so Back finds them as they were (see screensUnder).

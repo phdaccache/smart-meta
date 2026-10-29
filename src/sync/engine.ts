@@ -124,3 +124,18 @@ export class SyncEngine {
     await this.setMeta({ cursor: null })
   }
 }
+
+/**
+ * Queues every record on this device, once each, for the first upload into an account: whatever
+ * was made before signing in goes up with it, even if it was never queued or the queue was cleared.
+ */
+export async function queueEverything(db: AppDB): Promise<void> {
+  const queuedAt = new Date().toISOString()
+  await db.transaction('rw', [...COLLECTIONS.map((c) => db.coll(c)), db.outbox], async () => {
+    await db.outbox.clear()
+    for (const collection of COLLECTIONS) {
+      const ids = (await db.coll(collection).toCollection().primaryKeys()) as string[]
+      await db.outbox.bulkAdd(ids.map((id) => ({ collection, id, queuedAt })))
+    }
+  })
+}

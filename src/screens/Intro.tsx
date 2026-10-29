@@ -21,7 +21,8 @@ import { CheckButton, Chip, Field, PageText, toast } from '../ui/components'
 import { useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
 import { FlagBR, FlagUS, IconCheck, IconChevronLeft, IconClose, IconPlus } from '../ui/icons'
 import { useInstall, useInstalled } from '../ui/install'
-import { goBack, match, navigate } from '../ui/router'
+import { syncStatus } from '../sync/controller'
+import { goBack, match, navigate, openOver } from '../ui/router'
 import { Tile, ValueTile, valueLook } from '../ui/valueLook'
 import {
   AchieveFields, KindField, MeasureFields, measureFields, PrepFields, PrepHead, SMART, SMART_LINE, SMART_Q, SmartBar, TimeFields, TitleFields, WhyText,
@@ -83,13 +84,19 @@ function useIntro(): IntroState {
   }, () => state)
 }
 
-/** Skip or finish: first run leaves the Getting started card on Today. */
-async function leaveIntro() {
+/**
+ * Skip or finish: first run leaves the Getting started card on Today. Finished (after "Not only goals"), it
+ * offers to sign in while signed out: Activate notifications (spec AC-8). Saving the goal already counted
+ * as onboarded, so this doesn't ask whether it's the first run.
+ */
+async function leaveIntro(finished = false) {
   const s = await getSettings()
   const introAt = toDateStr(new Date())
   await setSettings(s.onboarded ? { introAt } : { onboarded: true, gettingStarted: true, introAt })
   resetIntro()
-  navigate('/')
+  const sync = syncStatus()
+  if (finished && sync.configured && sync.phase === 'signed-out') openOver('/', '/account')
+  else navigate('/')
 }
 
 // ——— routing ———
@@ -98,7 +105,7 @@ const inBrowser = () =>
   (navigator as Navigator & { standalone?: boolean }).standalone !== true && !window.matchMedia('(display-mode: standalone)').matches
 
 /** On an iPhone, Safari and the Home Screen app keep separate data: install first. */
-function inIosBrowser(): boolean {
+export function inIosBrowser(): boolean {
   const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
   return ios && inBrowser()
 }
@@ -146,13 +153,13 @@ function Frame(props: {
             <IconChevronLeft width={20} height={20} /> {t('nav.back')}
           </button>
         ) : props.lead ?? <span />}
-        <button type="button" className="btn ghost" onClick={leaveIntro}>{t('common.skip')}</button>
+        <button type="button" className="btn ghost" onClick={() => leaveIntro()}>{t('common.skip')}</button>
       </div>
       <div className="intro-body">{props.children}</div>
       {props.nav && (
         <div className="wizard-nav intro-nav">
           {props.nav}
-          {props.below}
+          {props.below && <div className="intro-below">{props.below}</div>}
         </div>
       )}
     </div>
@@ -844,7 +851,9 @@ function IntroPieces() {
   const pieces = piecesFor(s.draft, s.example, habitText(s.draft))
   // 0–3: one piece large. 4: all four in the row. 5: inside the goal.
   const [stage, setStage] = useState(() => (reducedMotion() ? 5 : 0))
-  const label = stage >= 5 ? <PageText text={marked('intro.goToday')} /> : stage === 4 ? t('intro.pieces.join') : t('common.continue')
+  const signInNext = syncStatus().configured && syncStatus().phase === 'signed-out'
+  const label = stage >= 5 ? (signInNext ? t('common.next') : <PageText text={marked('intro.goToday')} />)
+    : stage === 4 ? t('intro.pieces.join') : t('common.continue')
 
   // Joining: each chip starts where it sat in the row and moves into the goal (FLIP).
   const chips = useRef(new Map<PieceKey, HTMLElement>())
@@ -869,7 +878,7 @@ function IntroPieces() {
     }
   }, [stage])
   const forward = () => {
-    if (stage >= 5) return leaveIntro()
+    if (stage >= 5) return leaveIntro(true)
     // Where each chip is as Join everything is pressed: that's where it leaves from.
     if (stage === 4) rects.current = new Map([...chips.current].map(([k, el]) => [k, el.getBoundingClientRect()]))
     setStage(stage + 1)

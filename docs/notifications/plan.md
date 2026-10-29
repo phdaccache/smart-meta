@@ -933,17 +933,93 @@ the guards in §7.2. The certificate trust setting on iPhone isn't needed (the p
 certificate).
 
 ### S2. Accounts
-- [ ] Owner: create the app Gmail (2-Step Verification, app password); paste the SMTP app password and
+- [x] Owner: create the app Gmail (2-Step Verification, app password); paste the SMTP app password and
       the Turnstile secret into Supabase (staging first). The Cloudflare account and Turnstile widget
-      already exist (made in S1, §13).
-- [ ] Claude: add the staging Preview variables for `notifications-s2` and its hostname to the
-      Turnstile widget, or merge into `notifications` before phone tests (§16.2).
-- [ ] Email-code sign-in with Turnstile; drop password sign-in.
-- [ ] `members` (cap 100) and `profiles` (name, avatar) with RLS and explicit grants; existing users
-      migrated as members.
-- [ ] Waiting for access screen; push to the owner on a new request; Requests screen with Approve.
-- [ ] Sign-in after the first goal; "Not now" popup; Safari hint on iPhone.
-- [ ] One person per phone (§6.8); sign-out rules; delete account.
+      already exist (made in S1, §13). Done 2026-10-29: the app Gmail is `smartmeta.codes@gmail.com`;
+      staging has custom SMTP (smtp.gmail.com:465), sign-ups on, anonymous sign-ins off, confirm email
+      on, 6-digit codes valid 1 hour, Turnstile captcha, 30 emails an hour, and the "Confirm signup"
+      and "Magic Link" templates show only the code, in English and Portuguese together. Cloudflare
+      flags "siteverify isn't being called" and Supabase flags Gmail as a personal provider: both
+      expected (Supabase calls siteverify once the app sends tokens; Gmail is the §6.2 choice).
+- [x] Claude: add the staging Preview variables for `notifications-s2` (done 2026-10-29). Owner: add
+      the S2 preview hostname `smart-meta-h2ur-git-notifications-s2-daccache.vercel.app` to the
+      Turnstile widget. S2 is tested on its own preview (§16.2).
+Built on 2026-10-29; the owner tested everything on two phones on the preview the same day:
+- [x] Email-code sign-in with Turnstile; drop password sign-in. `src/sync/account.ts` (send and check
+      the code), `src/ui/captcha.ts` (Turnstile, invisible unless Cloudflare wants a tap, reset after
+      every send so "Send a new code" has a fresh token), screens in `src/screens/Account.tsx`.
+- [x] `members` (cap 100) and `profiles` (name, avatar) with RLS and explicit grants; existing users
+      migrated as members: `supabase/migrations/0002_accounts.sql`. Claude writes the SQL; **the owner
+      pastes it into the staging SQL editor** (Claude has no Supabase access, owner's choice
+      2026-10-29). The owner is recognized by the same email hash as the Developer section, so the
+      address isn't in the public repo, and gets in by themselves on the first sign-in. The file is
+      safe to run again: the existing-users backfill only runs when `members` is created. Tested
+      before pasting on a local Postgres with a stand-in for Supabase's auth (47 checks: who can read
+      and write what, the cap, approving, deleting).
+- [x] Waiting for access screen; Requests screen with Approve (Settings → Developer → Requests, with
+      the number waiting). **No push to the owner in S2:** it needs S5's pieces (see S5).
+- [x] Sign-in after the first goal; "Not now" popup; Safari hint on iPhone; the "Sync and get
+      notifications" banner on Today (swipe left to Hide, back after a day, a week, a month, then never).
+- [x] One person per phone (§6.8); sign-out rules; delete account. The phone's owner is
+      `meta.phoneOwner` ({ id, email }), set at the first sign-in; everything already on the phone is
+      queued for the first upload then. Sending a code to another email is refused while the phone
+      holds someone's data. A member's sign-out syncs first and refuses with anything left, then
+      wipes the phone; a waiting account's sign-out keeps the data on the phone (it was never
+      uploaded). Delete account calls `delete_my_account()` (no Edge Function), then wipes the phone.
+- [x] Name and avatar: the row at the top of Settings opens Account, whose card has a pencil for the editor
+      picked in S0. Kept on the phone, with or without an account, and sent to `profiles` only once the
+      account is a member (spec AC-4: nothing on the server while waiting).
+- [x] Someone else's data on the phone (spec AC-13): sending a code to another email is refused before the
+      captcha, with "Save a copy and remove it" (the share sheet with the JSON export, then the phone is
+      emptied) so the new person can sign in.
+
+Choices made while building (tell the owner; change if they disagree):
+- "Your goals are end-to-end encrypted." is **hidden until S3** (`ENCRYPTED` in `Account.tsx`): in S2 it
+  wouldn't be true yet. S3 turns it on.
+- The sign-in dots show three steps (activate, email, code); S3 adds the Face ID step.
+- Avatar colors are the values' 12 colors (gray, not cyan) and the sunburst pattern is stored as
+  `sunburst`; the server checks the same lists.
+- Security Advisor on staging (2026-10-29) flagged the app's functions as "SECURITY DEFINER callable by
+  signed-in users" and the policies as re-reading the user per row. Fixed: the functions' bodies live in
+  `private` (not in the API) behind thin `public` wrappers that run as the caller, the policies read
+  `(select auth.uid())` once, and `members` has an explicit deny-all policy. "Unused index" on
+  `records` stays: staging has no rows yet. **Never run 0001 again on its own after 0002**: it would add
+  back the old policy without the membership check (0002 removes it every time it runs).
+- A non-member can't write their profile either (stricter than the README's "their own profile"),
+  following spec AC-4.
+- Owner's first round of feedback (2026-10-29), done: the sign-in dots count Activate only when the flow
+  began there; the intro's last button says Next when sign-in follows; "Go to [Today]" on Waiting as in the
+  intro; one height for the main button on every onboarding and sign-in screen (a link under it sits in
+  the space kept below, see `.intro-below`); six equal code boxes; a long email no longer squeezes its
+  label; "erases the phone" reworded; Turnstile runs only when a code is sent (`execution: 'execute'`),
+  so its box shows only when it's needed and the code goes once it's ticked; "You're in" became a green
+  banner on Today ("You've been accepted! Your goals are now backed up."), swiped away like the sync
+  banner; the sync banner's day count follows "Pretend today is"; Requests rows swipe to Approve and
+  Delete (Notes style, no full swipe) and open a sheet with the whole email; deleting a request deletes
+  that sign-up (`reject_request()`, never a member); the waiting count is read again on returning.
+- Settings, as the owner asked: a profile row at the top (avatar, name, and the email or "Not signed in")
+  opens **Account**: "Edit name and avatar", Sync, Backup, and one card with Erase all data and Delete
+  account, each confirmed in a sheet. Name and avatar exist without an account too (kept on the phone).
+  Developer is its own page (Settings → Developer, developers only), with Requests in it.
+- Owner's second round (2026-10-29), done: the Developer page and Requests send anyone who isn't a developer
+  back to Settings (`DeveloperOnly`; the server refuses them anyway); the green banner has a ✕; name and
+  avatar are edited from a pencil at the top right of Account, and the profile row there opens a sheet with
+  the whole email and the day the account was made; a sheet's ✕ now asks before throwing typing away, as
+  pulling it down does (Quick add and the task sheet too); **the owner can remove a member** (swipe in
+  Requests, or from their sheet): `remove_member()` deletes the account and its synced data, the person's
+  phone keeps everything and works on without sync, and Today shows a red "You were removed from sync"
+  banner (`my_access()` answers `removed` for a session whose account is gone). Signing in again with the
+  same email takes the data on the phone back as theirs.
+- Third round (2026-10-29): the pencil moved into the profile card on Account (no chevron there), the
+  green banner shows a cloud, and both banners close only by swiping (no ✕).
+- Security Advisor's remaining warning, "Leaked Password Protection Disabled", is accepted: that check
+  (HaveIBeenPwned) needs a paid Supabase plan, and the app uses no passwords at all.
+- Mockup leftovers, by stage: Face ID, data password and new-phone unlock (sign-in screens 5, 6, 7, 11)
+  are S3; "Not synced yet" and the Sync row's status are S4; the friend list is for social, later. The
+  avatars mockup shows names and avatars in Requests; S2 shows the email's initial, since a waiting
+  person's profile stays on their phone (AC-4). Approved members could show theirs: ask the owner.
+- Local testing against staging: `npm run dev -- --mode staging` with `.env.staging.local` (ignored by
+  git), or the `dev-staging` entry in `.claude/launch.json`. `.env.local` points at production.
 - **Done when:** a test friend can sign up on the preview, wait, get approved with one tap, and sync.
 
 ### S3. Encryption
@@ -977,12 +1053,23 @@ certificate).
       reminders (once), weekly review (own time).
 - [ ] Settings → Notifications (per type, summary time, weekdays only, review time).
 - [ ] Developer test button. Beta flag for the owner → shadow week.
+- [ ] **Push to the owner on each new access request** (spec AC-5), moved here from S2 on
+      2026-10-29: "New request: ana@…", tapping it opens Requests. Sent by the server when someone
+      signs up, so it needs this stage's VAPID keys, server sender and the owner's subscription.
+      Not planned by the phone and not encrypted (it holds only an email, which the owner sees
+      anyway). Doesn't count toward the owner's cap of 3.
 - **Done when:** the owner gets correct pushes for a week on the preview.
 
 ### S6. The rest, then merge
 - [ ] Preps with a time, goal review date, in-app celebration.
 - [ ] App icon badge (late + today), quiet hours, lock-screen details toggle.
 - [ ] Merge plan: apply migrations to production, deploy, enable for the owner, then friends.
+- [ ] Production Supabase set up like staging was in S2, before deploying: custom SMTP with the app Gmail
+      (`smartmeta.codes@gmail.com`, its app password pasted by the owner), the code-only "Confirm signup"
+      and "Magic Link" templates, sign-ups on, anonymous sign-ins off, confirm email on, 6-digit codes,
+      Turnstile captcha with its secret, 30 emails an hour; then `0002_accounts.sql` in the SQL editor
+      (existing users become members), and Security Advisor checked. Friends sign in once with a code:
+      the password sign-in is gone from the app (spec AC-14).
 - **Done when:** merged to `main` and friends have it.
 
 ### What the owner needs to set up, and when
@@ -1025,14 +1112,12 @@ certificate).
 ## 16. Open questions
 
 1. **Privacy note:** written together in S4 (owner's ideas, Claude drafts), shown in Settings.
-2. **Stage branches and the preview (from S2 on):** each `notifications-s<N>` branch gets its own
-   Vercel preview address, so the Home Screen app installed from the `notifications` address only
-   shows a stage after it merges back. Options: test each stage on its own preview (a new Home Screen
-   icon per stage), or merge into `notifications` before testing on the phone. **S1 was tested on its
-   own preview** (the owner's choice, since it was throwaway). Claude suggests merging into
-   `notifications` before phone tests from S2 on, so there is one icon; ask the owner at the start of
-   S2. Staging variables are scoped per branch (§13), not to all previews, so UI-experiment previews
-   keep using production.
+
+Answered on 2026-10-29: **every stage is tested on its own branch's preview** (owner's choice), so
+each stage needs its staging Preview variables in Vercel (Claude adds them) and its preview hostname
+in the Turnstile widget (the owner adds it); a new Home Screen icon per stage. Supabase changes are
+pasted into the staging SQL editor by the owner; Claude gets no Supabase access. The push to the
+owner on a new request moves to S5.
 
 Answered on 2026-10-21 (kept for the record): push the branch (done); a time set on a task or prep
 counts as asked for; commitments get once-only reminders for now; late items aren't re-sent; weekly
@@ -1096,3 +1181,19 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   Learned: open the window first on a push tap (Android); no banner on Android is a phone setting
   (§5). S1 tested on its own preview; from S2 on, ask whether to merge first (§16.2). Test page and
   test VAPID keys deleted.
+- **2026-10-29 (5):** **S2 started** on branch `notifications-s2`, with its staging Preview variables
+  in Vercel. Owner's answers: every stage is tested on its own preview (§16.2 closed); Claude gets no
+  Supabase access, so the owner pastes SQL into the staging SQL editor; the owner's account is
+  `pedrodaccache@gmail.com`. The push to the owner on a new request moves from S2 to S5 (spec AC-5):
+  S1 sent its push by hand from a local script, but this one must go out by itself whenever someone
+  signs up, which needs S5's server sender.
+- **2026-10-29 (6):** S2 built on `notifications-s2`, waiting for the owner's test on the preview:
+  email-code sign-in with Turnstile (password sign-in removed), the accounts migration (members,
+  profiles, approve, requests, delete account), Activate notifications after the intro, "Not now",
+  the Safari hint, Waiting for access and List is full, the Today banner, Requests, name and avatar,
+  one owner per phone, sign-out and delete account. Choices made while building are listed under S2.
+- **2026-10-29 (7):** **S2 done.** The owner tested sign-up, waiting, approval, sync, sign-out, delete
+  account, deleting requests and removing members on two phones. Last additions: "Save a copy and remove
+  it" when the phone holds someone else's data (AC-13), spec AC-7 to the green banner, new AC-17 (delete a
+  request) and AC-18 (remove a member), README's membership line made stricter (profiles too), and the
+  production setup listed under S6. `notifications-s2` merged into `notifications`.
