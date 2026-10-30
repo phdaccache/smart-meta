@@ -1135,11 +1135,12 @@ start: backups run against **staging** until S6, then production (only the secre
 work); Claude creates the backups repo (private, not production yet); the privacy note is a **legal
 document** (a privacy policy under Brazil's LGPD), researched by Claude.
 
-Built on 2026-10-29, waiting for the owner's setup and test:
+Built on 2026-10-29; the owner set it up and tested every step below on 2026-10-30:
 - [x] Private repo [phdaccache/smart-meta-backups](https://github.com/phdaccache/smart-meta-backups) (made by
       Claude): **Backup** workflow (Sundays full, other nights the changes since the last full copy, `age`
       encrypted, kept 37/30 days as artifacts) and **Restore** workflow (by hand; only puts missing rows back).
-      Its nightly schedule is **off until the owner adds the secrets**. Restore SQL tested on a local Postgres
+      Nightly schedule on since 2026-10-30 (03:00 São Paulo); `AGE_RECIPIENT` is a repository variable,
+      `DATABASE_URL` and `RESTORE_DATABASE_URL` are secrets (staging's session pooler URI). Restore SQL tested on a local Postgres
       (11 checks: one account back, changes win over the full copy, new pull order, a second run adds
       nothing, the whole project back with accounts).
 - [x] Usage alarm in the backup job (N-20): database over 300 MB, an account over 10,000 rows or 2,000 new in
@@ -1157,8 +1158,11 @@ Built on 2026-10-29, waiting for the owner's setup and test:
 - [x] Privacy policy (Settings → About → Privacy policy, and a link on Activate notifications), in
       Portuguese (the one that counts) and English: `src/lib/privacy.ts`.
 - [x] Phone numbers in one module, `src/numbers.ts` (spec RE-5).
-- [ ] Owner: setup and tests below. Security Advisor clean after 0004.
-- **Done when:** a restore into staging works and the alarm fires on a test threshold.
+- [x] `0005_daily_rows_policy.sql`: the policy Security Advisor asked for on `private.daily_rows` (an INFO note).
+- [x] Activate notifications (owner, while testing): the encryption line and the privacy link halfway
+      between the text and the button, the button higher than the intro's.
+- [x] Owner: setup and every test below, including the restore drill on Android; `AGE_IDENTITY` deleted after.
+- **Done when:** a restore into staging works and the alarm fires on a test threshold. **Done 2026-10-30.**
 
 Choices made while building (the owner may change any):
 - **Quick undo leaves one tombstone** rather than erasing outright: if the check-in already reached the
@@ -1251,6 +1255,9 @@ a new email or delete the old staging test accounts first):
 - [ ] Preps with a time, goal review date, in-app celebration.
 - [ ] App icon badge (late + today), quiet hours, lock-screen details toggle.
 - [ ] Merge plan: apply migrations to production, deploy, enable for the owner, then friends.
+- [ ] Backups to production (from S4): in `smart-meta-backups`, replace `DATABASE_URL` and
+      `RESTORE_DATABASE_URL` with production's session pooler URI, update its README's "staging only" note,
+      run a full backup, and repeat the restore drill once with a test account.
 - [ ] Production Supabase set up like staging was in S2, before deploying: custom SMTP with the app Gmail
       (`smartmeta.codes@gmail.com`, its app password pasted by the owner), the code-only "Confirm signup"
       and "Magic Link" templates, sign-ups on, anonymous sign-ins off, confirm email on, 6-digit codes,
@@ -1420,3 +1427,9 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   for the owner's setup and test: the private backups repo (backup, alarm, restore), `0004_limits.sql`
   (limits, clock guard, purge), quick undo as a tombstone, the new sync timing with a flush on leaving,
   "Not synced yet", security headers, the privacy policy, `src/numbers.ts`. Choices listed under S4.
+- **2026-10-30 (1):** S4 set up and tested by the owner: 0004 and 0005 on staging, the backup key (public half
+  as a repository variable), the secrets, nightly backups on, the alarm's test email, the phone tests and the
+  restore drill on Android (the first try restored nothing: the drill had no "back up first" step, now added).
+  Activate notifications reworked on the owner's request. Staging accounts from S3 deleted where needed
+  (passkeys belong to each preview's address). **S4 done**; `notifications-s4` merged into `notifications`.
+  Still open for the owner: the privacy policy's choices (§16.1).
