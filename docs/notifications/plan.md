@@ -1217,12 +1217,19 @@ a new email or delete the old staging test accounts first):
    "changes" → "Saved changes-…".
 9. **Alarm:** Run workflow with "Make the alarm fire" ticked → the run fails with "ALARM: …" and an email
    arrives. Without the tick it stays green and the summary shows the counts.
-10. **Restore drill:** note the count from `select count(*) from public.records where user_id = (select id
-    from auth.users where email = '<test email>');`. Delete them: `delete from public.records where user_id =
-    (select id from auth.users where email = '<test email>');`. Add secrets `RESTORE_DATABASE_URL` (the same
-    staging URI) and `AGE_IDENTITY` (the `AGE-SECRET-KEY-…` line). Actions → Restore → Run workflow with that
-    account's id in "user_id". The count is back to what it was; on a second phone (or after signing out and
-    in), every goal is there. **Then delete the `AGE_IDENTITY` secret.**
+10. **Restore drill** (with a fresh test account, on the Android phone): sign up a new email, approve it,
+    add a goal and a few check-ins. **Run Backup** (Actions → Backup → Run workflow, kind "full"): a backup
+    only holds what existed when it ran. Then in the SQL Editor
+    `select u.id, u.email, (select count(*) from public.records r where r.user_id = u.id) from auth.users u order by u.created_at desc;`
+    and note that account's id and count. Delete them: `delete from public.records where user_id = '<id>';`.
+    The phone still shows everything and stays green: a delete made directly in the database is never sent
+    to phones, and phones never delete their own data. Add secrets `RESTORE_DATABASE_URL` (the same staging
+    URI) and `AGE_IDENTITY` (the `AGE-SECRET-KEY-…` line). Actions → Restore → Run workflow with the id in
+    "user_id": the run's summary says how many rows went back, and the count matches again. On the phone,
+    sign out and in again (it wipes and downloads from the server): every goal is back. **Then delete the
+    `AGE_IDENTITY` secret**: backups and their key must never sit in the same place.
+    (First try, 2026-10-30: the restore put back 0 rows because the drill had no backup step and the newest
+    backup was older than the test account. Step added.)
 
 ### S5. Push, core
 - [ ] VAPID keys; service worker push and click handlers (deep links).

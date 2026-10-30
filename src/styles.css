@@ -126,7 +126,14 @@ a { color: var(--accent); }
 .policy-link { display: block; margin: 0 auto; min-height: 32px; font-size: 13px; }
 /* Activate notifications: the lock line and the policy under the text, the button higher than the intro's. */
 .account.activate { --under-button: calc(2 * var(--safe-bottom) + 96px); }
-.activate-privacy { margin-top: 28px; }
+/* The privacy lines halfway between the text and the button: the gap above also covers the dots' row
+   (from the top of .intro-nav to the button) and the space inside the link's tap area, so the two gaps
+   look the same, text to text. */
+.account.activate { --dots-row: 69px; }
+.account.centered.activate .intro-body { justify-content: flex-start; padding-bottom: 0; }
+.account.activate .intro-body::before { content: ''; flex: 1 1 0; }
+.activate-gap { flex: 1 1 var(--dots-row); }
+.activate-gap.end { flex-basis: 0; }
 .activate-privacy .account-lock { margin-bottom: 0; }
 .activate-privacy .policy-link { margin-top: -4px; }
 /* Today's date line with the sync status at its right end (plan §6.9). */

@@ -145,10 +145,12 @@ function ActivateScreen() {
         right={<button type="button" className="btn ghost" onClick={() => setAsking(true)}>{t('common.skip')}</button>}
         nav={<button className="btn primary block" onClick={() => openSignIn(true)}>{t('acct.continueEmail')}</button>}
         below={<button className="quiet-link" onClick={() => setAsking(true)}>{t('acct.notNow')}</button>}>
+        <div className="activate-gap" />
         <div className="activate-privacy">
           <p className="account-lock">{ICONS.lock}<span>{t('acct.encrypted')}</span></p>
           <button type="button" className="link-btn policy-link" onClick={() => navigate('/privacy')}>{t('set.privacy')}</button>
         </div>
+        <div className="activate-gap end" />
       </Page>
       {/* 2 · "Not now": no reminders and no backup without an account (spec AC-9). */}
       {asking && (
