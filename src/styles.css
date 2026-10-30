@@ -123,7 +123,12 @@ a { color: var(--accent); }
 .policy p, .policy li { font-size: 15px; line-height: 1.5; color: var(--ink); }
 .policy section > * + * { margin-top: 8px; }
 .policy ul { padding-left: 20px; display: grid; gap: 6px; }
-.policy-link { display: block; margin: -4px auto 10px; min-height: 32px; font-size: 13px; }
+.policy-link { display: block; margin: 0 auto; min-height: 32px; font-size: 13px; }
+/* Activate notifications: the lock line and the policy under the text, the button higher than the intro's. */
+.account.activate { --under-button: calc(2 * var(--safe-bottom) + 96px); }
+.activate-privacy { margin-top: 28px; }
+.activate-privacy .account-lock { margin-bottom: 0; }
+.activate-privacy .policy-link { margin-top: -4px; }
 /* Today's date line with the sync status at its right end (plan §6.9). */
 .eyebrow-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 2px; }
 .eyebrow-row .eyebrow { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

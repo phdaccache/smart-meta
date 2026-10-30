@@ -97,9 +97,10 @@ function Page(props: {
   nav?: ReactNode
   /** A quieter choice under the main button, in the space kept for it (see .intro-below). */
   below?: ReactNode
+  className?: string
 }) {
   return (
-    <div className={`screen intro account ${props.form ? 'form' : 'centered'}`}>
+    <div className={`screen intro account ${props.form ? 'form' : 'centered'} ${props.className ?? ''}`}>
       <div className="intro-top account-bar">
         {props.back || props.onBack ? (
           <button type="button" className="back" onClick={() => (props.onBack ? props.onBack() : goBack(props.back!))}>
@@ -139,14 +140,16 @@ function ActivateScreen() {
   const later = () => navigate('/')
   return (
     <>
-      <Page icon={ICONS.bell} title={t('acct.activateTitle')} sub={t('acct.activateSub')} step="activate"
+      {/* The last screen before Today: the button sits higher, and the encryption line and the policy under the text. */}
+      <Page icon={ICONS.bell} title={t('acct.activateTitle')} sub={t('acct.activateSub')} step="activate" className="activate"
         right={<button type="button" className="btn ghost" onClick={() => setAsking(true)}>{t('common.skip')}</button>}
-        foot={<>
+        nav={<button className="btn primary block" onClick={() => openSignIn(true)}>{t('acct.continueEmail')}</button>}
+        below={<button className="quiet-link" onClick={() => setAsking(true)}>{t('acct.notNow')}</button>}>
+        <div className="activate-privacy">
           <p className="account-lock">{ICONS.lock}<span>{t('acct.encrypted')}</span></p>
           <button type="button" className="link-btn policy-link" onClick={() => navigate('/privacy')}>{t('set.privacy')}</button>
-        </>}
-        nav={<button className="btn primary block" onClick={() => openSignIn(true)}>{t('acct.continueEmail')}</button>}
-        below={<button className="quiet-link" onClick={() => setAsking(true)}>{t('acct.notNow')}</button>} />
+        </div>
+      </Page>
       {/* 2 · "Not now": no reminders and no backup without an account (spec AC-9). */}
       {asking && (
         <div className="action-sheet page" role="alertdialog" aria-label={t('acct.noAccountQ')}>
