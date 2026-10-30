@@ -116,6 +116,43 @@ a { color: var(--accent); }
 .head-text { min-width: 0; }
 .head-actions { display: flex; gap: 4px; align-items: center; margin-bottom: 2px; }
 .eyebrow { font-size: 13px; color: var(--ink-2); font-weight: 500; margin-bottom: 2px; }
+/* Settings → Privacy policy: long text, read like a document. */
+.policy { display: grid; gap: 22px; }
+.policy-summary { display: grid; gap: 10px; line-height: 1.45; }
+.policy h2 { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+.policy p, .policy li { font-size: 15px; line-height: 1.5; color: var(--ink); }
+.policy section > * + * { margin-top: 8px; }
+.policy ul { padding-left: 20px; display: grid; gap: 6px; }
+.policy-link { display: block; margin: 0 auto; min-height: 32px; font-size: 13px; }
+/* Activate notifications: the lock line and the policy under the text, the button higher than the intro's. */
+.account.activate { --under-button: calc(2 * var(--safe-bottom) + 96px); }
+/* The privacy lines halfway between the text and the button: the gap above also covers the dots' row
+   (from the top of .intro-nav to the button) and the space inside the link's tap area, so the two gaps
+   look the same, text to text. */
+.account.activate { --dots-row: 69px; }
+.account.centered.activate .intro-body { justify-content: flex-start; padding-bottom: 0; }
+.account.activate .intro-body::before { content: ''; flex: 1 1 0; }
+.activate-gap { flex: 1 1 var(--dots-row); }
+.activate-gap.end { flex-basis: 0; }
+.activate-privacy .account-lock { margin-bottom: 0; }
+.activate-privacy .policy-link { margin-top: -4px; }
+/* Today's date line with the sync status at its right end (plan §6.9). */
+.eyebrow-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 2px; }
+.eyebrow-row .eyebrow { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sync-note { display: inline-flex; align-items: center; gap: 4px; flex: none; white-space: nowrap; font-size: 13px; font-weight: 500; color: var(--ink-2); animation: fade 0.3s ease both; }
+.sync-note svg { width: 14px; height: 14px; stroke-width: 2; align-self: center; }
+.sync-note.err { color: var(--behind); }
+.sync-note.ok { color: var(--on-track); }
+/* Settings → Sync: the last sync time and an icon that explains. */
+.sync-val { display: inline-flex; align-items: center; gap: 6px; }
+.sync-ic { width: 32px; height: 32px; margin: -6px -6px -6px 0; display: inline-grid; place-items: center; border-radius: 8px; color: var(--on-track); flex: none; }
+.sync-ic:active { background: var(--surface-2); }
+.sync-ic.off { color: var(--ink-2); }
+.sync-ic.err { color: var(--behind); }
+.sync-ic.busy { color: var(--accent); }
+.sync-ic.busy svg { animation: spin 1s linear infinite; }
+.sync-pop-title { display: block; font-weight: 600; margin-bottom: 2px; }
+@media (prefers-reduced-motion: reduce) { .sync-ic.busy svg { animation: none; } }
 .large-title {
   font: 700 34px/1.1 var(--font-display);
   letter-spacing: -0.02em;
@@ -483,6 +520,7 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .sheet-actions { display: flex; gap: 10px; margin-top: 20px; }
 .sheet-actions .btn { flex: 1; }
 @keyframes fade { from { opacity: 0; } }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ——— wizard ——— */
 

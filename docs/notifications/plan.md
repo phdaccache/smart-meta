@@ -273,9 +273,10 @@ So toggling a checkbox on and off 5 times adds 10 rows. One person doing 5 extra
 about 1 MB a year, roughly doubling heavy use. Fixes, in order:
 
 1. **Quick undo erases instead of appending (decided: 30 minutes):** if a check-in is undone within
-   30 minutes (a misclick or a change of mind), both rows are removed; if they never synced, they
-   never leave the phone. Older undos keep today's behavior, so History still shows real "undone"
-   events. Misclicks no longer appear struck through in History.
+   30 minutes (a misclick or a change of mind), it becomes a tombstone (one empty row, purged after 90
+   days) instead of gaining a second "void" row (built in S4; a full erase could bring a check-in that
+   already synced back on the next pull). Older undos keep today's behavior, so History still shows real
+   "undone" events. Misclicks no longer appear struck through in History.
 2. **Server limits per user** against bugs, scripts and stolen accounts (confirmed by the owner;
    the numbers live in [spec Adjustable numbers](spec.md#adjustable-numbers), N-2 to N-5). A **row** is one saved
    record: a check-in, a task, a goal, a review. Editing a record doesn't add a row; it changes the
@@ -1129,16 +1130,110 @@ To test on the S3 preview (installed as its own Home Screen app; staging has 000
    `records` has no readable rows left.
 
 ### S4. Safety and operations
-- [ ] Private backups repo (owner creates it); weekly full + nightly changes, encrypted; restore drill.
-- [ ] Usage alarm in the backup job.
-- [ ] Database rules: size limit on `data`, row limits per user (§3.5), clock guard.
-- [ ] Quick undo within 30 minutes erases (§3.5); tombstone purge.
-- [ ] Sync timing (§6.10): debounce with a cap, flush on background, timer only while visible.
-- [ ] "Not synced yet" indicator.
-- [ ] Content-Security-Policy; Security Advisor clean.
-- [ ] Privacy note in Settings, written together; it states that email, name, avatar and metadata
-      are visible to the owner and content isn't (spec PR-7, PR-8).
-- **Done when:** a restore into staging works and the alarm fires on a test threshold.
+Started 2026-10-29 on branch `notifications-s4` (staging Preview variables added). Owner's answers at the
+start: backups run against **staging** until S6, then production (only the secret changes, so no double
+work); Claude creates the backups repo (private, not production yet); the privacy note is a **legal
+document** (a privacy policy under Brazil's LGPD), researched by Claude.
+
+Built on 2026-10-29; the owner set it up and tested every step below on 2026-10-30:
+- [x] Private repo [phdaccache/smart-meta-backups](https://github.com/phdaccache/smart-meta-backups) (made by
+      Claude): **Backup** workflow (Sundays full, other nights the changes since the last full copy, `age`
+      encrypted, kept 37/30 days as artifacts) and **Restore** workflow (by hand; only puts missing rows back).
+      Nightly schedule on since 2026-10-30 (03:00 São Paulo); `AGE_RECIPIENT` is a repository variable,
+      `DATABASE_URL` and `RESTORE_DATABASE_URL` are secrets (staging's session pooler URI). Restore SQL tested on a local Postgres
+      (11 checks: one account back, changes win over the full copy, new pull order, a second run adds
+      nothing, the whole project back with accounts).
+- [x] Usage alarm in the backup job (N-20): database over 300 MB, an account over 10,000 rows or 2,000 new in
+      a day. The push check waits for S5's send log. A "test alarm" switch makes it fire.
+- [x] `0004_limits.sql`: record size (N-4), rows per user in total (N-2) and per day (N-3, counted per
+      write in `private.daily_rows`), clock guard (N-18), purge of tombstones older than 90 days (N-19) by
+      `pg_cron` every night. Tested on a local Postgres (18 checks). N-5 (pending notifications) comes with
+      S5's table.
+- [x] Quick undo (N-14): a check-in undone within 30 minutes becomes a tombstone instead of a void row.
+- [x] Sync timing (N-15 to N-17): 2 s after the last change, at most 10 s during continuous editing; a
+      flush of up to 40 rows with `keepalive` when the app goes to the background; the 5-minute timer only
+      while visible.
+- [x] "Not synced yet" on Today's date line and the shorter Settings → Sync row (S0 mockup, option A).
+- [x] Content-Security-Policy and other security headers in `vercel.json`.
+- [x] Privacy policy (Settings → About → Privacy policy, and a link on Activate notifications), in
+      Portuguese (the one that counts) and English: `src/lib/privacy.ts`.
+- [x] Phone numbers in one module, `src/numbers.ts` (spec RE-5).
+- [x] `0005_daily_rows_policy.sql`: the policy Security Advisor asked for on `private.daily_rows` (an INFO note).
+- [x] Activate notifications (owner, while testing): the encryption line and the privacy link halfway
+      between the text and the button, the button higher than the intro's.
+- [x] Owner: setup and every test below, including the restore drill on Android; `AGE_IDENTITY` deleted after.
+- **Done when:** a restore into staging works and the alarm fires on a test threshold. **Done 2026-10-30.**
+
+Choices made while building (the owner may change any):
+- **Quick undo leaves one tombstone** rather than erasing outright: if the check-in already reached the
+  server, erasing only on the phone would let it come back on the next pull. One empty marker, purged after
+  90 days, instead of two rows forever. History doesn't show it.
+- **A refused write refuses the whole upload** (limits, clock guard). Nothing is lost: the rows stay on the
+  phone, Today says "Couldn't sync", the diagnostics log says why. A phone with its clock over 5 minutes
+  ahead syncs again once its clock is fixed and the stamps are no longer in the future.
+- **Restore needs the backup's secret key in GitHub for a moment:** the owner adds it as a secret, runs the
+  restore, then deletes it. Restored records get new `seq` values so phones pull them again.
+- **Security headers name both Supabase projects** (production and staging). A new project needs a new entry.
+- **Privacy policy:** names the owner in full as controller, with `smartmeta.codes@gmail.com` as contact;
+  says no DPO is appointed (ANPD Resolution 2/2022 for small agents); legal bases are contract (art. 7 V)
+  and legitimate interest (art. 7 IX); transfers abroad under art. 33 IX; minimum age 18. These are for the
+  owner to confirm. Claude isn't a lawyer: a lawyer's review before friends use it is recommended.
+
+**Owner's setup, in order** (Claude can't do these: they need the owner's accounts or secrets):
+1. **Migration:** Supabase → `smart-meta-staging` → SQL Editor → paste `supabase/migrations/0004_limits.sql` →
+   Run, then the same with `0005_daily_rows_policy.sql` (it clears the Advisor's "RLS enabled, no policy"
+   note on `private.daily_rows`). Then Integrations → Cron should list `smart-meta-purge`; Advisors →
+   Security Advisor should show nothing new (send Claude anything it shows).
+2. **Turnstile:** Cloudflare → Turnstile → widget "Smart Meta" → Settings → add the hostname
+   `smart-meta-h2ur-git-notifications-s4-daccache.vercel.app`.
+3. **Backup key:** in PowerShell, `winget install FiloSottile.age`, then `age-keygen`. Save both lines (public
+   `age1…`, secret `AGE-SECRET-KEY-…`) in the password manager as "Smart Meta backup key". Send Claude only
+   the public `age1…` line, or add it yourself as the variable below.
+4. **Backups repo secrets:** github.com/phdaccache/smart-meta-backups → Settings → Secrets and variables →
+   Actions. Variables → `AGE_RECIPIENT` = the `age1…` key (**set by Claude on 2026-10-30**). Secrets → New
+   repository secret → `DATABASE_URL` = Supabase → staging → **Connect** → **Session pooler** URI with
+   `[YOUR-PASSWORD]` replaced by staging's database password (from S1; if lost, Database → Settings → Reset
+   database password, which nothing else uses).
+5. **Email on failures:** github.com → Settings → Notifications → Actions → "Notify me only for failed
+   workflows", with Email ticked.
+6. Tell Claude; Claude turns the nightly schedule on and runs the first full copy.
+
+**To test on the S4 preview** (a new Home Screen app; passkeys from the S3 preview don't open here, so use
+a new email or delete the old staging test accounts first):
+1. **Sign up and sync:** sign up on the iPhone, Face ID, approve from the owner's account. Add a goal and
+   check something: within about 2 seconds the staging `records` table has the rows.
+2. **Not synced yet:** turn on Airplane Mode and check something in. After about 2 s Today's date line shows
+   a grey cloud and "Not synced yet". Settings → Sync: a grey cloud next to the time; tapping it says "1 change
+   waiting. You're offline…". Turn Airplane Mode off: a green "Synced" shows briefly, then nothing.
+3. **Flush on leaving:** check something in and leave the app within a second (swipe home). In the staging
+   `records` table the row is there anyway.
+4. **Quick undo:** check something in, uncheck it right away: Goal History shows nothing struck through;
+   in `records` that entry has `deleted = true` and no second row. Uncheck something checked over 30 minutes
+   ago: History shows it struck through, as before.
+5. **Security headers:** sign out and in again (Turnstile, email code, Face ID), open Settings, export a
+   backup: everything works as before. (A blocked request would show as a broken step.)
+6. **Privacy policy:** Settings → About → Privacy policy, in both languages; the link on "Activate
+   notifications". Read the text: anything wrong or missing goes to Claude.
+7. **Limits** (SQL Editor, as the owner; each should fail with the message shown):
+   `update public.records set updated_at = now() + interval '1 hour' where id = (select id from public.records limit 1);`
+   → `clock: stamped … ahead`. Then `select private.purge();` runs without error.
+8. **Backup:** Actions → Backup → Run workflow (kind: full) → green, "Saved full-…". Run it again with kind
+   "changes" → "Saved changes-…".
+9. **Alarm:** Run workflow with "Make the alarm fire" ticked → the run fails with "ALARM: …" and an email
+   arrives. Without the tick it stays green and the summary shows the counts.
+10. **Restore drill** (with a fresh test account, on the Android phone): sign up a new email, approve it,
+    add a goal and a few check-ins. **Run Backup** (Actions → Backup → Run workflow, kind "full"): a backup
+    only holds what existed when it ran. Then in the SQL Editor
+    `select u.id, u.email, (select count(*) from public.records r where r.user_id = u.id) from auth.users u order by u.created_at desc;`
+    and note that account's id and count. Delete them: `delete from public.records where user_id = '<id>';`.
+    The phone still shows everything and stays green: a delete made directly in the database is never sent
+    to phones, and phones never delete their own data. Add secrets `RESTORE_DATABASE_URL` (the same staging
+    URI) and `AGE_IDENTITY` (the `AGE-SECRET-KEY-…` line). Actions → Restore → Run workflow with the id in
+    "user_id": the run's summary says how many rows went back, and the count matches again. On the phone,
+    sign out and in again (it wipes and downloads from the server): every goal is back. **Then delete the
+    `AGE_IDENTITY` secret**: backups and their key must never sit in the same place.
+    (First try, 2026-10-30: the restore put back 0 rows because the drill had no backup step and the newest
+    backup was older than the test account. Step added.)
 
 ### S5. Push, core
 - [ ] VAPID keys; service worker push and click handlers (deep links).
@@ -1160,6 +1255,9 @@ To test on the S3 preview (installed as its own Home Screen app; staging has 000
 - [ ] Preps with a time, goal review date, in-app celebration.
 - [ ] App icon badge (late + today), quiet hours, lock-screen details toggle.
 - [ ] Merge plan: apply migrations to production, deploy, enable for the owner, then friends.
+- [ ] Backups to production (from S4): in `smart-meta-backups`, replace `DATABASE_URL` and
+      `RESTORE_DATABASE_URL` with production's session pooler URI, update its README's "staging only" note,
+      run a full backup, and repeat the restore drill once with a test account.
 - [ ] Production Supabase set up like staging was in S2, before deploying: custom SMTP with the app Gmail
       (`smartmeta.codes@gmail.com`, its app password pasted by the owner), the code-only "Confirm signup"
       and "Magic Link" templates, sign-ups on, anonymous sign-ins off, confirm email on, 6-digit codes,
@@ -1210,7 +1308,10 @@ To test on the S3 preview (installed as its own Home Screen app; staging has 000
 
 ## 16. Open questions
 
-1. **Privacy note:** written together in S4 (owner's ideas, Claude drafts), shown in Settings.
+1. **Privacy policy** (S4): Claude drafted it from the LGPD; the owner confirms the controller's full name,
+   the contact email, the minimum age (18) and the legal bases, and decides whether a lawyer reviews it
+   before friends use it (recommended). Also whether the policy needs a "what changed" notice in the app when
+   a new version comes (planned in its section 12, not built yet).
 2. **Locked out of the server copy** (S3): someone who loses every way to unlock (iCloud Keychain off and
    the phone gone, or the Apple ID lost) can't read the server copy; the phone's own data and JSON export
    still work, and sync stays paused. A "start over with this phone's data" choice (new keys, the server
@@ -1320,3 +1421,15 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   blocks it. Added the "open twice" warning (can't be dismissed, owner's choice), one access check at a
   time, and a diagnostics log in Developer.
 - **2026-10-29 (10):** **S3 done.** The owner confirmed it; `notifications-s3` merged into `notifications`.
+- **2026-10-29 (11):** **S4 started** on branch `notifications-s4`, with its staging Preview variables in
+  Vercel. Owner's answers: backups against staging until S6 (then only the secret changes); Claude creates
+  the backups repo; the privacy note is a legal privacy policy under the LGPD. Built the same day, waiting
+  for the owner's setup and test: the private backups repo (backup, alarm, restore), `0004_limits.sql`
+  (limits, clock guard, purge), quick undo as a tombstone, the new sync timing with a flush on leaving,
+  "Not synced yet", security headers, the privacy policy, `src/numbers.ts`. Choices listed under S4.
+- **2026-10-30 (1):** S4 set up and tested by the owner: 0004 and 0005 on staging, the backup key (public half
+  as a repository variable), the secrets, nightly backups on, the alarm's test email, the phone tests and the
+  restore drill on Android (the first try restored nothing: the drill had no "back up first" step, now added).
+  Activate notifications reworked on the owner's request. Staging accounts from S3 deleted where needed
+  (passkeys belong to each preview's address). **S4 done**; `notifications-s4` merged into `notifications`.
+  Still open for the owner: the privacy policy's choices (§16.1).

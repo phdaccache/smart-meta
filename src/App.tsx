@@ -20,6 +20,7 @@ import { GoalInsightsScreen, InsightsScreen } from './screens/Insights'
 import { TodayScreen } from './screens/Today'
 import { WhatsNew } from './screens/WhatsNew'
 import { introRoute, IntroStart } from './screens/Intro'
+import { PrivacyScreen } from './screens/Privacy'
 import { accountRoute, KeysPrompt } from './screens/Account'
 import { DeveloperOnly } from './ui/developer'
 import { Screen } from './ui/components'
@@ -47,6 +48,7 @@ function route(path: string, query: URLSearchParams) {
   if (path === '/settings') return <SettingsScreen />
   if (path === '/settings/values') return <ValuesScreen />
   if (path === '/settings/account') return <AccountScreen />
+  if (path === '/privacy') return <PrivacyScreen />
   if (path === '/settings/developer') return <DeveloperOnly><DeveloperScreen /></DeveloperOnly>
   if (path === '/review') return <ReviewScreen />
   if (path === '/insights') return <InsightsScreen />
@@ -77,7 +79,7 @@ export function App() {
   // Settings live on the device; goals arrive with sync, so a restored phone skips first run.
   const onboarding = !settings.onboarded && goalCount === 0
   // Signing in from the intro's "Restore" (a new phone) happens before any goal is here.
-  const firstRunPage = path.startsWith('/welcome') || path.startsWith('/account') || path === '/settings'
+  const firstRunPage = path.startsWith('/welcome') || path.startsWith('/account') || path === '/settings' || path === '/privacy'
   const content = onboarding && !firstRunPage ? <IntroStart /> : route(path, query)
   const tabbed = !onboarding && hasTabs(path)
   // Each screen scrolls in a layer of its own, and the ones it was opened from stay drawn underneath,

@@ -30,6 +30,21 @@ beforeEach(async () => {
 })
 
 describe('sync queue', () => {
+  it('flushes only the oldest few as the app goes to the background, and the rest wait', async () => {
+    for (let i = 0; i < 5; i++) await write(db, value(`V${i}`))
+    expect(await engine.flush(2)).toBe(2)
+    expect(target.rows.size).toBe(2)
+    expect(await engine.pending()).toBe(3)
+    await engine.sync()
+    expect(await engine.pending()).toBe(0)
+    expect(target.rows.size).toBe(5)
+  })
+
+  it('a flush with nothing queued sends nothing', async () => {
+    expect(await engine.flush(40)).toBe(0)
+    expect(target.rows.size).toBe(0)
+  })
+
   it('keeps every write queued while offline and loses nothing', async () => {
     target.online = false
     await write(db, value('Health'))

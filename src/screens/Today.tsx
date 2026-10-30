@@ -18,6 +18,7 @@ import { SwipeToDelete } from '../ui/SwipeToDelete'
 import { openQuickAdd } from './QuickAdd'
 import { OccurrenceSheet } from './OccurrenceSheet'
 import { useSyncStatus } from '../sync/controller'
+import { SyncNote } from '../ui/SyncNote'
 import { dashboardUrl } from '../sync/supabase'
 import { deleteWithUndo, TaskSheet } from './TaskSheet'
 import { GettingStarted } from './Intro'
@@ -189,6 +190,7 @@ export function TodayScreen({ date }: { date?: DateStr }) {
       // With a date filter on, the line under the date says which, so a short list is never a surprise.
       eyebrow={isPast ? t('today.pastDay', { date: dayMonth(viewDate) })
         : [dayMonth(viewDate), whenOn ? WHENS.find((w) => w.value === when)!.label() : count].filter(Boolean).join(' · ')}
+      eyebrowAside={!isPast && <SyncNote />}
       title={isPast && diffDays(viewDate, today) === 1 ? t('dates.Yesterday') : weekdayName(viewDate)}
       settings
       // Top-left, not beside the title: a long day name ("Wednesday") keeps one line.

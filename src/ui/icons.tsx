@@ -60,6 +60,19 @@ export const IconTrash = (p: P) => (
 export const IconCloud = (p: P) => (
   <Svg {...p}><path d="M7 18a4 4 0 0 1-.6-7.95A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9H7z" /></Svg>
 )
+/** Sync status (plan §6.9): offline, failing, caught up, under way. */
+export const IconCloudOff = (p: P) => (
+  <Svg {...p}><path d="M7 18a4 4 0 0 1-.6-7.95A6 6 0 0 1 9 6.6M12.5 4.1A6 6 0 0 1 18 9a4.5 4.5 0 0 1 2.2 8.1M17 18H7" /><path d="M3 3l18 18" /></Svg>
+)
+export const IconCloudAlert = (p: P) => (
+  <Svg {...p}><path d="M7 18a4 4 0 0 1-.6-7.95A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9H7z" /><path d="M12 9.5v3.5M12 15.6v.1" /></Svg>
+)
+export const IconCloudCheck = (p: P) => (
+  <Svg {...p}><path d="M7 18a4 4 0 0 1-.6-7.95A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9H7z" /><path d="m9.5 13 2 2 3.5-4" /></Svg>
+)
+export const IconSyncing = (p: P) => (
+  <Svg {...p}><path d="M20 12a8 8 0 0 1-14.2 5M4 12a8 8 0 0 1 14.2-5" /><path d="M18.5 3v4h-4M5.5 21v-4h4" /></Svg>
+)
 export const IconInfo = (p: P) => (
   <Svg strokeWidth="1.7" {...p}><circle cx="12" cy="12" r="9" /><path d="M12 11v5" /><circle cx="12" cy="7.8" r="0.6" fill="currentColor" /></Svg>
 )

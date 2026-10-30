@@ -9,9 +9,10 @@ import { toast } from '../ui/components'
 import { EncryptedTarget } from './encrypted'
 import { queueEverything, SyncEngine } from './engine'
 import { forgetAll, forgetKey, keepKeys, localLockState, readyKey, type LockState } from './keys'
+import { SYNC_AFTER_CHANGE_MS, SYNC_EVERY_MS, SYNC_MAX_WAIT_MS } from '../numbers'
 import { log, short } from './log'
 import { startProfileSync, stopProfileSync } from './profile'
-import { SupabaseTarget, supabase } from './supabase'
+import { SupabaseTarget, supabase, withKeepalive } from './supabase'
 
 /**
  * Where an account stands with the server: only members sync (spec AC-4). 'full' is waiting while the
@@ -36,11 +37,18 @@ export interface SyncStatus {
    * the data password), 'unlock' opens the one already made. Null when ready, or not signed in.
    */
   lock: LockState | null
+  online: boolean
+  /**
+   * When sync caught up after changes had been stuck (offline, or the server failing): Today says
+   * "Synced" briefly then, and never after an ordinary sync (plan §6.9).
+   */
+  recoveredAt: number | null
 }
 
 let status: SyncStatus = {
   configured: !!supabase, email: null, userId: null, requestedAt: null, access: null,
   phase: 'signed-out', lastSyncedAt: null, pending: 0, error: null, lock: null,
+  online: typeof navigator === 'undefined' || navigator.onLine, recoveredAt: null,
 }
 const listeners = new Set<() => void>()
 const set = (patch: Partial<SyncStatus>) => {
@@ -74,6 +82,10 @@ let engine: SyncEngine | null = null
 let timer: ReturnType<typeof setTimeout> | undefined
 let failures = 0
 const BACKOFF = [5_000, 30_000, 120_000, 600_000]
+/** The first change still waiting for a sync: continuous editing syncs at least every N-16. */
+let firstChangeAt: number | null = null
+/** Changes were waiting while offline or failing: the next sync that empties the queue says so. */
+let stuck = false
 
 function schedule(delay: number) {
   clearTimeout(timer)
@@ -83,20 +95,64 @@ function schedule(delay: number) {
 async function run() {
   const e = engine
   if (!e) return
+  firstChangeAt = null
   if (!navigator.onLine) {
-    set({ pending: await e.pending() })
+    const pending = await e.pending()
+    if (pending) stuck = true
+    set({ pending, online: false })
     return
   }
-  set({ phase: 'syncing' })
+  set({ phase: 'syncing', online: true })
   try {
     await e.sync()
     failures = 0
-    set({ phase: 'idle', error: null, lastSyncedAt: await e.lastSyncedAt(), pending: await e.pending() })
+    const pending = await e.pending()
+    const recovered = stuck && !pending
+    if (!pending) stuck = false
+    set({
+      phase: 'idle', error: null, lastSyncedAt: await e.lastSyncedAt(), pending,
+      ...(recovered && { recoveredAt: Date.now() }),
+    })
   } catch (err) {
     log('sync failed', err)
     // Never surfaces as a blocking error: data is safe locally and will retry.
-    set({ phase: 'error', error: (err as Error).message, pending: await e.pending() })
+    const pending = await e.pending()
+    if (pending) stuck = true
+    set({ phase: 'error', error: (err as Error).message, pending })
     schedule(BACKOFF[Math.min(failures++, BACKOFF.length - 1)])
+  }
+}
+
+/** After a change: N-15 after the last one, but no later than N-16 after the first still waiting. */
+function afterChange() {
+  if (!engine) return
+  const now = Date.now()
+  firstChangeAt ??= now
+  schedule(Math.max(0, Math.min(SYNC_AFTER_CHANGE_MS, firstChangeAt + SYNC_MAX_WAIT_MS - now)))
+}
+
+/** Rows in the push sent while the app goes to the background: small enough for a keepalive request. */
+const FLUSH_MAX = 40
+let flushing = false
+
+/**
+ * The app is going to the background: send what's waiting now (spec SY-3). iOS suspends the app
+ * within seconds and closing it from the app switcher sends no event at all, so this can't wait.
+ */
+async function flush() {
+  const e = engine
+  if (!e || flushing || !navigator.onLine) return
+  flushing = true
+  try {
+    if (!(await e.pending())) return
+    clearTimeout(timer)
+    const n = await withKeepalive(() => e.flush(FLUSH_MAX))
+    log('flush', n)
+    set({ pending: await e.pending() })
+  } catch (err) {
+    log('flush failed', err)
+  } finally {
+    flushing = false
   }
 }
 
@@ -277,9 +333,7 @@ let started = false
 export function startSync() {
   if (started) return
   started = true
-  writeListeners.add(() => {
-    if (engine) schedule(1500)
-  })
+  writeListeners.add(afterChange)
   if (!supabase) return
 
   // Supabase asks that nothing awaiting its own calls runs inside this callback: it would wait on itself.
@@ -292,11 +346,20 @@ export function startSync() {
     if (engine) schedule(delay)
     else if (status.userId) void refreshAccess()
   }
-  window.addEventListener('online', () => wake(0))
+  window.addEventListener('online', () => {
+    set({ online: true })
+    wake(0)
+  })
+  window.addEventListener('offline', () => set({ online: false }))
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') wake(500)
+    else void flush()
   })
-  setInterval(() => wake(0), 5 * 60_000)
+  // Safari may skip visibilitychange when the page is torn down.
+  window.addEventListener('pagehide', () => void flush())
+  setInterval(() => {
+    if (document.visibilityState === 'visible') wake(0)
+  }, SYNC_EVERY_MS)
 }
 
 /**

@@ -1,6 +1,7 @@
 import { addDays, diffDays, formatTime, logicalDate, parseTime } from '../lib/dates'
 import { commitmentRevision } from '../lib/revisions'
 import type { CommitmentDraft, GoalDraft, PrepDraft } from '../lib/draft'
+import { QUICK_UNDO_MS } from '../numbers'
 import { activeEntries, meetsTarget, missKey, type MissAsks, type MissPrompt } from '../lib/scoring'
 import type {
   Base, Commitment, DateStr, Entry, Goal, GoalReview, GoalState, ID, MissReason, Occurrence, Prep, Project, ProjectState,
@@ -301,10 +302,16 @@ export async function check(s: Subject, date: DateStr) {
   return put('entries', entry(s, date))
 }
 
-/** Undo never deletes: it appends a void that supersedes the entry. */
+/**
+ * Undo appends a void that supersedes the entry, so History shows it was undone. A misclick undone
+ * within QUICK_UNDO_MS (N-14) erases the check-in instead: one tombstone, purged later on the server,
+ * rather than two rows kept forever (plan §3.5). An entry that corrects another keeps the void, so the
+ * one it replaced stays replaced.
+ */
 export async function uncheck(entryId: ID) {
   const e = await db.entries.get(entryId)
   if (!e) return
+  if (!e.supersedes && Date.now() - new Date(e.createdAt).getTime() < QUICK_UNDO_MS) return tombstone('entries', [e.id])
   await put('entries', entry(e, e.date, { outcome: 'void', supersedes: e.id }))
 }
 
