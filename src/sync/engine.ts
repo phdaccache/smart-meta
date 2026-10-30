@@ -68,23 +68,38 @@ export class SyncEngine {
   async push(): Promise<number> {
     let pushed = 0
     for (;;) {
-      const batch = await this.db.outbox.orderBy('seq').limit(BATCH).toArray()
-      if (batch.length === 0) return pushed
-      const unique = new Map<string, { collection: Collection; id: string }>()
-      for (const item of batch) unique.set(`${item.collection}/${item.id}`, item)
-
-      const records: RemoteRecord[] = []
-      for (const { collection, id } of unique.values()) {
-        const data = await this.db.coll(collection).get(id)
-        if (!data) continue
-        records.push({
-          collection, id, data, updatedAt: data.updatedAt, deleted: !!data.deletedAt, dataVersion: DATA_VERSION,
-        })
-      }
-      if (records.length) await this.target.push(records)
-      await this.db.outbox.bulkDelete(batch.map((b) => b.seq!))
-      pushed += records.length
+      const n = await this.pushBatch(BATCH)
+      if (n == null) return pushed
+      pushed += n
     }
+  }
+
+  /**
+   * One small push as the app goes to the background (plan §6.10): only the oldest `max` queued rows,
+   * so the request fits what a browser finishes after the page is hidden. The rest wait for the next sync.
+   */
+  async flush(max: number): Promise<number> {
+    return (await this.pushBatch(max)) ?? 0
+  }
+
+  /** Sends the oldest `limit` queued rows; null when there's nothing queued. */
+  private async pushBatch(limit: number): Promise<number | null> {
+    const batch = await this.db.outbox.orderBy('seq').limit(limit).toArray()
+    if (batch.length === 0) return null
+    const unique = new Map<string, { collection: Collection; id: string }>()
+    for (const item of batch) unique.set(`${item.collection}/${item.id}`, item)
+
+    const records: RemoteRecord[] = []
+    for (const { collection, id } of unique.values()) {
+      const data = await this.db.coll(collection).get(id)
+      if (!data) continue
+      records.push({
+        collection, id, data, updatedAt: data.updatedAt, deleted: !!data.deletedAt, dataVersion: DATA_VERSION,
+      })
+    }
+    if (records.length) await this.target.push(records)
+    await this.db.outbox.bulkDelete(batch.map((b) => b.seq!))
+    return records.length
   }
 
   /** Applies remote records newer than the local copy, without re-queueing them. */

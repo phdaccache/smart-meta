@@ -13,6 +13,8 @@ import { goBack, navigate, pushLayer } from './router'
 
 export function Screen(props: {
   eyebrow?: ReactNode
+  /** At the right end of the eyebrow's line, which then spans the width (Today's sync status). */
+  eyebrowAside?: ReactNode
   title: ReactNode
   back?: string
   /** Back's text, when naming where it goes reads better (a tab's name). */
@@ -49,9 +51,15 @@ export function Screen(props: {
             {actions}
           </div>
         ) : null}
+        {props.eyebrowAside !== undefined && (
+          <div className="eyebrow-row">
+            <div className="eyebrow">{props.eyebrow}</div>
+            {props.eyebrowAside}
+          </div>
+        )}
         <div className="head-row">
           <div className="head-text">
-            {props.eyebrow && <div className="eyebrow">{props.eyebrow}</div>}
+            {props.eyebrow && props.eyebrowAside === undefined && <div className="eyebrow">{props.eyebrow}</div>}
             <h1 className="large-title">{props.title}</h1>
           </div>
           {!nav && actions}
@@ -526,7 +534,8 @@ export function WeekBar({ weeks, label = t('status.last4Weeks') }: { weeks: (Sta
  * An (i) that opens a short explanation. Use it for ideas that are genuinely
  * new; everything else should explain itself without text.
  */
-export function InfoTip({ label, children }: { label: string; children: ReactNode }) {
+/** A button that explains itself in a small popover. `icon` and `className` replace the usual "i". */
+export function InfoTip({ label, children, icon, className }: { label: string; children: ReactNode; icon?: ReactNode; className?: string }) {
   const [open, setOpen] = useState(false)
   const [style, setStyle] = useState<React.CSSProperties | null>(null)
   const btn = useRef<HTMLButtonElement>(null)
@@ -553,9 +562,9 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
   }, [open])
   return (
     <>
-      <button type="button" ref={btn} className="info-btn" aria-label={label} aria-expanded={open}
+      <button type="button" ref={btn} className={className ?? 'info-btn'} aria-label={label} aria-expanded={open}
         aria-describedby={open ? id : undefined} onClick={() => setOpen((o) => !o)}>
-        <IconInfo width={18} height={18} />
+        {icon ?? <IconInfo width={18} height={18} />}
       </button>
       {open && style && createPortal(<div id={id} role="tooltip" className="info-pop" style={style}>{children}</div>, document.body)}
     </>

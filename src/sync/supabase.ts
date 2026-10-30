@@ -5,11 +5,34 @@ import type { PullResult, RemoteRecord } from './target'
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
 
+let keepalive = 0
+
+/**
+ * Runs `fn` with requests the browser may finish after the page is hidden (plan §6.10). Browsers cap
+ * such bodies at about 64 KB in all, so a bigger one goes out as a normal request.
+ */
+export async function withKeepalive<T>(fn: () => Promise<T>): Promise<T> {
+  keepalive++
+  try {
+    return await fn()
+  } finally {
+    keepalive--
+  }
+}
+
+const KEEPALIVE_BODY_MAX = 60_000
+
+const fetchWithKeepalive: typeof fetch = (input, init) =>
+  keepalive && typeof init?.body === 'string' && init.body.length < KEEPALIVE_BODY_MAX
+    ? fetch(input, { ...init, keepalive: true })
+    : fetch(input, init)
+
 /** Null when the app is built without Supabase: it then runs fully local. */
 export const supabase: SupabaseClient | null =
   url && key
     ? createClient(url, key, {
         auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+        global: { fetch: fetchWithKeepalive },
       })
     : null
 

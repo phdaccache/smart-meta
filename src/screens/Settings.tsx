@@ -7,6 +7,7 @@ import { dayMonth, formatTime, toDateStr } from '../lib/dates'
 import { loadSampleData } from '../dev/sample'
 import { loadWorstCaseData } from '../dev/worst'
 import { canSignOut, deleteAccount, eraseAllData, signOut, syncNow, useSyncStatus } from '../sync/controller'
+import { SyncIcon } from '../ui/SyncNote'
 import { clearLog, readLog } from '../sync/log'
 import { pendingRequests } from '../sync/account'
 import { DateField, InfoTip, Screen, Section, Sheet, Stepper, Switch, toast, TypeToConfirm } from '../ui/components'
@@ -83,6 +84,7 @@ export function SettingsScreen() {
       <Section title={t('set.secAbout')}>
         <div className="card list settings">
           <LinkRow title={t('news.title')} onClick={() => setNews(true)} />
+          <LinkRow title={t('set.privacy')} onClick={() => navigate('/privacy')} />
           <div className="list-row">
             <div className="text"><span className="title">{t('set.version')}</span></div>
             <span className="row-value">{__APP_VERSION__}{__APP_COMMIT__ && <span className="muted"> · {__APP_COMMIT__}</span>}</span>
@@ -275,10 +277,7 @@ function SyncSection() {
           <>
             <div className="list-row">
               <div className="text"><span className="title">{t('set.synced')}</span></div>
-              <span className="row-value">
-                {s.phase === 'syncing' ? t('set.syncing') : s.phase === 'error' ? t('set.offlineRetry', { when: ago(s.lastSyncedAt) }) : ago(s.lastSyncedAt)}
-                {s.pending > 0 && ` · ${t('set.waiting')} ${s.pending}`}
-              </span>
+              <span className="row-value sync-val">{ago(s.lastSyncedAt)}<SyncIcon /></span>
             </div>
             <button className="list-row accent" onClick={syncNow} disabled={s.phase === 'syncing'}>
               <div className="text"><div className="title">{t('set.syncNow')}</div></div>

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { setSettings, type Settings } from '../db/settings'
 import { marked, t, tk, type Key } from '../i18n'
 import { addDays, dayMonth, formatTime, toDateStr } from '../lib/dates'
+import { MEMBERS_MAX } from '../numbers'
 import type { DateStr } from '../lib/types'
 import {
   approve, CODE_LENGTH, looksLikeEmail, members, OtherOwnerError, pendingRequests, rejectRequest, removeMember, RESEND_SECONDS,
@@ -140,7 +141,10 @@ function ActivateScreen() {
     <>
       <Page icon={ICONS.bell} title={t('acct.activateTitle')} sub={t('acct.activateSub')} step="activate"
         right={<button type="button" className="btn ghost" onClick={() => setAsking(true)}>{t('common.skip')}</button>}
-        foot={<p className="account-lock">{ICONS.lock}<span>{t('acct.encrypted')}</span></p>}
+        foot={<>
+          <p className="account-lock">{ICONS.lock}<span>{t('acct.encrypted')}</span></p>
+          <button type="button" className="link-btn policy-link" onClick={() => navigate('/privacy')}>{t('set.privacy')}</button>
+        </>}
         nav={<button className="btn primary block" onClick={() => openSignIn(true)}>{t('acct.continueEmail')}</button>}
         below={<button className="quiet-link" onClick={() => setAsking(true)}>{t('acct.notNow')}</button>} />
       {/* 2 · "Not now": no reminders and no backup without an account (spec AC-9). */}
@@ -679,8 +683,6 @@ export function RemovedBanner({ settings }: { settings: Settings }) {
 }
 
 // ——— 13 · Requests, for the owner ———
-
-const MEMBERS_MAX = 100 // spec N-1; the server holds the real cap (private.members_max)
 
 function RequestsScreen() {
   const { query } = useLocation()
