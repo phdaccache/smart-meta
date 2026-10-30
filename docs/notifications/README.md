@@ -55,7 +55,8 @@ These are the contracts between stages. Changing one affects others.
 - **Tables** (all with RLS, explicit grants, nothing for `anon`; plan §8.2): `records` (exists),
   `members` (only the owner writes), `profiles`, `user_keys` (locked data key, public key),
   `push_subscriptions` (one row per user), `scheduled_notifications` (deterministic ids like
-  `due:<taskId>:<fireAt>`), `send_log`.
+  `due:<taskId>:<fireAt>`), `send_log`. S4 adds `private.daily_rows` (new rows per user per day, for the
+  limits and the alarm; not reachable through the API). Backups: private repo `phdaccache/smart-meta-backups`.
 - **Membership gates the server:** non-members can't read or write anything on the server, their own
   profile included; they can only ask for their membership status (`my_access()`). Their name, avatar and
   data wait on the phone until approval (spec AC-4; made stricter by S2 with the owner's OK).
@@ -73,7 +74,7 @@ These are the contracts between stages. Changing one affects others.
 | S1 | Tests on the owner's iPhone (passkey, push, captcha) + staging setup | Done 2026-10-29 (passkey chosen; push and captcha proven on iPhone and Android) |
 | S2 | Accounts | Done 2026-10-29 (tested on two phones; members, requests, profile, one person per phone) |
 | S3 | Encryption | Done 2026-10-29 (tested on both phones; data encrypted on staging; "open twice" warning) |
-| S4 | Safety and operations (backups, alarm, limits, sync timing, privacy note) | Not started |
+| S4 | Safety and operations (backups, alarm, limits, sync timing, privacy note) | Built 2026-10-29, waiting for the owner's setup and test (plan §14 S4) |
 | S5 | Core notifications | Not started |
 | S6 | The rest, then merge to `main` | Not started |
 
