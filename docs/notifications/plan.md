@@ -1177,16 +1177,19 @@ Choices made while building (the owner may change any):
 
 **Owner's setup, in order** (Claude can't do these: they need the owner's accounts or secrets):
 1. **Migration:** Supabase → `smart-meta-staging` → SQL Editor → paste `supabase/migrations/0004_limits.sql` →
-   Run. Then Database → Cron should list `smart-meta-purge`; Advisors → Security Advisor should show nothing
-   new (send Claude a screenshot of anything it shows).
+   Run, then the same with `0005_daily_rows_policy.sql` (it clears the Advisor's "RLS enabled, no policy"
+   note on `private.daily_rows`). Then Integrations → Cron should list `smart-meta-purge`; Advisors →
+   Security Advisor should show nothing new (send Claude anything it shows).
 2. **Turnstile:** Cloudflare → Turnstile → widget "Smart Meta" → Settings → add the hostname
    `smart-meta-h2ur-git-notifications-s4-daccache.vercel.app`.
 3. **Backup key:** in PowerShell, `winget install FiloSottile.age`, then `age-keygen`. Save both lines (public
    `age1…`, secret `AGE-SECRET-KEY-…`) in the password manager as "Smart Meta backup key". Send Claude only
    the public `age1…` line, or add it yourself as the variable below.
 4. **Backups repo secrets:** github.com/phdaccache/smart-meta-backups → Settings → Secrets and variables →
-   Actions. Variables → `AGE_RECIPIENT` = the `age1…` key. Secrets → `DATABASE_URL` = Supabase → staging →
-   **Connect** → **Session pooler** URI with the database password filled in.
+   Actions. Variables → `AGE_RECIPIENT` = the `age1…` key (**set by Claude on 2026-10-30**). Secrets → New
+   repository secret → `DATABASE_URL` = Supabase → staging → **Connect** → **Session pooler** URI with
+   `[YOUR-PASSWORD]` replaced by staging's database password (from S1; if lost, Database → Settings → Reset
+   database password, which nothing else uses).
 5. **Email on failures:** github.com → Settings → Notifications → Actions → "Notify me only for failed
    workflows", with Email ticked.
 6. Tell Claude; Claude turns the nightly schedule on and runs the first full copy.
