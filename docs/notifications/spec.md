@@ -86,7 +86,8 @@ and projects; photo avatars; Google sign-in if it becomes reliable on iPhone.
 - **PR-7** [S4] Visible to the owner, and stated in the privacy note: **email, name, avatar, and
   metadata** (number and type of records, when they change, sizes, when pushes are scheduled).
 - **PR-8** [S4] A **privacy note** in Settings, written with the owner, says what is and isn't
-  visible.
+  visible. Built as a privacy policy under the LGPD (`src/lib/privacy.ts`), confirmed by the owner on
+  2026-10-30.
 
 ### Sync (SY)
 

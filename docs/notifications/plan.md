@@ -1176,8 +1176,9 @@ Choices made while building (the owner may change any):
 - **Security headers name both Supabase projects** (production and staging). A new project needs a new entry.
 - **Privacy policy:** names the owner in full as controller, with `smartmeta.codes@gmail.com` as contact;
   says no DPO is appointed (ANPD Resolution 2/2022 for small agents); legal bases are contract (art. 7 V)
-  and legitimate interest (art. 7 IX); transfers abroad under art. 33 IX; minimum age 18. These are for the
-  owner to confirm. Claude isn't a lawyer: a lawyer's review before friends use it is recommended.
+  and legitimate interest (art. 7 IX); transfers abroad under art. 33 IX; minimum age 18. **The owner
+  confirmed the name, the contact, the minimum age and no DPO on 2026-10-30.** Claude isn't a lawyer: a
+  lawyer's review before friends use it is recommended.
 
 **Owner's setup, in order** (Claude can't do these: they need the owner's accounts or secrets):
 1. **Migration:** Supabase → `smart-meta-staging` → SQL Editor → paste `supabase/migrations/0004_limits.sql` →
@@ -1308,10 +1309,9 @@ a new email or delete the old staging test accounts first):
 
 ## 16. Open questions
 
-1. **Privacy policy** (S4): Claude drafted it from the LGPD; the owner confirms the controller's full name,
-   the contact email, the minimum age (18) and the legal bases, and decides whether a lawyer reviews it
-   before friends use it (recommended). Also whether the policy needs a "what changed" notice in the app when
-   a new version comes (planned in its section 12, not built yet).
+1. **Privacy policy** (S4): whether a lawyer reviews it before friends use it (recommended), and the "what
+   changed" notice in the app when a new version comes (promised in its section 12, not built yet; needed
+   only once there is a version 2).
 2. **Locked out of the server copy** (S3): someone who loses every way to unlock (iCloud Keychain off and
    the phone gone, or the Apple ID lost) can't read the server copy; the phone's own data and JSON export
    still work, and sync stays paused. A "start over with this phone's data" choice (new keys, the server
@@ -1321,6 +1321,10 @@ a new email or delete the old staging test accounts first):
    device should be on the new version (the PWA updates on open). And 0003 refuses readable writes, so it
    goes to production together with the app that encrypts; an older app's writes then wait on its phone
    until it updates.
+
+Answered on 2026-10-30 (S4): the privacy policy's choices stand as drafted: the owner's full name (Pedro
+Henrique Antoine Cortez Daccache) as controller, `smartmeta.codes@gmail.com` as the contact, minimum age
+18, and no DPO appointed (ANPD Resolution 2/2022, art. 11, small processing agents).
 
 Answered on 2026-10-29 at the start of S3: Face ID right after the code, also while waiting; only the owner
 has data on production (everyone else's first sync happens after S6); staging test data can be deleted;
@@ -1433,3 +1437,6 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   Activate notifications reworked on the owner's request. Staging accounts from S3 deleted where needed
   (passkeys belong to each preview's address). **S4 done**; `notifications-s4` merged into `notifications`.
   Still open for the owner: the privacy policy's choices (§16.1).
+- **2026-10-30 (2):** the owner confirmed the privacy policy's four choices: full name as controller,
+  `smartmeta.codes@gmail.com` as contact, minimum age 18, no DPO. §16.1 keeps only the lawyer's review and
+  the change notice.

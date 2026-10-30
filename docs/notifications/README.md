@@ -74,7 +74,7 @@ These are the contracts between stages. Changing one affects others.
 | S1 | Tests on the owner's iPhone (passkey, push, captcha) + staging setup | Done 2026-10-29 (passkey chosen; push and captcha proven on iPhone and Android) |
 | S2 | Accounts | Done 2026-10-29 (tested on two phones; members, requests, profile, one person per phone) |
 | S3 | Encryption | Done 2026-10-29 (tested on both phones; data encrypted on staging; "open twice" warning) |
-| S4 | Safety and operations (backups, alarm, limits, sync timing, privacy note) | Done 2026-10-30 (backups and restore drill on staging, alarm email, limits; privacy policy choices still open, §16.1) |
+| S4 | Safety and operations (backups, alarm, limits, sync timing, privacy note) | Done 2026-10-30 (backups and restore drill on staging, alarm email, limits; privacy policy confirmed by the owner) |
 | S5 | Core notifications | Not started |
 | S6 | The rest, then merge to `main` | Not started |
 
