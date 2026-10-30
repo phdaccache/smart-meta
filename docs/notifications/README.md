@@ -9,7 +9,7 @@ Meta. It runs on branch `notifications` and merges to `main` only when notificat
 |---|---|---|
 | [spec.md](spec.md) | **What** must be true: numbered, checkable requirements, and **Adjustable numbers** (every limit, time and threshold, N-1 to N-25) | Only when the owner changes a requirement or a number |
 | [plan.md](plan.md) | **How and why**: facts, designs, trade-offs, the owner's worries (§0), decisions (§2), stages (§14), open questions (§16), change log | Whenever something is decided, learned or done |
-| [mockups/](mockups/) | S0 mockups (HTML artifacts); the picks are recorded in plan §2 | When the owner asks for another round |
+| [mockups/](mockups/) | S0 mockups and the S5 mockup `s5.html` (HTML artifacts); the picks are recorded in plan §2 and §14 | When the owner asks for another round |
 | [runway-simulator.html](runway-simulator.html) | Storage and cost simulator (also a private artifact: [Smart Meta Runway](https://claude.ai/artifact/6xvMmYEUDBiKkGsgkfLWhq)) | When limits or record sizes change |
 
 ## For every session working on this
@@ -75,7 +75,7 @@ These are the contracts between stages. Changing one affects others.
 | S2 | Accounts | Done 2026-10-29 (tested on two phones; members, requests, profile, one person per phone) |
 | S3 | Encryption | Done 2026-10-29 (tested on both phones; data encrypted on staging; "open twice" warning) |
 | S4 | Safety and operations (backups, alarm, limits, sync timing, privacy note) | Done 2026-10-30 (backups and restore drill on staging, alarm email, limits; privacy policy confirmed by the owner) |
-| S5 | Core notifications | Not started |
+| S5 | Core notifications | In progress on `notifications-s5`: part 1 of 3 (mockups), waiting for the owner's picks |
 | S6 | The rest, then merge to `main` | Not started |
 
 Details and checkboxes: [plan.md §14](plan.md).

@@ -1237,6 +1237,50 @@ a new email or delete the old staging test accounts first):
     backup was older than the test account. Step added.)
 
 ### S5. Push, core
+Started 2026-10-30 on branch `notifications-s5` (cut from `notifications` after S4, pushed). The owner split
+it into **three parts, with a session compaction after parts 1 and 2**, so this section holds what the next
+part needs:
+1. **Mockups** (in progress): one consolidated mockup, [mockups/s5.html](mockups/s5.html) (artifact
+   [Smart Meta S5 Mockups](https://claude.ai/artifact/Uw7Tho8s1fzcL7m8ennMWB)): the reminder switch on items
+   (layouts A, B, C), the push texts (approved ones to check again, new ones to pick), Settings →
+   Notifications as approved, and three questions. **Waiting for the owner's picks.**
+2. **Plumbing:** VAPID keys, service worker push and click, subscriptions, the tables, the dispatcher, the
+   test button, the push on a new access request. Ends with the owner's setup and one test push on both
+   phones.
+3. **The rest:** planner, the four types, Settings → Notifications, the reminder switch. Then the owner
+   tests, and the week on the preview starts.
+
+**Owner's idea for custom reminders (2026-10-30), replacing "a reminder at any date and time":** a
+**Notification switch on the item, off by default**, usable only when the item has a date or a time, with
+choices counted from it ("At the time", "15 minutes before", …). Once only, as before. In the mockup: with a
+time, At the time / 5, 15, 30 minutes / 1 hour / 1 day before; with a date only, On the day / 1, 2 days /
+1 week before, at a time picked (9:00 to start). Turning the date off turns the switch off; a task with no
+date has no reminder, which settles the open wording for "a task with no goal and no due date".
+
+**Open until the owner answers the mockup** (they change spec NO-2, NO-3, NO-5 and Settings' rows):
+- Q1, items with a time: (a) the item's switch decides, Settings drops "Items with a time"; or (b) items with
+  a time still push by themselves and the switch adds an earlier one.
+- Q2, commitments have no date or time: (a) no reminders on commitments until the at-risk reminders (§15);
+  or (b) a weekday-and-time reminder now (repeating, so pulled forward from §15).
+- Q3, preps: (a) the prep gets the same switch, Settings drops "Preps with a time"; or (b) preps keep
+  their S6 push.
+- Picks: reminder layout A/B/C; reminder text on a task (A when it's due, B how long until, C with its goal);
+  reminder text on a project (A due date and progress, B what's left, C plain). The new access-request push
+  body ("Approve or delete it in Requests.") needs the owner's OK.
+
+**Facts for parts 2 and 3** (checked in code on 2026-10-30):
+- No push code exists yet. The PWA uses vite-plugin-pwa in **generateSW** mode (`vite.config.ts`,
+  `registerType: 'autoUpdate'`): push and click handlers need `workbox.importScripts` with a file in
+  `public/`, or a switch to injectManifest. Click handler: `openWindow`/`focus` first (§5).
+- No `supabase/functions/` yet; migrations stop at `0005`. `pg_cron` is already in use (0004's purge).
+  Claude has no Supabase access: the owner pastes SQL, deploys functions and sets secrets.
+- Item fields: tasks `date` + optional `time`; project steps are tasks with `projectId`, date only; projects
+  `targetDate` + optional `time`; preps `fireWeekdays` + `fireTime` (always timed, weekly); commitments
+  have no date or time (`src/lib/types.ts`). The switch belongs in `DateTimeRows` (`src/screens/TaskSheet.tsx`),
+  which tasks and projects share; steps and preps have their own editors.
+- The S5 preview needs Vercel's two Preview variables for branch `notifications-s5` (Claude adds them) and
+  the hostname `smart-meta-h2ur-git-notifications-s5-daccache.vercel.app` in the Turnstile widget (owner).
+
 - [ ] VAPID keys; service worker push and click handlers (deep links).
 - [ ] One subscription per user; re-subscribe on open; diagnostics logged (spec NO-23).
 - [ ] Planner (tests first) with phone-encrypted payloads; upload only the difference.
@@ -1440,3 +1484,7 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
 - **2026-10-30 (2):** the owner confirmed the privacy policy's four choices: full name as controller,
   `smartmeta.codes@gmail.com` as contact, minimum age 18, no DPO. §16.1 keeps only the lawyer's review and
   the change notice.
+- **2026-10-30 (3):** S5 started on `notifications-s5`, in three parts (mockups, plumbing, the rest). The
+  owner proposed custom reminders as a switch on the item, off by default, counted from its date or time.
+  Consolidated S5 mockup published (`mockups/s5.html`) with three layouts, the push texts and three questions
+  (§14 S5); waiting for the picks.
