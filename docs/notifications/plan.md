@@ -1417,6 +1417,9 @@ passkey belongs to the S4 address (README, "Passkeys belong to one web address")
       projects, steps, preps), weekly review (own time).
 - [ ] Settings → Notifications (Morning summary with time and weekdays only, Reminders you set, Weekly
       review with time, Goal review dates; "On this phone" rows as approved).
+- [ ] **Kill switch in the app** (owner, 2026-10-31): an owner-only row in Developer, On / Shadow / Off,
+      checked on the server like approving a request (`private.is_owner()`), so pushes can be stopped from
+      the phone. Until then: `update private.push_config set mode = 'off'` in the SQL Editor.
 - [ ] Developer test button. Beta flag for the owner → shadow week. *(The test button and the server's
       shadow mode built in part 2; the app's beta flag and the shadow week in part 3.)*
 - [x] **Push to the owner on each new access request** (spec AC-5), moved here from S2 on
@@ -1490,10 +1493,6 @@ passkey belongs to the S4 address (README, "Passkeys belong to one web address")
    Claude's suggestion: on that path, only existing accounts sign in; a new email is told "No account uses
    this email" and pointed to Get started. Trade-off: it says whether an email has an account (behind the
    captcha). Changes AC-1 for that path, so it needs the owner's OK.
-5. **Kill switch in the app** (S5, owner, 2026-10-31): today it's SQL only
-   (`update private.push_config set mode = 'off'`). Claude's suggestion: an owner-only row in Developer
-   (On, Shadow, Off), checked on the server like approving a request, so it works from the phone in an
-   emergency.
 
 1. **Privacy policy** (S4): whether a lawyer reviews it before friends use it (recommended), and the "what
    changed" notice in the app when a new version comes (promised in its section 12, not built yet; needed
@@ -1507,6 +1506,8 @@ passkey belongs to the S4 address (README, "Passkeys belong to one web address")
    device should be on the new version (the PWA updates on open). And 0003 refuses readable writes, so it
    goes to production together with the app that encrypts; an older app's writes then wait on its phone
    until it updates.
+
+Answered on 2026-10-31 (S5): the kill switch goes in the app too, as an owner-only Developer row (part 3).
 
 Answered on 2026-10-30 (S4): the privacy policy's choices stand as drafted: the owner's full name (Pedro
 Henrique Antoine Cortez Daccache) as controller, `smartmeta.codes@gmail.com` as the contact, minimum age
@@ -1651,3 +1652,5 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   test: a tapped push no longer adds the screen already shown to Back; shorter Developer subtitle; a phone
   that signed in with no goals goes to Today with Getting started instead of the intro (owner's OK). New
   open questions 4 (sign-up from Restore) and 5 (kill switch in the app).
+- **2026-10-31 (6):** owner: the kill switch goes in the app (owner-only Developer row, part 3); for
+  Restore, only existing accounts sign in, with how and when to say so still being discussed (§16 question 4).
