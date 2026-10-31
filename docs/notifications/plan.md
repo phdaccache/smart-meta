@@ -1656,3 +1656,8 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   Restore, only existing accounts sign in, with how and when to say so still being discussed (§16 question 4).
 - **2026-10-31 (7):** "Restore from a backup" signs in existing accounts only (spec AC-1, owner's OK);
   a new email gets the generic error and no code.
+- **2026-10-31 (8):** sign-in navigation audited from every way in (Activate, Today's banner, Settings, the
+  Restore page, Settings → Sync's Face ID row, the prompt as the app opens), walked in the dev app. Fixed:
+  the data password's Back returns to Face ID; leaving Face ID or Unlock goes back where sign-in began
+  (Today after Activate); Getting started's close button works on a phone that skipped the intro. Finishing
+  a sign-in still goes to Today (or Waiting for access over Today) from everywhere.
