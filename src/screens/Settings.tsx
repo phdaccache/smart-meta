@@ -534,15 +534,14 @@ function DevPush({ userId }: { userId: string }) {
         <div className="text">
           <span className="title">Notifications on this phone</span>
           <div className="sub">
-            {!available ? 'Not available here: it needs the installed app and the server’s push key.'
-              : 'Only one phone per account gets them: turning them on here stops them on the other.'}
+            {available ? 'Only one phone per account gets them.' : 'Needs the installed app.'}
           </div>
         </div>
         {available && on != null && <Switch checked={on} label="Notifications on this phone" onChange={toggle} />}
       </div>
       {available && on && (
         <LinkRow title={busy ? 'Sending…' : 'Send a test notification'}
-          sub="Arrives within a minute. Lock the phone to see it on the Lock Screen." onClick={test} />
+          sub="Arrives within a minute." onClick={test} />
       )}
     </div>
   )

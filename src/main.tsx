@@ -49,9 +49,11 @@ registerSW({
   },
 })
 // Tapping a push while the app is open: the service worker brings it to the front and says where to go.
+// Already there, it stays: going again would leave the same screen twice in Back's way.
 navigator.serviceWorker?.addEventListener('message', (e: MessageEvent) => {
   const path: unknown = e.data?.type === 'open' ? e.data.path : null
-  if (typeof path === 'string' && path.startsWith('/') && !path.startsWith('//')) navigate(path)
+  if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//')) return
+  if (path !== location.pathname + location.search) navigate(path)
 })
 logUncaught()
 holdOpenLock()
