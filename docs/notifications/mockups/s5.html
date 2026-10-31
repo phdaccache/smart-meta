@@ -646,7 +646,7 @@ const NOW = new Date(2026, 9, 30, 9, 41) // the mockup's now: Friday 30 October 
 const SCENS = [
   { key: 'soonTime', label: 'Date and time, next week', due: [2026, 10, 5, 14, 30], time: true, note: 'Due Thursday, November 5 at 14:30, and today is Friday, October 30: 1 week and 1 month before have passed, so the menu leaves them out.' },
   { key: 'farTime', label: 'Date and time, months away', due: [2027, 2, 1, 10, 0], time: true, note: 'Due Monday, March 1 2027 at 10:00: every choice still fits.' },
-  { key: 'soonDate', label: 'Date only, next week', due: [2026, 10, 5], time: false, note: 'Due Thursday, November 5, no time: the push comes at 9:00 (question 5). 1 week before and more have passed. Custom offers days, weeks and months only.' },
+  { key: 'soonDate', label: 'Date only, next week', due: [2026, 10, 5], time: false, note: 'Due Thursday, November 5, no time: the push comes at the morning summary’s time, 8:00 to start (answer 5). 1 week before and more have passed. Custom offers days, weeks and months only.' },
   { key: 'farDate', label: 'Date only, months away', due: [2027, 5, 1], time: false, note: 'Due Tuesday, June 1 2027, no time: every choice fits, up to 6 months before.' },
   { key: 'nodate', label: 'No date', note: 'No date: no Notification card at all.' },
 ]
@@ -655,13 +655,13 @@ const VIEWS = [
   { key: 'ask', label: 'Not allowed yet', cap: 'The switches wait, greyed out. Tapping the card asks iOS for permission.' },
   { key: 'denied', label: 'Turned off in iPhone Settings', cap: 'Only after someone tapped Don’t Allow, or turned it off in iPhone Settings.' },
   { key: 'noaccount', label: 'No account', cap: 'Tapping the card opens sign-in at the email step.' },
-  { key: 'where', label: 'Where the row sits', cap: 'The Settings page with the new Notifications row outlined. It follows question 6: first row of App (a, shown until you answer) or its own card under your profile (b).' },
+  { key: 'where', label: 'Where the row sits', cap: 'The Settings page with the new Notifications row outlined. First row of App, as you answered (question 6a).' },
 ]
 const state = {
   tab: store.get('tab', 'reminder'), lang: store.get('lang', 'en'), theme: store.get('theme', null),
   scen: store.get('scen', 'soonTime'), phones: {},
   sview: store.get('sview', 'on'), on: { ...ON0 }, times: { ...TIMES0 }, sOpen: null, alert: false,
-  picks: { ...store.get('picks', {}), q1: 'a', q2: 'a', q3: 'a' },
+  picks: { q1: 'a', q2: 'a', q3: 'a', q4: 'a', q5: 'a', q6: 'a' }, // every question answered by 2026-10-31
 }
 if (!TABS.some((x) => x.key === state.tab)) state.tab = 'reminder'
 if (!SCENS.some((x) => x.key === state.scen)) state.scen = 'soonTime'
@@ -716,11 +716,11 @@ function offLabel(n, unit, timed) {
   if (n === 0) return timed ? t('At the time', 'Na hora') : t('On the day', 'No dia')
   return `${n} ${tx(UNIT_WORDS[unit][n === 1 ? 0 : 1])} ${t('before', 'antes')}`
 }
-// What a reminder counts back from: the due time, or a time of day on the due date (question 5).
+// What a reminder counts back from: the due time, or the morning summary's time on the due date (answer 5).
 function baseTime(s, p) {
   const [y, mo, d, h, mi] = s.due
   if (s.time) return new Date(y, mo, d, h, mi)
-  const at = state.picks.q5 === 'b' ? p.at : [9, 0]
+  const at = state.times.summary
   return new Date(y, mo, d, at[0], at[1])
 }
 function fireAt(s, p, [n, unit]) {
@@ -920,24 +920,14 @@ const ANSWERED = [
   ['1. Items with a time', 'a', 'Your Notification card decides: an item pushes only when its card says so. Settings drops “Items with a time”; the morning summary still lists everything.'],
   ['2. Commitments', 'a', 'No reminder on commitments for now. Repeating reminders come later, kept as an open feature.'],
   ['3. Preps', 'a', 'Preps get the same Notification card, None until set. Settings drops “Preps with a time”; the push text stays the approved one.'],
+  ['4. A push at the due time itself', 'a', '“At the time” (date and time) and “On the day” (date only) come first under None.'],
+  ['5. Date only: at what time', 'a, adjusted', 'At the morning summary’s time (8:00 to start), on the day the reminder falls.'],
+  ['6. Where the Notifications row sits', 'a', 'First row of the App section, above Language.'],
 ]
-const QUESTIONS = [
-  { key: 'q4', title: '4. A push at the due time itself', text: 'Your lists start at “5 minutes before”, or “1 day before” with a date only. With answer 1a nothing else pushes at the due time, so no choice would give a push right when the task is due, or on its day.', answers: [
-    ['a', 'Add “At the time” (date and time) and “On the day” (date only) as the first choice under None. The phone shows them now.', 'Keeps a push at the due time possible'],
-    ['b', 'Keep your lists exactly. Nothing pushes at the due time; the morning summary still lists the task that day.', ''],
-  ] },
-  { key: 'q5', title: '5. Date only: at what time', text: 'A task with a date and no time has no hour to count back from, so “1 day before” needs a time of day.', answers: [
-    ['a', '9:00 for every item with a date only, as in Reminders.', 'Nothing more on the card'],
-    ['b', 'An “At” row under Notification on items with a date only, 9:00 to start.', ''],
-  ] },
-  { key: 'q6', title: '6. Where the Notifications row sits', text: 'Settings → Notifications needs a row on the Settings page. See both in Settings → Notifications, “Where the row sits”.', answers: [
-    ['a', 'First row of the App section, above Language.', 'Next to the other settings for the whole app'],
-    ['b', 'Its own card, right under your profile.', ''],
-  ] },
-]
+const QUESTIONS = []
 function questionsPanel() {
-  const done = `<div class="qcard"><h2>Answered in round 1</h2>${ANSWERED.map(([title, k, text]) => `<p class="done-q"><b>${esc(title)}: ${k}.</b> ${esc(text)}</p>`).join('')}</div>`
-  return `<div class="tgroup"><h2>Three new questions</h2><p>Your new Notification list raises two; the third is the one you asked about Settings. Pick an answer for each; the phones follow answers 4, 5 and 6.</p></div>` + QUESTIONS.map((q) => `<div class="qcard"><h2>${esc(q.title)}</h2><p>${esc(q.text)}</p><div class="answers">${q.answers.map(([k, text, rec]) => { const on = state.picks[q.key] === k; return `<button class="ans ${on ? 'on' : ''}" data-ans="${q.key}:${k}" aria-pressed="${on}"><span class="k">${k}</span><span>${esc(text)}${rec ? `<span class="rec">Suggested: ${esc(rec)}</span>` : ''}</span></button>` }).join('')}</div></div>`).join('') + done
+  const done = `<div class="qcard"><h2>Every question, answered</h2>${ANSWERED.map(([title, k, text]) => `<p class="done-q"><b>${esc(title)}: ${k}.</b> ${esc(text)}</p>`).join('')}</div>`
+  return `<div class="tgroup"><h2>Questions</h2><p>All six answered; the phones follow the answers.</p></div>` + QUESTIONS.map((q) => `<div class="qcard"><h2>${esc(q.title)}</h2><p>${esc(q.text)}</p><div class="answers">${q.answers.map(([k, text, rec]) => { const on = state.picks[q.key] === k; return `<button class="ans ${on ? 'on' : ''}" data-ans="${q.key}:${k}" aria-pressed="${on}"><span class="k">${k}</span><span>${esc(text)}${rec ? `<span class="rec">Suggested: ${esc(rec)}</span>` : ''}</span></button>` }).join('')}</div></div>`).join('') + done
 }
 
 // ——— render ———
@@ -985,7 +975,7 @@ function render() {
   const p = state.picks
   const parts = [['Q4', p.q4], ['Q5', p.q5], ['Q6', p.q6]]
   const n = parts.filter((x) => x[1]).length
-  $('#picks-text').innerHTML = n ? `<b>${n} of ${parts.length} answered:</b> ` + parts.filter((x) => x[1]).map(([k, v]) => `${k} ${v}`).join(' · ') : 'Nothing answered yet: three new questions, in Questions.'
+  $('#picks-text').innerHTML = `<b>All answered:</b> ` + parts.map(([k, v]) => `${k} ${v}`).join(' · ')
   $('#copy').disabled = !n
 }
 // One phone again after a change, keeping its scroll and not replaying what already opened.

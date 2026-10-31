@@ -185,7 +185,7 @@ toast on Today; Requests is a Settings-style list. Numbers are the owner's scree
   summary, Items with a time, Reminders you set, Preps with a time, Weekly review, Goal review dates.
   **Changed in S5 (2026-10-31):** "Items with a time" and "Preps with a time" are gone (answers 1a and
   3a), and an open picker gets a line under it too (the owner asked for one under "Weekdays only").
-  Where the Notifications row sits on the Settings page: open (§14 S5, question 6).
+  The Notifications row is the first row of Settings → App, above Language (S5 answer 6a).
   "On this phone": App icon badge, Details on the lock screen, Quiet hours. "Developer": Send a test
   notification. **Switches with options work like Quick Add:** turning one on opens its options under
   the row (summary: time wheel and Weekdays only; weekly review: time; quiet hours: from and to); its
@@ -1249,7 +1249,7 @@ part needs:
    [Smart Meta S5 Mockups](https://claude.ai/artifact/Uw7Tho8s1fzcL7m8ennMWB)). Round 1 (2026-10-30):
    layouts A, B, C, push texts, Settings, three questions; answered 2026-10-31 (below). Round 2
    (2026-10-31): the owner's Notification card, the picked texts, where the Settings row sits, questions
-   4 to 6. **Waiting for the owner's check of round 2 and answers 4 to 6.**
+   4 to 6, answered the same day. **Done 2026-10-31.**
 2. **Plumbing:** VAPID keys, service worker push and click, subscriptions, the tables, the dispatcher, the
    test button, the push on a new access request. Ends with the owner's setup and one test push on both
    phones.
@@ -1269,9 +1269,10 @@ date has no reminder, which settles the open wording for "a task with no goal an
   (bell tile). No date, no card. The "Set a date to get a notification." note is gone.
 - The row's value sits on the right with up and down chevrons, **"None" to start**. Tapping it opens an
   **iOS-style menu**: None, then a divider, the choices, a divider, Custom. The chosen one has a check.
-- **Date and time:** 5, 15, 30 minutes, 1 hour, 2 hours, 1 day, 2 days, 1 week, 1 month before.
-  **Date only:** 1 day, 2 days, 1 week, 2 weeks, 1 month, 3 months, 6 months before. **Only choices still
-  ahead of now** are listed (a task due in 6 days has nothing from 1 week up).
+- **Date and time:** At the time (answer 4a), 5, 15, 30 minutes, 1 hour, 2 hours, 1 day, 2 days, 1 week, 1 month before.
+  **Date only:** On the day (4a), 1 day, 2 days, 1 week, 2 weeks, 1 month, 3 months, 6 months before. **Only choices still
+  ahead of now** are listed (a task due in 6 days has nothing from 1 week up). A date-only reminder fires
+  at the morning summary's time (answer 5).
 - **Custom** opens two wheels under the row: a number from 1 to 200 and a unit (Minutes, Hours, Days,
   Weeks, Months). Between the row and the wheels, in red, what's set: "23 hours before". Claude's choice,
   for the owner to check: with a date only, Custom offers days, weeks and months only.
@@ -1290,13 +1291,12 @@ date has no reminder, which settles the open wording for "a task with no goal an
 - Settings: a line under "Weekdays only" in the morning summary's options. The owner asked where the
   Notifications row goes on the Settings page: question 6.
 
-**Open in round 2:**
-- Q4, a push at the due time itself: the owner's lists start at 5 minutes (1 day) before, and with 1a
-  nothing else pushes at the due time. (a) add "At the time" / "On the day" first under None; (b) keep the
-  lists exactly.
-- Q5, what time a date-only reminder fires: (a) 9:00 for all, as in Reminders; (b) an "At" row on the card.
-- Q6, the Notifications row on the Settings page: (a) first row of App, above Language; (b) its own card
-  under the profile.
+**Round 2 answers (owner, 2026-10-31):**
+- Q4 **a**: "At the time" (date and time) and "On the day" (date only) come first under None.
+- Q5 **adjusted**: a date-only reminder fires at the **morning summary's time** (8:00 by default, its
+  setting) on the day it falls. Note for part 3: "On the day" and the summary then arrive together; both
+  are kept as the owner chose (the reminder is "asked for", the summary isn't).
+- Q6 **a**: the Notifications row is the first row of Settings → App, above Language.
 
 **Facts for parts 2 and 3** (checked in code on 2026-10-30):
 - No push code exists yet. The PWA uses vite-plugin-pwa in **generateSW** mode (`vite.config.ts`,
@@ -1527,3 +1527,6 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   later (2a). Task and project reminder text: when it's due, as times only ("Today, 14:30"); step text
   "CV & LinkedIn · step 1 of 4"; access request "New request" + email. Spec NO-2, NO-3, NO-5, NO-9, NO-19
   and AC-5 updated. Round 2 of the mockup published with questions 4 to 6.
+- **2026-10-31 (2):** round 2 answers: "At the time" / "On the day" first in the menu (4a); date-only
+  reminders at the morning summary's time (5); the Notifications row first in Settings → App (6a). S5 part 1
+  (mockups) done; next, part 2 (plumbing).

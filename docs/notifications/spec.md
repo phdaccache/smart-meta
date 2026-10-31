@@ -124,7 +124,8 @@ Types:
 - **NO-3** [S5] **Custom reminders**, once only, on **tasks, projects, project steps and preps** (not
   goals; not commitments for now, repeating reminders come later). Set on a **Notification card** that
   appears when the item has a date: "None" to start; a menu of choices counted back from the due date and
-  time, listing only those still ahead; and Custom (1 to 200 minutes, hours, days, weeks or months). A
+  time ("At the time" or "On the day" first), listing only those still ahead; and Custom (1 to 200
+  minutes, hours, days, weeks or months). With a date only, it fires at the morning summary's time. A
   prep's reminder follows each of its times. Always sent.
 - **NO-4** [S5] **Weekly review**: its own push on Monday, with its **own editable time** (default
   `N-12`).
@@ -161,7 +162,8 @@ Rules:
 
 Settings and indicators:
 - **NO-19** [S5] **Settings → Notifications:** a toggle per type (morning summary, reminders you set,
-  weekly review, goal review dates), summary time, weekdays only, review time.
+  weekly review, goal review dates), summary time, weekdays only, review time. Reached from the first
+  row of Settings → App.
 - **NO-20** [S6] **App icon badge:** toggle, **off by default**, counts **late + left today** (not the
   review).
 - **NO-21** [S6] **Lock-screen details:** on by default; off sends generic text.
