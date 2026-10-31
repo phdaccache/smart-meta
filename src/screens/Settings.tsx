@@ -40,7 +40,7 @@ export function SettingsScreen() {
   if (query.get('view') === 'restore') {
     return (
       <Screen back="/" title={t('set.restoreTitle')}>
-        <SyncSection />
+        <SyncSection restore />
         <DataSection lastExportAt={settings.lastExportAt} />
         {developer && <DeveloperRow />}
       </Screen>
@@ -223,7 +223,8 @@ function ago(iso: string | null): string {
   return t('set.daysAgo', { n: Math.round(h / 24) })
 }
 
-function SyncSection() {
+/** `restore`: shown by the intro's "Restore from a backup", where signing in never makes an account. */
+function SyncSection({ restore = false }: { restore?: boolean }) {
   const s = useSyncStatus()
   const [leaving, setLeaving] = useState<Awaited<ReturnType<typeof canSignOut>> | null>(null)
   const [busy, setBusy] = useState(false)
@@ -240,7 +241,7 @@ function SyncSection() {
     return (
       <Section title={t('set.sync')}>
         <div className="card list settings">
-          <LinkRow title={t('set.signInRow')} sub={t('set.signInSub')} onClick={() => openSignIn()} />
+          <LinkRow title={t('set.signInRow')} sub={t('set.signInSub')} onClick={() => openSignIn(false, restore)} />
         </div>
       </Section>
     )

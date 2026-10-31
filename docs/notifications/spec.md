@@ -34,6 +34,9 @@ and projects; photo avatars; Google sign-in if it becomes reliable on iPhone.
 
 - **AC-1** [S2] Sign-in and sign-up are one flow: the user types an email, receives a **6-digit code**
   and types it in the app. No link opens Safari. No password. Friends create their own accounts.
+  [S5] Except from the intro's **"Restore from a backup"**: there only an existing account signs in; a new
+  email gets the usual "Something went wrong. Try again." and no code, so the screen doesn't tell who
+  uses the app. (Owner, 2026-10-31.)
 - **AC-2** [S2] Codes are sent from a **dedicated app Gmail account**, not the owner's personal one.
 - **AC-3** [S2] A **captcha** (Cloudflare Turnstile) runs before a code is sent, including "resend".
 - **AC-4** [S2] Without approval, a signed-in user sees **"Waiting for access"**, keeps using the app on

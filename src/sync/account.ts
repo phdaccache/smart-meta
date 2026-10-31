@@ -20,6 +20,9 @@ export const looksLikeEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s
 function message(e: AuthError | Error): string {
   const text = e.message ?? ''
   const status = (e as AuthError).status
+  // No account with this email, on a path that doesn't make one: said like any other failure, so the
+  // screen doesn't tell who uses the app (owner, 2026-10-31).
+  if ((e as AuthError).code === 'otp_disabled' || /signups? not allowed/i.test(text)) return t('acct.errOther')
   if (/captcha/i.test(text)) return t('acct.errCaptcha')
   if (status === 429 || /rate limit|security purposes|only request this/i.test(text)) return t('acct.errTooSoon')
   if (/expired|invalid|otp/i.test(text) && status !== 500) return t('acct.errCode')
@@ -42,16 +45,17 @@ export async function saveAndRemove(): Promise<boolean> {
 }
 
 /**
- * Sends a code, making the account if the email has none. A phone holding someone else's data says
- * so here, before the captcha or any email (spec AC-13). `captcha` gives a Turnstile token (spec AC-3).
+ * Sends a code, making the account if the email has none (unless `create` is false: then a new email
+ * fails like any other error, and no code goes out). A phone holding someone else's data says so here,
+ * before the captcha or any email (spec AC-13). `captcha` gives a Turnstile token (spec AC-3).
  */
-export async function sendCode(email: string, captcha: () => Promise<string>): Promise<void> {
+export async function sendCode(email: string, captcha: () => Promise<string>, create = true): Promise<void> {
   if (!supabase) throw new Error(t('err.syncNotConfigured'))
   const address = email.trim().toLowerCase()
   const owner = await phoneOwner()
   if (owner && owner.email.toLowerCase() !== address) throw new OtherOwnerError(owner.email)
   const captchaToken = await captcha().catch(() => { throw new Error(t('acct.errCaptcha')) })
-  const { error } = await supabase.auth.signInWithOtp({ email: address, options: { shouldCreateUser: true, captchaToken } })
+  const { error } = await supabase.auth.signInWithOtp({ email: address, options: { shouldCreateUser: create, captchaToken } })
   if (error) throw new Error(message(error))
 }
 

@@ -46,10 +46,16 @@ export function accountRoute(path: string): ReactNode | null {
 let fromActivate = false
 /** Whether the Face ID step is part of a sign-in (with dots), or shown on its own, as the app opens. */
 let signingIn = false
+/** Begun at the intro's "Restore from a backup": only an existing account signs in (plan §16). */
+let restoring = false
 
-/** Opens the email step, ready to type. Called in the tap, for the keyboard (see holdKeyboard). */
-export function openSignIn(activate = false) {
+/**
+ * Opens the email step, ready to type. Called in the tap, for the keyboard (see holdKeyboard). `restore`:
+ * from "Restore from a backup", where a new email isn't made into an account.
+ */
+export function openSignIn(activate = false, restore = false) {
   fromActivate = activate
+  restoring = restore
   signingIn = true
   if (!inIosBrowser()) holdKeyboard()
   navigate('/account/email')
@@ -226,7 +232,7 @@ function EmailScreen() {
       const address = email.trim().toLowerCase()
       // The same address within the minute: the code already sent still works.
       if (address !== typedEmail || Date.now() - sentAt > RESEND_SECONDS * 1000) {
-        await sendCode(address, captcha.take)
+        await sendCode(address, captcha.take, !restoring)
         sentAt = Date.now()
       }
       typedEmail = address
@@ -292,7 +298,7 @@ function CodeScreen() {
   const resend = async () => {
     setError(null)
     try {
-      await sendCode(typedEmail, captcha.take)
+      await sendCode(typedEmail, captcha.take, !restoring)
       restart()
       setCode('')
       toast(t('acct.resent'))
