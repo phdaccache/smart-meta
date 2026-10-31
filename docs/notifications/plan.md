@@ -1256,6 +1256,9 @@ part needs:
    both phones (test push, tapping it, the "New request" push).
 3. **The rest:** planner, the four types, Settings → Notifications, the Notification card, the kill switch
    row in Developer, the app's beta flag. Then the owner tests, and the week on the preview starts.
+   **In progress 2026-10-31:** built and checked in the dev app (below, "Part 3: what was built"); the
+   Notification card on project steps and preps waits for a mockup round (round 3), since steps have no
+   editor of their own and preps' editor is a form, not the mocked list.
 
 **Owner's first idea for custom reminders (2026-10-30), replacing "a reminder at any date and time"; superseded
 on 2026-10-31 by the Notification card below:** a
@@ -1428,19 +1431,89 @@ passkey belongs to the S4 address (README, "Passkeys belong to one web address")
    text). `update private.push_config set mode = 'off';`, send a test: nothing comes;
    `update private.push_config set mode = 'on';`, send another: it comes.
 
+**Part 3 answers (owner, 2026-10-31):**
+- **Settings → Notifications follow the account:** saved as one synced, encrypted record (collection
+  `prefs`, id `notifications`), so any of the account's phones plans the same pushes, and a task finished on
+  any device takes its push back once that device syncs (spec NO-19 updated).
+- **Quick Add shows the Notification card** too, once a date is set.
+- **The app's beta flag:** Settings → Notifications shows only to accounts the server sends to: the owner and
+  `private.push_beta` in Shadow mode, every member when the mode is On (or Off: the kill switch doesn't hide
+  it). Signed out, it shows to offer sign-in (spec NO-18).
+
+**Part 3: what was built (2026-10-31):**
+- `src/lib/planner.ts` (pure, tests first in `src/lib/planner.test.ts`, 24 tests): every push for the next 14
+  days. The morning summary per day (built with Today's own `buildDay`, as if that day were today: timed items
+  with their time, then late ones, then the rest, 3 names and "and 3 more"; empty days and, with Weekdays only,
+  weekends skipped; a summary set before the day's rollover hour belongs to the day before). The weekly
+  review on Mondays while a week waits (`reviewPending`). Reminders on tasks, a project's own tasks, projects,
+  steps (by each step's end date, as Today spreads them) and preps (before each of their times, skipping a
+  day already done); nothing for done, deleted or paused items. Reminders within 15 minutes merge ("2 things
+  at 11:00"). Ids are deterministic (`sum:<day>`, `rev:<day>`, `rem:<fire ms>`).
+- `src/lib/reminders.ts`: the menu's choices, when a reminder fires (minutes and hours back from the moment;
+  days, weeks and months back on the calendar at the same time of day, so daylight saving doesn't move it;
+  31 March less a month is 28 February), the labels, and the push's "when" text. `src/lib/zoned.ts`: wall
+  clocks in any time zone with Intl (a skipped time moves forward; a doubled one takes the first).
+- `src/sync/planner.ts`: after every sync, plans, hashes each row (its content and the subscription's key),
+  and when anything changed reads the server's waiting rows, deletes what's gone, and encrypts and upserts
+  only what's new or different. Nothing changed: one small read (the subscription) and nothing else.
+- The Notification card (`src/ui/ReminderCard.tsx`) in the task sheet, Quick Add, a new project and a
+  project's details: None to start, an iOS pull-down menu (None, the choices still ahead, Custom), Custom's
+  two wheels with the red line. Taking the date off takes the reminder with it.
+- Settings → Notifications (`src/screens/Notifications.tsx`), first row of Settings → App: Morning summary
+  (time, Weekdays only with its line), Reminders you set, Weekly review (time); the cards for signed out,
+  not installed, not allowed yet, and turned off (iPhone or Android steps); on Android, a line about pop-ups
+  (§5); Developer: Send a test notification. The Developer switch from part 2 is gone.
+- Developer → Pushes (owner only): On / Shadow / Off. `supabase/migrations/0008_push_controls.sql`:
+  `push_status()` (mode, in the rollout, owner) and `set_push_mode()` (owner only). Tested on PGlite: 18
+  checks, run twice.
+- A reminder's push opens its task over Today (`/?task=<id>`); a project's or step's opens the project; a
+  prep's its goal; the summary Today; the review Review.
+
+**Choices made while building (the owner may change any):**
+- Times show as the app shows them elsewhere ("08:00", "1 June"), not "8:00" / "June 1" as in the mockup.
+- Custom starts from the choice already made ("15 minutes before"), or 1 hour (1 day with a date only).
+- A reminder whose time has gone by stays in the menu, ticked, until changed; it just sends nothing.
+- At most 290 waiting pushes (the server takes 300), so a test push always fits.
+
+**Owner's setup for part 3:**
+1. **Migration:** Supabase → `smart-meta-staging` → SQL Editor → paste
+   `supabase/migrations/0008_push_controls.sql` → Run. Then Advisors → Security Advisor: anything new goes to
+   Claude. (The dispatcher didn't change: no deploy.)
+
+**To test part 3 on the S5 preview** (after Vercel rebuilds; reopen the app twice so it updates):
+1. **Settings → Notifications** (first row under App): the switches are on if "Notifications on this phone"
+   was on in part 2; otherwise tap "Turn on notifications" → Allow.
+2. **A reminder:** add a task for today with a time 10 minutes ahead; Notification → "5 minutes before".
+   Five minutes before, "the task's name / Today, HH:MM" arrives; tapping it opens the task.
+3. **Done takes it back:** another task like it, ticked off before its push: nothing comes.
+4. **Merged:** two tasks with "At the time", 5 minutes apart: one push, "2 things at …".
+5. **Morning summary:** set its time 3 minutes ahead (with something on Today): "Today: N things" arrives.
+   Then put it back.
+6. **Other phone:** on the second phone (same account), tick off a task whose reminder is still ahead: the
+   first phone gets nothing for it.
+7. **Kill switch:** Developer → Pushes → Off, send a test: nothing comes; On again, another: it comes.
+8. **Beta flag:** Pushes → Shadow: the friend account's Settings has no Notifications row (reopen
+   Settings); On again: it's back.
+9. **Timing:** `select at, kind, fire_at, status, reason from private.send_log order by at desc limit 20;`
+   `at` should be within a few seconds of `fire_at`.
+
 - [x] VAPID keys; service worker push and click handlers (deep links). *(Part 2.)*
 - [x] One subscription per user; re-subscribe on open; diagnostics logged (spec NO-23). *(Part 2.)*
-- [ ] Planner (tests first) with phone-encrypted payloads; upload only the difference.
+- [x] Planner (tests first) with phone-encrypted payloads; upload only the difference. *(Part 3.)*
 - [x] Dispatcher: every minute, stale drop at 15 min, fuse 20/day, kill switch, send log. *(Part 2.)*
 - [ ] Types: morning summary (lists due items), custom reminders from the Notification card (once; tasks,
-      projects, steps, preps), weekly review (own time).
-- [ ] Settings → Notifications (Morning summary with time and weekdays only, Reminders you set, Weekly
-      review with time, Goal review dates; "On this phone" rows as approved).
-- [ ] **Kill switch in the app** (owner, 2026-10-31): an owner-only row in Developer, On / Shadow / Off,
+      projects, steps, preps), weekly review (own time). *(Part 3: all planned and tested; the card is on
+      tasks, Quick Add and projects; steps' and preps' cards wait for the round 3 mockup.)*
+- [x] Settings → Notifications (Morning summary with time and weekdays only, Reminders you set, Weekly
+      review with time; Goal review dates and the "On this phone" rows come in S6, as the mockup says).
+      *(Part 3.)*
+- [x] **Kill switch in the app** (owner, 2026-10-31): an owner-only row in Developer, On / Shadow / Off,
       checked on the server like approving a request (`private.is_owner()`), so pushes can be stopped from
-      the phone. Until then: `update private.push_config set mode = 'off'` in the SQL Editor.
+      the phone. The SQL Editor still works: `update private.push_config set mode = 'off'`. *(Part 3,
+      `0008_push_controls.sql`.)*
 - [ ] Developer test button. Beta flag for the owner → shadow week. *(The test button and the server's
-      shadow mode built in part 2; the app's beta flag and the shadow week in part 3.)*
+      shadow mode built in part 2; the app's beta flag built in part 3; the shadow week is the owner's week
+      of testing.)*
 - [x] **Push to the owner on each new access request** (spec AC-5), moved here from S2 on
       2026-10-29: title "New request", body the email (owner, 2026-10-31); tapping it opens Requests. Sent by the server when someone
       signs up, so it needs this stage's VAPID keys, server sender and the owner's subscription.
@@ -1692,3 +1765,9 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   language in the privacy policy). Next: S5 part 3.
 - **2026-10-31 (10):** privacy policy: "the app's language" added to the notification data, in both
   languages (owner's OK); version 1 corrected in place, dated 31 October 2026 (not on `main` yet).
+- **2026-10-31 (11):** S5 part 3 built: the planner (24 tests: time zones, daylight saving, midnight, done,
+  deleted, paused projects, language, merging), the upload of only what changed, the Notification card on
+  tasks, Quick Add and projects, Settings → Notifications, the owner's kill switch and the app's beta flag
+  (`0008_push_controls.sql`, 18 checks on PGlite). Owner's answers: the settings sync with the account
+  (spec NO-19), the card in Quick Add, Settings → Notifications only for accounts in the rollout. Next: the
+  owner pastes 0008 and tests; a round 3 mockup for the card on steps and preps.

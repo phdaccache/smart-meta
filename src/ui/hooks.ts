@@ -6,6 +6,8 @@ import { logicalDate } from '../lib/dates'
 import type { MissAsks } from '../lib/scoring'
 import type { Snapshot } from '../lib/today'
 import type { DateStr, Displacement, GoalReview, ID, Revision, WeekReview } from '../lib/types'
+import { DEFAULT_PREFS, type Prefs } from '../lib/planner'
+import { PREFS_ID } from '../db/repo'
 
 const live = <T extends { deletedAt?: string | null }>(rows: T[]) => rows.filter((r) => !r.deletedAt)
 /** IndexedDB returns rows by id (random); show them in the order they were made. */
@@ -73,6 +75,16 @@ export function useAllRevisions(): Revision[] | undefined {
 
 export function useWeekReviews(): WeekReview[] | undefined {
   return useLiveQuery(async () => (lastWeekReviews = live(await db.weekReviews.toArray())), [], lastWeekReviews)
+}
+
+/** Settings → Notifications, the same on each of the account's phones (the defaults until first changed). */
+export async function loadPrefs(): Promise<Prefs> {
+  const row = await db.prefs.get(PREFS_ID)
+  return { ...DEFAULT_PREFS, ...(row && !row.deletedAt ? row : {}) }
+}
+
+export function usePrefs(): Prefs | undefined {
+  return useLiveQuery(loadPrefs, [])
 }
 
 export function useAllGoalReviews(): GoalReview[] {

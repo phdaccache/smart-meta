@@ -10,7 +10,7 @@ import { canSignOut, deleteAccount, eraseAllData, signOut, syncNow, useSyncStatu
 import { SyncIcon } from '../ui/SyncNote'
 import { clearLog, readLog } from '../sync/log'
 import { pendingRequests } from '../sync/account'
-import { pushAvailable, pushOnHere, sendTestPush, turnOffPush, turnOnPush } from '../sync/push'
+import { refreshPushStatus, setPushMode, type PushStatus } from '../sync/push'
 import { DateField, InfoTip, Screen, Section, Sheet, Stepper, Switch, toast, TypeToConfirm } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconChevronUpDown } from '../ui/icons'
@@ -25,6 +25,7 @@ import type { Value } from '../lib/types'
 import { resetIntro } from './Intro'
 import { openSignIn } from './Account'
 import { AvatarView, ProfileSheet } from '../ui/Avatar'
+import { useNotificationsShown, usePushStatus } from './Notifications'
 import { useProfile } from '../sync/profile'
 
 export function SettingsScreen() {
@@ -33,6 +34,7 @@ export function SettingsScreen() {
   const { query } = useLocation()
   const install = useInstall()
   const developer = useIsDeveloper()
+  const notifications = useNotificationsShown()
   const [news, setNews] = useState(false)
   const values = snap?.values ?? []
 
@@ -73,6 +75,7 @@ export function SettingsScreen() {
 
       <Section title={t('set.secApp')}>
         <div className="card list settings">
+          {notifications && <LinkRow title={t('notif.title')} onClick={() => navigate('/settings/notifications')} />}
           <SelectRow id="lang" title={t('set.language')} value={langSetting()} options={langs} onChange={setLangSetting} />
           <SelectRow id="rollover" title={t('set.newDay')} info={t('set.newDayInfo')} value={String(settings.rolloverHour)}
             options={Array.from({ length: 9 }, (_, h) => ({ value: String(h), label: formatTime(h * 60) }))}
@@ -478,72 +481,42 @@ function DevSection({ devToday }: { devToday: string | null }) {
           sub={email ? 'Sign out of sync first, so your real data stays safe.' : 'Long names, a one-letter value, emoji, links and counts of 1, for checking layouts.'} onClick={() => load(loadWorstCaseData)} />
         <LinkRow title="Diagnostics log" sub="Sign-in, keys and sync on this device, for finding what went wrong." onClick={() => setLogOpen(true)} />
       </div>
-      {access === 'member' && userId && <DevPush userId={userId} />}
+      {access === 'member' && userId && <PushMode userId={userId} />}
       <DiagnosticsLog open={logOpen} onClose={() => setLogOpen(false)} />
     </Section>
   )
 }
 
 /**
- * Developer → push, until Settings → Notifications exists (S5 part 3): this phone's subscription, and a test
- * push encrypted here and sent by the server (spec NO-25).
+ * Developer → Pushes, for the owner (the server checks): On, Shadow (only the owner and the beta list get
+ * them, the rest is logged), or Off, the kill switch (spec NO-16). Read again each time this page opens.
  */
-function DevPush({ userId }: { userId: string }) {
-  const [on, setOn] = useState<boolean | null>(null)
+function PushMode({ userId }: { userId: string }) {
+  const status = usePushStatus(userId)
   const [busy, setBusy] = useState(false)
   useEffect(() => {
-    let live = true
-    pushOnHere(userId).then((v) => live && setOn(v))
-    return () => {
-      live = false
-    }
+    void refreshPushStatus(userId)
   }, [userId])
-  const available = pushAvailable()
-  const toggle = async (next: boolean) => {
-    if (busy) return
-    setBusy(true)
-    try {
-      if (!next) {
-        await turnOffPush(userId)
-        setOn(false)
-      } else if ((await turnOnPush(userId)) === 'denied') {
-        toast('Notifications are blocked for this app. Allow them in the phone’s settings, then try again.')
-      } else {
-        setOn(true)
-      }
-    } catch (e) {
-      toast((e as Error).message)
-    } finally {
-      setBusy(false)
-    }
-  }
-  const test = async () => {
-    if (busy) return
-    setBusy(true)
-    try {
-      await sendTestPush(userId)
-      toast('Planned. It arrives within a minute.')
-    } catch (e) {
-      toast((e as Error).message)
-    } finally {
-      setBusy(false)
-    }
-  }
+  if (!status?.owner) return null
+  const modes: { value: PushStatus['mode']; label: string }[] = [
+    { value: 'on', label: 'On' }, { value: 'shadow', label: 'Shadow' }, { value: 'off', label: 'Off' },
+  ]
   return (
     <div className="card list settings" style={{ marginTop: 16 }}>
-      <div className="list-row">
-        <div className="text">
-          <span className="title">Notifications on this phone</span>
-          <div className="sub">
-            {available ? 'Only one phone per account gets them.' : 'Needs the installed app.'}
-          </div>
-        </div>
-        {available && on != null && <Switch checked={on} label="Notifications on this phone" onChange={toggle} />}
-      </div>
-      {available && on && (
-        <LinkRow title={busy ? 'Sending…' : 'Send a test notification'}
-          sub="Arrives within a minute." onClick={test} />
-      )}
+      <SelectRow id="push-mode" title={busy ? 'Pushes…' : 'Pushes'} value={status.mode} options={modes}
+        info="For everyone on this server. Off is the kill switch: nothing is sent, and what waits is dropped once it’s 15 minutes late. Shadow sends only to you and the beta list, and logs the rest."
+        onChange={async (mode) => {
+          if (busy) return
+          setBusy(true)
+          try {
+            await setPushMode(userId, mode)
+            toast(`Pushes: ${modes.find((m) => m.value === mode)?.label}`)
+          } catch (e) {
+            toast((e as Error).message)
+          } finally {
+            setBusy(false)
+          }
+        }} />
     </div>
   )
 }

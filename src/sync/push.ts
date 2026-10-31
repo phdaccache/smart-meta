@@ -3,7 +3,9 @@ import { getLang } from '../i18n'
 import {
   encodeMessage, encryptPush, fromB64u, toB64u, type PushKeys, type PushMessage,
 } from '../../supabase/functions/_shared/webpush'
+import { phoneTimeZone } from '../lib/zoned'
 import { log } from './log'
+import { forgetPlan, planSoon } from './planner'
 import { supabase } from './supabase'
 
 /**
@@ -64,13 +66,16 @@ async function save(userId: string, sub: PushSubscription) {
   const { error } = await supabase!.from('push_subscriptions').upsert(
     {
       endpoint: sub.endpoint, ...keysOf(sub),
-      time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+      time_zone: phoneTimeZone(),
       lang: getLang(), checked_at: new Date().toISOString(),
     },
     { onConflict: 'user_id' },
   )
   if (error) throw new Error(error.message)
   await setMeta(pushKey(userId), sub.endpoint)
+  // New keys: whatever was planned went with the old ones.
+  await forgetPlan(userId)
+  void planSoon(userId)
 }
 
 /**
@@ -98,9 +103,42 @@ export async function turnOffPush(userId: string): Promise<void> {
     if (error) throw new Error(error.message)
   }
   await setMeta(pushKey(userId), null)
+  await forgetPlan(userId)
   const sub = await browserSubscription(false).catch(() => null)
   await sub?.unsubscribe().catch(() => {})
   log('push', 'off')
+}
+
+/** Where the account stands with pushes (0008): the mode, whether it's in the rollout, and whether it's the owner's. */
+export interface PushStatus {
+  mode: 'on' | 'shadow' | 'off'
+  /** In the rollout: Settings → Notifications shows (the app's beta flag). */
+  live: boolean
+  owner: boolean
+}
+
+export const pushStatusKey = (userId: string) => `pushStatus:${userId}`
+
+/** Asks the server, and keeps the answer for screens to read. Offline (or before 0008), the last answer stands. */
+export async function refreshPushStatus(userId: string): Promise<PushStatus | null> {
+  if (!supabase) return null
+  const { data, error } = await supabase.rpc('push_status')
+  const s = data as PushStatus | null
+  if (error || !s || typeof s !== 'object') {
+    if (error) log('push status failed', error.message)
+    return getMeta<PushStatus | null>(pushStatusKey(userId), null)
+  }
+  const status: PushStatus = { mode: s.mode, live: !!s.live, owner: !!s.owner }
+  await setMeta(pushStatusKey(userId), status)
+  return status
+}
+
+/** Developer → Pushes (the owner only, checked by the server): 'off' is the kill switch (spec NO-16). */
+export async function setPushMode(userId: string, mode: PushStatus['mode']): Promise<void> {
+  const { error } = await supabase!.rpc('set_push_mode', { new_mode: mode })
+  if (error) throw new Error(error.message)
+  log('push', 'mode', mode)
+  await refreshPushStatus(userId)
 }
 
 /** Checked at most this often while the app stays open, besides each open. */
@@ -114,8 +152,10 @@ let lastCheck = 0
  * and stops here if another phone took over (spec NO-15). Never asks for permission.
  */
 export async function checkPush(userId: string): Promise<void> {
-  if (!pushAvailable() || Date.now() - lastCheck < CHECK_EVERY_MS) return
+  if (!supabase || Date.now() - lastCheck < CHECK_EVERY_MS) return
   lastCheck = Date.now()
+  await refreshPushStatus(userId)
+  if (!pushAvailable()) return
   const ours = await getMeta<string | null>(pushKey(userId), null)
   if (!ours) return
   try {

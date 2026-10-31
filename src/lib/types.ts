@@ -80,6 +80,8 @@ export interface Prep extends Base {
   fireWeekdays: number[]
   /** 'HH:MM' */
   fireTime: string
+  /** A push before each of its times (spec NO-3). */
+  reminder?: Reminder | null
 }
 
 /** New projects wait in the backlog until started. */
@@ -99,6 +101,8 @@ export interface Project extends Base {
   startDate?: DateStr | null
   /** The day it went back to the backlog; missing on one waiting since it was made (use createdAt). */
   backlogSince?: DateStr | null
+  /** A push before its target date (spec NO-3); only with a target date. */
+  reminder?: Reminder | null
 }
 
 export interface Task extends Base {
@@ -121,6 +125,34 @@ export interface Task extends Base {
    * of the app show it as a plain task rather than a step.
    */
   forProjectId?: ID | null
+  /** A push before it's due (spec NO-3); only with a date (a step's: its end date). */
+  reminder?: Reminder | null
+}
+
+export type ReminderUnit = 'minute' | 'hour' | 'day' | 'week' | 'month'
+
+/**
+ * A once-only push counted back from when an item is due (spec NO-3): `n` units before its date and time,
+ * or before its date at the morning summary's time when it has no time. `n` 0: at the time, or on the day.
+ */
+export interface Reminder {
+  n: number
+  unit: ReminderUnit
+}
+
+/**
+ * Settings → Notifications (spec NO-19): one record per account, synced and encrypted like the rest, so
+ * any of the person's phones plans the same pushes. Its id is always 'notifications'.
+ */
+export interface NotificationPrefs extends Base {
+  summary: boolean
+  /** 'HH:MM'. Also when a reminder on an item with a date only arrives. */
+  summaryTime: string
+  weekdaysOnly: boolean
+  reminders: boolean
+  review: boolean
+  /** 'HH:MM', on Mondays. */
+  reviewTime: string
 }
 
 export type SubjectType = 'commitment' | 'prep' | 'task'

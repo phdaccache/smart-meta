@@ -5,13 +5,14 @@ import { marked, t } from '../i18n'
 import { addDays, dayMonth, dayMonthShort, diffDays, relativeDay } from '../lib/dates'
 import { activeEntries } from '../lib/scoring'
 import { stepDeadlines } from '../lib/today'
-import type { DateStr, Project, Task } from '../lib/types'
+import type { DateStr, Project, Reminder, Task } from '../lib/types'
 import { CheckButton, DatePickerButton, holdKeyboard, InfoTip, NoteField, PageText, passKeyboard, Screen, Section, TitleField, toast, TypeToConfirm } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconCalendar, IconClose } from '../ui/icons'
 import { Sortable } from '../ui/Sortable'
 import { deletedToast, putBack, SwipeToDelete } from '../ui/SwipeToDelete'
 import { navigate } from '../ui/router'
+import { ReminderCard } from '../ui/ReminderCard'
 import { openQuickAddFor } from './QuickAdd'
 import { DateTimeRows, deleteWithUndo, GoalChoice, linkableGoals, TaskList } from './TaskSheet'
 
@@ -77,6 +78,7 @@ export function NewProjectScreen({ goalId: presetGoal }: { goalId?: string | nul
   // A month to start with; switched off, it has no due date.
   const [targetDate, setTargetDate] = useState<DateStr | null>(() => addDays(today, 30))
   const [time, setTime] = useState('')
+  const [reminder, setReminder] = useState<Reminder | null>(null)
   const [goalId, setGoalId] = useState<string | null>(presetGoal ?? null)
   const [steps, setSteps] = useState<DraftStep[]>([])
   const [tried, setTried] = useState(false)
@@ -85,7 +87,7 @@ export function NewProjectScreen({ goalId: presetGoal }: { goalId?: string | nul
 
   const save = async () => {
     if (!title.trim()) return setTried(true)
-    const p = await createProject({ title, note, targetDate, time, goalId, steps: steps.map((s) => s.title), state: 'backlog' })
+    const p = await createProject({ title, note, targetDate, time, reminder, goalId, steps: steps.map((s) => s.title), state: 'backlog' })
     toast(t('project.savedBacklog'))
     navigate(`/projects/${p.id}`, { replace: true })
   }
@@ -102,6 +104,7 @@ export function NewProjectScreen({ goalId: presetGoal }: { goalId?: string | nul
           {tried && !title.trim() && <div className="field-error" role="alert">{t('project.nameOutcome')}</div>}
         </div>
         <DateTimeRows date={targetDate} time={time} today={today} firstDate={addDays(today, 30)} onChange={(d, tm) => { setTargetDate(d); setTime(tm) }} />
+        <ReminderCard date={targetDate} time={time} value={reminder} onChange={setReminder} />
         {linkableGoals(snap, goalId).length > 0 && <div className="card list settings"><GoalChoice id="p-goal" goalId={goalId} onChange={setGoalId} /></div>}
       </div>
       <Section title={<span className="title-row">{t('project.steps')}<InfoTip label={t('project.steps')}><PageText text={marked('project.stepsHint')} /></InfoTip></span>}>
@@ -211,7 +214,11 @@ export function ProjectScreen({ id }: { id: string }) {
           <div className="task-form">
             <div className="card task-text"><ProjectTitle key={project.id} title={project.title} onSave={(title) => updateProject(project, { title })} /></div>
             <DateTimeRows date={project.targetDate ?? null} time={project.time ?? ''} today={today} firstDate={addDays(today, 30)}
-              onChange={(targetDate, time) => updateProject(project, { targetDate, time: targetDate && time ? time : null })} />
+              onChange={(targetDate, time) => updateProject(project, {
+                targetDate, time: targetDate && time ? time : null, ...(!targetDate && { reminder: null }),
+              })} />
+            <ReminderCard date={project.targetDate ?? null} time={project.time} value={project.reminder}
+              onChange={(reminder) => updateProject(project, { reminder })} />
             {linkableGoals(snap, project.goalId ?? null).length > 0 && (
               <div className="card list settings">
                 <GoalChoice id="pe-goal" goalId={project.goalId ?? null} onChange={(goalId) => updateProject(project, { goalId })} />

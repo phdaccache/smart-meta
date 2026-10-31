@@ -91,6 +91,12 @@ export const IconNote = (p: P) => (
 export const IconClock = (p: P) => (
   <Svg {...p}><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></Svg>
 )
+export const IconBell = (p: P) => (
+  <Svg {...p}><path d="M6 10a6 6 0 0 1 12 0c0 4.5 1.6 6.3 2.3 7H3.7c.7-.7 2.3-2.5 2.3-7z" /><path d="M10 20.5a2.2 2.2 0 0 0 4 0" /></Svg>
+)
+export const IconBellOff = (p: P) => (
+  <Svg {...p}><path d="M8.2 5.3A6 6 0 0 1 18 10c0 2.4.5 4 1 5.1M17 17H3.7c.7-.7 2.3-2.5 2.3-7 0-.6.1-1.2.3-1.8" /><path d="M10 20.5a2.2 2.2 0 0 0 4 0M3 3l18 18" /></Svg>
+)
 export const IconHistory = (p: P) => (
   <Svg {...p}><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6" /><path d="M3 4v4h4" /><path d="M12 8v4.5l3 2" /></Svg>
 )

@@ -12,6 +12,7 @@ import { forgetAll, forgetKey, keepKeys, localLockState, readyKey, type LockStat
 import { SYNC_AFTER_CHANGE_MS, SYNC_EVERY_MS, SYNC_MAX_WAIT_MS } from '../numbers'
 import { log, short } from './log'
 import { startProfileSync, stopProfileSync } from './profile'
+import { planSoon } from './planner'
 import { checkPush, turnOffPush } from './push'
 import { SupabaseTarget, supabase, withKeepalive } from './supabase'
 
@@ -114,6 +115,8 @@ async function run() {
       phase: 'idle', error: null, lastSyncedAt: await e.lastSyncedAt(), pending,
       ...(recovered && { recoveredAt: Date.now() }),
     })
+    // Planned from the newest data of every device, so a task done anywhere takes its push back (spec NO-11).
+    if (status.userId && engine === e) void planSoon(status.userId)
   } catch (err) {
     log('sync failed', err)
     // Never surfaces as a blocking error: data is safe locally and will retry.

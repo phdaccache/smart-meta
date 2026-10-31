@@ -166,7 +166,8 @@ Rules:
 Settings and indicators:
 - **NO-19** [S5] **Settings → Notifications:** a toggle per type (morning summary, reminders you set,
   weekly review, goal review dates), summary time, weekdays only, review time. Reached from the first
-  row of Settings → App.
+  row of Settings → App. The settings follow the account: synced and encrypted like the rest, so every
+  phone of the account plans the same pushes (owner, 2026-10-31).
 - **NO-20** [S6] **App icon badge:** toggle, **off by default**, counts **late + left today** (not the
   review).
 - **NO-21** [S6] **Lock-screen details:** on by default; off sends generic text.

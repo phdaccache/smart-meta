@@ -13,7 +13,7 @@ import { ProjectTile, ValueTile } from '../ui/valueLook'
 import { useDisplacements, useMissAsksLoaded, useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
 import { dismissedMisses, reviewPending } from '../lib/review'
 import { IconCalendar, IconCheck, IconChevronLeft, IconChevronRight, IconFilter, IconNote, IconPlus } from '../ui/icons'
-import { navigate } from '../ui/router'
+import { navigate, useLocation } from '../ui/router'
 import { SwipeToDelete } from '../ui/SwipeToDelete'
 import { openQuickAdd } from './QuickAdd'
 import { OccurrenceSheet } from './OccurrenceSheet'
@@ -165,6 +165,15 @@ export function TodayScreen({ date }: { date?: DateStr }) {
   const view = useMemo(() => (snap && asks && weekReviews ? buildDay(snap, viewDate, ctx, asks, dismissed) : null),
     [snap, viewDate, ctx, asks, weekReviews, dismissed])
   const isPast = viewDate !== today
+  // A reminder's push opens its task (spec NO-13): over Today, which keeps the plain address, so Back
+  // doesn't open it again.
+  const linked = useLocation().query.get('task')
+  useEffect(() => {
+    if (!linked || !snap) return
+    navigate('/', { replace: true })
+    const task = snap.tasks.find((x) => x.id === linked && !x.deletedAt)
+    if (task) setOpenTask(task)
+  }, [linked, snap])
 
   if (!snap || !view) return null
   // Past days show what was done; the date filter is for what's ahead.

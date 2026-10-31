@@ -22,6 +22,7 @@ import { WhatsNew } from './screens/WhatsNew'
 import { introRoute, IntroStart } from './screens/Intro'
 import { PrivacyScreen } from './screens/Privacy'
 import { accountRoute, KeysPrompt } from './screens/Account'
+import { NotificationsScreen } from './screens/Notifications'
 import { DeveloperOnly } from './ui/developer'
 import { phoneOwner } from './sync/controller'
 import { Screen } from './ui/components'
@@ -49,6 +50,7 @@ function route(path: string, query: URLSearchParams) {
   if (path === '/settings') return <SettingsScreen />
   if (path === '/settings/values') return <ValuesScreen />
   if (path === '/settings/account') return <AccountScreen />
+  if (path === '/settings/notifications') return <NotificationsScreen />
   if (path === '/privacy') return <PrivacyScreen />
   if (path === '/settings/developer') return <DeveloperOnly><DeveloperScreen /></DeveloperOnly>
   if (path === '/review') return <ReviewScreen />
@@ -83,7 +85,7 @@ export function App() {
   // with nothing to restore (a new account, from the intro's "Restore"), it's Today with Getting started.
   const onboarding = !settings.onboarded && goalCount === 0 && !owned
   // Signing in from the intro's "Restore" (a new phone) happens before any goal is here.
-  const firstRunPage = path.startsWith('/welcome') || path.startsWith('/account') || path === '/settings' || path === '/privacy'
+  const firstRunPage = path.startsWith('/welcome') || path.startsWith('/account') || path === '/settings' || path === '/settings/notifications' || path === '/privacy'
   const content = onboarding && !firstRunPage ? <IntroStart /> : route(path, query)
   const tabbed = !onboarding && hasTabs(path)
   // Each screen scrolls in a layer of its own, and the ones it was opened from stay drawn underneath,

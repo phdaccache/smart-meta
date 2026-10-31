@@ -619,9 +619,9 @@ export function Chip(props: { selected?: boolean; onClick: () => void; children:
 }
 
 /** An on/off switch, like iPhone's Settings. */
-export function Switch(props: { checked: boolean; label: string; onChange: (on: boolean) => void }) {
+export function Switch(props: { checked: boolean; label: string; onChange: (on: boolean) => void; disabled?: boolean }) {
   return (
-    <button type="button" role="switch" className="switch" aria-checked={props.checked} aria-label={props.label}
+    <button type="button" role="switch" className="switch" aria-checked={props.checked} aria-label={props.label} disabled={props.disabled}
       onClick={() => props.onChange(!props.checked)} />
   )
 }

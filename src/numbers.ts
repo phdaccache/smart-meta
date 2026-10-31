@@ -17,3 +17,24 @@ export const SYNC_MAX_WAIT_MS = 10_000
 
 /** N-17: periodic sync, only while the app is on screen. */
 export const SYNC_EVERY_MS = 5 * 60_000
+
+/** N-6: how far ahead the phone plans pushes. The server takes up to 15 days (private.plan_ahead_max). */
+export const PLAN_DAYS = 14
+
+/** N-5: pushes waiting on the server at most (private.pending_max is 300); the rest leaves room for a test push. */
+export const PLAN_ROWS_MAX = 290
+
+/** N-7: pushes a day the app starts by itself (morning summary, weekly review). */
+export const APP_PUSHES_MAX = 3
+
+/** N-10: reminders this close in time go out as one push. */
+export const MERGE_MS = 15 * 60_000
+
+/** N-11: the morning summary's time to start with. */
+export const SUMMARY_TIME = '08:00'
+
+/** N-12: the weekly review's push, Mondays at this time to start with. */
+export const REVIEW_TIME = '08:00'
+
+/** N-13: names the morning summary lists before "and 3 more". */
+export const SUMMARY_NAMES = 3
