@@ -439,7 +439,7 @@ begin
   end if;
 end $$;
 
-create extension if not exists pg_net;
+create extension if not exists pg_net with schema extensions;
 -- Without `dispatch_url` in Vault it does nothing.
 select cron.schedule('smart-meta-dispatch', '* * * * *', $job$
   select net.http_post(

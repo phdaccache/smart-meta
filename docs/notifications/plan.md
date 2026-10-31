@@ -1359,17 +1359,26 @@ date has no reminder, which settles the open wording for "a task with no goal an
    `git pull`.
 2. **VAPID keys:** `node scripts/vapid-keys.mjs`. Save both lines in the password manager as "Smart Meta
    VAPID (staging)". **Send Claude only the `VAPID_PUBLIC_KEY` line** (it's public; Claude adds it to Vercel
-   as `VITE_VAPID_PUBLIC_KEY` and the preview rebuilds).
+   as `VITE_VAPID_PUBLIC_KEY` and the preview rebuilds). **Done 2026-10-31**: the owner sent it, Claude added it.
 3. **Supabase secrets:** Supabase → `smart-meta-staging` → Edge Functions → Secrets → add
    `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` with the two values.
 4. **Migration:** SQL Editor → paste `supabase/migrations/0006_push.sql` → Run. Then, in a new query:
    `select vault.create_secret('https://gveqbekpnczaejxnmfmp.supabase.co/functions/v1/dispatch', 'dispatch_url');`
-   and `update private.push_config set mode = 'on';` → Run.
+   and `update private.push_config set mode = 'on';` → Run. Then paste
+   `supabase/migrations/0007_pg_net_schema.sql` → Run (staging ran 0006 before it put `pg_net` in
+   `extensions`: Security Advisor's "Extension in Public" warning; a new project gets it right from 0006).
 5. **Deploy the dispatcher:** in PowerShell, in the repo folder: `npx supabase login` (a browser page asks
    to allow it), then
-   `npx supabase functions deploy dispatch --project-ref gveqbekpnczaejxnmfmp --no-verify-jwt --use-api`.
+   `npx supabase functions deploy dispatch --project-ref gveqbekpnczaejxnmfmp --no-verify-jwt --use-api`,
+   then **`npx supabase logout`** right away, and delete the token in Supabase → Account → Access Tokens.
+   Why: while it's on this computer, Claude's shell could use it (the management API runs SQL), which would
+   break "Claude gets no Supabase access" (owner's question, 2026-10-31). Repeat for each change to the
+   function; a GitHub Action holding the token as a secret is the alternative if this gets tiresome.
 6. **Check:** Integrations → Cron → `smart-meta-dispatch` succeeds each minute; Edge Functions → `dispatch`
    → Invocations shows a 200 each minute. Advisors → Security Advisor: anything new goes to Claude.
+   Seen on 2026-10-31 after 0006: "Extension in Public" (`pg_net`), fixed by 0007; "Leaked Password
+   Protection Disabled", which doesn't apply (the app has no passwords, only email codes, spec AC-1; and
+   the check is a paid-plan feature), so it stays as it is.
 7. **Turnstile:** Cloudflare → Turnstile → "Smart Meta" → Settings → add the hostname
    `smart-meta-h2ur-git-notifications-s5-daccache.vercel.app`.
 
@@ -1612,3 +1621,7 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   `0006_push.sql` (47 checks on PGlite), the `dispatch` Edge Function (run end to end on Deno), the service
   worker's push and tap handlers, subscriptions on the phone, Developer's switch and test push, the alarm's
   push check. Vercel Preview variables for `notifications-s5` added. Waiting for the owner's setup and test.
+- **2026-10-31 (4):** owner's VAPID public key added to Vercel (Preview, `notifications-s5`). Security
+  Advisor after 0006: `pg_net` in `public` → `0007_pg_net_schema.sql` moves it to `extensions` (0006 now
+  installs it there); leaked-password protection doesn't apply (no passwords). The CLI token is removed
+  right after each deploy, so Claude still has no Supabase access.
