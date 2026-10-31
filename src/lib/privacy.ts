@@ -7,7 +7,7 @@ import type { Lang } from '../i18n'
  * bump POLICY_VERSION and the date, and tell people in the app (section "Changes").
  */
 export const POLICY_VERSION = 1
-export const POLICY_DATE = '2026-10-29'
+export const POLICY_DATE = '2026-10-31'
 export const CONTACT_EMAIL = 'smartmeta.codes@gmail.com'
 
 export interface PolicySection {
@@ -26,7 +26,7 @@ export interface Policy {
 
 const pt: Policy = {
   title: 'Política de Privacidade',
-  updated: `Versão ${POLICY_VERSION}, atualizada em 29 de outubro de 2026.`,
+  updated: `Versão ${POLICY_VERSION}, atualizada em 31 de outubro de 2026.`,
   summary: [
     'Suas metas, check-ins, tarefas, projetos, revisões e notas são criptografados no seu celular antes de sair dele. Eu, que mantenho o app, não consigo ler esse conteúdo.',
     'Eu consigo ver seu e-mail, seu nome, seu avatar e dados técnicos (metadados): quantos registros você tem e de que tipo, quando mudam, o tamanho deles e quando há notificações agendadas.',
@@ -51,7 +51,7 @@ const pt: Policy = {
           'Perfil: o nome e o avatar que você escolhe, para identificar você nos pedidos de acesso e, no futuro, para seus amigos.',
           'Conteúdo: metas, check-ins, tarefas, projetos, preparos, revisões e notas. No servidor ficam apenas criptografados de ponta a ponta. Ficam visíveis só os metadados: tipo e identificador de cada registro, datas de alteração, tamanho e se foi apagado.',
           'Chaves: sua chave de dados guardada já trancada (só abre com sua passkey ou senha de dados) e sua chave pública. A passkey e o Face ID ficam com a Apple ou o Google e no seu aparelho; o app nunca recebe dados biométricos.',
-          'Notificações, se você ativar: o endereço de envio fornecido pelo serviço de notificações do seu aparelho (Apple ou Google), seu fuso horário, os horários das notificações planejadas e um registro de envio (horário e resultado) guardado por 30 dias. O texto das notificações é criptografado no seu celular.',
+          'Notificações, se você ativar: o endereço de envio fornecido pelo serviço de notificações do seu aparelho (Apple ou Google), seu fuso horário, o idioma do app, os horários das notificações planejadas e um registro de envio (horário e resultado) guardado por 30 dias. O texto das notificações é criptografado no seu celular.',
           'Segurança: ao pedir um código, o Cloudflare Turnstile verifica se é uma pessoa (usa o endereço IP e sinais do navegador). O provedor de login registra acessos (endereço IP e horário) para proteger as contas.',
           'Registro de diagnóstico: fica só no seu celular e só sai dele se você mesmo copiar e enviar.',
         ],
@@ -159,7 +159,7 @@ const pt: Policy = {
 
 const en: Policy = {
   title: 'Privacy Policy',
-  updated: `Version ${POLICY_VERSION}, updated 29 October 2026. The Portuguese version is the one that counts.`,
+  updated: `Version ${POLICY_VERSION}, updated 31 October 2026. The Portuguese version is the one that counts.`,
   summary: [
     'Your goals, check-ins, tasks, projects, reviews and notes are encrypted on your phone before they leave it. I, who run the app, can’t read that content.',
     'I can see your email, your name, your avatar and technical data (metadata): how many records you have and of which type, when they change, their size and when notifications are scheduled.',
@@ -184,7 +184,7 @@ const en: Policy = {
           'Profile: the name and avatar you pick, to recognize you in access requests and, later, for your friends.',
           'Content: goals, check-ins, tasks, projects, preps, reviews and notes. On the server they are only stored end-to-end encrypted. Only metadata is visible: each record’s type and id, when it changed, its size and whether it was deleted.',
           'Keys: your data key, stored already locked (it only opens with your passkey or data password), and your public key. The passkey and Face ID stay with Apple or Google and on your device; the app never receives biometric data.',
-          'Notifications, if you turn them on: the delivery address given by your device’s push service (Apple or Google), your time zone, when planned notifications fire, and a send log (time and result) kept for 30 days. Notification text is encrypted on your phone.',
+          'Notifications, if you turn them on: the delivery address given by your device’s push service (Apple or Google), your time zone, the app’s language, when planned notifications fire, and a send log (time and result) kept for 30 days. Notification text is encrypted on your phone.',
           'Security: when you ask for a code, Cloudflare Turnstile checks that you’re a person (using your IP address and browser signals). The sign-in provider logs sign-ins (IP address and time) to protect accounts.',
           'Diagnostics log: stays on your phone and only leaves it if you copy and send it yourself.',
         ],

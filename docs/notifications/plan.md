@@ -1524,13 +1524,11 @@ passkey belongs to the S4 address (README, "Passkeys belong to one web address")
    device should be on the new version (the PWA updates on open). And 0003 refuses readable writes, so it
    goes to production together with the app that encrypts; an older app's writes then wait on its phone
    until it updates.
-4. **Privacy policy and the push subscription's language** (S5, found 2026-10-31): the subscription also
-   stores the app's language (for the owner's "New request" text), which the policy's notifications line
-   doesn't list (it names the delivery address, time zone, when notifications fire, and the send log). Add
-   "your app's language" to that line in both languages? The policy is confirmed by the owner, so it waits
-   for the owner's OK.
 
 Answered on 2026-10-31 (S5): the kill switch goes in the app too, as an owner-only Developer row (part 3).
+The privacy policy now lists the app's language among the notification data (the push subscription keeps it
+for the owner's "New request" text), with the owner's OK. Version 1 was corrected in place and dated
+31 October 2026: it has never reached `main`, so nobody needs a "what changed" notice yet.
 "Restore from a backup" signs in existing accounts only; a new email gets the usual "Something went wrong.
 Try again." and no code (Supabase's `shouldCreateUser: false`), so the screen doesn't say who has an
 account. The owner's first idea, saying so only after a correct code, was dropped: Supabase makes the
@@ -1692,3 +1690,5 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
 - **2026-10-31 (9):** docs checked before compacting: README's tables (the `private` push tables), plan's
   facts rewritten for part 3, the owner's setup list (VAPID keys, the CLI), new open question 4 (the
   language in the privacy policy). Next: S5 part 3.
+- **2026-10-31 (10):** privacy policy: "the app's language" added to the notification data, in both
+  languages (owner's OK); version 1 corrected in place, dated 31 October 2026 (not on `main` yet).
