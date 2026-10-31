@@ -1252,7 +1252,7 @@ part needs:
    4 to 6, answered the same day. **Done 2026-10-31.**
 2. **Plumbing:** VAPID keys, service worker push and click, subscriptions, the tables, the dispatcher, the
    test button, the push on a new access request. Ends with the owner's setup and one test push on both
-   phones.
+   phones. **Built 2026-10-31** (below, "Part 2: what was built"); the owner's setup and test are next.
 3. **The rest:** planner, the four types, Settings → Notifications, the reminder switch. Then the owner
    tests, and the week on the preview starts.
 
@@ -1311,20 +1311,98 @@ date has no reminder, which settles the open wording for "a task with no goal an
 - The S5 preview needs Vercel's two Preview variables for branch `notifications-s5` (Claude adds them) and
   the hostname `smart-meta-h2ur-git-notifications-s5-daccache.vercel.app` in the Turnstile widget (owner).
 
-- [ ] VAPID keys; service worker push and click handlers (deep links).
-- [ ] One subscription per user; re-subscribe on open; diagnostics logged (spec NO-23).
+**Part 2: what was built (2026-10-31), waiting for the owner's setup and test:**
+- `supabase/functions/_shared/webpush.ts`: RFC 8291 encryption and RFC 8292 VAPID signing with only
+  WebCrypto, one copy for the phone (Vite) and the server (Deno). Tests in `src/sync/webpush.test.ts`
+  match RFC 8291's worked example byte for byte, round-trip through an independent decryption, and verify
+  the VAPID signature.
+- `supabase/migrations/0006_push.sql`: `push_subscriptions` (one per account; endpoints only at Apple,
+  Google, Mozilla or Microsoft push hosts, so the server can't be made to post elsewhere),
+  `scheduled_notifications` (encrypted payload at most 4 KB, `sub_key` = the p256dh it was encrypted for,
+  15 days ahead at most, 300 pending at most, sent rows kept two days and never re-armed by a late upload,
+  only waiting rows deletable by the app), `private.send_log` (no content), `private.push_config` (mode
+  `off` = kill switch, `shadow` = only the owner and `private.push_beta` get real pushes, `on`), the
+  dispatcher's functions, the purge extended, and the `smart-meta-dispatch` cron job (every minute,
+  `pg_net`, its secret made in Vault by the migration itself). Tested on PGlite (Postgres in WebAssembly)
+  with stand-ins for Supabase's auth, Vault, cron and pg_net: 47 checks, including running it twice.
+- `supabase/functions/dispatch/index.ts`: checks the secret (constant time, against Vault), claims what's
+  due, signs and forwards it (`TTL` 15 minutes, `Urgency: high`), encrypts and sends the owner's "New
+  request", and reports back. Run end to end on Deno against PGlite: a missing or wrong secret is refused;
+  Apple answered 400 to a fake device (logged as failed); Google answered 404 (subscription deleted).
+- `public/push-sw.js` (loaded by `workbox.importScripts`): shows the push (a plain "Smart Meta" if the
+  payload can't be read, since iPhone allows no silent push) and, on a tap, focuses or opens the app first,
+  then goes to the push's path (only paths inside the app).
+- `src/sync/push.ts`: turn on (permission from a tap, subscribe, save), turn off, the check on each open
+  (renews a dropped subscription, stops here if another phone took over, renews `checked_at` about once a
+  day), and the test push, encrypted on the phone. Signing out turns pushes off for the phone.
+- Settings → Developer: "Notifications on this phone" and "Send a test notification" (members only), until
+  Settings → Notifications comes in part 3.
+- Vercel Preview variables for `notifications-s5` (Supabase URL and key) added by Claude;
+  `VITE_VAPID_PUBLIC_KEY` waits for the owner's public key. The usage alarm (backups repo) now checks
+  pushes: over twice the previous week's daily average, and over 30 in a day.
+
+**Choices made while building (the owner may change any):**
+- **The new-request push counts toward the owner's fuse** (20 a day), so a flood of sign-ups can't push
+  without end; captcha and email codes make that unlikely. A request the dispatcher sees over 15 minutes
+  late (an outage) gets no push, as with every type.
+- **The kill switch keeps planned pushes waiting**; turned back on, whatever is over 15 minutes late is
+  dropped. New requests while it's off get no push.
+- **The default mode is `shadow`**, so a new project (production in S6) pushes only to the owner until
+  it's turned `on`. Staging is set to `on` in the setup below, so both test accounts get pushes.
+- **Functions are deployed with the Supabase CLI through `npx`** (no install, no Docker): the dashboard's
+  editor can't take the shared `_shared/webpush.ts` file.
+- **The test push says** "Test notification" / "Sent at 14:32. Push works on this phone." (English only, like
+  the rest of Developer) and opens Developer.
+
+**Owner's setup for part 2, in order** (Claude can't do these: they need the owner's accounts or secrets):
+1. **Update the folder:** in PowerShell, in `Documents\smart-meta`: `git checkout notifications-s5`, then
+   `git pull`.
+2. **VAPID keys:** `node scripts/vapid-keys.mjs`. Save both lines in the password manager as "Smart Meta
+   VAPID (staging)". **Send Claude only the `VAPID_PUBLIC_KEY` line** (it's public; Claude adds it to Vercel
+   as `VITE_VAPID_PUBLIC_KEY` and the preview rebuilds).
+3. **Supabase secrets:** Supabase → `smart-meta-staging` → Edge Functions → Secrets → add
+   `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` with the two values.
+4. **Migration:** SQL Editor → paste `supabase/migrations/0006_push.sql` → Run. Then, in a new query:
+   `select vault.create_secret('https://gveqbekpnczaejxnmfmp.supabase.co/functions/v1/dispatch', 'dispatch_url');`
+   and `update private.push_config set mode = 'on';` → Run.
+5. **Deploy the dispatcher:** in PowerShell, in the repo folder: `npx supabase login` (a browser page asks
+   to allow it), then
+   `npx supabase functions deploy dispatch --project-ref gveqbekpnczaejxnmfmp --no-verify-jwt --use-api`.
+6. **Check:** Integrations → Cron → `smart-meta-dispatch` succeeds each minute; Edge Functions → `dispatch`
+   → Invocations shows a 200 each minute. Advisors → Security Advisor: anything new goes to Claude.
+7. **Turnstile:** Cloudflare → Turnstile → "Smart Meta" → Settings → add the hostname
+   `smart-meta-h2ur-git-notifications-s5-daccache.vercel.app`.
+
+**To test part 2 on the S5 preview** (a new Home Screen app; the S4 passkeys don't open here):
+1. **iPhone:** open the S5 preview in Safari, Share → Add to Home Screen, open it from there, sign in.
+   Settings → Developer → turn on "Notifications on this phone" → Allow. Tap "Send a test notification" and
+   lock the phone: within a minute "Test notification" arrives. Tapping it opens Developer.
+2. **Android:** the same with the other test account (close the Chrome tab after installing).
+3. **New request:** on any browser, sign up with a new email and type the code. Within a minute the owner's
+   phone gets "New request" (or "Novo pedido") with that email; tapping it opens Requests.
+4. **One phone per account** (optional): sign in with the same account on the second phone and turn
+   notifications on there; reopen the app on the first phone: its switch is off, and only the second gets
+   the test.
+5. **The log and the kill switch:** SQL Editor →
+   `select at, kind, status, reason from private.send_log order by at desc limit 20;` shows each push (no
+   text). `update private.push_config set mode = 'off';`, send a test: nothing comes;
+   `update private.push_config set mode = 'on';`, send another: it comes.
+
+- [ ] VAPID keys; service worker push and click handlers (deep links). *(Built in part 2.)*
+- [ ] One subscription per user; re-subscribe on open; diagnostics logged (spec NO-23). *(Built in part 2.)*
 - [ ] Planner (tests first) with phone-encrypted payloads; upload only the difference.
-- [ ] Dispatcher: every minute, stale drop at 15 min, fuse 20/day, kill switch, send log.
+- [ ] Dispatcher: every minute, stale drop at 15 min, fuse 20/day, kill switch, send log. *(Built in part 2.)*
 - [ ] Types: morning summary (lists due items), custom reminders from the Notification card (once; tasks,
       projects, steps, preps), weekly review (own time).
 - [ ] Settings → Notifications (Morning summary with time and weekdays only, Reminders you set, Weekly
       review with time, Goal review dates; "On this phone" rows as approved).
-- [ ] Developer test button. Beta flag for the owner → shadow week.
+- [ ] Developer test button. Beta flag for the owner → shadow week. *(The test button and the server's
+      shadow mode built in part 2; the app's beta flag and the shadow week in part 3.)*
 - [ ] **Push to the owner on each new access request** (spec AC-5), moved here from S2 on
       2026-10-29: title "New request", body the email (owner, 2026-10-31); tapping it opens Requests. Sent by the server when someone
       signs up, so it needs this stage's VAPID keys, server sender and the owner's subscription.
-      Not planned by the phone and not encrypted (it holds only an email, which the owner sees
-      anyway). Doesn't count toward the owner's cap of 3.
+      Not planned by the phone, and encrypted by the server rather than the phone (it holds only an
+      email, which the owner sees anyway). Doesn't count toward the owner's cap of 3. *(Built in part 2.)*
 - **Done when:** the owner gets correct pushes for a week on the preview.
 
 ### S6. The rest, then merge
@@ -1530,3 +1608,7 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
 - **2026-10-31 (2):** round 2 answers: "At the time" / "On the day" first in the menu (4a); date-only
   reminders at the morning summary's time (5); the Notifications row first in Settings → App (6a). S5 part 1
   (mockups) done; next, part 2 (plumbing).
+- **2026-10-31 (3):** S5 part 2 (plumbing) built: the shared Web Push module (matches RFC 8291's example),
+  `0006_push.sql` (47 checks on PGlite), the `dispatch` Edge Function (run end to end on Deno), the service
+  worker's push and tap handlers, subscriptions on the phone, Developer's switch and test push, the alarm's
+  push check. Vercel Preview variables for `notifications-s5` added. Waiting for the owner's setup and test.

@@ -6,3 +6,6 @@ dev-dist
 .vercel
 *.log
 .env.*.local
+
+# Supabase CLI cache (created by `npx supabase …`)
+supabase/.temp/

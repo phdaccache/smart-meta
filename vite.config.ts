@@ -49,6 +49,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true,
+        // Push and tapping a push (public/push-sw.js).
+        importScripts: ['push-sw.js'],
       },
     }),
   ],

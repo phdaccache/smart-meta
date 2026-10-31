@@ -9,6 +9,7 @@ import { logUncaught } from './sync/log'
 import { CrashScreen } from './ui/CrashScreen'
 import { holdOpenLock, OpenTwice } from './ui/OpenTwice'
 import { installCaretAtEnd } from './ui/caret'
+import { navigate } from './ui/router'
 import './ui/install'
 import './styles.css'
 
@@ -46,6 +47,11 @@ registerSW({
       if (document.visibilityState === 'visible') registration.update().catch(() => {})
     })
   },
+})
+// Tapping a push while the app is open: the service worker brings it to the front and says where to go.
+navigator.serviceWorker?.addEventListener('message', (e: MessageEvent) => {
+  const path: unknown = e.data?.type === 'open' ? e.data.path : null
+  if (typeof path === 'string' && path.startsWith('/') && !path.startsWith('//')) navigate(path)
 })
 logUncaught()
 holdOpenLock()

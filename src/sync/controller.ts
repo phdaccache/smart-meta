@@ -12,6 +12,7 @@ import { forgetAll, forgetKey, keepKeys, localLockState, readyKey, type LockStat
 import { SYNC_AFTER_CHANGE_MS, SYNC_EVERY_MS, SYNC_MAX_WAIT_MS } from '../numbers'
 import { log, short } from './log'
 import { startProfileSync, stopProfileSync } from './profile'
+import { checkPush, turnOffPush } from './push'
 import { SupabaseTarget, supabase, withKeepalive } from './supabase'
 
 /**
@@ -280,6 +281,7 @@ async function startEngine(userId: string) {
   engine.lastSyncedAt().then((lastSyncedAt) => set({ lastSyncedAt }))
   schedule(0)
   startProfileSync(supabase!, userId)
+  void checkPush(userId)
 }
 
 /** After Face ID or the data password: sync starts for a member; a waiting account is ready for later. */
@@ -343,8 +345,10 @@ export function startSync() {
 
   // Waiting for access, these look for the approval; a member syncs.
   const wake = (delay: number) => {
-    if (engine) schedule(delay)
-    else if (status.userId) void refreshAccess()
+    if (engine) {
+      schedule(delay)
+      if (status.userId) void checkPush(status.userId)
+    } else if (status.userId) void refreshAccess()
   }
   window.addEventListener('online', () => {
     set({ online: true })
@@ -399,6 +403,8 @@ export async function signOut(): Promise<void> {
   const userId = status.userId
   engine = null
   clearTimeout(timer)
+  // Signed out, this phone gets no more pushes. Offline, the server's copy stays until it fails.
+  if (userId) await turnOffPush(userId).catch((e) => log('push off failed', e))
   await supabase?.auth.signOut({ scope: 'local' })
   if (wipe) await wipeLocal(db)
   // Signed out, the phone is locked: signing in again asks for Face ID (spec PR-3).

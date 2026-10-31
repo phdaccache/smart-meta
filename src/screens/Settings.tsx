@@ -10,6 +10,7 @@ import { canSignOut, deleteAccount, eraseAllData, signOut, syncNow, useSyncStatu
 import { SyncIcon } from '../ui/SyncNote'
 import { clearLog, readLog } from '../sync/log'
 import { pendingRequests } from '../sync/account'
+import { pushAvailable, pushOnHere, sendTestPush, turnOffPush, turnOnPush } from '../sync/push'
 import { DateField, InfoTip, Screen, Section, Sheet, Stepper, Switch, toast, TypeToConfirm } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconChevronUpDown } from '../ui/icons'
@@ -428,7 +429,7 @@ function DevSection({ devToday }: { devToday: string | null }) {
   const [busy, setBusy] = useState(false)
   const [debugPaint, setDebugPaint] = useState(() => document.documentElement.classList.contains('debug-paint'))
   const [logOpen, setLogOpen] = useState(false)
-  const { email, access } = useSyncStatus()
+  const { email, access, userId } = useSyncStatus()
   // Only the owner's account can list requests; anyone else's Developer section has no row for it.
   const waiting = useWaitingCount(access === 'member')
   const load = async (fill: (today: string) => Promise<void>) => {
@@ -476,8 +477,74 @@ function DevSection({ devToday }: { devToday: string | null }) {
           sub={email ? 'Sign out of sync first, so your real data stays safe.' : 'Long names, a one-letter value, emoji, links and counts of 1, for checking layouts.'} onClick={() => load(loadWorstCaseData)} />
         <LinkRow title="Diagnostics log" sub="Sign-in, keys and sync on this device, for finding what went wrong." onClick={() => setLogOpen(true)} />
       </div>
+      {access === 'member' && userId && <DevPush userId={userId} />}
       <DiagnosticsLog open={logOpen} onClose={() => setLogOpen(false)} />
     </Section>
+  )
+}
+
+/**
+ * Developer → push, until Settings → Notifications exists (S5 part 3): this phone's subscription, and a test
+ * push encrypted here and sent by the server (spec NO-25).
+ */
+function DevPush({ userId }: { userId: string }) {
+  const [on, setOn] = useState<boolean | null>(null)
+  const [busy, setBusy] = useState(false)
+  useEffect(() => {
+    let live = true
+    pushOnHere(userId).then((v) => live && setOn(v))
+    return () => {
+      live = false
+    }
+  }, [userId])
+  const available = pushAvailable()
+  const toggle = async (next: boolean) => {
+    if (busy) return
+    setBusy(true)
+    try {
+      if (!next) {
+        await turnOffPush(userId)
+        setOn(false)
+      } else if ((await turnOnPush(userId)) === 'denied') {
+        toast('Notifications are blocked for this app. Allow them in the phone’s settings, then try again.')
+      } else {
+        setOn(true)
+      }
+    } catch (e) {
+      toast((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  const test = async () => {
+    if (busy) return
+    setBusy(true)
+    try {
+      await sendTestPush(userId)
+      toast('Planned. It arrives within a minute.')
+    } catch (e) {
+      toast((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <div className="card list settings" style={{ marginTop: 16 }}>
+      <div className="list-row">
+        <div className="text">
+          <span className="title">Notifications on this phone</span>
+          <div className="sub">
+            {!available ? 'Not available here: it needs the installed app and the server’s push key.'
+              : 'Only one phone per account gets them: turning them on here stops them on the other.'}
+          </div>
+        </div>
+        {available && on != null && <Switch checked={on} label="Notifications on this phone" onChange={toggle} />}
+      </div>
+      {available && on && (
+        <LinkRow title={busy ? 'Sending…' : 'Send a test notification'}
+          sub="Arrives within a minute. Lock the phone to see it on the Lock Screen." onClick={test} />
+      )}
+    </div>
   )
 }
 
