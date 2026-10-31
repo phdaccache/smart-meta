@@ -18,7 +18,7 @@ import {
 import { useCaptcha } from '../ui/captcha'
 import { holdKeyboard, PageText, passKeyboard, Screen, Section, Sheet, toast } from '../ui/components'
 import { IconChevronLeft, IconChevronRight } from '../ui/icons'
-import { goBack, navigate, openOver, useLocation } from '../ui/router'
+import { backTo, currentDepth, goBack, navigate, openOver, useLocation } from '../ui/router'
 import { SwipeToDelete } from '../ui/SwipeToDelete'
 import { inIosBrowser } from './Intro'
 import { DeveloperOnly } from '../ui/developer'
@@ -48,6 +48,8 @@ let fromActivate = false
 let signingIn = false
 /** Begun at the intro's "Restore from a backup": only an existing account signs in (plan §16). */
 let restoring = false
+/** Where the sign-in began (see currentDepth): leaving it at the Face ID step goes back there. */
+let startDepth = 0
 
 /**
  * Opens the email step, ready to type. Called in the tap, for the keyboard (see holdKeyboard). `restore`:
@@ -57,6 +59,7 @@ export function openSignIn(activate = false, restore = false) {
   fromActivate = activate
   restoring = restore
   signingIn = true
+  startDepth = currentDepth()
   if (!inIosBrowser()) holdKeyboard()
   navigate('/account/email')
 }
@@ -393,10 +396,18 @@ export function KeysPrompt() {
   return null
 }
 
-/** Leaves the key for later: sync waits, and the app goes on. */
+/**
+ * Leaves the key for later: sync waits, and the app goes on. Back goes where the person was before: where
+ * the sign-in began (Settings, the Restore page, Today), past its used-up steps; Today after Activate
+ * notifications, the intro's end; or, for the screen opened on its own (Settings → Sync, or as the app
+ * opens), the screen under it.
+ */
 const later = () => {
+  const wasSigningIn = signingIn
   signingIn = false
-  navigate('/')
+  if (wasSigningIn && !fromActivate) backTo(startDepth, '/')
+  else if (wasSigningIn) navigate('/')
+  else goBack('/')
 }
 
 function passkeyError(e: unknown): string {
@@ -438,7 +449,7 @@ function LockScreen() {
       sub={byPhone('acct.lockSub', 'acct.lockSubOther')} step={signingIn ? 'lock' : undefined}
       foot={error && <p className="field-error account-hint">{error}</p>}
       nav={<button className="btn primary block" disabled={busy} onClick={go}>{byPhone('acct.lockGo', 'acct.lockGoOther')}</button>}
-      below={<button className="quiet-link" onClick={() => navigate('/account/password')}>{byPhone('acct.lockTrouble', 'acct.lockTroubleOther')}</button>} />
+      below={<button className="quiet-link" onClick={() => navigate('/account/password?from=lock')}>{byPhone('acct.lockTrouble', 'acct.lockTroubleOther')}</button>} />
   )
 }
 
@@ -479,6 +490,8 @@ function PasswordScreen() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const saved = useRef('')
+  // Asked for from the Face ID screen: Back returns to it. In its place (Face ID can't work here): leaving.
+  const fromLock = useLocation().query.get('from') === 'lock'
   useEffect(() => { prompted = true }, [])
 
   const submit = async () => {
@@ -506,7 +519,7 @@ function PasswordScreen() {
 
   const check = phase === 'check'
   return (
-    <Page form onBack={later} bar={t('acct.yourData')} title={t(check ? 'acct.pwCheckTitle' : 'acct.pwTitle')}
+    <Page form onBack={fromLock ? () => goBack('/account/lock') : later} bar={t('acct.yourData')} title={t(check ? 'acct.pwCheckTitle' : 'acct.pwTitle')}
       sub={check ? t('acct.pwCheckSub', { email }) : byPhone('acct.pwSub', 'acct.pwSubOther')} step={signingIn ? 'lock' : undefined}
       nav={<button className="btn primary block" disabled={busy || !password} onClick={submit}>
         {t(check ? 'common.continue' : 'acct.pwSave')}

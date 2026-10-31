@@ -267,6 +267,17 @@ export function openOver(root: string, to: string) {
   show(null)
 }
 
+/** How many in-app screens are under the one shown: a flow notes it at its start, to leave back to it (see backTo). */
+export const currentDepth = () => depth()
+
+/** Back to the screen that was shown at `d` (from currentDepth), past every screen opened since; `fallback` if it's gone. */
+export function backTo(d: number, fallback: string) {
+  if (afterOwnMoves(() => backTo(d, fallback))) return
+  const n = depth() - d
+  if (n > 0) history.go(-n)
+  else navigate(fallback, { replace: true })
+}
+
 /** Back within the app when there is somewhere to go, otherwise to a sensible parent. */
 export function goBack(fallback: string) {
   if (afterOwnMoves(() => goBack(fallback))) return

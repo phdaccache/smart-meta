@@ -951,7 +951,8 @@ export function GettingStarted({ snap }: { snap: Snapshot }) {
     <div className="card getting-started">
       <div className="gs-head">
         <h2>{t('gs.title')}</h2>
-        <button className="icon-btn" aria-label={t('gs.hide')} onClick={() => setSettings({ gettingStarted: false })}><IconClose width={18} height={18} /></button>
+        {/* Hidden for good, also on a phone that skipped the intro by signing in (not onboarded yet). */}
+        <button className="icon-btn" aria-label={t('gs.hide')} onClick={() => setSettings({ gettingStarted: false, onboarded: true })}><IconClose width={18} height={18} /></button>
       </div>
       <ul>
         {items.map((i) => {
