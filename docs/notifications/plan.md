@@ -1254,8 +1254,8 @@ part needs:
    test button, the push on a new access request. Ends with the owner's setup and one test push on both
    phones. **Done 2026-10-31:** built (below, "Part 2: what was built"), set up and tested by the owner on
    both phones (test push, tapping it, the "New request" push).
-3. **The rest:** planner, the four types, Settings → Notifications, the reminder switch. Then the owner
-   tests, and the week on the preview starts.
+3. **The rest:** planner, the four types, Settings → Notifications, the Notification card, the kill switch
+   row in Developer, the app's beta flag. Then the owner tests, and the week on the preview starts.
 
 **Owner's first idea for custom reminders (2026-10-30), replacing "a reminder at any date and time"; superseded
 on 2026-10-31 by the Notification card below:** a
@@ -1299,18 +1299,37 @@ date has no reminder, which settles the open wording for "a task with no goal an
   are kept as the owner chose (the reminder is "asked for", the summary isn't).
 - Q6 **a**: the Notifications row is the first row of Settings → App, above Language.
 
-**Facts for parts 2 and 3** (checked in code on 2026-10-30):
-- No push code exists yet. The PWA uses vite-plugin-pwa in **generateSW** mode (`vite.config.ts`,
-  `registerType: 'autoUpdate'`): push and click handlers need `workbox.importScripts` with a file in
-  `public/`, or a switch to injectManifest. Click handler: `openWindow`/`focus` first (§5).
-- No `supabase/functions/` yet; migrations stop at `0005`. `pg_cron` is already in use (0004's purge).
-  Claude has no Supabase access: the owner pastes SQL, deploys functions and sets secrets.
+**Facts for part 3** (after part 2, 2026-10-31; details in "Part 2: what was built" below):
+- **What exists to build on:** `src/sync/push.ts` (turn on/off, the check on each open, `sendTestPush`, which
+  shows how to encrypt and upload one row: `encryptPush(encodeMessage(message), keysOf(sub))`, base64url, with
+  `sub_key` = the subscription's p256dh); `supabase/functions/_shared/webpush.ts` (`PushMessage` is
+  `{ title, body, url, tag? }`; `MESSAGE_BYTES_MAX` is the text budget); `public/push-sw.js` shows it.
+- **What the server accepts in `scheduled_notifications`** (0006): `kind` in reminder, summary, review,
+  goal-review, test (a new kind needs a migration); `id` up to 200 characters of `[A-Za-z0-9:._-]`;
+  `fire_at` from 15 minutes ago to 15 days ahead; at most 300 pending per user (N-5) or the whole upload is
+  refused; `tag` (up to 64 of `[A-Za-z0-9_-]`, optional) is free for the planner's diff. Upserts on
+  `(user_id, id)`; a row already sent is never changed by an upsert; only pending rows can be deleted.
+- **A new subscription** (another phone, or the browser renewing it) deletes every pending row on the server:
+  the planner must replan when the endpoint it last planned for changes.
+- **Only one phone holds the subscription**, but any of the account's phones can read its keys
+  (`push_subscriptions` is readable by its owner), so planning from any phone works (plan §4.1).
+- **Timing:** cron fires at second 0, so a push due at hh:mm:00 leaves with that run; check `at` against
+  `fire_at` in `private.send_log` with the first real reminders.
+- **The Developer switch and test button are temporary**: Settings → Notifications replaces the switch
+  (the test button stays, NO-25). The kill switch row (owner only) needs a small migration: a get/set
+  function checked with `private.is_owner()`, as `approve_member` is.
+- **N-9 lives twice on the server**: `private.stale_after()` and the dispatch function's `TTL_SECONDS`.
+  Change both (spec RE-5).
+- **Deploying the function:** `npx supabase login`, deploy, `npx supabase logout`, delete the token
+  (owner only; Claude has no Supabase access). The owner pastes SQL and sets secrets.
+- **Testing modules in the dev browser:** after an edit, Vite serves the app's modules with `?t=`; a test
+  that imports `/src/...` without it gets a second copy with its own state (2026-10-31).
 - Item fields: tasks `date` + optional `time`; project steps are tasks with `projectId`, date only; projects
   `targetDate` + optional `time`; preps `fireWeekdays` + `fireTime` (always timed, weekly); commitments
-  have no date or time (`src/lib/types.ts`). The switch belongs in `DateTimeRows` (`src/screens/TaskSheet.tsx`),
+  have no date or time (`src/lib/types.ts`). The card belongs under `DateTimeRows` (`src/screens/TaskSheet.tsx`),
   which tasks and projects share; steps and preps have their own editors.
-- The S5 preview needs Vercel's two Preview variables for branch `notifications-s5` (Claude adds them) and
-  the hostname `smart-meta-h2ur-git-notifications-s5-daccache.vercel.app` in the Turnstile widget (owner).
+- The S5 preview has its Vercel Preview variables (Supabase URL and key, `VITE_VAPID_PUBLIC_KEY`) and its
+  Turnstile hostname; staging has 0006, 0007, the secrets, the dispatcher, and mode `on`.
 
 **Part 2: what was built (2026-10-31), set up and tested by the owner the same day:**
 - `supabase/functions/_shared/webpush.ts`: RFC 8291 encryption and RFC 8292 VAPID signing with only
@@ -1457,6 +1476,11 @@ passkey belongs to the S4 address (README, "Passkeys belong to one web address")
   paste it into Supabase's SMTP settings yourself.
 - **Cloudflare account** (free) for Turnstile: **done in S1** (2026-10-29), widget "Smart Meta".
 - **Vercel:** turn off preview protection and add Preview environment variables: **done in S1**.
+- **VAPID keys** (push): in S5, `node scripts/vapid-keys.mjs`; the private key only in Supabase → Edge
+  Functions → Secrets, the public one to Claude for Vercel. **Done for staging 2026-10-31**; production
+  gets its own pair in S6.
+- **Supabase CLI** (deploying Edge Functions): `npx supabase login`, deploy, then `npx supabase logout` and
+  delete the token in Account → Access Tokens, so no token stays on the computer Claude works on.
 
 ---
 
@@ -1488,7 +1512,6 @@ passkey belongs to the S4 address (README, "Passkeys belong to one web address")
 
 ## 16. Open questions
 
-
 1. **Privacy policy** (S4): whether a lawyer reviews it before friends use it (recommended), and the "what
    changed" notice in the app when a new version comes (promised in its section 12, not built yet; needed
    only once there is a version 2).
@@ -1501,6 +1524,11 @@ passkey belongs to the S4 address (README, "Passkeys belong to one web address")
    device should be on the new version (the PWA updates on open). And 0003 refuses readable writes, so it
    goes to production together with the app that encrypts; an older app's writes then wait on its phone
    until it updates.
+4. **Privacy policy and the push subscription's language** (S5, found 2026-10-31): the subscription also
+   stores the app's language (for the owner's "New request" text), which the policy's notifications line
+   doesn't list (it names the delivery address, time zone, when notifications fire, and the send log). Add
+   "your app's language" to that line in both languages? The policy is confirmed by the owner, so it waits
+   for the owner's OK.
 
 Answered on 2026-10-31 (S5): the kill switch goes in the app too, as an owner-only Developer row (part 3).
 "Restore from a backup" signs in existing accounts only; a new email gets the usual "Something went wrong.
@@ -1661,3 +1689,6 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   the data password's Back returns to Face ID; leaving Face ID or Unlock goes back where sign-in began
   (Today after Activate); Getting started's close button works on a phone that skipped the intro. Finishing
   a sign-in still goes to Today (or Waiting for access over Today) from everywhere.
+- **2026-10-31 (9):** docs checked before compacting: README's tables (the `private` push tables), plan's
+  facts rewritten for part 3, the owner's setup list (VAPID keys, the CLI), new open question 4 (the
+  language in the privacy policy). Next: S5 part 3.
