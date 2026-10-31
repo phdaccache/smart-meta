@@ -1252,7 +1252,8 @@ part needs:
    4 to 6, answered the same day. **Done 2026-10-31.**
 2. **Plumbing:** VAPID keys, service worker push and click, subscriptions, the tables, the dispatcher, the
    test button, the push on a new access request. Ends with the owner's setup and one test push on both
-   phones. **Built 2026-10-31** (below, "Part 2: what was built"); the owner's setup and test are next.
+   phones. **Done 2026-10-31:** built (below, "Part 2: what was built"), set up and tested by the owner on
+   both phones (test push, tapping it, the "New request" push).
 3. **The rest:** planner, the four types, Settings → Notifications, the reminder switch. Then the owner
    tests, and the week on the preview starts.
 
@@ -1311,7 +1312,7 @@ date has no reminder, which settles the open wording for "a task with no goal an
 - The S5 preview needs Vercel's two Preview variables for branch `notifications-s5` (Claude adds them) and
   the hostname `smart-meta-h2ur-git-notifications-s5-daccache.vercel.app` in the Turnstile widget (owner).
 
-**Part 2: what was built (2026-10-31), waiting for the owner's setup and test:**
+**Part 2: what was built (2026-10-31), set up and tested by the owner the same day:**
 - `supabase/functions/_shared/webpush.ts`: RFC 8291 encryption and RFC 8292 VAPID signing with only
   WebCrypto, one copy for the phone (Vite) and the server (Deno). Tests in `src/sync/webpush.test.ts`
   match RFC 8291's worked example byte for byte, round-trip through an independent decryption, and verify
@@ -1382,6 +1383,17 @@ date has no reminder, which settles the open wording for "a task with no goal an
 7. **Turnstile:** Cloudflare → Turnstile → "Smart Meta" → Settings → add the hostname
    `smart-meta-h2ur-git-notifications-s5-daccache.vercel.app`.
 
+**Owner's test, 2026-10-31:** the test push arrives on iPhone and Android and opens Developer; "New
+request" arrives with the email and opens Requests. Found and fixed: a push tapped on Android while
+Developer was open added Developer twice to Back (a tapped push for the screen already shown now leaves
+it); Developer's subtitle was cut at two lines (shortened); and signing in from the intro's "Restore from
+a backup" with nothing on the server (or while waiting) led back to the intro, "Go to Today" included.
+Fixed with the owner's OK: a phone with an owner skips the intro, and Today shows Getting started until
+the first goal. The test push comes at the start of the next minute (the dispatcher's run); a real
+reminder is due at the exact minute, so it leaves with that run and arrives seconds later. Part 3 checks
+this against the send log (`at` against `fire_at`). The S4 account had to be deleted on staging first: its
+passkey belongs to the S4 address (README, "Passkeys belong to one web address").
+
 **To test part 2 on the S5 preview** (a new Home Screen app; the S4 passkeys don't open here):
 1. **iPhone:** open the S5 preview in Safari, Share → Add to Home Screen, open it from there, sign in.
    Settings → Developer → turn on "Notifications on this phone" → Allow. Tap "Send a test notification" and
@@ -1397,21 +1409,21 @@ date has no reminder, which settles the open wording for "a task with no goal an
    text). `update private.push_config set mode = 'off';`, send a test: nothing comes;
    `update private.push_config set mode = 'on';`, send another: it comes.
 
-- [ ] VAPID keys; service worker push and click handlers (deep links). *(Built in part 2.)*
-- [ ] One subscription per user; re-subscribe on open; diagnostics logged (spec NO-23). *(Built in part 2.)*
+- [x] VAPID keys; service worker push and click handlers (deep links). *(Part 2.)*
+- [x] One subscription per user; re-subscribe on open; diagnostics logged (spec NO-23). *(Part 2.)*
 - [ ] Planner (tests first) with phone-encrypted payloads; upload only the difference.
-- [ ] Dispatcher: every minute, stale drop at 15 min, fuse 20/day, kill switch, send log. *(Built in part 2.)*
+- [x] Dispatcher: every minute, stale drop at 15 min, fuse 20/day, kill switch, send log. *(Part 2.)*
 - [ ] Types: morning summary (lists due items), custom reminders from the Notification card (once; tasks,
       projects, steps, preps), weekly review (own time).
 - [ ] Settings → Notifications (Morning summary with time and weekdays only, Reminders you set, Weekly
       review with time, Goal review dates; "On this phone" rows as approved).
 - [ ] Developer test button. Beta flag for the owner → shadow week. *(The test button and the server's
       shadow mode built in part 2; the app's beta flag and the shadow week in part 3.)*
-- [ ] **Push to the owner on each new access request** (spec AC-5), moved here from S2 on
+- [x] **Push to the owner on each new access request** (spec AC-5), moved here from S2 on
       2026-10-29: title "New request", body the email (owner, 2026-10-31); tapping it opens Requests. Sent by the server when someone
       signs up, so it needs this stage's VAPID keys, server sender and the owner's subscription.
       Not planned by the phone, and encrypted by the server rather than the phone (it holds only an
-      email, which the owner sees anyway). Doesn't count toward the owner's cap of 3. *(Built in part 2.)*
+      email, which the owner sees anyway). Doesn't count toward the owner's cap of 3. *(Part 2, tested.)*
 - **Done when:** the owner gets correct pushes for a week on the preview.
 
 ### S6. The rest, then merge
@@ -1472,6 +1484,16 @@ date has no reminder, which settles the open wording for "a task with no goal an
 ---
 
 ## 16. Open questions
+
+4. **Sign-up from "Restore from a backup"** (S5, owner, 2026-10-31): the intro's Restore path signs in with
+   the same flow as sign-up (spec AC-1), so a new email makes a new account there, which feels strange.
+   Claude's suggestion: on that path, only existing accounts sign in; a new email is told "No account uses
+   this email" and pointed to Get started. Trade-off: it says whether an email has an account (behind the
+   captcha). Changes AC-1 for that path, so it needs the owner's OK.
+5. **Kill switch in the app** (S5, owner, 2026-10-31): today it's SQL only
+   (`update private.push_config set mode = 'off'`). Claude's suggestion: an owner-only row in Developer
+   (On, Shadow, Off), checked on the server like approving a request, so it works from the phone in an
+   emergency.
 
 1. **Privacy policy** (S4): whether a lawyer reviews it before friends use it (recommended), and the "what
    changed" notice in the app when a new version comes (promised in its section 12, not built yet; needed
@@ -1625,3 +1647,7 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   Advisor after 0006: `pg_net` in `public` → `0007_pg_net_schema.sql` moves it to `extensions` (0006 now
   installs it there); leaked-password protection doesn't apply (no passwords). The CLI token is removed
   right after each deploy, so Claude still has no Supabase access.
+- **2026-10-31 (5):** S5 part 2 done: the owner set it up and tested it on both phones. Fixed from the
+  test: a tapped push no longer adds the screen already shown to Back; shorter Developer subtitle; a phone
+  that signed in with no goals goes to Today with Getting started instead of the intro (owner's OK). New
+  open questions 4 (sign-up from Restore) and 5 (kill switch in the app).
