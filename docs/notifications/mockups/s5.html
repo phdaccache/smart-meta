@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Smart Meta S5 Mockups</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -597,13 +598,42 @@ h1, h2, h3, p { margin: 0; }
 .lrow.new-row { box-shadow: inset 0 0 0 2px var(--accent); border-radius: 12px; }
 .done-q { font-size: 15px; line-height: 1.45; color: var(--ink-2); max-width: 66ch; }
 .done-q b { color: var(--ink); font-weight: 600; }
+/* ——— round 3: steps and preps ——— */
+.srow { display: flex; gap: 12px; align-items: flex-start; padding: 12px 16px; position: relative; }
+.srow + .srow::before { content: ''; position: absolute; top: 0; right: 0; left: 50px; border-top: 0.5px solid var(--line-strong); }
+.srow .text { flex: 1; min-width: 0; }
+.st-t { font-size: 17px; line-height: 1.3; }
+.sq { flex: none; width: 22px; height: 22px; border-radius: 6px; border: 1.6px solid var(--ink-3); margin-top: 1px; }
+.smeta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.schip { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; padding: 0 9px; border-radius: 8px; background: var(--surface-2); color: var(--ink-2); font-size: 13px; font-weight: 500; }
+.schip.on { background: var(--accent-soft); color: var(--accent); }
+.schip.menu-btn { margin: 0; box-shadow: inset 0 0 0 1.5px var(--accent); }
+.bell-s, .cal-s { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.bell-mark { display: inline-grid; place-items: center; min-height: 28px; color: var(--c-orange); }
+.bell-mark .bell-s { width: 15px; height: 15px; }
+.srow.add { color: var(--accent); align-items: center; font-size: 17px; }
+.add-plus { width: 22px; display: grid; place-items: center; }
+.add-plus svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+.r3-foot { font-size: 13px; color: var(--ink-2); padding: 0 16px; }
+.r3-val { display: inline-flex; align-items: center; gap: 6px; }
+.pform { padding: 14px 16px; display: grid; gap: 14px; }
+.flabel { font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; }
+.finput { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; font-size: 17px; }
+.finput.short-in { width: 96px; text-align: center; }
+.wdays { display: flex; gap: 6px; flex-wrap: wrap; }
+.wd { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); font-size: 14px; font-weight: 600; }
+.wd.on { background: var(--accent); color: var(--accent-ink); }
+.r3-btns { display: flex; gap: 10px; }
+.r3-btn { flex: 1; min-height: 46px; border-radius: 12px; display: grid; place-items: center; font-size: 16px; font-weight: 600; }
+.r3-btn.primary { background: var(--accent); color: var(--accent-ink); }
+.r3-btn.danger { color: var(--danger); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--danger) 40%, transparent); }
 </style>
 
 <div class="page">
   <header class="head">
     <p class="eyebrow">S5 mockups</p>
     <h1 class="large-title">Notifications, S5</h1>
-    <p class="lede">Round 2, with your round 1 picks in: the Notification card as in Reminders, your push texts, the line under “Weekdays only”, where the Notifications row sits in Settings, and three new questions.</p>
+    <p class="lede">Round 3: the Notification card on project steps and preps, two ways each, and four questions (tab 4, then Questions). Rounds 1 and 2 are answered and built; their tabs show what was picked.</p>
   </header>
   <div class="controls">
     <nav class="steps" id="steps" aria-label="Part"></nav>
@@ -640,6 +670,7 @@ const TABS = [
   { key: 'reminder', label: 'Reminder on an item' },
   { key: 'texts', label: 'Push texts' },
   { key: 'settings', label: 'Settings → Notifications' },
+  { key: 'r3', label: 'Steps and preps' },
   { key: 'questions', label: 'Questions' },
 ]
 const NOW = new Date(2026, 9, 30, 9, 41) // the mockup's now: Friday 30 October 2026, 9:41
@@ -661,11 +692,13 @@ const state = {
   tab: store.get('tab', 'reminder'), lang: store.get('lang', 'en'), theme: store.get('theme', null),
   scen: store.get('scen', 'soonTime'), phones: {},
   sview: store.get('sview', 'on'), on: { ...ON0 }, times: { ...TIMES0 }, sOpen: null, alert: false,
-  picks: { q1: 'a', q2: 'a', q3: 'a', q4: 'a', q5: 'a', q6: 'a' }, // every question answered by 2026-10-31
+  picks: { q1: 'a', q2: 'a', q3: 'a', q4: 'a', q5: 'a', q6: 'a', ...store.get('picks3', {}) }, // rounds 1 and 2 answered 2026-10-31
+  r3: store.get('r3', 'steps'),
 }
 if (!TABS.some((x) => x.key === state.tab)) state.tab = 'reminder'
 if (!SCENS.some((x) => x.key === state.scen)) state.scen = 'soonTime'
 if (!VIEWS.some((x) => x.key === state.sview)) state.sview = 'on'
+if (!['steps', 'preps'].includes(state.r3)) state.r3 = 'steps'
 const t = (en, pt) => (state.lang === 'en' ? en : pt)
 const L = (en, pt) => ({ en, pt })
 const tx = (o) => o[state.lang]
@@ -782,7 +815,14 @@ function placeMenu(vp) {
   const fitH = Math.min(h, below ? roomBelow : roomAbove)
   m.style.maxHeight = fitH + 'px'
   m.style.top = (below ? bottom + 6 : top - 6 - fitH) + 'px'
-  m.style.right = Math.max(12, (vr.right - ar.right) / k - 6) + 'px'
+  const right = Math.max(12, (vr.right - ar.right) / k - 6), w = m.offsetWidth
+  m.style.right = right + 'px'
+  m.style.left = 'auto'
+  // A value near the left edge (a step's bell): the menu hangs from its left instead, inside the screen.
+  if (vp.offsetWidth - right - w < 12) {
+    m.style.right = 'auto'
+    m.style.left = Math.max(12, Math.min((ar.left - vr.left) / k - 6, vp.offsetWidth - w - 12)) + 'px'
+  }
 }
 const sw = (key, on, dis) => `<span class="sw ${on && !dis ? 'on' : ''} ${dis ? 'dis' : ''}" ${dis ? '' : `data-tog="${key}"`} role="switch" aria-checked="${!!on && !dis}"></span>`
 const swShow = (on) =>`<span class="sw ${on ? 'on' : ''}" role="switch" aria-checked="${on}"></span>`
@@ -915,6 +955,110 @@ function textsPanel() {
     <div class="tgroup"><h2>Approved, unchanged</h2><p>You said the rest is OK. Shown again with what your answers changed around them.</p><div class="tiles">${kept.map(tpush).join('')}</div></div>`
 }
 
+// ——— 5. Round 3: the Notification card on project steps and preps ———
+const R3S = [
+  { key: 'steps', label: 'Project steps', note: 'Today a step has no editor of its own: tapping its name renames it in place, and its end date is the small “until 5 Nov” button under it. Two ways to give a step the Notification card. A step’s reminder has a date only, so it comes at the morning summary’s time.' },
+  { key: 'preps', label: 'Preps', note: 'A prep is edited in a sheet from its goal’s page: what to do, the days, the time. It repeats every week, so its reminder comes before each of its times. Two ways to add the card.' },
+]
+const R3_STEPS = [
+  [L('Update the CV', 'Atualizar o currículo'), [2026, 10, 5]],
+  [L('Write the LinkedIn summary', 'Escrever o resumo do LinkedIn'), [2026, 10, 12]],
+  [L('Ask two people for recommendations', 'Pedir duas recomendações'), [2026, 10, 19]],
+  [L('Apply to five jobs', 'Candidatar-se a cinco vagas'), [2026, 10, 26]],
+]
+const R3_PREP = { title: L('Pack the gym bag', 'Arrumar a mochila da academia'), goal: L('Exercise regularly', 'Fazer exercício com frequência') }
+const MON_SHORT = { en: 'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' '), pt: 'jan fev mar abr mai jun jul ago set out nov dez'.split(' ') }
+const dShort = ([y, m, d]) => `${d} ${MON_SHORT[state.lang][m]}`
+const r3 = () => R3S.find((x) => x.key === state.r3) || R3S[0]
+const PLUS = '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>'
+const bellSmall = () => svgIn('bell', 'bell-s')
+const calSmall = () => svgIn('calendar', 'cal-s')
+// A menu drawn open, as the phone shows it after a tap on the value.
+function r3Menu(timed, chosen, choices) {
+  const item = (label, on) => `<button class="mi" role="menuitemradio" aria-checked="${on}"><span class="mi-check">${on ? I.check : ''}</span><span>${esc(label)}</span></button>`
+  const mid = choices.map(([n, u]) => item(offLabel(n, u, timed), chosen === `${n}:${u}`)).join('')
+  return `<div class="menu-layer"><div class="menu" role="menu"><div class="mg">${item(t('None', 'Nenhuma'), chosen === 'none')}</div><div class="mg">${mid}</div><div class="mg">${item(t('Custom', 'Personalizado'), false)}</div></div></div>`
+}
+const notifyRow = (value, btn = false) => `<div class="list"><div class="lrow">${tile('bell', '--c-orange')}<span class="text">${t('Notification', 'Notificação')}</span><span class="${btn ? 'menu-btn' : 'r3-val'}"><span class="row-value">${esc(value)}</span>${I.updown}</span></div></div>`
+const projHead = () => `<button style="color:var(--accent);font-size:16px;display:inline-flex;align-items:center;min-height:44px;margin:0 0 2px -6px">${svgIn('back', 'ico').replace('class="ico"', 'class="ico" style="width:22px;height:22px;stroke-width:2.2"')}${t('Plan', 'Plano')}</button><p class="eyebrow">${t('Active project', 'Projeto ativo')}</p><h1 class="large-title" style="margin-bottom:6px">${esc(t('CV & LinkedIn', 'Currículo e LinkedIn'))}</h1>`
+// The project's steps as its page lists them. `mode` A: a bell beside the date once set; B: a bell button on every step.
+function stepRows(mode, openAt = -1) {
+  return R3_STEPS.map(([title, end], i) => {
+    const set = i === 0
+    const bell = mode === 'A'
+      ? (set ? `<span class="bell-mark" aria-label="${t('Notification set', 'Notificação definida')}">${bellSmall()}</span>` : '')
+      : `<span class="schip ${set ? 'on' : ''} ${i === openAt ? 'menu-btn' : ''}">${bellSmall()}${set ? esc(offLabel(1, 'day', false)) : ''}</span>`
+    return `<div class="srow"><span class="sq"></span><div class="text"><div class="st-t">${esc(tx(title))}</div><div class="smeta"><span class="schip">${calSmall()}${t('until', 'até')} ${dShort(end)}</span>${bell}</div></div></div>`
+  }).join('') + `<div class="srow add"><span class="add-plus">${PLUS}</span><span>${t('Add step', 'Adicionar etapa')}</span></div>`
+}
+function stepsPage(mode, openAt) {
+  return `<div class="screen scroll" style="padding-top:calc(var(--st) + 4px)">${projHead()}
+    <p class="sec-head"><span>${t('Steps', 'Etapas')}</span></p><div class="list">${stepRows(mode, openAt)}</div></div>`
+}
+function r3Phone(id) {
+  const date = [2026, 10, 12]
+  if (id === 'SA') {
+    const [title] = R3_STEPS[1]
+    return `${status()}<div class="today-behind" style="padding:0">${stepsPage('A')}</div><div class="backdrop"></div>
+      <div class="sheet large"><div class="grabber"></div><div class="sheet-bar"><div class="side"><button>${t('Cancel', 'Cancelar')}</button></div><h2>${t('Step', 'Etapa')}</h2><div class="side r"><button class="b">${t('Save', 'Salvar')}</button></div></div>
+      <div class="sheet-scroll"><div class="card tt"><div class="tt-title">${esc(tx(title))}</div><div class="tt-note">${t('Notes', 'Notas')}</div></div>
+      <div class="list"><div class="lrow">${tile('calendar', '--c-red')}<span class="dt-text"><span>${t('End date', 'Prazo')}</span><span class="dt-value">${esc(dateText({ due: date }))}</span></span>${swShow(true)}</div></div>
+      ${notifyRow(offLabel(1, 'day', false))}
+      <p class="r3-foot">${t('Step 2 of 4 in CV & LinkedIn', 'Etapa 2 de 4 em Currículo e LinkedIn')}</p></div></div>${home()}`
+  }
+  if (id === 'SB') {
+    return `${status()}${stepsPage('B', 1)}${r3Menu(false, 'none', [[0, 'day'], [1, 'day'], [2, 'day'], [1, 'week']])}${home()}`
+  }
+  const weekdays = (state.lang === 'en' ? 'M T W T F S S' : 'S T Q Q S S D').split(' ')
+  const wd = weekdays.map((d, i) => `<span class="wd ${i === 2 || i === 4 ? 'on' : ''}">${d}</span>`).join('')
+  const PREP_CHOICES = [[0, 'min'], [5, 'min'], [15, 'min'], [30, 'min'], [1, 'hour'], [2, 'hour'], [1, 'day']]
+  if (id === 'PA') {
+    return `${status()}<div class="today-behind"><h1 class="large-title">${esc(tx(R3_PREP.goal))}</h1></div><div class="backdrop"></div>
+      <div class="sheet large"><div class="grabber"></div><div class="sheet-bar"><div class="side"></div><h2>${t('Edit prep', 'Editar preparo')}</h2><div class="side r"><button>${t('Close', 'Fechar')}</button></div></div>
+      <div class="sheet-scroll"><div class="card pform">
+        <div><p class="flabel">${t('Prep 1', 'Preparo 1')}</p><div class="finput">${esc(tx(R3_PREP.title))}</div></div>
+        <div><p class="flabel">${t('Days', 'Dias')}</p><div class="wdays">${wd}</div></div>
+        <div><p class="flabel">${t('Time', 'Horário')}</p><div class="finput short-in">21:00</div></div></div>
+        ${notifyRow(offLabel(15, 'min', true), true)}
+        <div class="r3-btns"><span class="r3-btn danger">${t('Delete', 'Excluir')}</span><span class="r3-btn primary">${t('Save', 'Salvar')}</span></div></div></div>
+      ${r3Menu(true, '15:min', PREP_CHOICES)}${home()}`
+  }
+  // PB: the prep as rows, like a task.
+  return `${status()}<div class="today-behind"><h1 class="large-title">${esc(tx(R3_PREP.goal))}</h1></div><div class="backdrop"></div>
+    <div class="sheet large"><div class="grabber"></div><div class="sheet-bar"><div class="side"><button>${t('Cancel', 'Cancelar')}</button></div><h2>${t('Prep', 'Preparo')}</h2><div class="side r"><button class="b">${t('Save', 'Salvar')}</button></div></div>
+    <div class="sheet-scroll"><div class="card tt"><div class="tt-title">${esc(tx(R3_PREP.title))}</div></div>
+    <div class="list"><div class="lrow">${tile('calendar', '--c-red')}<span class="dt-text"><span>${t('Days', 'Dias')}</span><span class="dt-value">${t('Wed, Fri', 'qua, sex')}</span></span></div>
+      <div class="dt-picker" style="animation:none"><div class="wdays" style="justify-content:center">${wd}</div></div>
+      <div class="lrow">${tile('clock', '--c-blue')}<span class="dt-text"><span>${t('Time', 'Horário')}</span><span class="dt-value">21:00</span></span></div></div>
+    ${notifyRow(offLabel(15, 'min', true))}
+    <div class="r3-btns"><span class="r3-btn danger">${t('Delete prep', 'Excluir preparo')}</span></div></div></div>${home()}`
+}
+const R3_OPTS = {
+  steps: [
+    ['SA', 'A', 'A step opens like a task', 'Tapping a step opens a small sheet like the task sheet: its name, notes, End date, and the Notification card. On the page, a step with a reminder gets a small bell after its date. Renaming moves into the sheet.', 'q7'],
+    ['SB', 'B', 'A bell beside each step’s date', 'Each step keeps its row, with a bell button beside “until 12 Nov”. Tapping it opens the menu right there; once set, the bell shows the choice. Custom opens a small sheet with the two wheels.', 'q7'],
+  ],
+  preps: [
+    ['PA', 'A', 'The card under the prep’s time', 'The prep sheet stays as it is, with the Notification card added under it. Shown with its menu open: choices up to 1 day before, since a prep comes back every week.', 'q8'],
+    ['PB', 'B', 'The prep as rows, like a task', 'The prep sheet redone like the task sheet: the name, then Days and Time as rows (the days open under their row), then the Notification card. Same choices as A.', 'q8'],
+  ],
+}
+function r3Push() {
+  const step = ntCard(tx(R3_STEPS[1][0]), t('CV & LinkedIn · step 2 of 4', 'Currículo e LinkedIn · etapa 2 de 4'), t('now', 'agora'))
+  const prep = ntCard(tx(R3_PREP.title), `${t('Prep', 'Preparo')} · ${tx(R3_PREP.goal)}`, t('now', 'agora'))
+  return state.r3 === 'steps'
+    ? `<p class="get-line"><b>Arrives Wednesday 11 November, 8:00</b> (1 day before, at the morning summary’s time), with the step text you picked:</p><div class="wall">${step}</div>`
+    : `<p class="get-line"><b>Arrives Wednesdays and Fridays at 20:45</b> (15 minutes before each time), with the approved prep text:</p><div class="wall">${prep}</div>`
+}
+function r3HTML() {
+  return R3_OPTS[state.r3].map(([id, letter, name, note, q]) => {
+    const on = state.picks[q] === letter.toLowerCase()
+    return `<article class="opt"><div class="opt-head"><span class="letter">${letter}</span><h2 class="opt-name">${esc(name)}</h2></div>
+      <div class="device"><div class="scr"><div class="vp still ${isPhone() ? 'bare' : ''}" data-ph="${id}">${r3Phone(id)}</div></div></div>
+      <p class="opt-note">${esc(note)}</p><button class="pick ${on ? 'on' : ''}" data-ans="${q}:${letter.toLowerCase()}" aria-pressed="${on}">${on ? '✓ ' : ''}Pick ${letter}</button></article>`
+  }).join('') + `<article class="opt"><div class="opt-head"><span class="letter">✉</span><h2 class="opt-name">The push</h2></div><div class="get">${r3Push()}</div></article>`
+}
+
 // ——— 4. Questions ———
 const ANSWERED = [
   ['1. Items with a time', 'a', 'Your Notification card decides: an item pushes only when its card says so. Settings drops “Items with a time”; the morning summary still lists everything.'],
@@ -924,18 +1068,36 @@ const ANSWERED = [
   ['5. Date only: at what time', 'a, adjusted', 'At the morning summary’s time (8:00 to start), on the day the reminder falls.'],
   ['6. Where the Notifications row sits', 'a', 'First row of the App section, above Language.'],
 ]
-const QUESTIONS = []
+const QUESTIONS = [
+  { key: 'q7', title: '7. The card on project steps', text: 'See “Steps and preps” → Project steps.', answers: [
+    ['a', 'A step opens like a task: a sheet with its name, notes, End date and the Notification card.', 'the same card everywhere, and steps get notes'],
+    ['b', 'A bell beside each step’s date opens the menu right on the project page.', ''],
+  ] },
+  { key: 'q8', title: '8. The card on preps', text: 'See “Steps and preps” → Preps.', answers: [
+    ['a', 'The prep sheet as it is, with the card under it.', 'the smallest change'],
+    ['b', 'The prep sheet redone as rows, like a task.', ''],
+  ] },
+  { key: 'q9', title: '9. Steps whose date you didn’t set', text: 'A step without its own end date gets one spread from the project’s dates (4 steps in a month: about a week each). That date moves when steps are added, removed or done.', answers: [
+    ['a', 'They can have a reminder too; it follows the date shown, moving with it.', 'every step has a date on the page, so every step can remind'],
+    ['b', 'Only steps with an end date you set; the others show “Set an end date to get a notification.”', ''],
+  ] },
+  { key: 'q10', title: '10. Preps while creating a goal', text: 'Preps are also written in the new-goal steps (and in Edit goal), as a short form for up to three preps.', answers: [
+    ['a', 'Only in the prep sheet on the goal’s page; the new-goal steps stay short.', 'creating a goal is already long'],
+    ['b', 'In the new-goal steps and Edit goal too.', ''],
+  ] },
+]
 function questionsPanel() {
-  const done = `<div class="qcard"><h2>Every question, answered</h2>${ANSWERED.map(([title, k, text]) => `<p class="done-q"><b>${esc(title)}: ${k}.</b> ${esc(text)}</p>`).join('')}</div>`
-  return `<div class="tgroup"><h2>Questions</h2><p>All six answered; the phones follow the answers.</p></div>` + QUESTIONS.map((q) => `<div class="qcard"><h2>${esc(q.title)}</h2><p>${esc(q.text)}</p><div class="answers">${q.answers.map(([k, text, rec]) => { const on = state.picks[q.key] === k; return `<button class="ans ${on ? 'on' : ''}" data-ans="${q.key}:${k}" aria-pressed="${on}"><span class="k">${k}</span><span>${esc(text)}${rec ? `<span class="rec">Suggested: ${esc(rec)}</span>` : ''}</span></button>` }).join('')}</div></div>`).join('') + done
+  const done = `<div class="qcard"><h2>Rounds 1 and 2, answered</h2>${ANSWERED.map(([title, k, text]) => `<p class="done-q"><b>${esc(title)}: ${k}.</b> ${esc(text)}</p>`).join('')}</div>`
+  return `<div class="tgroup"><h2>Questions</h2><p>Round 3: four new ones, about the card on project steps and preps. The first six are answered and built.</p></div>` + QUESTIONS.map((q) => `<div class="qcard"><h2>${esc(q.title)}</h2><p>${esc(q.text)}</p><div class="answers">${q.answers.map(([k, text, rec]) => { const on = state.picks[q.key] === k; return `<button class="ans ${on ? 'on' : ''}" data-ans="${q.key}:${k}" aria-pressed="${on}"><span class="k">${k}</span><span>${esc(text)}${rec ? `<span class="rec">Suggested: ${esc(rec)}</span>` : ''}</span></button>` }).join('')}</div></div>`).join('') + done
 }
 
 // ——— render ———
 const $ = (s) => document.querySelector(s)
 const isPhone = () => matchMedia('(max-width: 760px)').matches
-function phoneInner(id) { return id === 'S' ? settingsPage() : sheetPhone() }
+function phoneInner(id) { return id === 'S' ? settingsPage() : id === 'D' ? sheetPhone() : r3Phone(id) }
 const D_NOTE = 'As in Reminders: once the task has a date, a card appears with one Notification row, None to start. Tap the value on the right for the menu: None, the choices that still fit before the due date, and Custom. Custom opens a wheel, with what you set in red above it.'
 function phonesHTML() {
+  if (state.tab === 'r3') return r3HTML()
   if (state.tab === 'settings') {
     const v = VIEWS.find((x) => x.key === state.sview)
     return `<article class="opt"><div class="device"><div class="scr"><div class="vp ${isPhone() ? 'bare' : ''}" data-ph="S">${phoneInner('S')}</div></div></div><p class="caption">${v.cap}</p></article>`
@@ -949,33 +1111,34 @@ function render() {
   else delete document.documentElement.dataset.theme
   document.documentElement.lang = state.lang === 'en' ? 'en' : 'pt-BR'
   const dark = state.theme ? state.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
-  const done = { reminder: '', texts: '', settings: state.picks.q6 ? '✓' : '', questions: ['q4', 'q5', 'q6'].every((k) => state.picks[k]) ? '✓' : '' }
+  const done = { reminder: '', texts: '', settings: '', r3: ['q7', 'q8'].every((k) => state.picks[k]) ? '✓' : '', questions: ['q7', 'q8', 'q9', 'q10'].every((k) => state.picks[k]) ? '✓' : '' }
   $('#steps').innerHTML = TABS.map((x, k) => `<button class="chip ${x.key === state.tab ? 'on' : ''}" data-tab="${x.key}" aria-pressed="${x.key === state.tab}"><span class="n">${k + 1}</span>${x.label}${done[x.key] ? `<span class="pk">${done[x.key]}</span>` : ''}</button>`).join('')
-  const subs = state.tab === 'reminder' ? SCENS.map((x) => [x.key, x.label, x.key === state.scen]) : state.tab === 'settings' ? VIEWS.map((x) => [x.key, x.label, x.key === state.sview]) : []
+  const subs = state.tab === 'reminder' ? SCENS.map((x) => [x.key, x.label, x.key === state.scen]) : state.tab === 'settings' ? VIEWS.map((x) => [x.key, x.label, x.key === state.sview])
+    : state.tab === 'r3' ? R3S.map((x) => [x.key, x.label, x.key === state.r3]) : []
   $('#sub').hidden = !subs.length
   $('#sub').innerHTML = subs.map(([k, label, on]) => `<button class="chip ${on ? 'on' : ''}" data-sub="${k}" aria-pressed="${on}">${label}</button>`).join('')
-  $('#scen-note').hidden = state.tab !== 'reminder'
-  $('#scen-note').textContent = SCENS.find((x) => x.key === state.scen).note
+  $('#scen-note').hidden = state.tab !== 'reminder' && state.tab !== 'r3'
+  $('#scen-note').textContent = state.tab === 'r3' ? r3().note : SCENS.find((x) => x.key === state.scen).note
   for (const b of document.querySelectorAll('#lang button')) b.classList.toggle('on', b.dataset.l === state.lang)
   for (const b of document.querySelectorAll('#theme button')) b.classList.toggle('on', b.dataset.t === (dark ? 'dark' : 'light'))
-  const phones = state.tab === 'reminder' || state.tab === 'settings'
+  const phones = state.tab === 'reminder' || state.tab === 'settings' || state.tab === 'r3'
   $('#screens').hidden = !phones
   $('#dots').hidden = true
   $('#panel').hidden = phones
   WHEELS = {}
   if (phones) {
-    $('#screens').classList.add('one')
+    $('#screens').classList.toggle('one', state.tab !== 'r3')
     $('#screens').innerHTML = phonesHTML()
     $('#dots').innerHTML = ''
-    fit(); setWheels(); syncDots(); placeMenu(document.querySelector('.vp[data-ph="D"]'))
+    fit(); setWheels(); syncDots(); document.querySelectorAll('.vp').forEach(placeMenu)
   } else {
     $('#panel').innerHTML = state.tab === 'texts' ? textsPanel() : questionsPanel()
     $('#screens').innerHTML = ''
   }
   const p = state.picks
-  const parts = [['Q4', p.q4], ['Q5', p.q5], ['Q6', p.q6]]
+  const parts = [['Q7', p.q7], ['Q8', p.q8], ['Q9', p.q9], ['Q10', p.q10]]
   const n = parts.filter((x) => x[1]).length
-  $('#picks-text').innerHTML = `<b>All answered:</b> ` + parts.map(([k, v]) => `${k} ${v}`).join(' · ')
+  $('#picks-text').innerHTML = `<b>Round 3:</b> ` + parts.map(([k, v]) => `${k} ${v || '–'}`).join(' · ')
   $('#copy').disabled = !n
 }
 // One phone again after a change, keeping its scroll and not replaying what already opened.
@@ -1008,19 +1171,23 @@ function syncDots() {
   const i = Math.round(s.scrollLeft / Math.max(1, s.clientWidth))
   document.querySelectorAll('#dots i').forEach((d, k) => d.classList.toggle('on', k === i))
 }
-const savePicks = () => store.set('picks', state.picks)
+const savePicks = () => store.set('picks3', { q7: state.picks.q7, q8: state.picks.q8, q9: state.picks.q9, q10: state.picks.q10 })
 
 // ——— events ———
 $('#steps').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (!b) return; state.tab = b.dataset.tab; store.set('tab', state.tab); render(); scrollTo?.(0, 0) })
 $('#sub').addEventListener('click', (e) => {
   const b = e.target.closest('[data-sub]'); if (!b) return
-  if (state.tab === 'reminder') { state.scen = b.dataset.sub; store.set('scen', state.scen); resetPhones() }
+  if (state.tab === 'r3') { state.r3 = b.dataset.sub; store.set('r3', state.r3) }
+  else if (state.tab === 'reminder') { state.scen = b.dataset.sub; store.set('scen', state.scen); resetPhones() }
   else { state.sview = b.dataset.sub; state.alert = false; store.set('sview', state.sview) }
   render()
 })
 $('#lang').addEventListener('click', (e) => { const b = e.target.closest('[data-l]'); if (!b) return; state.lang = b.dataset.l; store.set('lang', state.lang); render() })
 $('#theme').addEventListener('click', (e) => { const b = e.target.closest('[data-t]'); if (!b) return; state.theme = b.dataset.t; store.set('theme', state.theme); render() })
 $('#screens').addEventListener('click', (e) => {
+  const pk = e.target.closest('[data-ans]')
+  if (pk) { const [k, v] = pk.dataset.ans.split(':'); state.picks[k] = state.picks[k] === v ? undefined : v; savePicks(); render(); return }
+  if (state.tab === 'r3') return
   const tog = e.target.closest('[data-tog]')
   if (tog) {
     const key = tog.dataset.tog.split(':')[1]
@@ -1078,7 +1245,7 @@ $('#screens').addEventListener('scroll', (e) => {
 }, true)
 $('#copy').addEventListener('click', () => {
   const p = state.picks
-  const text = `S5 mockup round 2: question 4 ${p.q4 || '-'}; question 5 ${p.q5 || '-'}; question 6 ${p.q6 || '-'}`
+  const text = `S5 mockup round 3: question 7 ${p.q7 || '-'}; question 8 ${p.q8 || '-'}; question 9 ${p.q9 || '-'}; question 10 ${p.q10 || '-'}`
   const btn = $('#copy')
   const fallback = () => {
     let f = document.querySelector('.fallback')

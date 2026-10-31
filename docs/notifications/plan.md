@@ -1249,7 +1249,8 @@ part needs:
    [Smart Meta S5 Mockups](https://claude.ai/artifact/Uw7Tho8s1fzcL7m8ennMWB)). Round 1 (2026-10-30):
    layouts A, B, C, push texts, Settings, three questions; answered 2026-10-31 (below). Round 2
    (2026-10-31): the owner's Notification card, the picked texts, where the Settings row sits, questions
-   4 to 6, answered the same day. **Done 2026-10-31.**
+   4 to 6, answered the same day. **Done 2026-10-31.** Round 3 (2026-10-31, during part 3): the card on
+   project steps and preps, tab "Steps and preps", questions 7 to 10 (below), waiting for the owner.
 2. **Plumbing:** VAPID keys, service worker push and click, subscriptions, the tables, the dispatcher, the
    test button, the push on a new access request. Ends with the owner's setup and one test push on both
    phones. **Done 2026-10-31:** built (below, "Part 2: what was built"), set up and tested by the owner on
@@ -1430,6 +1431,18 @@ passkey belongs to the S4 address (README, "Passkeys belong to one web address")
    `select at, kind, status, reason from private.send_log order by at desc limit 20;` shows each push (no
    text). `update private.push_config set mode = 'off';`, send a test: nothing comes;
    `update private.push_config set mode = 'on';`, send another: it comes.
+
+**Round 3 questions (2026-10-31), waiting for the owner** (mockup tab 4, "Steps and preps"):
+- Q7, the card on project steps: **a** a step opens a sheet like a task (name, notes, End date, the card;
+  renaming moves into it; a set reminder shows a small bell after the step's date), Claude's suggestion;
+  **b** a bell button beside each step's date opens the menu on the project page (Custom in a small sheet).
+- Q8, the card on preps: **a** the prep sheet as it is, with the card under it (Claude's suggestion); **b**
+  the prep sheet redone as rows like a task. Either way, choices up to 1 day before (a prep repeats weekly):
+  At the time, 5, 15, 30 minutes, 1 hour, 2 hours, 1 day before; Custom in minutes, hours and days.
+- Q9, steps whose end date is spread from the project's (not set by hand): **a** they can remind too,
+  following the date shown (Claude's suggestion); **b** only steps with an end date set by hand.
+- Q10, preps written while creating a goal: **a** the card only in the prep sheet on the goal's page
+  (Claude's suggestion); **b** in the new-goal steps and Edit goal too.
 
 **Part 3 answers (owner, 2026-10-31):**
 - **Settings → Notifications follow the account:** saved as one synced, encrypted record (collection
@@ -1771,3 +1784,6 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   (`0008_push_controls.sql`, 18 checks on PGlite). Owner's answers: the settings sync with the account
   (spec NO-19), the card in Quick Add, Settings → Notifications only for accounts in the rollout. Next: the
   owner pastes 0008 and tests; a round 3 mockup for the card on steps and preps.
+- **2026-10-31 (12):** S5 mockup round 3 published (same artifact, tab "Steps and preps"): the Notification
+  card on project steps and preps, two layouts each, questions 7 to 10 in §14 S5. The planner already handles
+  both; only their editors wait for the answers.
