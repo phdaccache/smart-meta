@@ -124,6 +124,15 @@ describe('reminders on items', () => {
     expect(only('reminder', plan({ snap: paused }))).toEqual([])
   })
 
+  it('reminds for a step whose end date is spread from the project’s, following that date (owner’s answer 9a)', () => {
+    // Started 30 October, due 7 November: two steps get about 4 days each, so the first ends on 3 November.
+    const p = project({ title: 'Move flat', startDate: '2026-10-30', targetDate: '2026-11-07' })
+    const steps = [task({ title: 'Pack', projectId: p.id, order: 0, reminder: rem(0, 'day') }), task({ title: 'Move', projectId: p.id, order: 1 })]
+    const [push] = only('reminder', plan({ snap: snapshot({ projects: [p], tasks: steps }) }))
+    expect(iso(push.fireAt)).toBe('2026-11-03T11:00:00.000Z')
+    expect(push.message.body).toBe('Move flat · step 1 of 2')
+  })
+
   it('follows each of a prep’s times, except a day it was already done', () => {
     const g = goal({ title: 'Exercise regularly' })
     const c = commitment(g, { label: 'gym' })

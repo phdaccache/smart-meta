@@ -12,7 +12,7 @@ import { IconCalendar, IconClose } from '../ui/icons'
 import { Sortable } from '../ui/Sortable'
 import { deletedToast, putBack, SwipeToDelete } from '../ui/SwipeToDelete'
 import { navigate } from '../ui/router'
-import { ReminderCard } from '../ui/ReminderCard'
+import { ReminderCard, ReminderChip } from '../ui/ReminderCard'
 import { openQuickAddFor } from './QuickAdd'
 import { DateTimeRows, deleteWithUndo, GoalChoice, linkableGoals, TaskList } from './TaskSheet'
 
@@ -254,6 +254,11 @@ export function ProjectScreen({ id }: { id: string }) {
                     {!isDone && (
                       <div className="step-meta">
                         <StepEnd task={step} end={deadlines[steps.indexOf(step)]} />
+                        {/* Any step with a date, spread or set (owner's answers 7b and 9a). */}
+                        {deadlines[steps.indexOf(step)] && (
+                          <ReminderChip date={deadlines[steps.indexOf(step)]!} value={step.reminder} label={t('project.stepBell', { step: step.title })}
+                            onChange={(reminder) => updateTask(step, { reminder })} />
+                        )}
                       </div>
                     )}
                   </div>

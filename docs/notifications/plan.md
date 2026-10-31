@@ -1250,16 +1250,15 @@ part needs:
    layouts A, B, C, push texts, Settings, three questions; answered 2026-10-31 (below). Round 2
    (2026-10-31): the owner's Notification card, the picked texts, where the Settings row sits, questions
    4 to 6, answered the same day. **Done 2026-10-31.** Round 3 (2026-10-31, during part 3): the card on
-   project steps and preps, tab "Steps and preps", questions 7 to 10 (below), waiting for the owner.
+   project steps and preps, tab "Steps and preps", questions 7 to 10, answered the same day (below).
 2. **Plumbing:** VAPID keys, service worker push and click, subscriptions, the tables, the dispatcher, the
    test button, the push on a new access request. Ends with the owner's setup and one test push on both
    phones. **Done 2026-10-31:** built (below, "Part 2: what was built"), set up and tested by the owner on
    both phones (test push, tapping it, the "New request" push).
 3. **The rest:** planner, the four types, Settings → Notifications, the Notification card, the kill switch
    row in Developer, the app's beta flag. Then the owner tests, and the week on the preview starts.
-   **In progress 2026-10-31:** built and checked in the dev app (below, "Part 3: what was built"); the
-   Notification card on project steps and preps waits for a mockup round (round 3), since steps have no
-   editor of their own and preps' editor is a form, not the mocked list.
+   **Built 2026-10-31** and checked in the dev app (below, "Part 3: what was built"), including the card on
+   project steps and preps after the round 3 answers. Next: the owner's setup and test, then the week.
 
 **Owner's first idea for custom reminders (2026-10-30), replacing "a reminder at any date and time"; superseded
 on 2026-10-31 by the Notification card below:** a
@@ -1432,7 +1431,10 @@ passkey belongs to the S4 address (README, "Passkeys belong to one web address")
    text). `update private.push_config set mode = 'off';`, send a test: nothing comes;
    `update private.push_config set mode = 'on';`, send another: it comes.
 
-**Round 3 questions (2026-10-31), waiting for the owner** (mockup tab 4, "Steps and preps"):
+**Round 3 answers (owner, 2026-10-31): 7 b, 8 b, 9 a, 10 a, and preps written while creating a goal (the
+new goal, Edit goal, the intro, a template's habit) take the new rows too, without the card.** Built the same
+day: a bell beside each step's date (`ReminderChip`), the one prep editor (`PrepEditor`) redone as rows, the
+card in the prep sheet only. The questions as asked:
 - Q7, the card on project steps: **a** a step opens a sheet like a task (name, notes, End date, the card;
   renaming moves into it; a set reminder shows a small bell after the step's date), Claude's suggestion;
   **b** a bell button beside each step's date opens the menu on the project page (Custom in a small sheet).
@@ -1514,9 +1516,9 @@ passkey belongs to the S4 address (README, "Passkeys belong to one web address")
 - [x] One subscription per user; re-subscribe on open; diagnostics logged (spec NO-23). *(Part 2.)*
 - [x] Planner (tests first) with phone-encrypted payloads; upload only the difference. *(Part 3.)*
 - [x] Dispatcher: every minute, stale drop at 15 min, fuse 20/day, kill switch, send log. *(Part 2.)*
-- [ ] Types: morning summary (lists due items), custom reminders from the Notification card (once; tasks,
-      projects, steps, preps), weekly review (own time). *(Part 3: all planned and tested; the card is on
-      tasks, Quick Add and projects; steps' and preps' cards wait for the round 3 mockup.)*
+- [x] Types: morning summary (lists due items), custom reminders from the Notification card (once; tasks,
+      projects, steps, preps), weekly review (own time). *(Part 3: the card on tasks, Quick Add and
+      projects; the bell beside a step's date; the card in the prep sheet.)*
 - [x] Settings → Notifications (Morning summary with time and weekdays only, Reminders you set, Weekly
       review with time; Goal review dates and the "On this phone" rows come in S6, as the mockup says).
       *(Part 3.)*
@@ -1787,3 +1789,8 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
 - **2026-10-31 (12):** S5 mockup round 3 published (same artifact, tab "Steps and preps"): the Notification
   card on project steps and preps, two layouts each, questions 7 to 10 in §14 S5. The planner already handles
   both; only their editors wait for the answers.
+- **2026-10-31 (13):** round 3 answered (7 b, 8 b, 9 a, 10 a) and built: a bell beside each step's date
+  (spread dates too), its menu on the project page, Custom in a small sheet; preps as rows like a task
+  everywhere they're written (prep sheet, new goal, Edit goal, intro, template habits), the Notification card
+  only in the prep sheet (up to 1 day before; Custom up to 24 hours or 6 days). Spec NO-3 updated. A planner
+  test for a spread step's reminder (25 planner tests).

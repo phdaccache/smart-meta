@@ -129,7 +129,9 @@ Types:
   appears when the item has a date: "None" to start; a menu of choices counted back from the due date and
   time ("At the time" or "On the day" first), listing only those still ahead; and Custom (1 to 200
   minutes, hours, days, weeks or months). With a date only, it fires at the morning summary's time. A
-  prep's reminder follows each of its times. Always sent.
+  prep's reminder follows each of its times. Always sent. [S5, owner, 2026-10-31] A **project step** sets it
+  from a bell beside its end date on the project's page, whether that date was set or spread; a **prep** in
+  its sheet on the goal's page (laid out as rows like a task), up to 1 day before.
 - **NO-4** [S5] **Weekly review**: its own push on Monday, with its **own editable time** (default
   `N-12`).
 - **NO-5** [S5] **Preps** don't push by themselves; their Notification card does (NO-3). (Owner,

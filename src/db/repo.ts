@@ -133,6 +133,7 @@ export function draftFromCommitment(c: Commitment): CommitmentDraft {
 
 const prepFields = (p: PrepDraft, commitmentId: ID): Fields<Prep> => ({
   commitmentId, title: p.title.trim(), fireWeekdays: [...p.fireWeekdays].sort(), fireTime: p.fireTime.trim(),
+  ...(p.reminder !== undefined && { reminder: p.reminder }),
 })
 
 export async function activeGoalCount(): Promise<number> {

@@ -2,7 +2,7 @@ import { t } from '../i18n'
 import { en } from '../i18n/en'
 import { ptBR } from '../i18n/pt-BR'
 import { isDateStr, parseTime } from './dates'
-import type { CheckinType, Comparator, DateStr, GoalKind, Period, Shape } from './types'
+import type { CheckinType, Comparator, DateStr, GoalKind, Period, Reminder, Shape } from './types'
 
 /**
  * A measurement definition must say how much, how long, when, or how often —
@@ -47,6 +47,8 @@ export interface PrepDraft {
   title: string
   fireWeekdays: number[]
   fireTime: string
+  /** Set only from the prep sheet on a goal's page; missing elsewhere, so saving there keeps the one it has. */
+  reminder?: Reminder | null
 }
 
 export interface CommitmentDraft {

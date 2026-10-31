@@ -7,13 +7,15 @@ import {
   type CommitmentDraft, type Errors, type GoalDraft, type PrepDraft,
 } from '../lib/draft'
 import { addMonths, OBSTACLE_PREPS, toleranceLine } from '../lib/intro'
-import { capitalize } from '../lib/dates'
+import { capitalize, weekdaysLabel } from '../lib/dates'
 import { periodWord } from '../lib/describe'
 import type { Period, Shape } from '../lib/types'
 import { templateByKey, templatesFor, type Template } from '../lib/templates'
 import { startTemplate, TemplateGoalScreen } from './TemplateGoal'
 import { Chip, DateField, Field, InfoTip, PageText, Reveal, Screen, Sheet, toast, WeekdayPicker } from '../ui/components'
-import { IconChevronRight, IconChevronUpDown, IconClose } from '../ui/icons'
+import { IconCalendar, IconChevronRight, IconChevronUpDown, IconClock, IconClose } from '../ui/icons'
+import { ReminderCard } from '../ui/ReminderCard'
+import { IconTile } from '../ui/valueLook'
 import { TimeWheel } from '../ui/pickers'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { goBack, navigate, screensUnder, scrollScreenToTop, useLocation } from '../ui/router'
@@ -307,7 +309,7 @@ function CadenceSummary({ d, set }: { d: CommitmentDraft; set: (p: Partial<Commi
 }
 
 /** One line of text that wraps onto more lines instead of cutting off (a suggested prep can be long). */
-function GrowingText({ id, value, placeholder, onChange }: { id: string; value: string; placeholder?: string; onChange: (v: string) => void }) {
+function GrowingText({ id, value, placeholder, label, onChange }: { id: string; value: string; placeholder?: string; label?: string; onChange: (v: string) => void }) {
   const ref = useRef<HTMLTextAreaElement>(null)
   useLayoutEffect(() => {
     const el = ref.current
@@ -316,41 +318,83 @@ function GrowingText({ id, value, placeholder, onChange }: { id: string; value: 
     el.style.height = `${el.scrollHeight + el.offsetHeight - el.clientHeight}px`
   }, [value])
   return (
-    <textarea ref={ref} id={id} rows={1} className="growing" value={value} placeholder={placeholder}
+    <textarea ref={ref} id={id} rows={1} className="growing" value={value} placeholder={placeholder} aria-label={label}
       onKeyDown={(ev) => ev.key === 'Enter' && ev.preventDefault()} onChange={(ev) => onChange(ev.target.value.replace(/\n/g, ' '))} />
   )
 }
 
-export function PrepEditor({ preps, onChange, showErrors, removable = true }: {
+/**
+ * Preps as rows, like a task (owner's pick 8b, and in the new goal and the intro too): the name, then Days
+ * and Time, each opening its picker under its row, and in the prep sheet the Notification card. Several
+ * preps (a new goal's) each get their own group, with a remove button.
+ */
+export function PrepEditor({ preps, onChange, showErrors, removable = true, notify = false }: {
   preps: PrepDraft[]; onChange: (p: PrepDraft[]) => void; showErrors: boolean
   /** Editing one saved prep in a sheet: that sheet has its own Delete. */
   removable?: boolean
+  /** The prep sheet on a goal's page: the Notification card under the time (owner's answer 10a). */
+  notify?: boolean
 }) {
   const update = (i: number, p: Partial<PrepDraft>) => onChange(preps.map((x, j) => (j === i ? { ...x, ...p } : x)))
+  // One picker open at a time; a prep with no days yet starts with its days open.
+  const [open, setOpen] = useState<{ i: number; row: 'days' | 'time' } | null>(null)
+  const isOpen = (i: number, row: 'days' | 'time') => (open ? open.i === i && open.row === row : row === 'days' && !preps[i].fireWeekdays.length)
+  const toggle = (i: number, row: 'days' | 'time') => {
+    ;(document.activeElement as HTMLElement | null)?.blur?.()
+    setOpen(isOpen(i, row) ? { i: -1, row } : { i, row })
+  }
   return (
     <div className="stack">
       {preps.map((p, i) => {
         const e = validatePrep(p)
+        const errors = showErrors ? [e.title, e.fireWeekdays, e.fireTime].filter(Boolean) : []
         return (
-          <div key={i} className="card pad prep-card">
-            {removable && (
-              <button type="button" className="icon-btn prep-remove" aria-label={t('common.remove')}
-                onClick={() => onChange(preps.filter((_, j) => j !== i))}><IconClose width={18} height={18} /></button>
+          <div key={i} className="prep-rows">
+            {(removable || preps.length > 1) && (
+              <div className="prep-rows-head">
+                <span>{t('form.prepN', { n: i + 1 })}</span>
+                {removable && (
+                  <button type="button" className="icon-btn prep-remove" aria-label={t('common.remove')}
+                    onClick={() => onChange(preps.filter((_, j) => j !== i))}><IconClose width={18} height={18} /></button>
+                )}
+              </div>
             )}
-            <Field label={t('form.prepN', { n: i + 1 })} htmlFor={`prep-${i}`} error={showErrors ? e.title : undefined}>
-              <GrowingText id={`prep-${i}`} value={p.title} placeholder={t('form.phPrep')} onChange={(title) => update(i, { title })} />
-            </Field>
-            <Field label={t('common.days')} error={showErrors ? e.fireWeekdays : undefined}>
-              <WeekdayPicker value={p.fireWeekdays} onChange={(fireWeekdays) => update(i, { fireWeekdays })} />
-            </Field>
-            <Field label={t('common.time')} htmlFor={`prep-t-${i}`} error={showErrors ? e.fireTime : undefined}>
-              <input id={`prep-t-${i}`} type="time" value={p.fireTime} onChange={(ev) => update(i, { fireTime: ev.target.value })} />
-            </Field>
+            <div className="card task-text">
+              <GrowingText id={`prep-${i}`} value={p.title} placeholder={t('form.phPrep')} label={t('common.prep')} onChange={(title) => update(i, { title })} />
+            </div>
+            <div className="card list settings dt-rows">
+              <div className="list-row">
+                <IconTile color="red"><IconCalendar width={16} height={16} /></IconTile>
+                <button type="button" className="dt-text" aria-expanded={isOpen(i, 'days')} onClick={() => toggle(i, 'days')}>
+                  <span className="title">{t('common.days')}</span>
+                  {p.fireWeekdays.length > 0 && <span className="dt-value">{weekdaysLabel(p.fireWeekdays)}</span>}
+                </button>
+              </div>
+              <Reveal open={isOpen(i, 'days')}>
+                <div className="dt-picker"><WeekdayPicker value={p.fireWeekdays} onChange={(fireWeekdays) => update(i, { fireWeekdays })} /></div>
+              </Reveal>
+              <div className="list-row">
+                <IconTile color="blue"><IconClock width={16} height={16} /></IconTile>
+                <button type="button" className="dt-text" aria-expanded={isOpen(i, 'time')} onClick={() => toggle(i, 'time')}>
+                  <span className="title">{t('common.time')}</span>
+                  <span className="dt-value">{p.fireTime}</span>
+                </button>
+              </div>
+              <Reveal open={isOpen(i, 'time')}>
+                <div className="dt-picker"><TimeWheel value={p.fireTime} onChange={(fireTime) => update(i, { fireTime })} /></div>
+              </Reveal>
+            </div>
+            {notify && <ReminderCard date={null} time={p.fireTime} repeats value={p.reminder} onChange={(reminder) => update(i, { reminder })} />}
+            {errors.map((msg) => <div key={msg} className="field-error" role="alert">{msg}</div>)}
           </div>
         )
       })}
-      {preps.length < MAX_PREPS && (
-        <button type="button" className="btn outline" onClick={() => onChange([...preps, { title: '', fireWeekdays: [], fireTime: '21:00' }])}>
+      {/* The prep sheet edits just one. */}
+      {removable && preps.length < MAX_PREPS && (
+        <button type="button" className="btn outline" onClick={() => {
+          setOpen(null)
+          onChange([...preps, { title: '', fireWeekdays: [], fireTime: '21:00' }])
+        }}>
           {t('form.addPrep')}
         </button>
       )}

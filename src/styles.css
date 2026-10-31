@@ -1354,6 +1354,23 @@ li.done .gs-title { color: var(--ink-3); }
 .step-end.set { color: var(--accent); border-style: solid; border-color: color-mix(in srgb, var(--accent) 45%, transparent); background: var(--accent-soft); }
 .step-end-hit { display: inline-flex; align-items: center; gap: 4px; height: 100%; padding: 0 8px; font-size: 12.5px; font-weight: 600; }
 .step-end-clear { width: 24px; height: 100%; display: grid; place-items: center; margin-left: -6px; color: inherit; }
+/* A step's reminder (S5, owner's pick 7b): a bell beside its date; set, it says when. */
+.step-bell {
+  display: inline-flex; align-items: center; gap: 4px; height: 26px; min-width: 32px; justify-content: center; padding: 0 8px; border-radius: 7px;
+  border: 1px dashed var(--line-strong); color: var(--ink-2); font-size: 12.5px; font-weight: 600; position: relative;
+}
+/* A bigger target than it looks, as the date's button. */
+.step-bell::after { content: ''; position: absolute; inset: -9px -4px; }
+.step-bell.set { color: var(--accent); border-style: solid; border-color: color-mix(in srgb, var(--accent) 45%, transparent); background: var(--accent-soft); }
+.step-bell:active { opacity: 0.5; }
+/* Preps as rows, like a task (S5, owner's pick 8b). */
+.prep-rows { display: grid; gap: 10px; }
+.prep-rows + .prep-rows { margin-top: 10px; }
+.prep-rows-head { display: flex; align-items: center; justify-content: space-between; min-height: 36px; margin: 0 4px -4px 16px; font-size: 13px; font-weight: 600; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.03em; }
+.prep-rows-head .prep-remove { position: static; }
+.prep-rows .dt-picker .weekdays { justify-content: center; }
+/* Inside a card (a new goal's form, the intro), the rows' own cards take the page's color to stand apart. */
+.card .prep-rows > .card { background: var(--bg); }
 
 /* ——— notes ——— */
 

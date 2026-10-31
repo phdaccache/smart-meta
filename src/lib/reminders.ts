@@ -24,12 +24,17 @@ export const CUSTOM_MAX = 200
 export const TIMED_UNITS: ReminderUnit[] = ['minute', 'hour', 'day', 'week', 'month']
 /** With a date only, Custom counts whole days at least. */
 export const DATE_UNITS: ReminderUnit[] = ['day', 'week', 'month']
+/** A prep's menu (owner's pick 8b): it comes back every week, so a day before at most. */
+export const PREP_CHOICES: Reminder[] = [r(0, 'minute'), r(5, 'minute'), r(15, 'minute'), r(30, 'minute'), r(1, 'hour'), r(2, 'hour'), r(1, 'day')]
+export const PREP_UNITS: ReminderUnit[] = ['minute', 'hour', 'day']
+/** Custom on a prep stays inside its week. */
+export const PREP_MAX: Partial<Record<ReminderUnit, number>> = { hour: 24, day: 6 }
 
 export const sameReminder = (a: Reminder | null | undefined, b: Reminder | null | undefined) =>
   !!a && !!b && a.n === b.n && (a.unit === b.unit || (a.n === 0 && b.n === 0))
 
 /** One of the menu's own choices, rather than Custom. */
-export const isPreset = (x: Reminder, timed: boolean) => (timed ? TIMED_CHOICES : DATE_CHOICES).some((c) => sameReminder(c, x))
+export const isPreset = (x: Reminder, menu: Reminder[]) => menu.some((c) => sameReminder(c, x))
 
 /** Anything stored on an item is checked before it's used: another device or an older app may have written it. */
 export function validReminder(x: unknown): x is Reminder {
