@@ -929,7 +929,8 @@ function IntroPieces() {
 export function GettingStarted({ snap }: { snap: Snapshot }) {
   const settings = useSettings()
   const weekReviews = useWeekReviews()
-  if (!settings.gettingStarted) return null
+  // A phone that skipped the intro by signing in, with no goal yet, gets it too (see App).
+  if (!settings.gettingStarted && (settings.onboarded || snap.goals.length > 0)) return null
   const items = [
     { key: 'goal', done: snap.goals.length > 0, title: t('gs.firstGoal'), action: () => { resetIntro({ short: true }); navigate('/welcome/goal/smart') } },
     { key: 'check', done: snap.entries.some((e) => !e.deletedAt) || snap.occurrences.length > 0, title: t('gs.firstCheckIn') },
