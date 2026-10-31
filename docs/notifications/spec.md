@@ -39,7 +39,7 @@ and projects; photo avatars; Google sign-in if it becomes reliable on iPhone.
 - **AC-4** [S2] Without approval, a signed-in user sees **"Waiting for access"**, keeps using the app on
   the phone, and stores **nothing** on the server.
 - **AC-5** [S2] The owner approves each new request with **one tap** from a Requests screen in
-  Developer mode. Only the owner can approve. [S5] The owner gets a **push for each new request**.
+  Developer mode. Only the owner can approve. [S5] The owner gets a **push for each new request**: "New request", with the email as its body.
   (Push moved to S5 by the owner 2026-10-29.)
 - **AC-6** [S2] At most `N-1` members. Past that, new users see that the list is full and keep waiting.
 - **AC-7** [S2] On approval, everything the user created locally uploads, and a green banner on Today
@@ -118,13 +118,18 @@ Types:
 - **NO-1** [S5] **Morning summary**: one push, default time `N-11`, editable, optional **weekdays
   only**, skipped on empty days; lists timed items first, then late, then the rest, at most `N-13`
   names and "+N more". Shows item names (content), since it's encrypted end to end.
-- **NO-2** [S5] **Due dates:** items without a time appear in the morning summary; items **with a
-  time** also get a push **at that time**. Project steps follow the same rule.
-- **NO-3** [S5] **Custom reminders**, once only, on **tasks, projects, project steps, preps and
-  commitments** (not goals). Always sent.
+- **NO-2** [S5] **Due dates:** items with a due date appear in the morning summary. An item pushes only
+  through its Notification card (NO-3), with or without a time (owner, 2026-10-31; before, items with a
+  time pushed at that time by themselves). Project steps follow the same rule.
+- **NO-3** [S5] **Custom reminders**, once only, on **tasks, projects, project steps and preps** (not
+  goals; not commitments for now, repeating reminders come later). Set on a **Notification card** that
+  appears when the item has a date: "None" to start; a menu of choices counted back from the due date and
+  time, listing only those still ahead; and Custom (1 to 200 minutes, hours, days, weeks or months). A
+  prep's reminder follows each of its times. Always sent.
 - **NO-4** [S5] **Weekly review**: its own push on Monday, with its **own editable time** (default
   `N-12`).
-- **NO-5** [S6] **Preps with a time**: a push at that time.
+- **NO-5** [S5] **Preps** don't push by themselves; their Notification card does (NO-3). (Owner,
+  2026-10-31; before, every prep with a time pushed at that time in S6.)
 - **NO-6** [S6] **Goal review date reached**: a push.
 - **NO-7** [S6] **Goal completed / target hit**: an in-app celebration, no push.
 - **NO-8** No pushes for: missed logging, goal status changes, sync, release notes, plan tomorrow,
@@ -132,7 +137,7 @@ Types:
 
 Rules:
 - **NO-9** [S5] Pushes **the app starts by itself** (summary, weekly review, goal review date): at most
-  `N-7` a day. Pushes the user asked for (custom reminders, items or preps with a time) **always** go
+  `N-7` a day. Pushes the user asked for (reminders set on a Notification card) **always** go
   out. Items within `N-10` of each other are merged into one push.
 - **NO-10** [S5] Pushes arrive **on time** (normally within a minute). A push more than `N-9` late is
   dropped, never sent late.
@@ -155,8 +160,8 @@ Rules:
   encrypted; the server only delivers.
 
 Settings and indicators:
-- **NO-19** [S5] **Settings → Notifications:** a toggle per type, summary time, weekdays only, review
-  time.
+- **NO-19** [S5] **Settings → Notifications:** a toggle per type (morning summary, reminders you set,
+  weekly review, goal review dates), summary time, weekdays only, review time.
 - **NO-20** [S6] **App icon badge:** toggle, **off by default**, counts **late + left today** (not the
   review).
 - **NO-21** [S6] **Lock-screen details:** on by default; off sends generic text.

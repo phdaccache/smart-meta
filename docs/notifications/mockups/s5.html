@@ -575,13 +575,35 @@ h1, h2, h3, p { margin: 0; }
 .ans.on { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); }
 .ans.on .k { background: var(--accent); color: var(--accent-ink); }
 .ans .rec { display: block; color: var(--accent); font-weight: 600; font-size: 13px; margin-top: 2px; }
+:root { --menu-bg: rgb(249 249 251 / 0.88); --menu-gap: rgb(0 0 0 / 0.07); --menu-shadow: 0 12px 40px rgb(0 0 0 / 0.2); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --menu-bg: rgb(44 44 48 / 0.92); --menu-gap: rgb(0 0 0 / 0.4); --menu-shadow: 0 12px 40px rgb(0 0 0 / 0.55); } }
+:root[data-theme="dark"] { --menu-bg: rgb(44 44 48 / 0.92); --menu-gap: rgb(0 0 0 / 0.4); --menu-shadow: 0 12px 40px rgb(0 0 0 / 0.55); }
+/* Round 2: the Notification card's menu, as in Reminders */
+.menu-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin: -11px -6px; padding: 0 6px; }
+.menu-layer { position: absolute; inset: 0; z-index: 40; }
+.menu { position: absolute; width: 250px; max-height: calc(100% - 110px); overflow-y: auto; scrollbar-width: none; border-radius: 13px; background: var(--menu-bg); -webkit-backdrop-filter: blur(24px) saturate(1.8); backdrop-filter: blur(24px) saturate(1.8); box-shadow: var(--menu-shadow); transform-origin: top right; animation: menu-pop 0.22s var(--ease-out) both; }
+.menu::-webkit-scrollbar { display: none; }
+.mg + .mg { border-top: 8px solid var(--menu-gap); }
+.mi { position: relative; display: flex; align-items: center; gap: 4px; width: 100%; min-height: 44px; padding: 0 16px 0 10px; font-size: 17px; text-align: left; color: var(--ink); }
+.mi + .mi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; border-top: 0.5px solid var(--line-strong); }
+.mi-check { width: 22px; flex: none; display: grid; place-items: center; }
+.mi-check svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+@keyframes menu-pop { from { opacity: 0; transform: scale(0.86); } to { opacity: 1; transform: none; } }
+.vp.still .menu { animation: none; }
+@media (prefers-reduced-motion: reduce) { .menu { animation: none !important; } }
+.custom-line { color: var(--c-red); font-size: 17px; text-align: center; padding-top: 2px; }
+/* A row after an open picker gets its line too (the owner's fix under "Weekdays only") */
+.dt-picker + .lrow::before { content: ''; position: absolute; top: 0; right: 0; left: 16px; border-top: 0.5px solid var(--line-strong); }
+.lrow.new-row { box-shadow: inset 0 0 0 2px var(--accent); border-radius: 12px; }
+.done-q { font-size: 15px; line-height: 1.45; color: var(--ink-2); max-width: 66ch; }
+.done-q b { color: var(--ink); font-weight: 600; }
 </style>
 
 <div class="page">
   <header class="head">
     <p class="eyebrow">S5 mockups</p>
     <h1 class="large-title">Notifications, S5</h1>
-    <p class="lede">Everything S5 builds, in one place: the new reminder switch on items, every push text (approved ones to check again, new ones to pick), Settings → Notifications as approved, and three questions the switch raises.</p>
+    <p class="lede">Round 2, with your round 1 picks in: the Notification card as in Reminders, your push texts, the line under “Weekdays only”, where the Notifications row sits in Settings, and three new questions.</p>
   </header>
   <div class="controls">
     <nav class="steps" id="steps" aria-label="Part"></nav>
@@ -620,25 +642,29 @@ const TABS = [
   { key: 'settings', label: 'Settings → Notifications' },
   { key: 'questions', label: 'Questions' },
 ]
+const NOW = new Date(2026, 9, 30, 9, 41) // the mockup's now: Friday 30 October 2026, 9:41
 const SCENS = [
-  { key: 'timed', label: 'Task with a time', note: 'A task due Thursday, November 5 at 14:30. The choices count back from that time.' },
-  { key: 'dateonly', label: 'Task with a date only', note: 'A task due Thursday, no time. The choices are days before, at a time you pick (9:00 to start).' },
-  { key: 'nodate', label: 'Task with no date', note: 'No date: the switch stays grey until a date is set.' },
+  { key: 'soonTime', label: 'Date and time, next week', due: [2026, 10, 5, 14, 30], time: true, note: 'Due Thursday, November 5 at 14:30, and today is Friday, October 30: 1 week and 1 month before have passed, so the menu leaves them out.' },
+  { key: 'farTime', label: 'Date and time, months away', due: [2027, 2, 1, 10, 0], time: true, note: 'Due Monday, March 1 2027 at 10:00: every choice still fits.' },
+  { key: 'soonDate', label: 'Date only, next week', due: [2026, 10, 5], time: false, note: 'Due Thursday, November 5, no time: the push comes at 9:00 (question 5). 1 week before and more have passed. Custom offers days, weeks and months only.' },
+  { key: 'farDate', label: 'Date only, months away', due: [2027, 5, 1], time: false, note: 'Due Tuesday, June 1 2027, no time: every choice fits, up to 6 months before.' },
+  { key: 'nodate', label: 'No date', note: 'No date: no Notification card at all.' },
 ]
 const VIEWS = [
-  { key: 'on', label: 'Notifications on', cap: 'As approved on 29 October. Turn on a switch with options and they open under it; tap the blue value to change it again or close it. Rows that come in S6: Preps with a time, Goal review dates, and everything under On this phone.' },
+  { key: 'on', label: 'Notifications on', cap: 'As approved on 29 October, with your answers: no “Items with a time” (1a) and no “Preps with a time” (3a). Turn on Morning summary: a line now sits under “Weekdays only”. Rows that come in S6: Goal review dates, and everything under On this phone.' },
   { key: 'ask', label: 'Not allowed yet', cap: 'The switches wait, greyed out. Tapping the card asks iOS for permission.' },
   { key: 'denied', label: 'Turned off in iPhone Settings', cap: 'Only after someone tapped Don’t Allow, or turned it off in iPhone Settings.' },
   { key: 'noaccount', label: 'No account', cap: 'Tapping the card opens sign-in at the email step.' },
+  { key: 'where', label: 'Where the row sits', cap: 'The Settings page with the new Notifications row outlined. It follows question 6: first row of App (a, shown until you answer) or its own card under your profile (b).' },
 ]
 const state = {
   tab: store.get('tab', 'reminder'), lang: store.get('lang', 'en'), theme: store.get('theme', null),
-  scen: store.get('scen', 'timed'), phones: {},
+  scen: store.get('scen', 'soonTime'), phones: {},
   sview: store.get('sview', 'on'), on: { ...ON0 }, times: { ...TIMES0 }, sOpen: null, alert: false,
-  picks: store.get('picks', {}),
+  picks: { ...store.get('picks', {}), q1: 'a', q2: 'a', q3: 'a' },
 }
 if (!TABS.some((x) => x.key === state.tab)) state.tab = 'reminder'
-if (!SCENS.some((x) => x.key === state.scen)) state.scen = 'timed'
+if (!SCENS.some((x) => x.key === state.scen)) state.scen = 'soonTime'
 if (!VIEWS.some((x) => x.key === state.sview)) state.sview = 'on'
 const t = (en, pt) => (state.lang === 'en' ? en : pt)
 const L = (en, pt) => ({ en, pt })
@@ -678,98 +704,117 @@ function wheel(id, labels, sel, cls, set) {
 const clockWheels = (id, [h, m], set) => `<div class="wheels">${wheel(id + ':h', HOURS, HOURS.indexOf(h), '', (i) => set([HOURS[i], m]))}<span class="wheels-colon">:</span>${wheel(id + ':m', MINUTES.map((x) => String(x).padStart(2, '0')), MINUTES.indexOf(m), '', (i) => set([h, MINUTES[i]]))}</div>`
 function setWheels() { for (const w of document.querySelectorAll('.wheel')) w.scrollTop = +w.dataset.sel * 36 }
 
-// ——— 1. Reminder on an item ———
+// ——— 1. Reminder on an item: a Notification card, as in Reminders ———
 const TASK = { title: L('Renew gym membership', 'Renovar a academia'), goal: L('Exercise regularly', 'Fazer exercício com frequência') }
-const DUE = [2026, 10, 5, 14, 30] // Thursday, 5 November 2026, 14:30
-const TIMED = [[L('At the time', 'Na hora'), 0], [L('5 minutes before', '5 minutos antes'), 5], [L('15 minutes before', '15 minutos antes'), 15],
-  [L('30 minutes before', '30 minutos antes'), 30], [L('1 hour before', '1 hora antes'), 60], [L('1 day before', '1 dia antes'), 1440]]
-const DAYS = [[L('On the day', 'No dia'), 0], [L('1 day before', '1 dia antes'), 1], [L('2 days before', '2 dias antes'), 2], [L('1 week before', '1 semana antes'), 7]]
-const PILLS_TIMED = [0, 2, 4, 5], PILLS_DAYS = [0, 1, 3]
-const LAYOUTS = [
-  { key: 'A', name: 'Third switch, choices as a list', note: 'A Notification switch under Date and Time, working like them. Grey until the task has a date. Turned on, the choices open under it as a list; the blue value closes or reopens them.' },
-  { key: 'B', name: 'Third switch, a wheel', note: 'The same switch, with the choice on a wheel like the time picker. Shorter on screen, but you see one choice at a time.' },
-  { key: 'C', name: 'Its own card, quick choices', note: 'A separate card under Date and Time with a few one-tap choices. Fastest to set; looks less like the rest of the sheet.' },
-]
-function scenPhone() {
-  if (state.scen === 'timed') return { date: true, time: true, notify: true, choice: 2, at: [9, 0], open: 'notify' }
-  if (state.scen === 'dateonly') return { date: true, time: false, notify: true, choice: 0, at: [9, 0], open: 'notify' }
-  return { date: false, time: false, notify: false, choice: 0, at: [9, 0], open: null }
+const UNITS = ['min', 'hour', 'day', 'week', 'month']
+const UNIT_WORDS = { min: [L('minute', 'minuto'), L('minutes', 'minutos')], hour: [L('hour', 'hora'), L('hours', 'horas')], day: [L('day', 'dia'), L('days', 'dias')], week: [L('week', 'semana'), L('weeks', 'semanas')], month: [L('month', 'mês'), L('months', 'meses')] }
+const WITH_TIME = [[5, 'min'], [15, 'min'], [30, 'min'], [1, 'hour'], [2, 'hour'], [1, 'day'], [2, 'day'], [1, 'week'], [1, 'month']]
+const DATE_ONLY = [[1, 'day'], [2, 'day'], [1, 'week'], [2, 'week'], [1, 'month'], [3, 'month'], [6, 'month']]
+const scen = () => SCENS.find((x) => x.key === state.scen)
+const cap = (s) => s[0].toUpperCase() + s.slice(1)
+function offLabel(n, unit, timed) {
+  if (n === 0) return timed ? t('At the time', 'Na hora') : t('On the day', 'No dia')
+  return `${n} ${tx(UNIT_WORDS[unit][n === 1 ? 0 : 1])} ${t('before', 'antes')}`
 }
-function resetPhones() { for (const o of LAYOUTS) state.phones[o.key] = scenPhone() }
+// What a reminder counts back from: the due time, or a time of day on the due date (question 5).
+function baseTime(s, p) {
+  const [y, mo, d, h, mi] = s.due
+  if (s.time) return new Date(y, mo, d, h, mi)
+  const at = state.picks.q5 === 'b' ? p.at : [9, 0]
+  return new Date(y, mo, d, at[0], at[1])
+}
+function fireAt(s, p, [n, unit]) {
+  const f = baseTime(s, p)
+  if (unit === 'min') f.setMinutes(f.getMinutes() - n)
+  else if (unit === 'hour') f.setHours(f.getHours() - n)
+  else if (unit === 'day') f.setDate(f.getDate() - n)
+  else if (unit === 'week') f.setDate(f.getDate() - 7 * n)
+  else f.setMonth(f.getMonth() - n)
+  return f
+}
+// The menu: only choices still ahead of now, led by "At the time" or "On the day" unless answer 4 is b.
+function choices(s, p) {
+  const list = (s.time ? WITH_TIME : DATE_ONLY).filter((o) => fireAt(s, p, o) > NOW)
+  return state.picks.q4 === 'b' ? list : [[0, s.time ? 'min' : 'day'], ...list]
+}
+const customUnits = (s) => (s.time ? UNITS : UNITS.slice(2))
+const chosen = (s, p) => (p.sel === 'custom' ? [p.cn, customUnits(s)[p.cu]] : p.sel)
+const sameSel = (a, b) => Array.isArray(a) && a[0] === b[0] && a[1] === b[1]
+function resetPhones() { state.phones.D = { sel: 'none', menu: false, cn: 1, cu: 0, at: [9, 0], atOpen: false } }
 resetPhones()
-const list = (p) => (p.time ? TIMED : DAYS)
-const notifyValue = (p) => tx(list(p)[p.choice][0]) + (p.time ? '' : `, ${hm(p.at)}`)
-const dateText = () => { const s = new Intl.DateTimeFormat(state.lang === 'en' ? 'en-US' : 'pt-BR', { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date(2026, 10, 5)); return s[0].toUpperCase() + s.slice(1) }
-
-function notifyRows(id, p) {
-  const dis = !p.date
-  const open = p.notify && p.open === 'notify'
-  let html = `<div class="lrow ${dis ? 'dim' : ''}">${tile('bell', '--c-orange')}<button class="dt-text" ${p.notify ? `data-open="${id}:notify"` : 'disabled'}><span>${t('Notification', 'Notificação')}</span>${p.notify ? `<span class="dt-value">${esc(notifyValue(p))}</span>` : ''}</button>${sw(id + ':notify', p.notify, dis)}</div>`
-  if (!open) return html
-  if (id === 'A') {
-    html += `<div class="dt-picker">${list(p).map(([lab], i) => `<button class="choice" data-choose="${id}:${i}"><span>${esc(tx(lab))}</span>${i === p.choice ? I.check : ''}</button>`).join('')}`
-    if (!p.time) html += `<p class="sub-head">${t('At', 'Às')}</p>${clockWheels(id + ':at', p.at, (v) => { p.at = v })}`
-    return html + '</div>'
-  }
-  const labels = list(p).map(([lab]) => esc(tx(lab)))
-  const choiceWheel = wheel(id + ':choice', labels, p.choice, p.time ? 'wide' : 'mid', (i) => { p.choice = i })
-  if (p.time) return html + `<div class="dt-picker"><div class="wheels">${choiceWheel}</div></div>`
-  return html + `<div class="dt-picker"><div class="wheels">${choiceWheel}${wheel(id + ':ath', HOURS, HOURS.indexOf(p.at[0]), '', (i) => { p.at = [HOURS[i], p.at[1]] })}<span class="wheels-colon">:</span>${wheel(id + ':atm', MINUTES.map((x) => String(x).padStart(2, '0')), MINUTES.indexOf(p.at[1]), '', (i) => { p.at = [p.at[0], MINUTES[i]] })}</div></div>`
+function dateText(s) {
+  const [y, mo, d] = s.due
+  const o = { weekday: 'long', month: 'long', day: 'numeric', ...(y !== NOW.getFullYear() ? { year: 'numeric' } : {}) }
+  return cap(new Intl.DateTimeFormat(state.lang === 'en' ? 'en-US' : 'pt-BR', o).format(new Date(y, mo, d)))
 }
-function cardC(p) {
-  const id = 'C', dis = !p.date
-  let html = `<div class="list">${`<div class="lrow ${dis ? 'dim' : ''}">${tile('bell', '--c-orange')}<span class="text" style="${dis ? 'opacity:.45' : ''}">${t('Notification', 'Notificação')}</span>${sw(id + ':notify', p.notify, dis)}</div>`}`
-  if (p.notify) {
-    const idx = p.time ? PILLS_TIMED : PILLS_DAYS
-    html += `<div class="pills">${idx.map((i) => `<button class="pill ${i === p.choice ? 'on' : ''}" data-choose="${id}:${i}">${esc(tx(list(p)[i][0]))}</button>`).join('')}</div>`
-    if (!p.time) {
-      html += `<div class="lrow"><button class="dt-text" data-open="${id}:at"><span>${t('At', 'Às')}</span><span class="dt-value">${hm(p.at)}</span></button></div>`
-      if (p.open === 'at') html += `<div class="dt-picker">${clockWheels(id + ':at', p.at, (v) => { p.at = v })}</div>`
-    }
+function valueText(s, p) {
+  if (p.sel === 'none') return t('None', 'Nenhuma')
+  if (p.sel === 'custom') return t('Custom', 'Personalizado')
+  return offLabel(p.sel[0], p.sel[1], s.time)
+}
+function notifyCard(s, p) {
+  let html = `<div class="list"><div class="lrow">${tile('bell', '--c-orange')}<span class="text">${t('Notification', 'Notificação')}</span><button class="menu-btn" data-menu="D" aria-haspopup="menu" aria-expanded="${p.menu}"><span class="row-value">${esc(valueText(s, p))}</span>${I.updown}</button></div>`
+  if (p.sel === 'custom') {
+    const nums = [...Array(200).keys()].map((i) => i + 1)
+    const units = customUnits(s).map((u) => cap(tx(UNIT_WORDS[u][1])))
+    html += `<div class="dt-picker"><p class="custom-line">${esc(offLabel(p.cn, customUnits(s)[p.cu], s.time))}</p><div class="wheels">${wheel('D:cn', nums, p.cn - 1, '', (i) => { p.cn = i + 1 })}${wheel('D:cu', units, p.cu, 'mid', (i) => { p.cu = i })}</div></div>`
+  }
+  if (!s.time && state.picks.q5 === 'b' && p.sel !== 'none') {
+    html += `<div class="lrow"><button class="dt-text" data-open="D:at"><span>${t('At', 'Às')}</span><span class="dt-value">${hm(p.at)}</span></button></div>`
+    if (p.atOpen) html += `<div class="dt-picker">${clockWheels('D:at', p.at, (v) => { p.at = v })}</div>`
   }
   return html + '</div>'
 }
+function menuHTML(s, p) {
+  const item = (key, label, on) => `<button class="mi" role="menuitemradio" aria-checked="${on}" data-msel="${key}"><span class="mi-check">${on ? I.check : ''}</span><span>${esc(label)}</span></button>`
+  const mid = choices(s, p).map((o) => item(o.join(':'), offLabel(o[0], o[1], s.time), sameSel(p.sel, o))).join('')
+  return `<div class="menu-layer" data-menu-close><div class="menu" role="menu"><div class="mg">${item('none', t('None', 'Nenhuma'), p.sel === 'none')}</div>${mid ? `<div class="mg">${mid}</div>` : ''}<div class="mg">${item('custom', t('Custom', 'Personalizado'), p.sel === 'custom')}</div></div></div>`
+}
+// The menu opens under its value, or above it when that has more room; if neither fits, it scrolls.
+function placeMenu(vp) {
+  const m = vp && vp.querySelector('.menu'), a = vp && vp.querySelector('.menu-btn')
+  if (!m || !a) return
+  m.style.maxHeight = 'none'
+  const vr = vp.getBoundingClientRect(), k = vr.width / vp.offsetWidth || 1, ar = a.getBoundingClientRect()
+  const top = (ar.top - vr.top) / k, bottom = (ar.bottom - vr.top) / k, h = m.offsetHeight
+  const roomBelow = vp.offsetHeight - 40 - bottom - 6, roomAbove = top - 6 - 60
+  const below = h <= roomBelow || roomBelow >= roomAbove
+  const fitH = Math.min(h, below ? roomBelow : roomAbove)
+  m.style.maxHeight = fitH + 'px'
+  m.style.top = (below ? bottom + 6 : top - 6 - fitH) + 'px'
+  m.style.right = Math.max(12, (vr.right - ar.right) / k - 6) + 'px'
+}
 const sw = (key, on, dis) => `<span class="sw ${on && !dis ? 'on' : ''} ${dis ? 'dis' : ''}" ${dis ? '' : `data-tog="${key}"`} role="switch" aria-checked="${!!on && !dis}"></span>`
-function sheetPhone(id) {
-  const p = state.phones[id]
-  const dateRow = `<div class="lrow">${tile('calendar', '--c-red')}<button class="dt-text" ${p.date ? '' : 'disabled'}><span>${t('Date', 'Data')}</span>${p.date ? `<span class="dt-value">${esc(dateText())}</span>` : ''}</button>${sw(id + ':date', p.date)}</div>`
-  const timeRow = `<div class="lrow">${tile('clock', '--c-blue')}<button class="dt-text" ${p.time ? '' : 'disabled'}><span>${t('Time', 'Horário')}</span>${p.time ? '<span class="dt-value">14:30</span>' : ''}</button>${sw(id + ':time', p.time)}</div>`
-  const inCard = id !== 'C'
-  const foot = !p.date ? `<p class="foot-note">${t('Set a date to get a notification.', 'Defina uma data para receber uma notificação.')}</p>` : ''
+const swShow = (on) =>`<span class="sw ${on ? 'on' : ''}" role="switch" aria-checked="${on}"></span>`
+function sheetPhone() {
+  const s = scen(), p = state.phones.D, hasDate = !!s.due
+  const dateRow = `<div class="lrow">${tile('calendar', '--c-red')}<span class="dt-text"><span>${t('Date', 'Data')}</span>${hasDate ? `<span class="dt-value">${esc(dateText(s))}</span>` : ''}</span>${swShow(hasDate)}</div>`
+  const timeRow = `<div class="lrow">${tile('clock', '--c-blue')}<span class="dt-text"><span>${t('Time', 'Horário')}</span>${s.time ? `<span class="dt-value">${hm([s.due[3], s.due[4]])}</span>` : ''}</span>${swShow(!!s.time)}</div>`
   const body = `<div class="card tt"><div class="tt-title">${esc(tx(TASK.title))}</div><div class="tt-note">${t('Notes', 'Notas')}</div></div>
-    <div class="list">${dateRow}${timeRow}${inCard ? notifyRows(id, p) : ''}</div>${inCard ? foot : ''}
-    ${inCard ? '' : cardC(p) + foot}
+    <div class="list">${dateRow}${timeRow}</div>${hasDate ? notifyCard(s, p) : ''}
     <div class="list"><div class="lrow">${tile('target', '--c-green')}<span class="text">${t('Goal', 'Meta')}</span><span class="row-value">${esc(tx(TASK.goal))}</span>${I.updown}</div></div>`
   return `${status()}<div class="today-behind"><h1 class="large-title">${t('Today', 'Hoje')}</h1></div><div class="backdrop"></div>
     <div class="sheet large"><div class="grabber"></div><div class="sheet-bar"><div class="side"><button>${t('Cancel', 'Cancelar')}</button></div><h2>${t('Task', 'Tarefa')}</h2><div class="side r"><button class="b">${t('Save', 'Salvar')}</button></div></div>
-    <div class="sheet-scroll">${body}</div></div>${home()}`
+    <div class="sheet-scroll">${body}</div></div>${hasDate && p.menu ? menuHTML(s, p) : ''}${home()}`
 }
-// The reminder's text, by the pick in Push texts (A unless changed).
-function taskBody(p, pick) {
-  let s
-  if (p.time) {
-    const m = TIMED[p.choice][1]
-    if (pick === 'B') s = m === 0 ? t('Due now', 'Vence agora') : m < 60 ? t(`Due in ${m} minutes`, `Vence em ${m} minutos`) : m === 60 ? t('Due in 1 hour', 'Vence em 1 hora') : t('Due tomorrow at 14:30', 'Vence amanhã às 14:30')
-    else s = m === 1440 ? t('Due tomorrow at 14:30', 'Vence amanhã às 14:30') : t('Due at 14:30', 'Vence às 14:30')
-  } else {
-    const d = DAYS[p.choice][1]
-    if (pick === 'B') s = d === 0 ? t('Due today.', 'Vence hoje.') : d === 1 ? t('Due tomorrow.', 'Vence amanhã.') : d === 2 ? t('Due in 2 days.', 'Vence em 2 dias.') : t('Due in a week.', 'Vence em uma semana.')
-    else s = d === 0 ? t('Due today.', 'Vence hoje.') : d === 1 ? t('Due tomorrow.', 'Vence amanhã.') : d === 2 ? t('Due Thursday.', 'Vence quinta.') : t('Due on November 5.', 'Vence em 5 de novembro.')
-  }
-  return pick === 'C' ? s.replace(/\.$/, '') + ' · ' + tx(TASK.goal) : s
-}
-function fireAt(p) {
-  if (p.time) return new Date(new Date(...DUE).getTime() - TIMED[p.choice][1] * 60000)
-  return new Date(DUE[0], DUE[1], DUE[2] - DAYS[p.choice][1], p.at[0], p.at[1])
+// The push text (task text A, times only): when it's due, said from the day the push arrives.
+function whenText(fire, s) {
+  const [y, mo, d] = s.due, due = new Date(y, mo, d)
+  const diff = Math.round((due - new Date(fire.getFullYear(), fire.getMonth(), fire.getDate())) / 86400000)
+  const loc = state.lang === 'en' ? 'en-US' : 'pt-BR'
+  const w = diff === 0 ? t('Today', 'Hoje') : diff === 1 ? t('Tomorrow', 'Amanhã')
+    : cap(new Intl.DateTimeFormat(loc, diff < 7 ? { weekday: 'long' } : { month: 'long', day: 'numeric' }).format(due))
+  return s.time ? `${w}, ${hm([s.due[3], s.due[4]])}` : w
 }
 const ntCard = (title, body, when) => `<div class="nt"><span class="appicon" aria-hidden="true"></span><div class="nt-text"><div class="nt-top"><span class="nt-title">${esc(title)}</span><span class="nt-time">${esc(when)}</span></div>${body ? `<p class="nt-body">${esc(body)}</p>` : ''}</div></div>`
-function getBlock(id) {
-  const p = state.phones[id]
-  if (!p.date) return '<p class="get-line">No date, so no notification and nothing in the morning summary.</p>'
-  if (!p.notify) return '<p class="get-line">Switch off: no push for this task. The morning summary still lists it on Thursday.</p>'
-  const f = fireAt(p)
-  const when = new Intl.DateTimeFormat('en-GB', { weekday: 'long', hour: 'numeric', minute: '2-digit' }).format(f)
-  return `<p class="get-line"><b>Arrives ${esc(when)}</b> (text from Push texts, pick ${state.picks.taskText || 'A'})</p><div class="wall">${ntCard(tx(TASK.title), taskBody(p, state.picks.taskText || 'A'), t('now', 'agora'))}</div>`
+function getBlock() {
+  const s = scen(), p = state.phones.D
+  if (!s.due) return '<p class="get-line">No date: no Notification card and no push.</p>'
+  if (p.sel === 'none') return '<p class="get-line"><b>None</b> to start: no push. The morning summary still lists the task on its day.</p>'
+  const f = fireAt(s, p, chosen(s, p))
+  if (f <= NOW) return '<p class="get-line"><b>That’s before now</b> (today is Friday 30 October, 9:41), so there’s nothing to send. Pick a shorter time.</p>'
+  const when = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', ...(f.getFullYear() !== NOW.getFullYear() ? { year: 'numeric' } : {}), hour: 'numeric', minute: '2-digit' }).format(f)
+  return `<p class="get-line"><b>Arrives ${esc(when)}</b></p><div class="wall">${ntCard(tx(TASK.title), whenText(f, s), t('now', 'agora'))}</div>`
 }
 
 // ——— 3. Settings → Notifications, as approved ———
@@ -825,6 +870,7 @@ const iosAlert = (l) => `<div class="alert-wrap"><div class="alert"><div class="
   <div class="btns" style="display:flex"><button style="border-right:0.5px solid var(--alert-line)" data-go-view="denied">${l.dont}</button><button class="b" style="border-top:0" data-go-view="on">${l.allow}</button></div></div></div>`
 function settingsPage() {
   const l = SL(), v = state.sview
+  if (v === 'where') return mainSettings()
   let inner
   if (v === 'on') inner = sscreen(shead(l) + whatList(l) + phoneList(l) + sec(l.dev, `<div class="lrow link">${l.test}</div>`))
   else if (v === 'ask') inner = sscreen(shead(l) + banner('bell', l.ask, 'data-ask') + whatList(l, true) + phoneList(l, true)) + (state.alert ? iosAlert(l) : '')
@@ -832,84 +878,88 @@ function settingsPage() {
   else inner = sscreen(shead(l) + banner('user', l.signIn, '') + whatList(l, true) + phoneList(l, true))
   return status() + inner + home()
 }
+// The Settings page, with the new row where question 6 puts it.
+function mainSettings() {
+  const l = SL(), b = state.picks.q6 === 'b'
+  const link = (label, sub, cls = '') => `<div class="lrow ${cls}"><span class="text">${label}${sub ? `<span class="sub" style="display:block">${sub}</span>` : ''}</span>${I.chevR}</div>`
+  const val = (label, v) => `<div class="lrow"><span class="text">${label}</span><span class="row-value">${v}</span>${I.updown}</div>`
+  const nrow = link(l.title, '', 'new-row')
+  const profile = `<div class="list"><div class="lrow"><span class="initials">AS</span><span class="text">Ana Souza<span class="sub" style="display:block">ana.souza@gmail.com</span></span>${I.chevR}</div></div>`
+  return status() + sscreen(`<h1 class="large-title" style="margin:6px 0 16px">${l.back}</h1>` + profile + (b ? `<div class="list" style="margin-top:22px">${nrow}</div>` : '')
+    + sec(t('Goals', 'Metas'), link(t('Values', 'Valores'), t('Health · Career · Family', 'Saúde · Carreira · Família')) + `<div class="lrow"><span class="text">${t('Active goals', 'Metas ativas')}</span><span class="row-value">3</span></div>` + val(t('New goals', 'Novas metas'), t('Guided', 'Guiado')))
+    + sec('App', (b ? '' : nrow) + val(t('Language', 'Idioma'), t('Automatic', 'Automático')) + val(t('New day starts at', 'O dia começa às'), '4:00') + link(t('Replay intro', 'Rever o tutorial'), t('The welcome and a guided new goal', 'As boas-vindas e uma nova meta guiada')))
+    + sec(t('About', 'Sobre'), link(t('What’s new', 'Novidades')) + link(t('Privacy policy', 'Política de privacidade')) + `<div class="lrow"><span class="text">${t('Version', 'Versão')}</span><span class="row-value">1.2.0</span></div>`)) + home()
+}
 
 // ——— 2. Push texts ———
 const STEP = { item: L('Update the CV', 'Atualizar o currículo') }
 const PROJECT = L('CV & LinkedIn', 'Currículo e LinkedIn')
-const PROJECT_TEXTS = [
-  { key: 'A', name: 'Due date and progress', body: L('Due Friday · 2 of 5 steps done', 'Vence sexta · 2 de 5 etapas feitas') },
-  { key: 'B', name: 'What’s left', body: L('3 steps left, due Friday', 'Faltam 3 etapas, vence sexta') },
-  { key: 'C', name: 'Plain', body: L('Project · due Friday', 'Projeto · vence sexta') },
-]
-const TASK_TEXTS = [
-  { key: 'A', name: 'When it’s due', why: 'States the due time or day, whatever the choice. Matches the approved “Due at 14:30”.' },
-  { key: 'B', name: 'How long until it’s due', why: 'Counts down from the reminder: “Due in 15 minutes”. Reads naturally; wrong if the push arrives late (it never arrives over 15 minutes late).' },
-  { key: 'C', name: 'When it’s due, with its goal', why: 'Like A, plus the goal or project it belongs to, when it has one.' },
-]
-function approvedTiles() {
-  const a = [
-    { lbl: 'Morning summary', tag: ['ok', 'A, approved'], cards: [[t('Today: 6 things', 'Hoje: 6 itens'), t('Dentist appointment at 14:30, Renew gym membership (late), Gym and 3 more', 'Consulta no dentista às 14:30, Renovar a academia (atrasada), Academia e mais 3')]] },
-    { lbl: 'Due at a time', tag: ['ok', 'A, approved'], why: 'Alone, and two items within 15 minutes merged.', cards: [[t('Dentist appointment', 'Consulta no dentista'), t('Due at 14:30', 'Vence às 14:30')], [t('2 things at 11:00', '2 itens às 11:00'), t('Call the bank\nSend the invoice, 11:10', 'Ligar para o banco\nEnviar a nota fiscal, 11:10')]] },
-    { lbl: 'Reminder on a project step', tag: ['ok', 'C, approved'], cards: [[tx(STEP.item), t('Step 1 of 4 in CV & LinkedIn.', 'Etapa 1 de 4 em Currículo e LinkedIn.')]] },
-    { lbl: 'Weekly review', tag: ['ok', 'B, approved'], cards: [[t('Weekly review', 'Revisão da semana'), t('Look back at last week and plan this one.', 'Confira a semana passada e planeje esta.')]] },
-    { lbl: 'Reminder on a habit', tag: ['ok', 'C, approved'], why: 'Used only if commitments keep reminders (question 2).', cards: [[t('At least 45 minutes of exercise', 'Pelo menos 45 minutos de exercício'), t('Exercise regularly · 1 of 3 this week', 'Fazer exercício com frequência · 1 de 3 nesta semana')]] },
-    { lbl: 'Prep with a time', tag: ['ok', 'A, approved · S6'], why: 'Also the prep’s reminder text if preps get the switch (question 3).', cards: [[t('Pack the gym bag and pick tomorrow’s routine', 'Arrumar a mochila e escolher o treino de amanhã'), t('Prep · Exercise regularly', 'Preparo · Fazer exercício com frequência')]] },
-    { lbl: 'Goal review date', tag: ['ok', 'B, approved · S6'], cards: [[t('Review date reached', 'Chegou a data de revisão'), t('Sleep well', 'Dormir bem')]] },
-    { lbl: 'New access request (to you only)', tag: ['new', 'New, check'], why: 'Planned in S2 as “New request: ana@…”. The body is new. Tapping opens Requests.', cards: [[t('New request: ana.souza@gmail.com', 'Novo pedido: ana.souza@gmail.com'), t('Approve or delete it in Requests.', 'Aprove ou exclua em Pedidos.')]] },
-  ]
-  return a.map((x) => `<div class="tpush"><p class="lbl">${esc(x.lbl)} <span class="tag ${x.tag[0]}">${esc(x.tag[1])}</span></p><div class="wall">${x.cards.map(([ti, b]) => ntCard(ti, b, t('now', 'agora'))).join('')}</div>${x.why ? `<p class="why">${esc(x.why)}</p>` : ''}</div>`).join('')
-}
-const pickBtn = (k, v) => { const on = state.picks[k] === v; return `<button class="pick ${on ? 'on' : ''}" data-pick="${k}:${v}" aria-pressed="${on}">${on ? I.pickCheck + ' Picked' : 'Pick ' + v}</button>` }
+const tpush = (x) => `<div class="tpush"><p class="lbl">${esc(x.lbl)} <span class="tag ${x.tag[0]}">${esc(x.tag[1])}</span></p><div class="wall">${x.cards.map(([ti, b, when]) => ntCard(ti, b, when || t('now', 'agora'))).join('')}</div>${x.why ? `<p class="why">${esc(x.why)}</p>` : ''}</div>`
 function textsPanel() {
-  const timed15 = { time: true, choice: 2 }, days2 = { time: false, choice: 2 }
-  const taskTiles = TASK_TEXTS.map((o) => `<div class="tpush"><p class="lbl">${o.key}. ${esc(o.name)}</p><div class="wall">${ntCard(tx(TASK.title), taskBody(timed15, o.key), t('14:15', '14:15'))}${ntCard(tx(TASK.title), taskBody(days2, o.key), t('Tue 9:00', 'ter. 9:00'))}</div><p class="why">${esc(o.why)}</p>${pickBtn('taskText', o.key)}</div>`).join('')
-  const projTiles = PROJECT_TEXTS.map((o) => `<div class="tpush"><p class="lbl">${o.key}. ${esc(o.name)}</p><div class="wall">${ntCard(tx(PROJECT), tx(o.body), t('now', 'agora'))}</div>${pickBtn('projectText', o.key)}</div>`).join('')
-  return `<div class="tgroup"><h2>Reminder on a task: pick one</h2><p>Each shows a task due Thursday at 14:30 reminded 15 minutes before, and a task due Thursday with no time reminded 2 days before. A task with no goal and no date can’t have a reminder any more, so that open wording is gone.</p><div class="tiles">${taskTiles}</div></div>
-    <div class="tgroup"><h2>Reminder on a project: pick one</h2><p>The project “CV & LinkedIn”, due Friday, with 2 of its 5 steps done. Its steps keep the approved “Step 1 of 4 in CV & LinkedIn.”</p><div class="tiles">${projTiles}</div></div>
-    <div class="tgroup"><h2>Approved in S0: check them again</h2><p>Unchanged since you picked them. Tell me in the chat if any should change.</p><div class="tiles">${approvedTiles()}</div></div>`
+  const T = tx(TASK.title)
+  const yours = [
+    { lbl: 'Reminder on a task', tag: ['new', 'A, times only'], why: 'Only when it’s due, said from the day the push arrives: Today, Tomorrow, the weekday within a week, then the date. With no time, the day alone.', cards: [[T, t('Today, 14:30', 'Hoje, 14:30'), '14:15'], [T, t('Tomorrow, 14:30', 'Amanhã, 14:30'), t('Wed', 'qua.')], [T, t('Thursday', 'Quinta-feira'), t('Tue', 'ter.')], [T, t('June 1', '1 de junho'), t('May 1', '1 de mai.')]] },
+    { lbl: 'Reminder on a project', tag: ['new', 'A, times only'], why: 'The same as a task: its name, then when it’s due.', cards: [[tx(PROJECT), t('Tomorrow, 18:00', 'Amanhã, 18:00')], [tx(PROJECT), t('Friday', 'Sexta-feira')]] },
+    { lbl: 'Reminder on a project step', tag: ['new', 'Your text'], why: 'Was “Step 1 of 4 in CV & LinkedIn.”', cards: [[tx(STEP.item), t('CV & LinkedIn · step 1 of 4', 'Currículo e LinkedIn · etapa 1 de 4')]] },
+    { lbl: 'New access request (to you only)', tag: ['new', 'Your text'], why: 'Tapping it opens Requests.', cards: [[t('New request', 'Novo pedido'), 'ana.souza@gmail.com']] },
+  ]
+  const kept = [
+    { lbl: 'Morning summary', tag: ['ok', 'A, approved'], cards: [[t('Today: 6 things', 'Hoje: 6 itens'), t('Dentist appointment at 14:30, Renew gym membership (late), Gym and 3 more', 'Consulta no dentista às 14:30, Renovar a academia (atrasada), Academia e mais 3')]] },
+    { lbl: 'Several at once', tag: ['ok', 'A, approved'], why: 'Reminders within 15 minutes of each other still merge into one push. A single one now reads like your task text, “Today, 14:30”, instead of “Due at 14:30”.', cards: [[t('2 things at 11:00', '2 itens às 11:00'), t('Call the bank\nSend the invoice, 11:10', 'Ligar para o banco\nEnviar a nota fiscal, 11:10')]] },
+    { lbl: 'Weekly review', tag: ['ok', 'B, approved'], cards: [[t('Weekly review', 'Revisão da semana'), t('Look back at last week and plan this one.', 'Confira a semana passada e planeje esta.')]] },
+    { lbl: 'Prep', tag: ['ok', 'A, approved'], why: 'Preps get the Notification card too (answer 3a) and keep this text.', cards: [[t('Pack the gym bag and pick tomorrow’s routine', 'Arrumar a mochila e escolher o treino de amanhã'), t('Prep · Exercise regularly', 'Preparo · Fazer exercício com frequência')]] },
+    { lbl: 'Goal review date', tag: ['ok', 'B, approved · S6'], cards: [[t('Review date reached', 'Chegou a data de revisão'), t('Sleep well', 'Dormir bem')]] },
+    { lbl: 'Reminder on a habit', tag: ['', 'Not used for now'], why: 'Commitments get no reminder for now (answer 2a). Kept for repeating reminders later.', cards: [[t('At least 45 minutes of exercise', 'Pelo menos 45 minutos de exercício'), t('Exercise regularly · 1 of 3 this week', 'Fazer exercício com frequência · 1 de 3 nesta semana')]] },
+  ]
+  return `<div class="tgroup"><h2>Your picks and changes</h2><p>As you set them in round 1. Tell me in the chat if any still reads wrong.</p><div class="tiles">${yours.map(tpush).join('')}</div></div>
+    <div class="tgroup"><h2>Approved, unchanged</h2><p>You said the rest is OK. Shown again with what your answers changed around them.</p><div class="tiles">${kept.map(tpush).join('')}</div></div>`
 }
 
 // ——— 4. Questions ———
+const ANSWERED = [
+  ['1. Items with a time', 'a', 'Your Notification card decides: an item pushes only when its card says so. Settings drops “Items with a time”; the morning summary still lists everything.'],
+  ['2. Commitments', 'a', 'No reminder on commitments for now. Repeating reminders come later, kept as an open feature.'],
+  ['3. Preps', 'a', 'Preps get the same Notification card, None until set. Settings drops “Preps with a time”; the push text stays the approved one.'],
+]
 const QUESTIONS = [
-  { key: 'q1', title: '1. Items with a time', text: 'Today’s plan (spec NO-2) pushes every item with a time at that time, with the “Items with a time” switch in Settings. Your item switch is off by default, so the two overlap.', answers: [
-    ['a', 'Your switch decides. An item gets its own push only when its switch is on (“At the time” is one of the choices). Settings drops “Items with a time”; the morning summary still lists everything.', 'Fits your idea; one rule'],
-    ['b', 'Keep both. Items with a time still push at that time by themselves, and the switch adds one earlier reminder on top.', ''],
+  { key: 'q4', title: '4. A push at the due time itself', text: 'Your lists start at “5 minutes before”, or “1 day before” with a date only. With answer 1a nothing else pushes at the due time, so no choice would give a push right when the task is due, or on its day.', answers: [
+    ['a', 'Add “At the time” (date and time) and “On the day” (date only) as the first choice under None. The phone shows them now.', 'Keeps a push at the due time possible'],
+    ['b', 'Keep your lists exactly. Nothing pushes at the due time; the morning summary still lists the task that day.', ''],
   ] },
-  { key: 'q2', title: '2. Commitments', text: 'Reminders were planned for commitments too, but a commitment (“gym, 3 times a week”) has no date or time, so the switch has nothing to count from.', answers: [
-    ['a', 'No reminders on commitments for now. They come with the at-risk reminders, the first feature after the MVP.', 'Keeps S5 small'],
-    ['b', 'Give commitments a weekday-and-time reminder now. That’s a repeating reminder, which was set for after the MVP.', ''],
+  { key: 'q5', title: '5. Date only: at what time', text: 'A task with a date and no time has no hour to count back from, so “1 day before” needs a time of day.', answers: [
+    ['a', '9:00 for every item with a date only, as in Reminders.', 'Nothing more on the card'],
+    ['b', 'An “At” row under Notification on items with a date only, 9:00 to start.', ''],
   ] },
-  { key: 'q3', title: '3. Preps', text: 'A prep always has weekdays and a time, and S6 was going to push every prep at its time (“Preps with a time”).', answers: [
-    ['a', 'The prep gets the same switch: off until you turn it on, at its time or earlier. Settings drops “Preps with a time”. Its push text stays the approved one.', 'Same rule everywhere'],
-    ['b', 'Preps keep their own push in S6, on for every prep, and get no switch.', ''],
+  { key: 'q6', title: '6. Where the Notifications row sits', text: 'Settings → Notifications needs a row on the Settings page. See both in Settings → Notifications, “Where the row sits”.', answers: [
+    ['a', 'First row of the App section, above Language.', 'Next to the other settings for the whole app'],
+    ['b', 'Its own card, right under your profile.', ''],
   ] },
 ]
 function questionsPanel() {
-  return `<div class="tgroup"><h2>Three questions the switch raises</h2><p>Pick an answer for each. Settings → Notifications follows answers 1 and 3. Anything else, tell me in the chat.</p></div>` + QUESTIONS.map((q) => `<div class="qcard"><h2>${esc(q.title)}</h2><p>${esc(q.text)}</p><div class="answers">${q.answers.map(([k, text, rec]) => { const on = state.picks[q.key] === k; return `<button class="ans ${on ? 'on' : ''}" data-ans="${q.key}:${k}" aria-pressed="${on}"><span class="k">${k}</span><span>${esc(text)}${rec ? `<span class="rec">Suggested: ${esc(rec)}</span>` : ''}</span></button>` }).join('')}</div></div>`).join('')
+  const done = `<div class="qcard"><h2>Answered in round 1</h2>${ANSWERED.map(([title, k, text]) => `<p class="done-q"><b>${esc(title)}: ${k}.</b> ${esc(text)}</p>`).join('')}</div>`
+  return `<div class="tgroup"><h2>Three new questions</h2><p>Your new Notification list raises two; the third is the one you asked about Settings. Pick an answer for each; the phones follow answers 4, 5 and 6.</p></div>` + QUESTIONS.map((q) => `<div class="qcard"><h2>${esc(q.title)}</h2><p>${esc(q.text)}</p><div class="answers">${q.answers.map(([k, text, rec]) => { const on = state.picks[q.key] === k; return `<button class="ans ${on ? 'on' : ''}" data-ans="${q.key}:${k}" aria-pressed="${on}"><span class="k">${k}</span><span>${esc(text)}${rec ? `<span class="rec">Suggested: ${esc(rec)}</span>` : ''}</span></button>` }).join('')}</div></div>`).join('') + done
 }
 
 // ——— render ———
 const $ = (s) => document.querySelector(s)
 const isPhone = () => matchMedia('(max-width: 760px)').matches
-function phoneInner(id) { return id === 'S' ? settingsPage() : sheetPhone(id) }
+function phoneInner(id) { return id === 'S' ? settingsPage() : sheetPhone() }
+const D_NOTE = 'As in Reminders: once the task has a date, a card appears with one Notification row, None to start. Tap the value on the right for the menu: None, the choices that still fit before the due date, and Custom. Custom opens a wheel, with what you set in red above it.'
 function phonesHTML() {
   if (state.tab === 'settings') {
     const v = VIEWS.find((x) => x.key === state.sview)
     return `<article class="opt"><div class="device"><div class="scr"><div class="vp ${isPhone() ? 'bare' : ''}" data-ph="S">${phoneInner('S')}</div></div></div><p class="caption">${v.cap}</p></article>`
   }
-  return LAYOUTS.map((o) => {
-    const picked = state.picks.layout === o.key
-    return `<article class="opt"><div class="opt-head"><span class="letter">${o.key}</span><h2 class="opt-name">${esc(o.name)}</h2></div>
-      <div class="device"><div class="scr"><div class="vp ${isPhone() ? 'bare' : ''}" data-ph="${o.key}">${phoneInner(o.key)}</div></div></div>
-      <p class="opt-note">${esc(o.note)}</p><div class="get" data-get="${o.key}">${getBlock(o.key)}</div>${pickBtn('layout', o.key)}</article>`
-  }).join('')
+  return `<article class="opt"><div class="opt-head"><span class="letter">D</span><h2 class="opt-name">Notification card, as in Reminders</h2></div>
+    <div class="device"><div class="scr"><div class="vp ${isPhone() ? 'bare' : ''}" data-ph="D">${phoneInner('D')}</div></div></div>
+    <p class="opt-note">${esc(D_NOTE)}</p><div class="get" data-get="D">${getBlock()}</div></article>`
 }
 function render() {
   if (state.theme) document.documentElement.dataset.theme = state.theme
   else delete document.documentElement.dataset.theme
   document.documentElement.lang = state.lang === 'en' ? 'en' : 'pt-BR'
   const dark = state.theme ? state.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
-  const done = { reminder: state.picks.layout, texts: state.picks.taskText && state.picks.projectText ? '✓' : '', settings: '', questions: ['q1', 'q2', 'q3'].every((k) => state.picks[k]) ? '✓' : '' }
+  const done = { reminder: '', texts: '', settings: state.picks.q6 ? '✓' : '', questions: ['q4', 'q5', 'q6'].every((k) => state.picks[k]) ? '✓' : '' }
   $('#steps').innerHTML = TABS.map((x, k) => `<button class="chip ${x.key === state.tab ? 'on' : ''}" data-tab="${x.key}" aria-pressed="${x.key === state.tab}"><span class="n">${k + 1}</span>${x.label}${done[x.key] ? `<span class="pk">${done[x.key]}</span>` : ''}</button>`).join('')
   const subs = state.tab === 'reminder' ? SCENS.map((x) => [x.key, x.label, x.key === state.scen]) : state.tab === 'settings' ? VIEWS.map((x) => [x.key, x.label, x.key === state.sview]) : []
   $('#sub').hidden = !subs.length
@@ -920,22 +970,22 @@ function render() {
   for (const b of document.querySelectorAll('#theme button')) b.classList.toggle('on', b.dataset.t === (dark ? 'dark' : 'light'))
   const phones = state.tab === 'reminder' || state.tab === 'settings'
   $('#screens').hidden = !phones
-  $('#dots').hidden = state.tab !== 'reminder'
+  $('#dots').hidden = true
   $('#panel').hidden = phones
   WHEELS = {}
   if (phones) {
-    $('#screens').classList.toggle('one', state.tab === 'settings')
+    $('#screens').classList.add('one')
     $('#screens').innerHTML = phonesHTML()
-    $('#dots').innerHTML = state.tab === 'reminder' ? LAYOUTS.map(() => '<i></i>').join('') : ''
-    fit(); setWheels(); syncDots()
+    $('#dots').innerHTML = ''
+    fit(); setWheels(); syncDots(); placeMenu(document.querySelector('.vp[data-ph="D"]'))
   } else {
     $('#panel').innerHTML = state.tab === 'texts' ? textsPanel() : questionsPanel()
     $('#screens').innerHTML = ''
   }
   const p = state.picks
-  const parts = [['Reminder layout', p.layout], ['Task text', p.taskText], ['Project text', p.projectText], ['Q1', p.q1], ['Q2', p.q2], ['Q3', p.q3]]
+  const parts = [['Q4', p.q4], ['Q5', p.q5], ['Q6', p.q6]]
   const n = parts.filter((x) => x[1]).length
-  $('#picks-text').innerHTML = n ? `<b>${n} of ${parts.length} picked:</b> ` + parts.filter((x) => x[1]).map(([k, v]) => `${k} ${v}`).join(' · ') : 'Nothing picked yet: a reminder layout, two texts and three answers.'
+  $('#picks-text').innerHTML = n ? `<b>${n} of ${parts.length} answered:</b> ` + parts.filter((x) => x[1]).map(([k, v]) => `${k} ${v}`).join(' · ') : 'Nothing answered yet: three new questions, in Questions.'
   $('#copy').disabled = !n
 }
 // One phone again after a change, keeping its scroll and not replaying what already opened.
@@ -952,6 +1002,7 @@ function refresh(id, animateOpen = false) {
   const g = document.querySelector(`[data-get="${id}"]`)
   if (g) g.innerHTML = getBlock(id)
   for (const w of vp.querySelectorAll('.wheel')) w.scrollTop = +w.dataset.sel * 36
+  placeMenu(vp)
 }
 function fit() {
   for (const scr of document.querySelectorAll('.scr')) {
@@ -979,33 +1030,34 @@ $('#sub').addEventListener('click', (e) => {
 })
 $('#lang').addEventListener('click', (e) => { const b = e.target.closest('[data-l]'); if (!b) return; state.lang = b.dataset.l; store.set('lang', state.lang); render() })
 $('#theme').addEventListener('click', (e) => { const b = e.target.closest('[data-t]'); if (!b) return; state.theme = b.dataset.t; store.set('theme', state.theme); render() })
-function togglePhone(id, key) {
-  const p = state.phones[id]
-  if (key === 'date') { p.date = !p.date; if (!p.date) { p.time = false; p.notify = false }; p.open = null; p.choice = 0 }
-  else if (key === 'time') { p.time = !p.time; if (p.time) p.date = true; p.choice = 0; if (p.open === 'at') p.open = null }
-  else if (key === 'notify') { p.notify = !p.notify; p.choice = 0; p.open = p.notify && id !== 'C' ? 'notify' : null }
-  refresh(id, key === 'notify' && p.notify)
-}
 $('#screens').addEventListener('click', (e) => {
-  const pick = e.target.closest('[data-pick]')
-  if (pick) { const [k, v] = pick.dataset.pick.split(':'); state.picks[k] = state.picks[k] === v ? undefined : v; savePicks(); render(); return }
   const tog = e.target.closest('[data-tog]')
   if (tog) {
-    const [id, key] = tog.dataset.tog.split(':')
-    if (id !== 's') return togglePhone(id, key)
+    const key = tog.dataset.tog.split(':')[1]
     state.on[key] = !state.on[key]
     const opens = ['summary', 'review', 'quiet'].includes(key)
     if (opens) state.sOpen = state.on[key] ? key : state.sOpen === key ? null : state.sOpen
     WHEELS = {}; refresh('S', opens && state.on[key]); return
   }
+  const ms = e.target.closest('[data-msel]')
+  if (ms) {
+    const p = state.phones.D, k = ms.dataset.msel
+    if (k === 'custom' && p.sel !== 'custom') { p.cn = 1; p.cu = scen().time ? 1 : 0 }
+    p.sel = k === 'none' || k === 'custom' ? k : [+k.split(':')[0], k.split(':')[1]]
+    p.menu = false; WHEELS = {}; refresh('D', k === 'custom'); return
+  }
+  if (e.target.closest('[data-menu]')) {
+    const p = state.phones.D; p.menu = !p.menu; WHEELS = {}; refresh('D')
+    const m = document.querySelector('.vp[data-ph="D"] .menu'); if (m) m.style.animation = 'menu-pop 0.22s var(--ease-out) both'
+    return
+  }
+  if (e.target.closest('[data-menu-close]')) { state.phones.D.menu = false; WHEELS = {}; refresh('D'); return }
   const open = e.target.closest('[data-open]')
   if (open) {
     const [id, key] = open.dataset.open.split(':')
     if (id === 's') { const opening = state.sOpen !== key; state.sOpen = opening ? key : null; WHEELS = {}; refresh('S', opening); return }
-    const p = state.phones[id]; const opening = p.open !== key; p.open = opening ? key : null; WHEELS = {}; refresh(id, opening); return
+    const p = state.phones.D; p.atOpen = !p.atOpen; WHEELS = {}; refresh('D', p.atOpen); return
   }
-  const ch = e.target.closest('[data-choose]')
-  if (ch) { const [id, i] = ch.dataset.choose.split(':'); state.phones[id].choice = +i; WHEELS = {}; refresh(id); return }
   const item = e.target.closest('.wheel-item')
   if (item) { const w = item.parentElement; w.scrollTo({ top: [...w.children].indexOf(item) * 36, behavior: 'smooth' }); return }
   if (e.target.closest('[data-ask]')) { state.alert = true; WHEELS = {}; refresh('S', true); return }
@@ -1036,7 +1088,7 @@ $('#screens').addEventListener('scroll', (e) => {
 }, true)
 $('#copy').addEventListener('click', () => {
   const p = state.picks
-  const text = `S5 mockup picks: reminder layout ${p.layout || '-'}; task reminder text ${p.taskText || '-'}; project reminder text ${p.projectText || '-'}; question 1 ${p.q1 || '-'}; question 2 ${p.q2 || '-'}; question 3 ${p.q3 || '-'}`
+  const text = `S5 mockup round 2: question 4 ${p.q4 || '-'}; question 5 ${p.q5 || '-'}; question 6 ${p.q6 || '-'}`
   const btn = $('#copy')
   const fallback = () => {
     let f = document.querySelector('.fallback')
@@ -1050,7 +1102,7 @@ $('#copy').addEventListener('click', () => {
 let resizeTimer, wasPhone = isPhone()
 addEventListener('resize', () => {
   clearTimeout(resizeTimer)
-  resizeTimer = setTimeout(() => { if (isPhone() !== wasPhone) { wasPhone = isPhone(); render() } else fit() }, 60)
+  resizeTimer = setTimeout(() => { if (isPhone() !== wasPhone) { wasPhone = isPhone(); render() } else { fit(); placeMenu(document.querySelector('.vp[data-ph="D"]')) } }, 60)
 })
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', render)
 render()

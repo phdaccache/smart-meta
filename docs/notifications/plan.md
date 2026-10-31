@@ -109,12 +109,12 @@ the same local tables as A's, so both people's data mix. Fix in S2 (§6.8).
 |---|---|
 | **Morning summary** | ✅ 8:00 by default, editable; weekdays-only option; skipped on empty days. Format chosen from mockups. |
 | **Due date, no time** | ✅ Mentioned in the morning summary. |
-| **Due date, with a time** | ✅ In the morning summary **and** its own push at the exact time. |
-| **Custom reminder** | ✅ On **tasks, projects, project steps, preps and commitments** (not goals: no purpose). **Once only** for now, commitments included. **Always pushed** (never capped). Repeating reminders and **at-risk reminders for commitments** are the next feature after the MVP (§15). |
+| **Due date, with a time** | ✅ In the morning summary. **Changed 2026-10-31 (S5, answer 1a):** no push of its own any more; the item's Notification card decides (custom reminder below). |
+| **Custom reminder** | ✅ On **tasks, projects, project steps and preps** (not goals: no purpose). **Not on commitments** for now (owner, 2026-10-31: they have no date; repeating reminders come later, §15). **Once only** (a prep's reminder follows each of its times). **Always pushed** (never capped). Set with the **Notification card** (owner's design, 2026-10-31, §14 S5). Repeating reminders and **at-risk reminders for commitments** are the next feature after the MVP (§15). |
 | **Weekly review** | ✅ Its own push on Monday morning, **with its own editable time** (default the same as the morning summary, 8:00). |
 | Project steps | ✅ Same rules as due dates (steps have end dates). |
 | Late items | Not pushed again after their time; only counted in the badge (confirmed). |
-| Preps with a time | ✅ |
+| Preps with a time | ✅ **Changed 2026-10-31 (S5, answer 3a):** no push by itself; the prep's Notification card, like any item. |
 | Goal review date reached | ✅ |
 | Goal completed / target hit | ✅ In-app celebration only, no push. |
 | Test notification | ✅ Developer mode only (the owner). |
@@ -128,8 +128,8 @@ the same local tables as A's, so both people's data mix. Fix in S2 (§6.8).
 The owner's top three: custom reminder, due date, review ready.
 
 **Daily limits:** pushes **the app starts by itself** (morning summary, weekly review, goal review
-date) are **at most 3 a day**. Pushes the user asked for (custom reminders, timed due dates, preps
-with a time) **always go out**, merged when close together. A server-side **safety fuse of 20 a day**
+date) are **at most 3 a day**. Pushes the user asked for (reminders set on a Notification card; before
+2026-10-31 also timed due dates and preps with a time) **always go out**, merged when close together. A server-side **safety fuse of 20 a day**
 catches bugs. A time the user set on a task or prep counts as "asked for" (confirmed).
 
 ### Notification wording (picked in S0, 2026-10-21)
@@ -141,14 +141,16 @@ icon and name; the title is one line on the lock screen (cut with "…"), the bo
 | Type | Pick | Title | Body |
 |---|---|---|---|
 | Morning summary | A | "Today: 6 things" / "Hoje: 6 itens" | One sentence, at most 3 names (N-13): timed items with their time, then late ones marked, then the rest, then the count left. "Dentist appointment at 14:30, Renew gym membership (late), Gym and 3 more" / "Consulta no dentista às 14:30, Renovar a academia (atrasada), Academia e mais 3" |
-| Due at a time | A | The item's name | "Due at 14:30" / "Vence às 14:30". **Merged** (within N-10): title "2 things at 11:00" / "2 itens às 11:00", body one item per line, later ones with their time ("Send the invoice, 11:10") |
-| Custom reminder | C, adjusted | The item's name | Context, no why. **Project step:** "Step 1 of 4 in CV & LinkedIn." / "Etapa 1 de 4 em Currículo e LinkedIn." **Goal item** (habit): the goal, then the week so far: "Exercise regularly · 1 of 3 this week" / "Fazer exercício com frequência · 1 de 3 nesta semana". **Task without a goal:** its due date when it has one ("Due today." / "Vence hoje.") |
+| Due at a time | A | The item's name | Single: replaced on 2026-10-31 by the task reminder text below ("Today, 14:30"), since items no longer push at their time by themselves. **Merged** (within N-10), kept: title "2 things at 11:00" / "2 itens às 11:00", body one item per line, later ones with their time ("Send the invoice, 11:10") |
+| Custom reminder | C, adjusted; **changed in S5 (2026-10-31)** | The item's name | **Task and project** (S5 pick A, times only): only when it's due, said from the day the push arrives: "Today, 14:30" / "Hoje, 14:30", "Tomorrow, 23:35" / "Amanhã, 23:35", the weekday within a week ("Thursday, 14:30" / "Quinta-feira, 14:30"), then the date ("June 1" / "1 de junho"); no time, the day alone ("Tomorrow"). **Project step** (owner's text): "CV & LinkedIn · step 1 of 4" / "Currículo e LinkedIn · etapa 1 de 4". **Prep:** the "Prep with a time" text below. ~~Goal item (habit)~~: not used while commitments have no reminder ("Exercise regularly · 1 of 3 this week", kept for later) |
 | Weekly review | B | "Weekly review" / "Revisão da semana" | "Look back at last week and plan this one." / "Confira a semana passada e planeje esta." Same text every week, no numbers |
 | Prep with a time | A | The prep | "Prep · Exercise regularly" / "Preparo · Fazer exercício com frequência" |
 | Goal review date | B | "Review date reached" / "Chegou a data de revisão" | The goal's name |
 
-Not settled by the mockup (decide in S5, ask the owner if unclear): the reminder body for a prep,
-a project as a whole, and a task with no goal and no due date.
+| New access request (owner only, S5) | Owner, 2026-10-31 | "New request" / "Novo pedido" | The email ("ana.souza@gmail.com"). Tapping it opens Requests |
+
+Settled in S5 (2026-10-31): a prep's reminder keeps the prep text, a project's uses the task text, and a
+task with no due date can't have a reminder (the Notification card needs a date).
 
 ### Sign-in flow (picked in S0, 2026-10-23)
 
@@ -181,6 +183,9 @@ toast on Today; Requests is a Settings-style list. Numbers are the owner's scree
 - **Settings → Notifications** with a toggle per type, plus morning summary time and weekdays-only.
   **Picked in S0 (2026-10-29), layout A:** one page, rows without subtitles. "What you get": Morning
   summary, Items with a time, Reminders you set, Preps with a time, Weekly review, Goal review dates.
+  **Changed in S5 (2026-10-31):** "Items with a time" and "Preps with a time" are gone (answers 1a and
+  3a), and an open picker gets a line under it too (the owner asked for one under "Weekdays only").
+  Where the Notifications row sits on the Settings page: open (§14 S5, question 6).
   "On this phone": App icon badge, Details on the lock screen, Quiet hours. "Developer": Send a test
   notification. **Switches with options work like Quick Add:** turning one on opens its options under
   the row (summary: time wheel and Weekdays only; weekly review: time; quiet hours: from and to); its
@@ -404,7 +409,7 @@ no account yet, Supabase creates one; that is the sign-up.
    new phone → unlock with the passkey.
 6. The app checks **membership** (a `members` table only the owner can write):
    - **Not a member** → **"Waiting for access"** screen. The app keeps working on the phone; nothing
-     is stored on the server. The owner gets a push: "New request: ana@…". If there are already 100
+     is stored on the server. The owner gets a push: "New request", with the email as its body (S5). If there are already 100
      members: "The list is full for now", still waiting.
    - **Member** → sync starts; notifications can be turned on.
 7. **The owner approves with one tap:** the "New request" push opens a **Requests** list in Developer
@@ -1241,32 +1246,57 @@ Started 2026-10-30 on branch `notifications-s5` (cut from `notifications` after 
 it into **three parts, with a session compaction after parts 1 and 2**, so this section holds what the next
 part needs:
 1. **Mockups** (in progress): one consolidated mockup, [mockups/s5.html](mockups/s5.html) (artifact
-   [Smart Meta S5 Mockups](https://claude.ai/artifact/Uw7Tho8s1fzcL7m8ennMWB)): the reminder switch on items
-   (layouts A, B, C), the push texts (approved ones to check again, new ones to pick), Settings →
-   Notifications as approved, and three questions. **Waiting for the owner's picks.**
+   [Smart Meta S5 Mockups](https://claude.ai/artifact/Uw7Tho8s1fzcL7m8ennMWB)). Round 1 (2026-10-30):
+   layouts A, B, C, push texts, Settings, three questions; answered 2026-10-31 (below). Round 2
+   (2026-10-31): the owner's Notification card, the picked texts, where the Settings row sits, questions
+   4 to 6. **Waiting for the owner's check of round 2 and answers 4 to 6.**
 2. **Plumbing:** VAPID keys, service worker push and click, subscriptions, the tables, the dispatcher, the
    test button, the push on a new access request. Ends with the owner's setup and one test push on both
    phones.
 3. **The rest:** planner, the four types, Settings → Notifications, the reminder switch. Then the owner
    tests, and the week on the preview starts.
 
-**Owner's idea for custom reminders (2026-10-30), replacing "a reminder at any date and time":** a
+**Owner's first idea for custom reminders (2026-10-30), replacing "a reminder at any date and time"; superseded
+on 2026-10-31 by the Notification card below:** a
 **Notification switch on the item, off by default**, usable only when the item has a date or a time, with
 choices counted from it ("At the time", "15 minutes before", …). Once only, as before. In the mockup: with a
 time, At the time / 5, 15, 30 minutes / 1 hour / 1 day before; with a date only, On the day / 1, 2 days /
 1 week before, at a time picked (9:00 to start). Turning the date off turns the switch off; a task with no
 date has no reminder, which settles the open wording for "a task with no goal and no due date".
 
-**Open until the owner answers the mockup** (they change spec NO-2, NO-3, NO-5 and Settings' rows):
-- Q1, items with a time: (a) the item's switch decides, Settings drops "Items with a time"; or (b) items with
-  a time still push by themselves and the switch adds an earlier one.
-- Q2, commitments have no date or time: (a) no reminders on commitments until the at-risk reminders (§15);
-  or (b) a weekday-and-time reminder now (repeating, so pulled forward from §15).
-- Q3, preps: (a) the prep gets the same switch, Settings drops "Preps with a time"; or (b) preps keep
-  their S6 push.
-- Picks: reminder layout A/B/C; reminder text on a task (A when it's due, B how long until, C with its goal);
-  reminder text on a project (A due date and progress, B what's left, C plain). The new access-request push
-  body ("Approve or delete it in Requests.") needs the owner's OK.
+**The Notification card (owner's design, 2026-10-31, replacing layouts A to C), as in Reminders:**
+- An item with a date gets a **card of its own under Date and Time, holding one row, "Notification"**
+  (bell tile). No date, no card. The "Set a date to get a notification." note is gone.
+- The row's value sits on the right with up and down chevrons, **"None" to start**. Tapping it opens an
+  **iOS-style menu**: None, then a divider, the choices, a divider, Custom. The chosen one has a check.
+- **Date and time:** 5, 15, 30 minutes, 1 hour, 2 hours, 1 day, 2 days, 1 week, 1 month before.
+  **Date only:** 1 day, 2 days, 1 week, 2 weeks, 1 month, 3 months, 6 months before. **Only choices still
+  ahead of now** are listed (a task due in 6 days has nothing from 1 week up).
+- **Custom** opens two wheels under the row: a number from 1 to 200 and a unit (Minutes, Hours, Days,
+  Weeks, Months). Between the row and the wheels, in red, what's set: "23 hours before". Claude's choice,
+  for the owner to check: with a date only, Custom offers days, weeks and months only.
+- The push: title the item's name, body when it's due (texts in §2 "Notification wording").
+- Projects use the same card (target date and optional time); steps (date only) and preps (always timed,
+  repeating: the reminder follows each of the prep's times) get it in their own editors.
+
+**Round 1 answers (owner, 2026-10-31):**
+- Q1 **a**: the Notification card decides; items with a time no longer push by themselves; Settings drops
+  "Items with a time"; the morning summary still lists everything (spec NO-2 changed).
+- Q2 **a, adjusted**: no reminder on commitments for now; repeating reminders come later, kept as an
+  open feature (§15).
+- Q3 **a**: preps get the same card, None until set; Settings drops "Preps with a time" (spec NO-5).
+- Texts: task and project reminders A, as times only ("Today, 14:30"); project step "CV & LinkedIn · step
+  1 of 4"; access request title "New request", body the email. The rest of the approved texts: OK.
+- Settings: a line under "Weekdays only" in the morning summary's options. The owner asked where the
+  Notifications row goes on the Settings page: question 6.
+
+**Open in round 2:**
+- Q4, a push at the due time itself: the owner's lists start at 5 minutes (1 day) before, and with 1a
+  nothing else pushes at the due time. (a) add "At the time" / "On the day" first under None; (b) keep the
+  lists exactly.
+- Q5, what time a date-only reminder fires: (a) 9:00 for all, as in Reminders; (b) an "At" row on the card.
+- Q6, the Notifications row on the Settings page: (a) first row of App, above Language; (b) its own card
+  under the profile.
 
 **Facts for parts 2 and 3** (checked in code on 2026-10-30):
 - No push code exists yet. The PWA uses vite-plugin-pwa in **generateSW** mode (`vite.config.ts`,
@@ -1285,19 +1315,21 @@ date has no reminder, which settles the open wording for "a task with no goal an
 - [ ] One subscription per user; re-subscribe on open; diagnostics logged (spec NO-23).
 - [ ] Planner (tests first) with phone-encrypted payloads; upload only the difference.
 - [ ] Dispatcher: every minute, stale drop at 15 min, fuse 20/day, kill switch, send log.
-- [ ] Types: morning summary, due dates (no time → summary; with time → also at that time), custom
-      reminders (once), weekly review (own time).
-- [ ] Settings → Notifications (per type, summary time, weekdays only, review time).
+- [ ] Types: morning summary (lists due items), custom reminders from the Notification card (once; tasks,
+      projects, steps, preps), weekly review (own time).
+- [ ] Settings → Notifications (Morning summary with time and weekdays only, Reminders you set, Weekly
+      review with time, Goal review dates; "On this phone" rows as approved).
 - [ ] Developer test button. Beta flag for the owner → shadow week.
 - [ ] **Push to the owner on each new access request** (spec AC-5), moved here from S2 on
-      2026-10-29: "New request: ana@…", tapping it opens Requests. Sent by the server when someone
+      2026-10-29: title "New request", body the email (owner, 2026-10-31); tapping it opens Requests. Sent by the server when someone
       signs up, so it needs this stage's VAPID keys, server sender and the owner's subscription.
       Not planned by the phone and not encrypted (it holds only an email, which the owner sees
       anyway). Doesn't count toward the owner's cap of 3.
 - **Done when:** the owner gets correct pushes for a week on the preview.
 
 ### S6. The rest, then merge
-- [ ] Preps with a time, goal review date, in-app celebration.
+- [ ] Goal review date, in-app celebration. (Preps with a time moved to S5 on 2026-10-31: preps get the
+      Notification card like any item.)
 - [ ] App icon badge (late + today), quiet hours, lock-screen details toggle.
 - [ ] Merge plan: apply migrations to production, deploy, enable for the owner, then friends.
 - [ ] Backups to production (from S4): in `smart-meta-backups`, replace `DATABASE_URL` and
@@ -1342,7 +1374,8 @@ date has no reminder, which settles the open wording for "a task with no goal an
   - The app already computes pace and "at risk" in `scoring.ts`; reuse it so the reminder and the
     screen agree.
   - Let the user choose per commitment: off, at-risk only, or every planned day.
-- Repeating custom reminders.
+- **Repeating custom reminders**, and with them **reminders on commitments** (open feature, owner
+  2026-10-31: no reminder on commitments in the MVP, since they have no date; add repeat after).
 - **More ways to unlock** (moved from S3 by the owner, 2026-10-29): move the key from the old phone with a
   QR code, an optional recovery code, a second passkey. `user_keys.locks` already holds several locks;
   adding one needs an update grant on that column only.
@@ -1488,3 +1521,9 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   owner proposed custom reminders as a switch on the item, off by default, counted from its date or time.
   Consolidated S5 mockup published (`mockups/s5.html`) with three layouts, the push texts and three questions
   (§14 S5); waiting for the picks.
+- **2026-10-31:** owner's round 1 answers on the S5 mockup. Custom reminders become a **Notification card**
+  as in Reminders (None to start, a menu of choices still ahead, Custom with two wheels). Items with a time
+  and preps no longer push by themselves (answers 1a, 3a); no reminder on commitments, repeating reminders
+  later (2a). Task and project reminder text: when it's due, as times only ("Today, 14:30"); step text
+  "CV & LinkedIn · step 1 of 4"; access request "New request" + email. Spec NO-2, NO-3, NO-5, NO-9, NO-19
+  and AC-5 updated. Round 2 of the mockup published with questions 4 to 6.
