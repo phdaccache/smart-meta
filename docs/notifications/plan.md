@@ -1817,6 +1817,21 @@ above that `main` had it too was wrong. The cause is still unknown. The owner's 
 looks like a page with no history at all, not an entry we can reach, which is new against what this plan said in the third round. Temporary log lines
 in `src/ui/router.ts` ("edge touch", "after swipe", "page leaving") say whether our page is still alive behind the white page. To remove once this is settled.
 
+**Tenth round (same day):** no white page in that build's test (18:06 to 18:08 UTC), with the app opened by hand and no push tapped: 7 touches at the left
+edge of Today with nothing under it (no swipe at all, as on `main`), 2 at the right edge with nothing ahead, 8 forward swipes, about 17 back swipes, some under a second apart.
+Not tried: the Back button before a right-edge swipe, and **an app opened by tapping a push**. An idea to test, not proven: the white page came in the session
+opened by a tap at 17:38 (`click sees 0 windows`, so `clients.openWindow`), `main` has no pushes at all, and a page with no history fits something
+the iPhone makes when a worker opens a window. It may also be chance, since the white page never came every time.
+
+**Eleventh round (same day): it is the window the worker opens.** The owner reproduced it. The log: the app opened by a tap at 18:12:03 (`click sees 0 windows`),
+edge touches on Today did nothing, then a screen, then `swipe to depth 0 entries 2` at 18:12:19.417. The "after swipe 300" line came, and the 1500 and 4000 ones never did:
+the page stopped running within about a second, with no "page leaving", and the next line is the new open at 18:12:36. The white page at 17:39 has the same shape: opened by a tap
+at 17:38, `swipe to depth 0 entries 2` at 17:39:08, then nothing until a new open. Sessions opened by hand had about 15 such swipes in the last two logs with no white page. `main` has no pushes, so
+it never opens a window. So `public/push-sw.js` no longer calls `clients.openWindow` on the iPhone. The evidence that the phone opens the app by itself: the page starts about 40 ms
+after the click event (18:12:03.866 to .910; 17:37:11.592 to .634), too soon for a launch that event began, though that page did get the push's address, so this isn't proven.
+**To check on the iPhone:** a tap with the app fully closed still opens it, and goes to its place by the cache ("push tapped kept"). What that white page is
+isn't known. This doesn't explain the owner's white page with spare entries, which those entries' removal solved. Android keeps `openWindow`.
+
 ### S6 part B: production and the merge (step by step)
 
 Written in part A so it survives the compaction; check each against the code as you go. Claude can't do the
