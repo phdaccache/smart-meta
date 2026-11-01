@@ -1560,6 +1560,17 @@ card in the prep sheet only. The questions as asked:
   landing, the first open (or sync) plans again for the new zone; until then they come at the old zone's
   wall time.
 
+**Third round (owner's test on the iPhone, Android fine):**
+- **A single reminder didn't light its row** (two at once did): the row sat below the screen, and the smooth
+  scroll to it didn't happen as the app came to the front from the push, so the glow played out of sight.
+  Now it waits until the app shows, jumps to the row at once (as Reminders does), and each tap lights it
+  again, the same row included. The log says "remind open task found" (or "missing") for each tap.
+- **The morning summary didn't come:** not a bug. Each day has one summary (`sum:<day>`), and the server
+  keeps a push that's already gone out as it is (0006, `scheduled_guard`), so it can't be sent twice. Today's
+  had come in the first test; moving its time to test again changed nothing. The step's reminder is its own
+  push, so it came. Test the summary on another day; `select id, status, fire_at from
+  public.scheduled_notifications where id like 'sum:%' order by fire_at desc limit 3;` shows it.
+
 **Owner's setup for the second round:** paste `supabase/migrations/0010_owner_push_tools.sql` → Run (after
 0009). To see the new name, remove the app from the Home Screen and add it again (sign in again after).
 
@@ -1856,3 +1867,5 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   no fuse for the owner (`0010_owner_push_tools.sql`, spec NO-16, NO-17); a warning when saving a
   notification whose time has passed (spec NO-3); Back after the app reloads itself stays in the app (the
   white page); signing out offline drops the phone's subscription first; the app renamed "Smart Meta".
+- **2026-10-31 (16):** iPhone: a single reminder's row is jumped to and lit once the app shows (it lit out of
+  sight); the summary not coming again the same day explained (one a day, sent ones are kept).

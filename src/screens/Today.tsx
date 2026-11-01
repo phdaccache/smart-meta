@@ -14,6 +14,7 @@ import { useDisplacements, useMissAsksLoaded, usePrefs, useSettings, useSnapshot
 import { DEFAULT_PREFS, remindedRows } from '../lib/planner'
 import { phoneTimeZone } from '../lib/zoned'
 import { NOW_MS } from '../numbers'
+import { log } from '../sync/log'
 import { dismissedMisses, reviewPending } from '../lib/review'
 import { IconCalendar, IconCheck, IconChevronLeft, IconChevronRight, IconFilter, IconNote, IconPlus } from '../ui/icons'
 import { navigate, useLocation } from '../ui/router'
@@ -195,7 +196,8 @@ export function TodayScreen({ date }: { date?: DateStr }) {
   const prefs = usePrefs()
   const remind = query.get('remind')
   const [nowRows, setNowRows] = useState<string[] | null>(null)
-  const [flash, setFlash] = useState<string | null>(null)
+  /** The row to light up; `n` makes each tap a new one, even of the same row. */
+  const [flash, setFlash] = useState<{ key: string; n: number } | null>(null)
   useEffect(() => {
     if (!remind || !snap || !view || prefs === undefined) return
     const at = Number(query.get('at'))
@@ -215,29 +217,35 @@ export function TodayScreen({ date }: { date?: DateStr }) {
       setFilter('all')
       setWhen('all')
     }
-    setFlash(remind)
+    setFlash({ key: remind, n: Date.now() })
   }, [remind, snap, view, prefs])
   useEffect(() => {
     if (!flash) return
-    const row = document.querySelector<HTMLElement>(`[data-item="${CSS.escape(flash)}"]`)
-    if (!row) return setFlash(null)
-    // Out of sight: it lights up once it has scrolled into view, not on the way.
-    const box = row.getBoundingClientRect()
-    const away = box.top < 0 || box.bottom > (window.visualViewport?.height ?? window.innerHeight)
-    if (away) row.scrollIntoView({ block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
-    let off: ReturnType<typeof setTimeout> | undefined
-    const on = setTimeout(() => {
-      row.classList.add('flash')
-      off = setTimeout(() => {
-        row.classList.remove('flash')
-        setFlash(null)
-      }, 2400)
-    }, away ? 600 : 0)
-    return () => {
-      clearTimeout(on)
-      clearTimeout(off)
+    // On the iPhone a tapped push can reach the app before it's on screen, and a smooth scroll then may not
+    // happen at all: the row lit up below the screen, unseen (S5 test). So it waits until the app shows, and
+    // jumps to the row at once, as Reminders does. No timer is involved, so paused timers can't hold it back.
+    let stop = () => {}
+    const run = () => {
+      const row = document.querySelector<HTMLElement>(`[data-item="${CSS.escape(flash.key)}"]`)
+      log('remind', 'open', flash.key.split(':')[0], row ? 'found' : 'missing')
+      if (!row) return
+      const box = row.getBoundingClientRect()
+      if (box.top < 0 || box.bottom > (window.visualViewport?.height ?? window.innerHeight)) row.scrollIntoView({ block: 'center' })
       row.classList.remove('flash')
+      void row.offsetWidth // a new tap on the same row plays again
+      row.classList.add('flash')
     }
+    if (document.visibilityState === 'visible') run()
+    else {
+      const shown = () => {
+        if (document.visibilityState !== 'visible') return
+        stop()
+        run()
+      }
+      document.addEventListener('visibilitychange', shown)
+      stop = () => document.removeEventListener('visibilitychange', shown)
+    }
+    return () => stop()
   }, [flash])
 
   if (!snap || !view) return null
