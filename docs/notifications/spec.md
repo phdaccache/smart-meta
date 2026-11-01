@@ -188,7 +188,8 @@ Settings and indicators:
   review): the day's commitments and preps, and tasks and steps due that day or late.
 - **NO-21** [S6] **Lock-screen details:** on by default; off, a push says only its kind, no names or counts.
 - **NO-22** [S6] **Quiet hours:** off by default (`N-26` once on). **Everything waits** until they end, reminders
-  too; nothing is skipped. [Owner, 2026-11-01] These three follow the account, like the rest of NO-19.
+  too, the owner's "New request" included; nothing is skipped. [Owner, 2026-11-01] These three follow the account,
+  like the rest of NO-19.
 - **NO-23** [S5] **Diagnostics are logged, not shown:** the send log (NO-16) keeps each push's result
   (delivered, failed, subscription gone), and the push subscription keeps when the phone last checked
   its permission and subscription. Users never see this. (Changed by the owner 2026-10-29: no

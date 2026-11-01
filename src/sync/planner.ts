@@ -1,6 +1,6 @@
 import { db } from '../db/db'
 import { getMeta, getSettings, setMeta } from '../db/settings'
-import { planPushes, type PlannedPush } from '../lib/planner'
+import { planPushes, type PlannedPush, type Prefs } from '../lib/planner'
 import { phoneTimeZone } from '../lib/zoned'
 import { loadPrefs, loadSnapshot } from '../ui/hooks'
 import { encodeMessage, encryptPush, toB64u, type PushKeys } from '../../supabase/functions/_shared/webpush'
@@ -13,6 +13,9 @@ import { supabase } from './supabase'
  * can read the subscription's public keys, and every phone plans the same pushes from the same synced data
  * and Settings → Notifications. Each push is encrypted here for that subscription (plan §7.4).
  */
+
+/** Where the account stands with pushes, as the server last said (src/sync/push.ts). */
+export const pushStatusKey = (userId: string) => `pushStatus:${userId}`
 
 /** The last plan this phone saw on the server: nothing changed, nothing to ask the server again. */
 const planKey = (userId: string) => `plan:${userId}`
@@ -60,6 +63,7 @@ async function plan(userId: string) {
   if (!sub) return setMeta(planKey(userId), null)
 
   const [snap, weekReviews, prefs, settings] = await Promise.all([loadSnapshot(), db.weekReviews.toArray(), loadPrefs(), getSettings()])
+  await tellRequestQuiet(userId, prefs)
   const pushes = planPushes({
     snap, weekReviews: weekReviews.filter((w) => !w.deletedAt), prefs, now: Date.now(), timeZone: phoneTimeZone(),
     rolloverHour: settings.rolloverHour,
@@ -92,6 +96,20 @@ async function plan(userId: string) {
   }
   await setMeta(planKey(userId), whole)
   log('push', 'planned', pushes.length, 'changed', changed.length, 'removed', gone.length)
+}
+
+/**
+ * The owner's "New request" push is the one the server starts by itself, so it needs the owner's quiet hours
+ * (0011, spec NO-22). Only the owner's account sends them. A failure doesn't stop the plan; the next one tries again.
+ */
+async function tellRequestQuiet(userId: string, prefs: Prefs) {
+  if (!supabase || !(await getMeta<{ owner?: boolean } | null>(pushStatusKey(userId), null))?.owner) return
+  const hours = prefs.quiet ? [prefs.quietFrom, prefs.quietTo] : [null, null]
+  const key = `requestQuiet:${userId}`
+  if (JSON.stringify(await getMeta<unknown>(key, null)) === JSON.stringify(hours)) return
+  const { error } = await supabase.rpc('set_request_quiet', { quiet_from: hours[0], quiet_to: hours[1] })
+  if (error) return log('push', 'request quiet failed', error.message)
+  await setMeta(key, hours)
 }
 
 /** After signing out or a new subscription, the next plan asks the server afresh. */

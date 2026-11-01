@@ -56,7 +56,7 @@ These are the contracts between stages. Changing one affects others.
   `members` (only the owner writes), `profiles`, `user_keys` (locked data key, public key),
   `push_subscriptions` (one row per user), `scheduled_notifications` (deterministic ids: `sum:<day>`,
   `rev:<day>`, `gol:<day>:<goal>`, `rem:<due ms>:<item>`, `test:<ms>`; payload encrypted by the phone), and, out of the API's reach, `private.send_log`
-  (no content), `private.push_config` (kill switch and shadow mode) and `private.push_beta` (S5, `0006_push.sql`). S4 adds `private.daily_rows` (new rows per user per day, for the
+  (no content), `private.push_config` (kill switch, shadow mode, the owner's own quiet hours for "New request") and `private.push_beta` (S5, `0006_push.sql`). S4 adds `private.daily_rows` (new rows per user per day, for the
   limits and the alarm; not reachable through the API). Backups: private repo `phdaccache/smart-meta-backups`.
 - **Membership gates the server:** non-members can't read or write anything on the server, their own
   profile included; they can only ask for their membership status (`my_access()`). Their name, avatar and

@@ -1658,34 +1658,55 @@ setting). Mockups: [Smart Meta S6 Mockups](https://claude.ai/artifact/JGqJ6CnYgT
 - `src/ui/Celebration.tsx`, `.cele` in `src/styles.css`: CSS animations only, two taps of the phone as the ring
   closes, reduced motion just fades. Developer → Goal celebration → Play it shows it again.
 
+- **The owner's "New request" waits too** (owner's question, 2026-11-01). It's the one push the server starts by
+  itself, and the settings are encrypted, so the owner's phone tells the server the owner's own quiet hours
+  (`0011_request_quiet.sql`, `private.push_config`, owner only; nobody else's hours reach the server). During them
+  nothing goes out and `requests_seen_at` stays; when they end, what came in goes out, unless already approved.
+  Tested on PGlite with stand-ins: 30 checks, run twice. No dispatcher deploy: only the SQL changed.
+
 **Choices made while building (the owner may change any):**
 - **The badge counts less than Today's total:** commitments and preps of the day, and tasks and steps due today
   or late (as Today's "Today" filter). Today also lists tasks due later and tasks with no date; counting those
   would keep the number up for good ("late + left today", NO-20). The morning summary still counts everything.
-- The server's own "New request" push to the owner doesn't know quiet hours: the server can't read the
-  settings (they're encrypted). It still arrives at night, for the owner only.
 - More than 3 goal review dates on one day (with the cap of 3): the rest get no push; their pages still ask.
 
 The S6 preview has its Vercel Preview variables (Supabase URL and key, `VITE_VAPID_PUBLIC_KEY`, all staging's).
 
-**To test part A on the S6 preview** (`smart-meta-h2ur-git-notifications-s6-daccache.vercel.app`, a new Home
-Screen app; sign in with an account on staging, Face ID, turn on notifications):
-1. **Settings → Notifications:** "Goal review dates" and the "How they arrive" section show; turning Quiet hours
-   on opens From and To; the blue line follows them; everything is still there after reopening the app and on
-   the other phone.
-2. **Celebration:** Developer → Goal celebration → Play it, a few times. Is the motion right? Then a real one:
-   a goal with a review date today (Edit goal), its page → Review → Yes → Close it out → Save: the ring plays,
-   Done shows the goal's page, Back goes to Goals. With Yes → Renew: "You hit it". With No: only "Saved".
-   A maintenance goal → Close it out: it plays.
-3. **Goal review push:** a goal with tomorrow's review date, or set the morning summary's time 3 minutes ahead
-   on a goal whose review date is today (before saving a review): "Review date reached / the goal's name" comes
-   at that time; tapping it opens the goal. Then "Goal review dates" off: planning again takes it away.
-4. **Details off:** turn it off, add a task with a reminder a few minutes ahead: "Reminder", no name; tapping it
-   opens the task on Today. Then back on.
-5. **Quiet hours:** From now to 5 minutes ahead, and a reminder 2 minutes ahead: it arrives when they end, not
-   before. Tick something off in that time with a reminder held: it never comes. Then off.
-6. **Badge:** turn it on and leave the app: the icon shows late + left today. Tick one off: the number drops.
-   A push arriving with the app closed sets the number for its day. Off: the number goes away.
+**Set up for the test (owner):**
+1. Supabase → `smart-meta-staging` → SQL Editor → paste `supabase/migrations/0011_request_quiet.sql` → Run. Advisors →
+   Security Advisor: anything new goes to Claude.
+2. Cloudflare → Turnstile → "Smart Meta" → Settings → add `smart-meta-h2ur-git-notifications-s6-daccache.vercel.app`.
+3. On the iPhone, open that address in Safari, add it to the Home Screen, open it from there. Sign in with the
+   owner's staging account (code, Face ID). Settings → Notifications → "Turn on notifications" → Allow. Same on
+   Android if wanted; pushes go to whichever phone turned them on last, so finish on the iPhone.
+
+**To test part A** (on the phone that turned notifications on; the test account needs a goal and a task):
+- **A. Settings.** Settings → Notifications. "What you get" has "Goal review dates"; below it, "How they arrive" has App
+  icon badge (off), Details on the lock screen (on), Quiet hours (off). Quiet hours on: From and To wheels open, the
+  blue line says "22:00 to 07:00" and follows the wheels. Close and reopen the app: all still there. On the other
+  phone, after it syncs: the same. Turn Quiet hours back off.
+- **B. The celebration's motion.** Settings → Developer → Goal celebration → Play it, a few times. The ring closes, the
+  phone taps twice, the words come in. Pronto closes it. Too much, too little, or right?
+- **C. A real celebration.** On a goal that started before today: Edit → "Review on" today → save. The page shows
+  "Review date reached" → Review → Yes → Close it out → Save. The ring plays with "Goal completed"; Pronto shows the
+  goal's page; Back goes to the goals. Then on another goal, the same with Yes → Renew: "You hit it". Another with
+  No: only the "Saved" toast. A maintenance goal → Close it out: it plays.
+- **D. The goal review push.** A goal that started before today: Edit → "Review on" today. Settings → Notifications →
+  Morning summary → time 3 minutes ahead. Wait with the app closed: "Review date reached" with the goal's name. Tap it:
+  the goal opens. Then Goal review dates off, and repeat on another goal: nothing comes. Put both back.
+- **E. Details off.** Details on the lock screen off. A task for today, with a time 10 minutes ahead and Notification
+  "5 minutes before". Lock the phone: "Reminder", with no name. Tap it: Today, on that task. Details back on.
+- **F. Quiet hours hold a reminder.** Quiet hours on, From the current time, To 5 minutes ahead. A task with a reminder
+  arriving 2 minutes from now. Nothing comes at 2 minutes; it arrives within a minute after they end, with its name.
+- **G. A held reminder can be cancelled.** The same again, and tick the task off before they end: nothing comes.
+- **H. "New request" waits.** Quiet hours on, From now, To 5 minutes ahead. In another browser (or a private tab), sign up
+  on the same preview with a new email. No push yet; Developer → Requests already lists them. Within a minute after
+  quiet hours end: "New request" with that email. Quiet hours off, and sign up again with another email: it comes
+  at once. Reject the test requests.
+- **I. The badge.** App icon badge on. Leave the app: the icon shows what's late or left today (tasks due today or
+  late, plus today's commitments and preps). Open it, tick one off, leave: one less. Leave the app with a reminder
+  coming: the push sets the number for its day. Badge off, open and leave: the number is gone.
+- **J. Send anything odd to Claude.** Settings → Developer → Diagnostics log has the details.
 
 ### S6 part B: production and the merge (step by step)
 
@@ -1723,7 +1744,7 @@ docs up to date); `origin/main` merged in if it has anything new; tests and buil
    `0002_accounts.sql` (existing accounts become members), `0003_keys.sql`, `0004_limits.sql`,
    `0005_daily_rows_policy.sql`, `0006_push.sql` (mode starts at `shadow`: leave it), then in a new query
    `select vault.create_secret('https://oqhwkjhuuaeopahhcxac.supabase.co/functions/v1/dispatch', 'dispatch_url');`,
-   then `0007_pg_net_schema.sql`, `0008_push_controls.sql`, `0009_push_mode_where.sql`, `0010_owner_push_tools.sql`.
+   then `0007_pg_net_schema.sql`, `0008_push_controls.sql`, `0009_push_mode_where.sql`, `0010_owner_push_tools.sql`, `0011_request_quiet.sql`.
 8. **Owner, the dispatcher:** in PowerShell, in the repo folder: `npx supabase login`, then
    `npx supabase functions deploy dispatch --project-ref oqhwkjhuuaeopahhcxac --no-verify-jwt --use-api`, then
    **`npx supabase logout`** right away, and delete the token in Supabase → Account → Access Tokens.
