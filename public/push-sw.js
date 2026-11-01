@@ -24,6 +24,28 @@ function trace(text) {
 }
 const kindOf = (s) => (typeof s === 'string' ? s.split(/[:/?]/).filter(Boolean)[0] || 'today' : 'none')
 
+/**
+ * Notes a push for the app, which works out from it a tap that never came here (see findLostTap in src/main.tsx).
+ * In a database, since an open app on the iPhone doesn't see what this worker writes to the cache (S6 test).
+ */
+function noteRecent(tag, path) {
+  if (!tag) return Promise.resolve()
+  return new Promise((done, fail) => {
+    const open = indexedDB.open('smart-meta-push', 1)
+    open.onupgradeneeded = () => open.result.createObjectStore('recent', { keyPath: 'tag' })
+    open.onerror = () => fail(open.error)
+    open.onsuccess = () => {
+      const tx = open.result.transaction('recent', 'readwrite')
+      tx.objectStore('recent').put({ tag, path, at: Date.now() })
+      tx.oncomplete = () => {
+        open.result.close()
+        done()
+      }
+      tx.onabort = () => fail(tx.error)
+    }
+  }).catch((e) => trace(`note failed ${e && e.name}`))
+}
+
 self.addEventListener('push', (event) => {
   let m = null
   try {
@@ -42,6 +64,7 @@ self.addEventListener('push', (event) => {
         data: { url: appPath(m && m.url) },
       }),
       setBadge(m && m.badge),
+      noteRecent(m && typeof m.tag === 'string' ? m.tag : null, appPath(m && m.url)),
       trace(`push ${kindOf(m && m.tag)}`),
     ]),
   )

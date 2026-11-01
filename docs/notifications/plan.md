@@ -1777,12 +1777,24 @@ the first screen, so it offers no swipe at all; the spare entries gave it someth
   "nav page start at depth N layer N entries N" on every load and "nav swipe to depth N" on each swipe, so the next white screen's
   log shows whether old entries were there.
 
-**The missing `worker` lines in the last log prove nothing yet.** The log is in UTC. The trace build was created at 17:04:05 and
-the push came at 17:06:03. A new worker only installs when the app comes to the front, so an app already in the background
-most likely handled that push with the old worker, which has no trace. The app's reading side works (dev app: lines from the
-cache reach the log, and a kept tap is followed), but the worker's own writing can't run here. **After a deploy, open the app once before
-testing a push.** The worker now also traces how many windows the tap saw and whether the message was sent. Whether the tap reaches
-the worker in the failures is still unknown, so nothing else changed in the tap's path.
+**The worker's trace works, and it shows the cache doesn't reach an open app.** The log is in UTC. The next log has `worker
+17:06:02.200 push task`, so the worker with the trace handled the 17:06 push (a guess in this round that an old worker had was wrong).
+But that line only reached the log at 17:23:42, on a new page load. The page open at 17:06 looked for it at 17:06:03 (five times
+in 10 s), 17:07:40 and 17:23:39, and never saw it. So on the iPhone an open page doesn't see what the worker writes to the cache, only
+a page loaded later does. The cache fallback from S5 can't help an app in the background. The same list had no `click` line, so
+the worker probably never got that tap, which is not proven. The worker now also traces how many windows a tap saw and whether its message was sent.
+
+**Seventh round (same day):** the owner: the white screen seems fixed (their test, not many tries of a reload on an inner screen). A tap
+again did nothing. After closing and reopening, the log had `worker 17:26:02.520 push task` and `worker 17:28:01.934 push task`, and no
+`click` at all, with the app at the front 2.7 s after each push. So **in these failures the iPhone brings the app to the front and
+never tells the worker about the tap.** All four failures came 2 to 5 s into the minute, soon after the push; whether a later tap
+always works isn't known. The fallback (`findLostTap` in `src/main.tsx`, `noteRecent` in `public/push-sw.js`): the worker notes each push
+in its own small database, `smart-meta-push`. Coming to the front, the app looks at 0.6, 2 and 5 s: a push of the last minute, with no
+tap since, that's gone from `getNotifications()` was tapped, and it opens as a tap would ("push tapped lost"). One left unread stays
+on the list, so opening the app by hand does nothing. Clearing a push from the list and opening the app within the minute would count as a tap,
+which only opens its place. Tried in the dev app with the worker's real code and the phone's parts stood in for: unread, tapped, a list that
+updates late, one tap only, over a minute old, the tap's own message first, the row lighting up. **Not proven on the iPhone:** that an open app
+sees this database, and that `getNotifications()` drops a tapped push. The log says which ("push recent N listed N …", "push recent failed").
 
 ### S6 part B: production and the merge (step by step)
 

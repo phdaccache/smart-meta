@@ -88,12 +88,62 @@ async function readTap() {
 }
 // The worker may still be writing it as the app shows: look again a moment later.
 const lookForTap = () => [0, 600, 2000, 5000, 10_000].forEach((ms) => setTimeout(() => void readTap(), ms))
+
+interface RecentPush { tag: string; path: string; at: number }
+/** A push that arrived this recently and has gone from the list was tapped; older, it's for a moment that's gone. */
+const LOST_TAP_MS = 60_000
+/** The pushes of the last minute, from the worker's database (public/push-sw.js); older ones go. */
+function recentPushes(): Promise<RecentPush[]> {
+  return new Promise((done, fail) => {
+    const open = indexedDB.open('smart-meta-push', 1)
+    open.onupgradeneeded = () => open.result.createObjectStore('recent', { keyPath: 'tag' })
+    open.onerror = () => fail(open.error)
+    open.onsuccess = () => {
+      const tx = open.result.transaction('recent', 'readwrite')
+      const store = tx.objectStore('recent')
+      const all = store.getAll()
+      all.onsuccess = () => {
+        const fresh = (all.result as RecentPush[]).filter((p) => Date.now() - p.at < LOST_TAP_MS)
+        store.clear()
+        fresh.forEach((p) => store.put(p))
+        tx.oncomplete = () => {
+          open.result.close()
+          done(fresh)
+        }
+      }
+      tx.onabort = () => fail(tx.error)
+    }
+  })
+}
+/**
+ * On the iPhone, a tap on a push that arrived seconds before brought the app to the front and never reached the
+ * worker (S6 test: "push" traced, no "click"). So a tap that didn't arrive is worked out here: a push of the last
+ * minute that's no longer on the phone's list, as one just tapped isn't, while one left unread stays there.
+ */
+async function findLostTap() {
+  if (document.visibilityState !== 'visible') return
+  try {
+    const recent = (await recentPushes()).filter((p) => p.at > lastTap)
+    if (!recent.length) return
+    const registration = await navigator.serviceWorker.getRegistration()
+    if (!registration) return
+    const listed = new Set((await registration.getNotifications()).map((n) => n.tag))
+    const gone = recent.filter((p) => !listed.has(p.tag)).sort((a, b) => b.at - a.at)[0]
+    log('push', 'recent', recent.length, 'listed', listed.size, gone ? `${gone.tag.split(':')[0]} gone ${Date.now() - gone.at} ms after it came` : 'none gone')
+    if (gone) openTapped(gone.path, Date.now(), 'lost')
+  } catch (e) {
+    log('push', 'recent failed', e)
+  }
+}
+
 if ('caches' in window) {
   lookForTap()
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return
     log('app', 'came to the front')
     lookForTap()
+    // After the tap's own message, which comes at once when it comes at all; the phone may take a moment to update its list.
+    ;[600, 2000, 5000].forEach((ms) => setTimeout(() => void findLostTap(), ms))
   })
 }
 logUncaught()
