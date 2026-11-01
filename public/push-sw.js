@@ -22,7 +22,7 @@ function trace(text) {
     .catch(() => {})
   return tracing
 }
-const kindOf = (s) => (typeof s === 'string' ? s.split(/[:/?]/).filter(Boolean)[0] || 'today' : 'none')
+const kindOf = (s) => (typeof s === 'string' ? s.split(/[:/?=]/).filter(Boolean)[0] || 'today' : 'none')
 
 /**
  * Notes a push for the app, which works out from it a tap that never came here (see findLostTap in src/main.tsx).

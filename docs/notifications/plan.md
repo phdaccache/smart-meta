@@ -1796,6 +1796,22 @@ which only opens its place. Tried in the dev app with the worker's real code and
 updates late, one tap only, over a minute old, the tap's own message first, the row lighting up. **Not proven on the iPhone:** that an open app
 sees this database, and that `getNotifications()` drops a tapped push. The log says which ("push recent N listed N …", "push recent failed").
 
+**Eighth round (same day):** the fallback worked at 17:34, 17:35 and 17:36, so an open app does see the database, and a tapped push can
+leave the list. Then it stopped: from 17:41 the log says "recent 1 listed 2 none gone", tapped pushes still on the list, 27 s later in one
+case. Why the list changed isn't known. So a push the app came to the front within 15 s of (`ANSWERED_MS`, the failures were 1 to 4 s) now counts as tapped too,
+even if listed. Owner's call to make: opening the app by hand within those 15 s also goes to that push's place. Tried in the dev app:
+tapped and still listed opens it; listed and 20 s old stays; arriving with the app already open stays; the tap's own message first
+does nothing more. A hint, not proven: the real click reached the worker at 17:39, and that app had been opened by tapping a push (17:38),
+while apps opened by hand (17:33, 17:40, 17:42) got no click. A quick tap isn't the cause: the 17:39 one came 1.1 s after its push. The worker's click trace
+wrote ids into the log; it now writes kinds only.
+
+**A second white screen: a swipe from the right edge on Today**, after visiting a screen and coming back, so the iPhone has a forward entry
+to go to. The log has "swipe to depth 1 entries 2" at 17:39:57, then a new open at 17:40:01. Not every time: four more at 17:40:12 to 17:40:23 had no new open after them. All
+of that session's entries belong to one page load, so reloads aren't involved here. Our code runs ("swipe to depth 1"), and the screen comes
+back fine with `history.forward()` in the dev app. Forward entries can't be removed from a page, and nothing about them differs from `main`
+in the code (the same forward entries, the same `popstate` path), so **`main` may have this too, unnoticed.** The owner is asked to try it there.
+If it has, it isn't from this project. A possible fix, not tried: stop touches at the right edge in the installed app (`preventDefault` on `touchstart`).
+
 ### S6 part B: production and the merge (step by step)
 
 Written in part A so it survives the compaction; check each against the code as you go. Claude can't do the
