@@ -77,6 +77,6 @@ These are the contracts between stages. Changing one affects others.
 | S3 | Encryption | Done 2026-10-29 (tested on both phones; data encrypted on staging; "open twice" warning) |
 | S4 | Safety and operations (backups, alarm, limits, sync timing, privacy note) | Done 2026-10-30 (backups and restore drill on staging, alarm email, limits; privacy policy confirmed by the owner) |
 | S5 | Core notifications | Done 2026-11-01 (planner, the four types, Settings → Notifications, the Notification card, kill switch, shadow beta from Requests; tested on both phones, 0006 to 0010 on staging). The shadow week moved to production, after S6 |
-| S6 | The rest, then merge to `main` | Part A built and tested on the iPhone 2026-11-01, waiting for the merge into `notifications`; part B's steps are in plan §14 |
+| S6 | The rest, then merge to `main` | Part A done 2026-11-01 (tested on the iPhone, merged into `notifications`); part B not started, its steps are in plan §14 |
 
 Details and checkboxes: [plan.md §14](plan.md).

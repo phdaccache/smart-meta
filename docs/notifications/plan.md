@@ -1844,8 +1844,10 @@ Written in part A so it survives the compaction; check each against the code as 
 **Owner** steps (accounts and secrets; Claude gets no Supabase access) and gives them one at a time, waiting
 for each. **Secrets never go in chat.** Production is project ref `oqhwkjhuuaeopahhcxac` (`.env.production`).
 
-**Before any of it (Claude):** part A tested by the owner; `notifications-s6` merged into `notifications` (S6's
-docs up to date); `origin/main` merged in if it has anything new; tests and build pass; a release note in
+**Part A is merged into `notifications` (2026-11-01).** Part B runs in its own session (owner's choice). Anything it changes
+in the repo goes on `notifications-s6`, brought up to date from `origin/notifications` first, and merges into `notifications` before step 10.
+
+**Before any of it (Claude):** `origin/main` merged in if it has anything new; tests and build pass; a release note in
 `src/lib/releases.ts` (ask the owner for its text; `package.json` version up); privacy policy date still right.
 
 1. **Owner, a copy first:** on each phone with data, Settings → export the JSON backup, and keep it.
@@ -1898,8 +1900,8 @@ docs up to date); `origin/main` merged in if it has anything new; tests and buil
 pushes at once. App: Vercel → Deployments → promote the last good one; 0003's check would refuse an older app's
 writes, so they'd wait on the phones until the app is forward again. Nothing on the phones is lost.
 
-- [ ] Goal review date, in-app celebration. *(Built in part A, waiting for the owner's test.)*
-- [ ] App icon badge, quiet hours, lock-screen details toggle. *(Built in part A, waiting for the owner's test.)*
+- [x] Goal review date, in-app celebration. *(Part A, tested on the iPhone.)*
+- [x] App icon badge, quiet hours, lock-screen details toggle. *(Part A, tested on the iPhone.)*
 - [ ] Part B: production set up, migrations, backups, merge, the owner first, then friends.
 - **Done when:** merged to `main` and friends have it.
 
@@ -2191,3 +2193,4 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   waits), details off (the kind only), badge, Settings' "How they arrive" (follows the account), the goal
   celebration (option A with more motion). Part B's step-by-step written in §14. Waiting for the owner's test.
 - **2026-11-01 (24):** part A's last two iPhone bugs solved with the owner's tests: no spare entries under the first screen, no `clients.openWindow` on the iPhone (a white page after a back swipe), and a tapped push the worker never hears about is worked out by the app (`findLostTap`). Details in §14 S6, sixth to twelfth rounds.
+- **2026-11-01 (25):** S6 part A done (owner) and `notifications-s6` merged into `notifications`. Part B starts in its own session.
