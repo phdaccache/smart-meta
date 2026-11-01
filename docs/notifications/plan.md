@@ -1263,7 +1263,8 @@ part needs:
    **Built 2026-10-31** and checked in the dev app (below, "Part 3: what was built"), including the card on
    project steps and preps after the round 3 answers. **Tested by the owner on both phones 2026-10-31**,
    in five rounds, each fixed the same day (below, "Owner's test of part 3" and the rounds after it); 0009
-   and 0010 pasted. **What's left: the shadow week** (from 1 November 2026).
+   and 0010 pasted. **S5 done 2026-11-01** (owner): merged into `notifications` without a shadow week on
+   the preview.
 
 **Owner's first idea for custom reminders (2026-10-30), replacing "a reminder at any date and time"; superseded
 on 2026-10-31 by the Notification card below:** a
@@ -1612,15 +1613,16 @@ only one acts. The log says "push tapped message" or "push tapped kept".
       `0008_push_controls.sql`.)*
 - [x] Developer test button *(part 2, tested)*. Beta flag for the owner *(part 3, tested: Shadow hides the
       row from accounts not in the beta; the beta list is switched from Developer → Requests, 0010)*.
-- [ ] **Shadow week** (N-22): from 1 November 2026, Pushes on Shadow, the owner (and anyone switched into
-      the beta) using it day to day; run by the owner by hand, nothing scheduled. Anything wrong goes back to this branch. Then S5 merges into
-      `notifications`.
+- [x] ~~Shadow week on the preview~~ (owner, 2026-11-01): skipped; S5 merges as tested. The shadow
+      feature stays: after S6, on production, the owner picks who gets pushes from Developer → Requests
+      and sets Pushes to On when ready (spec NO-17).
 - [x] **Push to the owner on each new access request** (spec AC-5), moved here from S2 on
       2026-10-29: title "New request", body the email (owner, 2026-10-31); tapping it opens Requests. Sent by the server when someone
       signs up, so it needs this stage's VAPID keys, server sender and the owner's subscription.
       Not planned by the phone, and encrypted by the server rather than the phone (it holds only an
       email, which the owner sees anyway). Doesn't count toward the owner's cap of 3. *(Part 2, tested.)*
-- **Done when:** the owner gets correct pushes for a week on the preview.
+- **Done when:** the owner gets correct pushes for a week on the preview. **Done 2026-11-01** by the
+  owner's call after testing on both phones (the week moved to production, after S6).
 
 ### S6. The rest, then merge
 - [ ] Goal review date, in-app celebration. (Preps with a time moved to S5 on 2026-10-31: preps get the
@@ -1909,3 +1911,5 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   shared decisions); open question 4, app updates reloading at once.
 - **2026-10-31 (21):** open question 4 answered (updates keep reloading at once); the shadow week is run by
   the owner by hand.
+- **2026-11-01 (22):** **S5 done** (owner): no shadow week on the preview; the shadow feature stays for
+  production after S6, where the owner sets the beta list. `notifications-s5` merged into `notifications`.

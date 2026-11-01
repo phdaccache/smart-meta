@@ -76,7 +76,7 @@ These are the contracts between stages. Changing one affects others.
 | S2 | Accounts | Done 2026-10-29 (tested on two phones; members, requests, profile, one person per phone) |
 | S3 | Encryption | Done 2026-10-29 (tested on both phones; data encrypted on staging; "open twice" warning) |
 | S4 | Safety and operations (backups, alarm, limits, sync timing, privacy note) | Done 2026-10-30 (backups and restore drill on staging, alarm email, limits; privacy policy confirmed by the owner) |
-| S5 | Core notifications | In progress on `notifications-s5`: part 1 of 3 (mockups) done 2026-10-31; part 2 (plumbing) done 2026-10-31 (tested on both phones); part 3 built 2026-10-31 (planner, Settings → Notifications, the card on tasks, projects, steps and preps, kill switch, beta flag) and tested by the owner on both phones the same day (0009, 0010 pasted); the shadow week runs from 1 November, then S5 merges into `notifications` |
+| S5 | Core notifications | Done 2026-11-01 (planner, the four types, Settings → Notifications, the Notification card, kill switch, shadow beta from Requests; tested on both phones, 0006 to 0010 on staging). The shadow week moved to production, after S6 |
 | S6 | The rest, then merge to `main` | Not started |
 
 Details and checkboxes: [plan.md §14](plan.md).
