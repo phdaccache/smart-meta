@@ -71,8 +71,6 @@ interface NavState {
   layer?: number
   /** The screens this one was opened from, bottom first. */
   under?: string[]
-  /** An entry under the first screen (see SPARE_ENTRIES), and how many from the bottom. */
-  spare?: number
 }
 
 const depth = () => (history.state as NavState | null)?.depth ?? 0
@@ -102,24 +100,10 @@ let later: (() => void)[] = []
 // Entries made before this page loaded count as the bottom of the stack. After a reload (the app updating
 // itself on an inner screen, S5 test), the entries under it belong to the page that was: going back into
 // them loads that page anew, which a Home Screen app on the iPhone showed as a blank white page. So Back
-// starts here, and goes to the screen's own parent instead.
-if (depth() > 0 || layer() > 0) log('nav', 'fresh page at depth', depth(), 'layer', layer())
-/**
- * Under the app's first screen, the iPhone's Home Screen app has an empty page: its own browser bar with no address,
- * no code of ours running, and no way back but closing the app (S6 test, a quick swipe from the edge). A swipe can't
- * be stopped, so it lands here instead: spare entries under the first screen, which put the screen back at once. Two,
- * since a second quick swipe may start before the phone knows about the first one's way back. Only there: in
- * a browser Back has to be able to leave, and on Android it closes the app.
- */
-const SPARE_ENTRIES = 2
-const stopsSwipes = (navigator as Navigator & { standalone?: boolean }).standalone === true
-if (stopsSwipes) {
-  history.replaceState({ depth: 0, spare: SPARE_ENTRIES }, '')
-  for (let n = SPARE_ENTRIES - 1; n > 0; n--) history.pushState({ depth: 0, spare: n }, '')
-  history.pushState({ depth: 0 }, '')
-} else {
-  history.replaceState({ depth: 0 }, '')
-}
+// starts here, and goes to the screen's own parent instead. (Nothing may be added under the first screen: on a
+// fresh open the iPhone has nothing to swipe back to, and an entry put there gave it one, showing a white page. S6 test.)
+log('nav', 'page start at depth', depth(), 'layer', layer(), 'entries', history.length)
+history.replaceState({ depth: 0 }, '')
 
 // Screens keep their own scroll (see screensUnder) and the page itself never scrolls, so the browser restoring
 // the page's scroll on Back changes nothing, and it stays on: after a swipe back, the iPhone keeps its picture
@@ -194,16 +178,12 @@ function backArrived() {
   if (ownMoves === 0) later.splice(0).forEach((run) => run())
 }
 
+/** Set while going down to the bottom of the stack to reload there (see reloadFromBottom). */
+let reloading: (() => void) | null = null
+
 window.addEventListener('popstate', (e: PopStateEvent & { hasUAVisualTransition?: boolean }) => {
-  const spare = (e.state as NavState | null)?.spare
-  if (spare) {
-    // A swipe past the first screen: the same screen again, with the spare entries back under it.
-    const at = shown[shown.length - 1]
-    for (let n = spare - 1; n > 0; n--) history.pushState({ depth: 0, spare: n }, '', at)
-    history.pushState({ depth: 0 }, '', at)
-    log('nav', 'swipe stopped at the first screen', spare)
-    return
-  }
+  if (reloading) return reloading()
+  if (e.hasUAVisualTransition) log('nav', 'swipe to depth', depth(), 'entries', history.length)
   // After this event's own work, which is about the same move.
   if (backing != null) queueMicrotask(backArrived)
   if (ownMoves > 0) {
@@ -226,6 +206,31 @@ window.addEventListener('popstate', (e: PopStateEvent & { hasUAVisualTransition?
   // Safari's own swipe back already slid the page; sliding it again would play it twice.
   show(e.hasUAVisualTransition ? null : 'back')
 })
+
+/**
+ * Reloads the app on the screen it's on, from the bottom of the stack. A reload leaves the entries under it behind,
+ * and going back into those showed the iPhone's white page, closing the app the only way out (S5 and S6 tests; a swipe
+ * reaches them whatever Back does). This page's own entries are safe to go down, so it goes down them first.
+ * `to` is the screen to reload on: the one shown unless said otherwise.
+ */
+export function reloadFromBottom(to = getPath()) {
+  const finish = () => {
+    reloading = null
+    if (depth() + layer() > 0) return location.replace(to)
+    history.replaceState({ depth: 0 }, '', to)
+    location.reload()
+  }
+  const n = depth() + layer()
+  if (n === 0) return finish()
+  reloading = () => {
+    if (depth() + layer() === 0) finish()
+  }
+  // A move that never comes mustn't hold the reload back.
+  setTimeout(() => {
+    if (reloading) finish()
+  }, 1000)
+  history.go(-n)
+}
 
 /** Takes `n` of our own entries off the history. */
 function dropEntries(n: number) {

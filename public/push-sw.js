@@ -7,17 +7,20 @@ function appPath(url) {
   return typeof url === 'string' && url.startsWith('/') && !url.startsWith('//') ? url : '/'
 }
 
+let tracing = Promise.resolve()
 /**
  * What the worker saw, for the app to copy into the diagnostics log (src/main.tsx): kinds only, no text or ids.
  * The S6 test had the app coming to the front after a tap with no sign of the tap: did it ever reach the worker?
  */
 function trace(text) {
   const line = `${new Date().toISOString().slice(11, 23)} ${text}`
-  return caches.open('smart-meta-tap')
+  // One at a time: two at once would each write the list without the other's line.
+  tracing = tracing.then(() => caches.open('smart-meta-tap'))
     .then((c) => c.match('/__trace')
       .then((r) => (r ? r.json() : []))
       .then((list) => c.put('/__trace', new Response(JSON.stringify([...list, line].slice(-20)), { headers: { 'Content-Type': 'application/json' } }))))
     .catch(() => {})
+  return tracing
 }
 const kindOf = (s) => (typeof s === 'string' ? s.split(/[:/?]/).filter(Boolean)[0] || 'today' : 'none')
 
@@ -64,12 +67,16 @@ self.addEventListener('notificationclick', (event) => {
   const at = Date.now()
   // focus() or openWindow() first, while the tap still allows it: Android ignores them after other work.
   const go = self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+    void trace(`click sees ${windows.length} windows ${windows.map((w) => w.visibilityState).join(' ')}`)
     const open = windows.find((w) => 'focus' in w)
     if (!open) return self.clients.openWindow(path)
     return open.focus().catch((e) => {
       void trace(`focus failed ${e && e.name}`)
       return open
-    }).then((w) => (w || open).postMessage({ type: 'open', path, at }))
+    }).then((w) => {
+      ;(w || open).postMessage({ type: 'open', path, at })
+      return trace('click message sent')
+    })
   })
   const keep = caches.open(TAP_CACHE)
     .then((c) => c.put(TAP_KEY, new Response(JSON.stringify({ path, at }), { headers: { 'Content-Type': 'application/json' } })))

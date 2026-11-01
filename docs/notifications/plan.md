@@ -1760,6 +1760,30 @@ by the cache. Not known why; it isn't how long the app was away. `public/push-sw
 fallback is possible: a push that arrived moments ago and has gone from `getNotifications()` was probably tapped. A missed
 tap only leaves the app where it was, so it doesn't hold back part B. (`feedback.js` in the log was Vercel's preview toolbar.)
 
+**Sixth round (same day):** the owner: swiping on Today shows the white page, which `main` never does ("at main, we cant
+swipe left from Today"). **The spare entries caused that and are gone.** On a fresh open the iPhone has nothing under
+the first screen, so it offers no swipe at all; the spare entries gave it something to swipe to. What differs from `main`:
+- **`main`:** a reload on an inner screen keeps its depth, and tapping a tab goes back down to the real bottom of the history, so
+  Today ends up with nothing under it.
+- **Since S5:** a reload counts as depth 0 ("fresh page"), which keeps Back from those entries, but a tab tap then stays where
+  it is, so Today can have the old entries under it, and a swipe reaches them. Each deploy reloads the app, wherever
+  it is. That is the likely cause of the quick-swipe white screen on inner screens, and why it came "not every time": it needs a reload
+  on an inner screen earlier in that session. **Not proven on the iPhone.**
+- **The fix:** `reloadFromBottom` in `src/ui/router.ts`. An update's reload (`onNeedReload` in `src/main.tsx`) and the three
+  `location.replace('/')` in Settings first go down this page's own entries, which is safe, and reload at the bottom, on the same
+  screen. Tried in the dev app: from depth 2, and with a sheet open, it lands at index 0 with `canGoBack` false; three quick
+  `history.back()` and three quick Back taps stop at the bottom. `backing` and the slide's cancel stay.
+- **Still possible:** a reload it can't catch (the iPhone dropping the page in the background) leaves old entries. The log now says
+  "nav page start at depth N layer N entries N" on every load and "nav swipe to depth N" on each swipe, so the next white screen's
+  log shows whether old entries were there.
+
+**The missing `worker` lines in the last log prove nothing yet.** The log is in UTC. The trace build was created at 17:04:05 and
+the push came at 17:06:03. A new worker only installs when the app comes to the front, so an app already in the background
+most likely handled that push with the old worker, which has no trace. The app's reading side works (dev app: lines from the
+cache reach the log, and a kept tap is followed), but the worker's own writing can't run here. **After a deploy, open the app once before
+testing a push.** The worker now also traces how many windows the tap saw and whether the message was sent. Whether the tap reaches
+the worker in the failures is still unknown, so nothing else changed in the tap's path.
+
 ### S6 part B: production and the merge (step by step)
 
 Written in part A so it survives the compaction; check each against the code as you go. Claude can't do the

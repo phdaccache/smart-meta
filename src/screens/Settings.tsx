@@ -19,7 +19,7 @@ import { deletedToast, putBack, SwipeToDelete } from '../ui/SwipeToDelete'
 import { useIsDeveloper } from '../ui/developer'
 import { RELEASES } from '../lib/releases'
 import { ReleaseNotes } from './WhatsNew'
-import { navigate, useLocation } from '../ui/router'
+import { navigate, reloadFromBottom, useLocation } from '../ui/router'
 import { ValueLookSheet, ValueTile, valueLook } from '../ui/valueLook'
 import type { Value } from '../lib/types'
 import { resetIntro } from './Intro'
@@ -261,7 +261,7 @@ function SyncSection({ restore = false }: { restore?: boolean }) {
     setBusy(true)
     try {
       await signOut()
-      window.location.replace('/')
+      reloadFromBottom('/')
     } catch (e) {
       toast((e as Error).message)
       setBusy(false)
@@ -363,7 +363,7 @@ function DangerSection() {
   const run = async (fn: () => Promise<void>) => {
     try {
       await fn()
-      window.location.replace('/')
+      reloadFromBottom('/')
     } catch (e) {
       toast((e as Error).message)
     }
@@ -451,7 +451,7 @@ function DevSection({ devToday }: { devToday: string | null }) {
     setBusy(true)
     try {
       await fill(today)
-      window.location.replace('/')
+      reloadFromBottom('/')
     } catch (e) {
       toast((e as Error).message)
       setBusy(false)

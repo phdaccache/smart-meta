@@ -9,7 +9,7 @@ import { log, logUncaught } from './sync/log'
 import { CrashScreen } from './ui/CrashScreen'
 import { holdOpenLock, OpenTwice } from './ui/OpenTwice'
 import { installCaretAtEnd } from './ui/caret'
-import { navigate } from './ui/router'
+import { navigate, reloadFromBottom } from './ui/router'
 import './ui/install'
 import './styles.css'
 
@@ -39,6 +39,7 @@ document.addEventListener('visibilitychange', () => {
 })
 registerSW({
   immediate: true,
+  onNeedReload: () => reloadFromBottom(),
   // A Home Screen app coming back from the background doesn't reload, so it never looks for a new
   // version. Look each time it comes to the front: a new one installs and reloads the app at once.
   onRegisteredSW(_url, registration) {
