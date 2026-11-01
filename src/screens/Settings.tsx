@@ -10,6 +10,7 @@ import { canSignOut, deleteAccount, eraseAllData, signOut, syncNow, useSyncStatu
 import { SyncIcon } from '../ui/SyncNote'
 import { clearLog, readLog } from '../sync/log'
 import { pendingRequests } from '../sync/account'
+import { refreshPushStatus, setPushMode, type PushStatus } from '../sync/push'
 import { DateField, InfoTip, Screen, Section, Sheet, Stepper, Switch, toast, TypeToConfirm } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconChevronUpDown } from '../ui/icons'
@@ -24,6 +25,7 @@ import type { Value } from '../lib/types'
 import { resetIntro } from './Intro'
 import { openSignIn } from './Account'
 import { AvatarView, ProfileSheet } from '../ui/Avatar'
+import { useNotificationsShown, usePushStatus } from './Notifications'
 import { useProfile } from '../sync/profile'
 
 export function SettingsScreen() {
@@ -32,6 +34,7 @@ export function SettingsScreen() {
   const { query } = useLocation()
   const install = useInstall()
   const developer = useIsDeveloper()
+  const notifications = useNotificationsShown()
   const [news, setNews] = useState(false)
   const values = snap?.values ?? []
 
@@ -39,7 +42,7 @@ export function SettingsScreen() {
   if (query.get('view') === 'restore') {
     return (
       <Screen back="/" title={t('set.restoreTitle')}>
-        <SyncSection />
+        <SyncSection restore />
         <DataSection lastExportAt={settings.lastExportAt} />
         {developer && <DeveloperRow />}
       </Screen>
@@ -72,6 +75,7 @@ export function SettingsScreen() {
 
       <Section title={t('set.secApp')}>
         <div className="card list settings">
+          {notifications && <LinkRow title={t('notif.title')} onClick={() => navigate('/settings/notifications')} />}
           <SelectRow id="lang" title={t('set.language')} value={langSetting()} options={langs} onChange={setLangSetting} />
           <SelectRow id="rollover" title={t('set.newDay')} info={t('set.newDayInfo')} value={String(settings.rolloverHour)}
             options={Array.from({ length: 9 }, (_, h) => ({ value: String(h), label: formatTime(h * 60) }))}
@@ -222,7 +226,8 @@ function ago(iso: string | null): string {
   return t('set.daysAgo', { n: Math.round(h / 24) })
 }
 
-function SyncSection() {
+/** `restore`: shown by the intro's "Restore from a backup", where signing in never makes an account. */
+function SyncSection({ restore = false }: { restore?: boolean }) {
   const s = useSyncStatus()
   const [leaving, setLeaving] = useState<Awaited<ReturnType<typeof canSignOut>> | null>(null)
   const [busy, setBusy] = useState(false)
@@ -239,7 +244,7 @@ function SyncSection() {
     return (
       <Section title={t('set.sync')}>
         <div className="card list settings">
-          <LinkRow title={t('set.signInRow')} sub={t('set.signInSub')} onClick={() => openSignIn()} />
+          <LinkRow title={t('set.signInRow')} sub={t('set.signInSub')} onClick={() => openSignIn(false, restore)} />
         </div>
       </Section>
     )
@@ -428,7 +433,7 @@ function DevSection({ devToday }: { devToday: string | null }) {
   const [busy, setBusy] = useState(false)
   const [debugPaint, setDebugPaint] = useState(() => document.documentElement.classList.contains('debug-paint'))
   const [logOpen, setLogOpen] = useState(false)
-  const { email, access } = useSyncStatus()
+  const { email, access, userId } = useSyncStatus()
   // Only the owner's account can list requests; anyone else's Developer section has no row for it.
   const waiting = useWaitingCount(access === 'member')
   const load = async (fill: (today: string) => Promise<void>) => {
@@ -476,8 +481,43 @@ function DevSection({ devToday }: { devToday: string | null }) {
           sub={email ? 'Sign out of sync first, so your real data stays safe.' : 'Long names, a one-letter value, emoji, links and counts of 1, for checking layouts.'} onClick={() => load(loadWorstCaseData)} />
         <LinkRow title="Diagnostics log" sub="Sign-in, keys and sync on this device, for finding what went wrong." onClick={() => setLogOpen(true)} />
       </div>
+      {access === 'member' && userId && <PushMode userId={userId} />}
       <DiagnosticsLog open={logOpen} onClose={() => setLogOpen(false)} />
     </Section>
+  )
+}
+
+/**
+ * Developer → Pushes, for the owner (the server checks): On, Shadow (only the owner and the beta list get
+ * them, the rest is logged), or Off, the kill switch (spec NO-16). Read again each time this page opens.
+ */
+function PushMode({ userId }: { userId: string }) {
+  const status = usePushStatus(userId)
+  const [busy, setBusy] = useState(false)
+  useEffect(() => {
+    void refreshPushStatus(userId)
+  }, [userId])
+  if (!status?.owner) return null
+  const modes: { value: PushStatus['mode']; label: string }[] = [
+    { value: 'on', label: 'On' }, { value: 'shadow', label: 'Shadow' }, { value: 'off', label: 'Off' },
+  ]
+  return (
+    <div className="card list settings" style={{ marginTop: 16 }}>
+      <SelectRow id="push-mode" title={busy ? 'Pushes…' : 'Pushes'} value={status.mode} options={modes}
+        info="For everyone on this server. Off is the kill switch: nothing is sent, and what waits is dropped once it’s 15 minutes late. Shadow sends only to you and the beta list, and logs the rest."
+        onChange={async (mode) => {
+          if (busy) return
+          setBusy(true)
+          try {
+            await setPushMode(userId, mode)
+            toast(`Pushes: ${modes.find((m) => m.value === mode)?.label}`)
+          } catch (e) {
+            toast((e as Error).message)
+          } finally {
+            setBusy(false)
+          }
+        }} />
+    </div>
   )
 }
 

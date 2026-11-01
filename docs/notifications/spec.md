@@ -34,12 +34,15 @@ and projects; photo avatars; Google sign-in if it becomes reliable on iPhone.
 
 - **AC-1** [S2] Sign-in and sign-up are one flow: the user types an email, receives a **6-digit code**
   and types it in the app. No link opens Safari. No password. Friends create their own accounts.
+  [S5] Except from the intro's **"Restore from a backup"**: there only an existing account signs in; a new
+  email gets the usual "Something went wrong. Try again." and no code, so the screen doesn't tell who
+  uses the app. (Owner, 2026-10-31.)
 - **AC-2** [S2] Codes are sent from a **dedicated app Gmail account**, not the owner's personal one.
 - **AC-3** [S2] A **captcha** (Cloudflare Turnstile) runs before a code is sent, including "resend".
 - **AC-4** [S2] Without approval, a signed-in user sees **"Waiting for access"**, keeps using the app on
   the phone, and stores **nothing** on the server.
 - **AC-5** [S2] The owner approves each new request with **one tap** from a Requests screen in
-  Developer mode. Only the owner can approve. [S5] The owner gets a **push for each new request**.
+  Developer mode. Only the owner can approve. [S5] The owner gets a **push for each new request**: "New request", with the email as its body.
   (Push moved to S5 by the owner 2026-10-29.)
 - **AC-6** [S2] At most `N-1` members. Past that, new users see that the list is full and keep waiting.
 - **AC-7** [S2] On approval, everything the user created locally uploads, and a green banner on Today
@@ -116,15 +119,28 @@ and projects; photo avatars; Google sign-in if it becomes reliable on iPhone.
 
 Types:
 - **NO-1** [S5] **Morning summary**: one push, default time `N-11`, editable, optional **weekdays
-  only**, skipped on empty days; lists timed items first, then late, then the rest, at most `N-13`
-  names and "+N more". Shows item names (content), since it's encrypted end to end.
-- **NO-2** [S5] **Due dates:** items without a time appear in the morning summary; items **with a
-  time** also get a push **at that time**. Project steps follow the same rule.
-- **NO-3** [S5] **Custom reminders**, once only, on **tasks, projects, project steps, preps and
-  commitments** (not goals). Always sent.
+  only**, skipped on empty days. Title "Today: N things"; body how many of each kind, a kind with none left
+  out: "Tasks: 4, Preps: 2, Commitments: 2, Projects: 3" (a project's current step counts for Projects).
+  [S5, owner, 2026-10-31: replaced the list of up to `N-13` names.]
+- **NO-2** [S5] **Due dates:** items with a due date appear in the morning summary. An item pushes only
+  through its Notification card (NO-3), with or without a time (owner, 2026-10-31; before, items with a
+  time pushed at that time by themselves). Project steps follow the same rule.
+- **NO-3** [S5] **Custom reminders**, once only, on **tasks, projects, project steps and preps** (not
+  goals; not commitments for now, repeating reminders come later). Set on a **Notification card** that
+  appears when the item has a date: "None" to start; a menu of choices counted back from the due date and
+  time ("At the time" or "On the day" first), listing only those still ahead; and Custom (1 to 200
+  minutes, hours, days, weeks or months). With a date only, it fires at the morning summary's time. A
+  prep's reminder follows each of its times. Always sent. [S5, owner, 2026-10-31] A **project step** sets it
+  from a bell beside its end date on the project's page, whether that date was set or spread; a **prep** in
+  its sheet on the goal's page (laid out as rows like a task), up to 1 day before. [S5, owner, 2026-10-31]
+  The choices open in the phone's own picker (as a task's goal or project does); Custom's wheels offer only
+  what's still ahead of now; tapping Custom's red line folds the wheels and keeps the choice. Saving with
+  a notification whose time has passed (the date moved closer, or the screen stayed open past it) asks
+  first: "This notification's time has passed. Nothing will be sent for it." Save anyway, or Change it.
 - **NO-4** [S5] **Weekly review**: its own push on Monday, with its **own editable time** (default
   `N-12`).
-- **NO-5** [S6] **Preps with a time**: a push at that time.
+- **NO-5** [S5] **Preps** don't push by themselves; their Notification card does (NO-3). (Owner,
+  2026-10-31; before, every prep with a time pushed at that time in S6.)
 - **NO-6** [S6] **Goal review date reached**: a push.
 - **NO-7** [S6] **Goal completed / target hit**: an in-app celebration, no push.
 - **NO-8** No pushes for: missed logging, goal status changes, sync, release notes, plan tomorrow,
@@ -132,20 +148,27 @@ Types:
 
 Rules:
 - **NO-9** [S5] Pushes **the app starts by itself** (summary, weekly review, goal review date): at most
-  `N-7` a day. Pushes the user asked for (custom reminders, items or preps with a time) **always** go
-  out. Items within `N-10` of each other are merged into one push.
+  `N-7` a day. Pushes the user asked for (reminders set on a Notification card) **always** go
+  out, **each as its own push**, as in Reminders: the phone stacks those that come together. ~~Items within
+  `N-10` of each other are merged into one push.~~ (Owner, 2026-10-31.)
 - **NO-10** [S5] Pushes arrive **on time** (normally within a minute). A push more than `N-9` late is
   dropped, never sent late.
 - **NO-11** [S5] **Finishing or deleting an item cancels** its pending push (once the phone has synced).
 - **NO-12** [S5] Late items are not pushed again.
-- **NO-13** [S5] Tapping a push **opens that item** (task, project, goal) or Today.
+- **NO-13** [S5] Tapping a push **opens that item** (task, project, goal) or Today. [S5, owner, 2026-10-31]
+  A reminder for something on Today (a task, the current step, today's prep) opens **Today**, scrolled to its
+  row, which lights up a moment, as in Reminders. When others reminded within `N-10` of it, Today's filter
+  shows "Now": those rows only, the tapped one lit; of the others, only those due today or late (an early
+  reminder for something due another day isn't "now"). Anything else opens its page.
 - **NO-14** [S5] Pushes use the **app's language** and the user's **time zone**, including travel and
   daylight saving.
 - **NO-15** [S5] Pushes go to **one device per account**: the latest that turned notifications on.
 - **NO-16** [S5] A server-side **fuse** (`N-8` pushes per user per day), a **kill switch**, and a send
-  log without content (kept `N-21`).
+  log without content (kept `N-21`). [S5, owner, 2026-10-31] The owner's own account has no fuse, for
+  testing.
 - **NO-17** [S5] Before friends: a **shadow period** (`N-22`) that logs what would be sent without
-  sending.
+  sending. [S5, owner, 2026-10-31] The owner adds members to it and takes them out in Developer →
+  Requests (a member's sheet).
 - **NO-18** [S5] Notifications require an account; without one, Settings explains why and offers
   sign-in.
 - **NO-27** [S5] **Subscriptions are kept alive:** each app open checks the push subscription and
@@ -155,8 +178,10 @@ Rules:
   encrypted; the server only delivers.
 
 Settings and indicators:
-- **NO-19** [S5] **Settings → Notifications:** a toggle per type, summary time, weekdays only, review
-  time.
+- **NO-19** [S5] **Settings → Notifications:** a toggle per type (morning summary, reminders,
+  weekly review, goal review dates), summary time, weekdays only, review time. Reached from the first
+  row of Settings → App. The settings follow the account: synced and encrypted like the rest, so every
+  phone of the account plans the same pushes (owner, 2026-10-31).
 - **NO-20** [S6] **App icon badge:** toggle, **off by default**, counts **late + left today** (not the
   review).
 - **NO-21** [S6] **Lock-screen details:** on by default; off sends generic text.
@@ -250,10 +275,10 @@ code (RE-5), and add a line to the plan's change log. "Where" says what enforces
 | N-7 | **3** | Pushes per day the app starts by itself | Phone planner |
 | N-8 | **20** | Pushes per user per day, safety fuse | Server |
 | N-9 | **15 minutes** | A push later than this is dropped | Server |
-| N-10 | **15 minutes** | Items this close in time are merged into one push | Phone planner |
+| N-10 | **15 minutes** | Reminders this close before the one tapped show with it under Today's "Now" (until 2026-10-31: merged into one push) | Phone |
 | N-11 | **8:00** | Morning summary default time (user can change) | Phone |
 | N-12 | **Monday 8:00** | Weekly review push default (user can change the time) | Phone |
-| N-13 | **3** | Item names listed in the morning summary before "+N more" | Phone |
+| ~~N-13~~ | ~~3~~ | ~~Item names listed in the morning summary before "+N more"~~ (the summary counts kinds since 2026-10-31) | |
 | N-14 | **30 minutes** | An undo within this erases the check-in instead of keeping it as history | Phone |
 | N-15 | **2 seconds** | Sync waits this long after the last change | Phone |
 | N-16 | **10 seconds** | Longest wait during continuous editing | Phone |

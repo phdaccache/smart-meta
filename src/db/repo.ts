@@ -1,11 +1,12 @@
 import { addDays, diffDays, formatTime, logicalDate, parseTime } from '../lib/dates'
 import { commitmentRevision } from '../lib/revisions'
 import type { CommitmentDraft, GoalDraft, PrepDraft } from '../lib/draft'
-import { QUICK_UNDO_MS } from '../numbers'
+import { DEFAULT_PREFS, type Prefs } from '../lib/planner'
+import { CHANGE_OF_MIND_MS, QUICK_UNDO_MS } from '../numbers'
 import { activeEntries, meetsTarget, missKey, type MissAsks, type MissPrompt } from '../lib/scoring'
 import type {
   Base, Commitment, DateStr, Entry, Goal, GoalReview, GoalState, ID, MissReason, Occurrence, Prep, Project, ProjectState,
-  Task, Value, WeekReview,
+  Reminder, Task, Value, WeekReview,
 } from '../lib/types'
 import { db, type Collection, type CollectionTypes } from './db'
 import { getMeta, getSettings, setMeta } from './settings'
@@ -132,6 +133,7 @@ export function draftFromCommitment(c: Commitment): CommitmentDraft {
 
 const prepFields = (p: PrepDraft, commitmentId: ID): Fields<Prep> => ({
   commitmentId, title: p.title.trim(), fireWeekdays: [...p.fireWeekdays].sort(), fireTime: p.fireTime.trim(),
+  ...(p.reminder !== undefined && { reminder: p.reminder }),
 })
 
 export async function activeGoalCount(): Promise<number> {
@@ -445,7 +447,8 @@ export async function deleteOccurrence(o: Occurrence) {
 
 /** `projectId` makes it the project's next step; `forProjectId` a task of the project's own. */
 export async function createTask(fields: {
-  title: string; note?: string | null; date?: DateStr | null; time?: string | null; goalId?: ID | null; projectId?: ID | null; forProjectId?: ID | null
+  title: string; note?: string | null; date?: DateStr | null; time?: string | null; reminder?: Reminder | null; goalId?: ID | null
+  projectId?: ID | null; forProjectId?: ID | null
 }) {
   let order: number | null = null
   if (fields.projectId) {
@@ -455,14 +458,23 @@ export async function createTask(fields: {
   return put('tasks', make<'tasks'>({
     title: fields.title.trim(), date: fields.date ?? null, time: fields.date ? fields.time ?? null : null, goalId: fields.forProjectId || fields.projectId ? null : fields.goalId ?? null,
     projectId: fields.projectId ?? null, order, forProjectId: fields.projectId ? null : fields.forProjectId ?? null, note: fields.note?.trim() || null,
+    reminder: fields.date ? fields.reminder ?? null : null, dateSetAt: fields.date ? new Date().toISOString() : null,
   }))
 }
 
 export async function updateTask(t: Task, changes: Partial<Fields<Task>>) {
-  // A task's date put off (later, or taken off) keeps the old one, shown struck through from then on.
+  // A task's date put off (later, or taken off) keeps the old one, shown struck through from then on. Not
+  // when it was set the same day or a moment ago: that's a change of mind (owner, 2026-10-31).
   const cur = (await db.tasks.get(t.id)) ?? t
-  if ('date' in changes && cur.date && !cur.projectId && (!changes.date || changes.date > cur.date)) {
-    changes = { ...changes, movedFrom: [...(cur.movedFrom ?? []), cur.date] }
+  if ('date' in changes && (changes.date ?? null) !== (cur.date ?? null)) {
+    const { rolloverHour } = await getSettings()
+    const now = new Date()
+    const setAt = new Date(cur.dateSetAt ?? cur.createdAt)
+    const changedMind = now.getTime() - setAt.getTime() < CHANGE_OF_MIND_MS || logicalDate(now, rolloverHour) === logicalDate(setAt, rolloverHour)
+    if (cur.date && !cur.projectId && (!changes.date || changes.date > cur.date) && !changedMind) {
+      changes = { ...changes, movedFrom: [...(cur.movedFrom ?? []), cur.date] }
+    }
+    changes = { ...changes, dateSetAt: changes.date ? now.toISOString() : null }
   }
   return patch('tasks', t.id, changes)
 }
@@ -478,11 +490,13 @@ export async function restoreTask(id: ID) {
 
 /** Projects made on their own wait in the backlog (`state: 'backlog'`); a template's start with their goal. */
 export async function createProject(fields: {
-  title: string; note?: string; targetDate: DateStr | null; time?: string | null; goalId?: ID | null; steps: string[]; state?: ProjectState
+  title: string; note?: string; targetDate: DateStr | null; time?: string | null; reminder?: Reminder | null; goalId?: ID | null
+  steps: string[]; state?: ProjectState
 }) {
   const project = make<'projects'>({
     title: fields.title.trim(), note: fields.note?.trim() || null, targetDate: fields.targetDate,
-    time: fields.targetDate ? fields.time || null : null, goalId: fields.goalId ?? null, state: fields.state ?? 'active',
+    time: fields.targetDate ? fields.time || null : null, reminder: fields.targetDate ? fields.reminder ?? null : null,
+    goalId: fields.goalId ?? null, state: fields.state ?? 'active',
   })
   const steps = fields.steps
     .map((s) => s.trim())
@@ -534,7 +548,7 @@ export async function reorderSteps(steps: Task[]) {
 export async function promoteTask(t: Task) {
   const project = make<'projects'>({
     title: t.title, note: t.note?.trim() || null, targetDate: t.date ?? null, time: t.date ? t.time ?? null : null,
-    goalId: t.goalId ?? null, state: 'active',
+    reminder: t.date ? t.reminder ?? null : null, goalId: t.goalId ?? null, state: 'active',
   })
   await putAll([{ c: 'projects', r: project }, { c: 'tasks', r: { ...t, deletedAt: now() } }])
   return project
@@ -560,4 +574,16 @@ export async function dismissInReview(week: DateStr, keys: string | string[]) {
 export async function markWeekReviewed(week: DateStr, dismiss: string[] = []) {
   const w = await weekReviewFor(week)
   await put('weekReviews', { ...w, doneAt: now(), dismissed: [...new Set([...w.dismissed, ...dismiss])] })
+}
+
+// ——— Settings → Notifications ———
+
+/** The one prefs record's id: the same on every phone, so the account has one. */
+export const PREFS_ID = 'notifications'
+
+/** Settings → Notifications, synced like the rest (made on the first change; until then, the defaults). */
+export async function setPrefs(changes: Partial<Prefs>) {
+  const cur = await db.prefs.get(PREFS_ID)
+  const t = now()
+  await put('prefs', { ...DEFAULT_PREFS, id: PREFS_ID, createdAt: t, updatedAt: t, ...cur, ...changes, deletedAt: null })
 }

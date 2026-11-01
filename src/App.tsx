@@ -22,7 +22,9 @@ import { WhatsNew } from './screens/WhatsNew'
 import { introRoute, IntroStart } from './screens/Intro'
 import { PrivacyScreen } from './screens/Privacy'
 import { accountRoute, KeysPrompt } from './screens/Account'
+import { NotificationsScreen } from './screens/Notifications'
 import { DeveloperOnly } from './ui/developer'
+import { phoneOwner } from './sync/controller'
 import { Screen } from './ui/components'
 
 const TABS: { path: string; label: Key; Icon: typeof IconToday }[] = [
@@ -48,6 +50,7 @@ function route(path: string, query: URLSearchParams) {
   if (path === '/settings') return <SettingsScreen />
   if (path === '/settings/values') return <ValuesScreen />
   if (path === '/settings/account') return <AccountScreen />
+  if (path === '/settings/notifications') return <NotificationsScreen />
   if (path === '/privacy') return <PrivacyScreen />
   if (path === '/settings/developer') return <DeveloperOnly><DeveloperScreen /></DeveloperOnly>
   if (path === '/review') return <ReviewScreen />
@@ -68,18 +71,21 @@ export function App() {
   const lang = useLang()
   const settings = useSettingsLoaded()
   const goalCount = useLiveQuery(() => db.goals.filter((g) => !g.deletedAt).count(), [])
+  // Someone has signed in on this phone (it has an owner): the first run is behind them.
+  const owned = useLiveQuery(async () => !!(await phoneOwner()), [])
   const { path, query } = useLocation()
   const today = useToday(settings?.rolloverHour ?? 4)
   const reviewDot = useLiveQuery(
     async () => reviewPending(await db.goals.toArray(), await db.weekReviews.toArray(), today),
     [today],
   )
-  if (!settings || goalCount == null) return null
+  if (!settings || goalCount == null || owned == null) return null
 
-  // Settings live on the device; goals arrive with sync, so a restored phone skips first run.
-  const onboarding = !settings.onboarded && goalCount === 0
+  // Settings live on the device; goals arrive with sync, so a restored phone skips first run. Signed in
+  // with nothing to restore (a new account, from the intro's "Restore"), it's Today with Getting started.
+  const onboarding = !settings.onboarded && goalCount === 0 && !owned
   // Signing in from the intro's "Restore" (a new phone) happens before any goal is here.
-  const firstRunPage = path.startsWith('/welcome') || path.startsWith('/account') || path === '/settings' || path === '/privacy'
+  const firstRunPage = path.startsWith('/welcome') || path.startsWith('/account') || path === '/settings' || path === '/settings/notifications' || path === '/privacy'
   const content = onboarding && !firstRunPage ? <IntroStart /> : route(path, query)
   const tabbed = !onboarding && hasTabs(path)
   // Each screen scrolls in a layer of its own, and the ones it was opened from stay drawn underneath,

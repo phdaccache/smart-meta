@@ -929,7 +929,8 @@ function IntroPieces() {
 export function GettingStarted({ snap }: { snap: Snapshot }) {
   const settings = useSettings()
   const weekReviews = useWeekReviews()
-  if (!settings.gettingStarted) return null
+  // A phone that skipped the intro by signing in, with no goal yet, gets it too (see App).
+  if (!settings.gettingStarted && (settings.onboarded || snap.goals.length > 0)) return null
   const items = [
     { key: 'goal', done: snap.goals.length > 0, title: t('gs.firstGoal'), action: () => { resetIntro({ short: true }); navigate('/welcome/goal/smart') } },
     { key: 'check', done: snap.entries.some((e) => !e.deletedAt) || snap.occurrences.length > 0, title: t('gs.firstCheckIn') },
@@ -950,7 +951,8 @@ export function GettingStarted({ snap }: { snap: Snapshot }) {
     <div className="card getting-started">
       <div className="gs-head">
         <h2>{t('gs.title')}</h2>
-        <button className="icon-btn" aria-label={t('gs.hide')} onClick={() => setSettings({ gettingStarted: false })}><IconClose width={18} height={18} /></button>
+        {/* Hidden for good, also on a phone that skipped the intro by signing in (not onboarded yet). */}
+        <button className="icon-btn" aria-label={t('gs.hide')} onClick={() => setSettings({ gettingStarted: false, onboarded: true })}><IconClose width={18} height={18} /></button>
       </div>
       <ul>
         {items.map((i) => {

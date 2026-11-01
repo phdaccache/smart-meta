@@ -5,10 +5,11 @@ import { inject, pageview } from '@vercel/analytics'
 import { App } from './App'
 import { initLang } from './i18n'
 import { startSync } from './sync/controller'
-import { logUncaught } from './sync/log'
+import { log, logUncaught } from './sync/log'
 import { CrashScreen } from './ui/CrashScreen'
 import { holdOpenLock, OpenTwice } from './ui/OpenTwice'
 import { installCaretAtEnd } from './ui/caret'
+import { navigate } from './ui/router'
 import './ui/install'
 import './styles.css'
 
@@ -47,6 +48,42 @@ registerSW({
     })
   },
 })
+// Tapping a push: the service worker opens the app where the push points, or brings an open one to the front
+// and says where to go. It also leaves the tap in a cache (public/push-sw.js), read here on start and each
+// time the app comes to the front: on the iPhone, an open app came to the front but its message never came.
+const launchedAt = location.pathname + location.search
+/** The last tap handled, so the message and the cache don't both act on it. */
+let lastTap = 0
+function openTapped(path: unknown, at: number, how: string) {
+  if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//') || at <= lastTap) return
+  lastTap = at
+  log('push', 'tapped', how, path.split('?')[0], path.includes('remind=') ? 'remind' : '')
+  // Already there, it stays: going again would leave the same screen twice in Back's way. Opened at it, too.
+  if (path !== location.pathname + location.search && !(how === 'kept' && path === launchedAt)) navigate(path)
+}
+navigator.serviceWorker?.addEventListener('message', (e: MessageEvent) => {
+  if (e.data?.type === 'open') openTapped(e.data.path, typeof e.data.at === 'number' ? e.data.at : Date.now(), 'message')
+})
+/** A tap this recent is still to be followed; an older one was for a moment that's gone. */
+const TAP_FRESH_MS = 60_000
+async function readTap() {
+  try {
+    const cache = await caches.open('smart-meta-tap')
+    const res = await cache.match('/__tap')
+    if (!res) return
+    await cache.delete('/__tap')
+    const tap = (await res.json()) as { path?: unknown; at?: unknown }
+    if (typeof tap.at === 'number' && Date.now() - tap.at < TAP_FRESH_MS) openTapped(tap.path, tap.at, 'kept')
+  } catch {
+    // No cache (private mode, an old browser): the message is all there is.
+  }
+}
+// The worker may still be writing it as the app shows: look again a moment later.
+const lookForTap = () => [0, 600, 2000].forEach((ms) => setTimeout(() => void readTap(), ms))
+if ('caches' in window) {
+  lookForTap()
+  document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && lookForTap())
+}
 logUncaught()
 holdOpenLock()
 startSync()

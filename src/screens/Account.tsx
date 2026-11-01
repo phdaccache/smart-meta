@@ -16,9 +16,10 @@ import {
   localRow, NoPrfError, passkeysWork, setUpWithPasskey, setUpWithPassword, unlockWithPasskey, unlockWithPassword,
 } from '../sync/keys'
 import { useCaptcha } from '../ui/captcha'
-import { holdKeyboard, PageText, passKeyboard, Screen, Section, Sheet, toast } from '../ui/components'
+import { holdKeyboard, PageText, passKeyboard, Screen, Section, Sheet, Switch, toast } from '../ui/components'
+import { pushBeta, setPushBeta } from '../sync/push'
 import { IconChevronLeft, IconChevronRight } from '../ui/icons'
-import { goBack, navigate, openOver, useLocation } from '../ui/router'
+import { backTo, currentDepth, goBack, navigate, openOver, useLocation } from '../ui/router'
 import { SwipeToDelete } from '../ui/SwipeToDelete'
 import { inIosBrowser } from './Intro'
 import { DeveloperOnly } from '../ui/developer'
@@ -46,11 +47,20 @@ export function accountRoute(path: string): ReactNode | null {
 let fromActivate = false
 /** Whether the Face ID step is part of a sign-in (with dots), or shown on its own, as the app opens. */
 let signingIn = false
+/** Begun at the intro's "Restore from a backup": only an existing account signs in (plan §16). */
+let restoring = false
+/** Where the sign-in began (see currentDepth): leaving it at the Face ID step goes back there. */
+let startDepth = 0
 
-/** Opens the email step, ready to type. Called in the tap, for the keyboard (see holdKeyboard). */
-export function openSignIn(activate = false) {
+/**
+ * Opens the email step, ready to type. Called in the tap, for the keyboard (see holdKeyboard). `restore`:
+ * from "Restore from a backup", where a new email isn't made into an account.
+ */
+export function openSignIn(activate = false, restore = false) {
   fromActivate = activate
+  restoring = restore
   signingIn = true
+  startDepth = currentDepth()
   if (!inIosBrowser()) holdKeyboard()
   navigate('/account/email')
 }
@@ -226,7 +236,7 @@ function EmailScreen() {
       const address = email.trim().toLowerCase()
       // The same address within the minute: the code already sent still works.
       if (address !== typedEmail || Date.now() - sentAt > RESEND_SECONDS * 1000) {
-        await sendCode(address, captcha.take)
+        await sendCode(address, captcha.take, !restoring)
         sentAt = Date.now()
       }
       typedEmail = address
@@ -292,7 +302,7 @@ function CodeScreen() {
   const resend = async () => {
     setError(null)
     try {
-      await sendCode(typedEmail, captcha.take)
+      await sendCode(typedEmail, captcha.take, !restoring)
       restart()
       setCode('')
       toast(t('acct.resent'))
@@ -387,10 +397,18 @@ export function KeysPrompt() {
   return null
 }
 
-/** Leaves the key for later: sync waits, and the app goes on. */
+/**
+ * Leaves the key for later: sync waits, and the app goes on. Back goes where the person was before: where
+ * the sign-in began (Settings, the Restore page, Today), past its used-up steps; Today after Activate
+ * notifications, the intro's end; or, for the screen opened on its own (Settings → Sync, or as the app
+ * opens), the screen under it.
+ */
 const later = () => {
+  const wasSigningIn = signingIn
   signingIn = false
-  navigate('/')
+  if (wasSigningIn && !fromActivate) backTo(startDepth, '/')
+  else if (wasSigningIn) navigate('/')
+  else goBack('/')
 }
 
 function passkeyError(e: unknown): string {
@@ -432,7 +450,7 @@ function LockScreen() {
       sub={byPhone('acct.lockSub', 'acct.lockSubOther')} step={signingIn ? 'lock' : undefined}
       foot={error && <p className="field-error account-hint">{error}</p>}
       nav={<button className="btn primary block" disabled={busy} onClick={go}>{byPhone('acct.lockGo', 'acct.lockGoOther')}</button>}
-      below={<button className="quiet-link" onClick={() => navigate('/account/password')}>{byPhone('acct.lockTrouble', 'acct.lockTroubleOther')}</button>} />
+      below={<button className="quiet-link" onClick={() => navigate('/account/password?from=lock')}>{byPhone('acct.lockTrouble', 'acct.lockTroubleOther')}</button>} />
   )
 }
 
@@ -473,6 +491,8 @@ function PasswordScreen() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const saved = useRef('')
+  // Asked for from the Face ID screen: Back returns to it. In its place (Face ID can't work here): leaving.
+  const fromLock = useLocation().query.get('from') === 'lock'
   useEffect(() => { prompted = true }, [])
 
   const submit = async () => {
@@ -500,7 +520,7 @@ function PasswordScreen() {
 
   const check = phase === 'check'
   return (
-    <Page form onBack={later} bar={t('acct.yourData')} title={t(check ? 'acct.pwCheckTitle' : 'acct.pwTitle')}
+    <Page form onBack={fromLock ? () => goBack('/account/lock') : later} bar={t('acct.yourData')} title={t(check ? 'acct.pwCheckTitle' : 'acct.pwTitle')}
       sub={check ? t('acct.pwCheckSub', { email }) : byPhone('acct.pwSub', 'acct.pwSubOther')} step={signingIn ? 'lock' : undefined}
       nav={<button className="btn primary block" disabled={busy || !password} onClick={submit}>
         {t(check ? 'common.continue' : 'acct.pwSave')}
@@ -693,6 +713,8 @@ function RequestsScreen() {
   const { query } = useLocation()
   const [waiting, setWaiting] = useState<Request[] | null>(null)
   const [approved, setApproved] = useState<Member[]>([])
+  /** Members who get real pushes while Pushes is on Shadow (0010); null before 0010 or while loading. */
+  const [beta, setBeta] = useState<Set<string> | null>(null)
   const me = useSyncStatus().userId
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -704,6 +726,8 @@ function RequestsScreen() {
       setWaiting(w)
       setApproved(m)
       setError(null)
+      // Its own call: before 0010 is pasted, Requests still works, without the switch.
+      setBeta(await pushBeta().catch((e) => (log('push beta', e), null)))
     } catch (e) {
       setError((e as Error).message)
     }
@@ -749,6 +773,15 @@ function RequestsScreen() {
     await load()
   }
   const sureOut = (m: Member) => confirm(t('acct.removeQ', { email: m.email }))
+  const toggleBeta = async (m: Member, on: boolean) => {
+    setBeta((b) => b && new Set(on ? [...b, m.userId] : [...b].filter((x) => x !== m.userId)))
+    try {
+      await setPushBeta(m.userId, on)
+    } catch (e) {
+      toast((e as Error).message)
+      await load()
+    }
+  }
 
   const initial = (email: string) => <span className="initial" aria-hidden="true">{email.charAt(0).toUpperCase()}</span>
   return (
@@ -780,7 +813,9 @@ function RequestsScreen() {
                     {m.avatar ? <AvatarView avatar={m.avatar} size={32} /> : initial(m.email)}
                     <div className="text">
                       <div className="title ellipsis">{m.name || m.email}</div>
-                      <div className="sub ellipsis">{m.name ? `${m.email} · ${askedText(m.approvedAt)}` : askedText(m.approvedAt)}</div>
+                      <div className="sub ellipsis">
+                        {[m.name && m.email, askedText(m.approvedAt), beta?.has(m.userId) && t('acct.beta')].filter(Boolean).join(' · ')}
+                      </div>
                     </div>
                   </button>
                 )
@@ -808,6 +843,14 @@ function RequestsScreen() {
                 <div className="sub">{t(open.request ? 'acct.asked' : 'acct.approvedOn')}</div><div className="title">{askedFull(open.at)}</div>
               </div></div>
             </div>
+            {open.member && open.member.userId !== me && beta && (
+              <div className="card list settings request-beta">
+                <div className="list-row">
+                  <div className="text"><div className="title">{t('acct.beta')}</div><div className="sub">{t('acct.betaSub')}</div></div>
+                  <Switch checked={beta.has(open.member.userId)} label={t('acct.beta')} onChange={(on) => toggleBeta(open.member!, on)} />
+                </div>
+              </div>
+            )}
             {open.member && open.member.userId !== me && (
               <div className="sheet-actions column">
                 <button className="btn danger block" onClick={() => sureOut(open.member!) && out(open.member!)}>{t('acct.removeMember')}</button>

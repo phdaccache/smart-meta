@@ -274,8 +274,8 @@ export function PrepSheet({ commitment, editing, onClose }: { commitment: Commit
   if (editing !== key) {
     setKey(editing)
     setTried(false)
-    setDrafts(editing === 'new' ? [{ title: '', fireWeekdays: [], fireTime: '21:00' }]
-      : editing ? [{ title: editing.title, fireWeekdays: editing.fireWeekdays, fireTime: editing.fireTime }] : [])
+    setDrafts(editing === 'new' ? [{ title: '', fireWeekdays: [], fireTime: '21:00', reminder: null }]
+      : editing ? [{ title: editing.title, fireWeekdays: editing.fireWeekdays, fireTime: editing.fireTime, reminder: editing.reminder ?? null }] : [])
   }
   if (!editing) return null
   const d = drafts[0]
@@ -285,13 +285,19 @@ export function PrepSheet({ commitment, editing, onClose }: { commitment: Commit
     else await updatePrep(editing, d)
     onClose()
   }
+  const dirty = !!d && (editing === 'new' ? !!d.title.trim() || d.fireWeekdays.length > 0
+    : d.title !== editing.title || d.fireTime !== editing.fireTime || d.fireWeekdays.join() !== editing.fireWeekdays.join()
+      || JSON.stringify(d.reminder ?? null) !== JSON.stringify(editing.reminder ?? null))
+  // Laid out like the task sheet (owner's pick 8b): Save at the top, the rows, then Delete.
   return (
-    <Sheet open onClose={onClose} title={editing === 'new' ? t('goal.prepFor', { name: commitment.label }) : t('goal.editPrep')}>
-      <PrepEditor preps={drafts} onChange={(p) => p.length ? setDrafts(p) : onClose()} showErrors={tried} removable={false} />
-      <div className="sheet-actions">
-        {editing !== 'new' && <button className="btn danger" onClick={async () => { await removePrep(editing); onClose() }}>{t('common.delete')}</button>}
-        <button className="btn primary" onClick={save}>{t('common.save')}</button>
-      </div>
+    <Sheet open large onClose={onClose} title={editing === 'new' ? t('goal.prepFor', { name: commitment.label }) : t('common.prep')}
+      done={{ label: t('common.save'), onClick: save }} dirty={dirty}>
+      <PrepEditor preps={drafts} onChange={(p) => p.length ? setDrafts(p) : onClose()} showErrors={tried} removable={false} notify />
+      {editing !== 'new' && (
+        <div className="stack" style={{ marginTop: 16 }}>
+          <button className="btn danger block" onClick={async () => { await removePrep(editing); onClose() }}>{t('goal.deletePrep')}</button>
+        </div>
+      )}
     </Sheet>
   )
 }

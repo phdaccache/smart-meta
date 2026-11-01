@@ -108,7 +108,7 @@ const ITEM = 36
 const pad = (n: number) => String(n).padStart(2, '0')
 
 /** One column of the wheel: scrolls and snaps, and the row in the middle is the choice. */
-function Wheel(props: { count: number; value: number; label: string; onChange: (n: number) => void; format?: (i: number) => string; className?: string }) {
+export function Wheel(props: { count: number; value: number; label: string; onChange: (n: number) => void; format?: (i: number) => string; className?: string }) {
   const ref = useRef<HTMLDivElement>(null)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
   useEffect(() => {

@@ -10,10 +10,14 @@ import { buildDay, type Snapshot, type TodayGroup, type TodayItem } from '../lib
 import type { Commitment, DateStr, ID, MissReason, Task } from '../lib/types'
 import { CheckButton, Chip, DatePickerButton, DueText, Screen, Segmented, Sheet, toast } from '../ui/components'
 import { ProjectTile, ValueTile } from '../ui/valueLook'
-import { useDisplacements, useMissAsksLoaded, useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
+import { useDisplacements, useMissAsksLoaded, usePrefs, useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
+import { DEFAULT_PREFS, remindedRows } from '../lib/planner'
+import { phoneTimeZone } from '../lib/zoned'
+import { NOW_MS } from '../numbers'
+import { log } from '../sync/log'
 import { dismissedMisses, reviewPending } from '../lib/review'
 import { IconCalendar, IconCheck, IconChevronLeft, IconChevronRight, IconFilter, IconNote, IconPlus } from '../ui/icons'
-import { navigate } from '../ui/router'
+import { navigate, useLocation } from '../ui/router'
 import { SwipeToDelete } from '../ui/SwipeToDelete'
 import { openQuickAdd } from './QuickAdd'
 import { OccurrenceSheet } from './OccurrenceSheet'
@@ -101,7 +105,11 @@ function applyWhen(groups: TodayGroup[], when: When, today: DateStr): TodayGroup
  * The filter button and the menu it opens, as on the iPhone: the menu grows out of the button,
  * the choice is ticked, and a tap anywhere else closes it. The button fills while a filter is on.
  */
-function WhenMenu({ value, onChange }: { value: When; onChange: (w: When) => void }) {
+function WhenMenu({ value, now, onChange }: {
+  value: When; onChange: (w: When) => void
+  /** Opened from a push that came with others: "Now" is on, and shown first. */
+  now: boolean
+}) {
   // Closing keeps it shown a moment, while it shrinks back into the button.
   const [phase, setPhase] = useState<'closed' | 'open' | 'closing'>('closed')
   const open = phase === 'open'
@@ -128,17 +136,23 @@ function WhenMenu({ value, onChange }: { value: When; onChange: (w: When) => voi
   }, [open])
   return (
     <div className="when" ref={wrap}>
-      <button type="button" className={`icon-btn filter-btn ${value !== 'all' ? 'on' : ''}`} aria-label={t('today.when')}
+      <button type="button" className={`icon-btn filter-btn ${value !== 'all' || now ? 'on' : ''}`} aria-label={t('today.when')}
         aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
         <IconFilter />
       </button>
       {phase !== 'closed' && (
         <div className={`menu ${phase === 'closing' ? 'closing' : ''}`} role="menu" aria-label={t('today.when')}>
           <div className="menu-title">{t('today.when')}</div>
+          {now && (
+            <button type="button" role="menuitemradio" aria-checked className="menu-item" onClick={() => setOpen(false)}>
+              <span className="menu-check"><IconCheck width={16} height={16} strokeWidth={2.4} /></span>
+              {t('today.whenNow')}
+            </button>
+          )}
           {WHENS.map((w) => (
-            <button key={w.value} type="button" role="menuitemradio" aria-checked={value === w.value} className="menu-item"
+            <button key={w.value} type="button" role="menuitemradio" aria-checked={!now && value === w.value} className="menu-item"
               onClick={() => { onChange(w.value); setOpen(false) }}>
-              <span className="menu-check">{value === w.value && <IconCheck width={16} height={16} strokeWidth={2.4} />}</span>
+              <span className="menu-check">{!now && value === w.value && <IconCheck width={16} height={16} strokeWidth={2.4} />}</span>
               {w.label()}
             </button>
           ))}
@@ -146,6 +160,41 @@ function WhenMenu({ value, onChange }: { value: When; onChange: (w: When) => voi
       )}
     </div>
   )
+}
+
+/** A push's link to a row on Today, kept for this app's session until shown (it survives a reload). */
+interface PendingRemind { remind: string; at: number; elsewhere: string | null; t: number }
+const REMIND_KEY = 'today-remind'
+/** Older than this, it's let go: the moment has passed. */
+const REMIND_KEEP_MS = 2 * 60_000
+
+function readPending(): PendingRemind | null {
+  try {
+    const p = JSON.parse(sessionStorage.getItem(REMIND_KEY) ?? 'null') as PendingRemind | null
+    return p && typeof p.remind === 'string' && Date.now() - p.t < REMIND_KEEP_MS ? p : null
+  } catch {
+    return null
+  }
+}
+
+function writePending(p: PendingRemind | null) {
+  try {
+    if (p) sessionStorage.setItem(REMIND_KEY, JSON.stringify(p))
+    else sessionStorage.removeItem(REMIND_KEY)
+  } catch {
+    // Private mode: it just won't survive a reload.
+  }
+}
+
+/** Whether the app is on screen. */
+function useVisible(): boolean {
+  const [visible, setVisible] = useState(() => document.visibilityState === 'visible')
+  useEffect(() => {
+    const on = () => setVisible(document.visibilityState === 'visible')
+    document.addEventListener('visibilitychange', on)
+    return () => document.removeEventListener('visibilitychange', on)
+  }, [])
+  return visible
 }
 
 export function TodayScreen({ date }: { date?: DateStr }) {
@@ -165,11 +214,88 @@ export function TodayScreen({ date }: { date?: DateStr }) {
   const view = useMemo(() => (snap && asks && weekReviews ? buildDay(snap, viewDate, ctx, asks, dismissed) : null),
     [snap, viewDate, ctx, asks, weekReviews, dismissed])
   const isPast = viewDate !== today
+  // Opening a task from a link (a project's own task pushed from elsewhere): over Today, which keeps the
+  // plain address, so Back doesn't open it again.
+  const query = useLocation().query
+  const linked = query.get('task')
+  useEffect(() => {
+    if (!linked || !snap) return
+    navigate('/', { replace: true })
+    const task = snap.tasks.find((x) => x.id === linked && !x.deletedAt)
+    if (task) setOpenTask(task)
+  }, [linked, snap])
+
+  // A reminder's push (owner, 2026-10-31): Today, scrolled to its row, which lights up a moment, as in
+  // Reminders. Others that reminded with it show together under the filter's "Now"; only the tapped one
+  // lights up. Not on Today (a step not current yet, a prep on another day): where it lives instead.
+  const prefs = usePrefs()
+  const remind = query.get('remind')
+  const [nowRows, setNowRows] = useState<string[] | null>(null)
+  /** The row to light up; `n` makes each tap a new one, even of the same row. */
+  const [flash, setFlash] = useState<{ key: string; n: number } | null>(null)
+  // The link is kept until it's been shown: on the iPhone the app often reloads right as a push opens it
+  // (updating itself), or gets the link before it's on screen, and both lost it (S5 test).
+  const [pending, setPending] = useState<PendingRemind | null>(readPending)
+  const visible = useVisible()
+  useEffect(() => {
+    if (!remind) return
+    const p: PendingRemind = { remind, at: Number(query.get('at')), elsewhere: query.get('else'), t: Date.now() }
+    log('remind', 'link', remind.split(':')[0])
+    writePending(p)
+    setPending(p)
+    navigate('/', { replace: true })
+  }, [remind])
+  useEffect(() => {
+    if (!pending || !visible || !snap || !view || prefs === undefined) return
+    const { remind: key, at, elsewhere } = pending
+    const items = view.groups.flatMap((g) => g.items).filter((i) => !i.done)
+    const open = new Set(items.map((i) => i.key))
+    if (!open.has(key)) {
+      // Not here yet: still on its way from the sync, so it waits (a little while at most).
+      const id = key.slice(key.indexOf(':') + 1)
+      if (!snap.tasks.some((x) => x.id === id) && !snap.preps.some((x) => x.id === id)) return
+      writePending(null)
+      setPending(null)
+      log('remind', 'elsewhere', key.split(':')[0])
+      if (elsewhere?.startsWith('/') && !elsewhere.startsWith('//')) navigate(elsewhere)
+      return
+    }
+    writePending(null)
+    setPending(null)
+    const input = { snap, prefs: prefs ?? DEFAULT_PREFS, now: Date.now(), timeZone: phoneTimeZone(), rolloverHour: settings.rolloverHour }
+    // "Now" is what's due now: an early reminder for something due another day stays out (owner, 2026-10-31).
+    const dueNow = new Set(items.filter((i) => !i.dueDate || i.dueDate <= today).map((i) => i.key))
+    const rows = Number.isFinite(at) ? remindedRows(input, at - NOW_MS, at + 60_000).filter((k) => k === key || dueNow.has(k)) : []
+    const together = rows.length > 1 && rows.includes(key)
+    setNowRows(together ? rows : null)
+    // Nothing on Today may hide the row.
+    if (!together && !applyWhen(applyFilter(view.groups, filter), when, today).some((g) => g.items.some((i) => i.key === key))) {
+      setFilter('all')
+      setWhen('all')
+    }
+    setFlash({ key, n: Date.now() })
+  }, [pending, visible, snap, view, prefs])
+  useEffect(() => {
+    if (!flash) return
+    // Jumps to the row at once, as Reminders does: a smooth scroll as the app came to the front didn't
+    // happen at all on the iPhone, and the row lit up below the screen, unseen (S5 test).
+    const row = document.querySelector<HTMLElement>(`[data-item="${CSS.escape(flash.key)}"]`)
+    log('remind', 'open', flash.key.split(':')[0], row ? 'found' : 'missing')
+    if (!row) return
+    const box = row.getBoundingClientRect()
+    if (box.top < 0 || box.bottom > (window.visualViewport?.height ?? window.innerHeight)) row.scrollIntoView({ block: 'center' })
+    row.classList.remove('flash')
+    void row.offsetWidth // a new tap on the same row plays again
+    row.classList.add('flash')
+  }, [flash])
 
   if (!snap || !view) return null
   // Past days show what was done; the date filter is for what's ahead.
-  const whenOn = !isPast && when !== 'all'
-  const shown = applyWhen(applyFilter(view.groups, filter), isPast ? 'all' : when, today)
+  const nowOn = !isPast && !!nowRows
+  const whenOn = !isPast && (when !== 'all' || nowOn)
+  const shown = nowOn
+    ? view.groups.map((g) => ({ ...g, items: g.items.filter((i) => nowRows.includes(i.key)), prompts: [] })).filter((g) => g.items.length > 0)
+    : applyWhen(applyFilter(view.groups, filter), isPast ? 'all' : when, today)
 
   let count = ''
   if (view.total > 0) {
@@ -189,7 +315,7 @@ export function TodayScreen({ date }: { date?: DateStr }) {
     <Screen
       // With a date filter on, the line under the date says which, so a short list is never a surprise.
       eyebrow={isPast ? t('today.pastDay', { date: dayMonth(viewDate) })
-        : [dayMonth(viewDate), whenOn ? WHENS.find((w) => w.value === when)!.label() : count].filter(Boolean).join(' · ')}
+        : [dayMonth(viewDate), nowOn ? t('today.whenNow') : whenOn ? WHENS.find((w) => w.value === when)!.label() : count].filter(Boolean).join(' · ')}
       eyebrowAside={!isPast && <SyncNote />}
       title={isPast && diffDays(viewDate, today) === 1 ? t('dates.Yesterday') : weekdayName(viewDate)}
       settings
@@ -200,7 +326,7 @@ export function TodayScreen({ date }: { date?: DateStr }) {
         </button>
       )}
       actions={<>
-        {!isPast && view.groups.length > 0 && <WhenMenu value={when} onChange={setWhen} />}
+        {!isPast && view.groups.length > 0 && <WhenMenu value={when} now={nowOn} onChange={(w) => { setNowRows(null); setWhen(w) }} />}
         <DatePickerButton className="icon-btn" value={viewDate} max={today} label={t('today.goToPastDay')} confirm={t('today.goToDay')}
           onPick={(d) => navigate(d === today ? '/' : `/day/${d}`)}>
           <IconCalendar />
@@ -216,7 +342,7 @@ export function TodayScreen({ date }: { date?: DateStr }) {
       ) : (
         <>
           <div className="today-filter">
-            <Segmented label={t('common.show')} value={filter} onChange={setFilter} options={[
+            <Segmented label={t('common.show')} value={nowOn ? 'all' : filter} onChange={(f) => { setNowRows(null); setFilter(f) }} options={[
               { value: 'all', label: t('common.all') }, { value: 'goals', label: t('today.filterGoals') },
               { value: 'projects', label: t('today.filterProjects') }, { value: 'tasks', label: t('today.filterTasks') },
             ]} />
@@ -410,7 +536,7 @@ function ItemRow({ item, date, today, onOpen }: { item: TodayItem; date: DateStr
     </>
   )
   return (
-    <li>
+    <li data-item={item.key}>
       {deletable ? (
         <SwipeToDelete className={rowClass} label={t('task.deleteNamed', { task: item.title })} onDelete={() => deleteWithUndo(item.subjectId)}>
           {content}

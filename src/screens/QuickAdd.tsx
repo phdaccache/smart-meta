@@ -1,8 +1,9 @@
 import { useState, useSyncExternalStore } from 'react'
 import { createTask } from '../db/repo'
 import { t } from '../i18n'
-import type { DateStr } from '../lib/types'
+import type { DateStr, Reminder } from '../lib/types'
 import { holdKeyboard, NoteField, Sheet, TitleField, toast } from '../ui/components'
+import { ReminderCard, usePassedCheck } from '../ui/ReminderCard'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { DateTimeRows, TaskLinks } from './TaskSheet'
 
@@ -42,17 +43,23 @@ function TaskForm({ today, onDone }: { today: DateStr; onDone: () => void }) {
   const [title, setTitle] = useState('')
   const [date, setDate] = useState<DateStr | null>(null)
   const [time, setTime] = useState('')
+  const [reminder, setReminder] = useState<Reminder | null>(null)
   const [note, setNote] = useState('')
   const [goalId, setGoalId] = useState<string | null>(preset.goalId ?? null)
   const [projectId, setProjectId] = useState<string | null>(preset.projectId ?? null)
   const project = snap?.projects.find((p) => p.id === projectId)
 
-  const save = async () => {
+  const passed = usePassedCheck()
+  const save = () => {
     if (!title.trim()) return
-    // Always a task: of a project (not a step), of a goal, or on its own.
-    await createTask({ title, note, date, time: time || null, goalId: project ? null : goalId, forProjectId: project?.id ?? null })
-    toast(project ? t('qa.addedTo', { project: project.title }) : t('common.added'))
-    onDone()
+    passed.guard(date ? reminder : null, date, time, async () => {
+      // Always a task: of a project (not a step), of a goal, or on its own.
+      await createTask({
+        title, note, date, time: time || null, reminder: date ? reminder : null, goalId: project ? null : goalId, forProjectId: project?.id ?? null,
+      })
+      toast(project ? t('qa.addedTo', { project: project.title }) : t('common.added'))
+      onDone()
+    })
   }
 
   return (
@@ -64,8 +71,10 @@ function TaskForm({ today, onDone }: { today: DateStr; onDone: () => void }) {
           <NoteField compact value={note} onChange={setNote} label={t('common.notes')} />
         </div>
         <DateTimeRows date={date} time={time} today={today} onChange={(d, tm) => { setDate(d); setTime(tm) }} />
+        <ReminderCard date={date} time={time} value={reminder} onChange={setReminder} />
         <TaskLinks projectId={projectId} goalId={goalId} onProject={setProjectId} onGoal={setGoalId} />
       </form>
+      {passed.ask}
     </Sheet>
   )
 }

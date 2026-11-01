@@ -9,9 +9,11 @@ import { toast } from '../ui/components'
 import { EncryptedTarget } from './encrypted'
 import { queueEverything, SyncEngine } from './engine'
 import { forgetAll, forgetKey, keepKeys, localLockState, readyKey, type LockState } from './keys'
-import { SYNC_AFTER_CHANGE_MS, SYNC_EVERY_MS, SYNC_MAX_WAIT_MS } from '../numbers'
+import { PLAN_AFTER_CHANGE_MS, SYNC_AFTER_CHANGE_MS, SYNC_EVERY_MS, SYNC_MAX_WAIT_MS } from '../numbers'
 import { log, short } from './log'
 import { startProfileSync, stopProfileSync } from './profile'
+import { planSoon } from './planner'
+import { checkPush, turnOffPush } from './push'
 import { SupabaseTarget, supabase, withKeepalive } from './supabase'
 
 /**
@@ -113,6 +115,8 @@ async function run() {
       phase: 'idle', error: null, lastSyncedAt: await e.lastSyncedAt(), pending,
       ...(recovered && { recoveredAt: Date.now() }),
     })
+    // Planned from the newest data of every device, so a task done anywhere takes its push back (spec NO-11).
+    if (status.userId && engine === e) void planSoon(status.userId)
   } catch (err) {
     log('sync failed', err)
     // Never surfaces as a blocking error: data is safe locally and will retry.
@@ -129,6 +133,20 @@ function afterChange() {
   const now = Date.now()
   firstChangeAt ??= now
   schedule(Math.max(0, Math.min(SYNC_AFTER_CHANGE_MS, firstChangeAt + SYNC_MAX_WAIT_MS - now)))
+  planAfterChange()
+}
+
+/**
+ * Pushes are planned from this phone's own data, so a change needn't wait for the sync: the owner set a
+ * reminder and locked the phone within the sync's 2 seconds, and its push never came (S5 test, 2026-10-31).
+ */
+let planTimer: ReturnType<typeof setTimeout> | undefined
+function planAfterChange(delay = PLAN_AFTER_CHANGE_MS) {
+  clearTimeout(planTimer)
+  planTimer = setTimeout(() => {
+    planTimer = undefined
+    if (status.userId && engine && navigator.onLine) void planSoon(status.userId)
+  }, delay)
 }
 
 /** Rows in the push sent while the app goes to the background: small enough for a keepalive request. */
@@ -140,6 +158,8 @@ let flushing = false
  * within seconds and closing it from the app switcher sends no event at all, so this can't wait.
  */
 async function flush() {
+  // A change waiting to be planned goes now, while the phone still lets the app run.
+  if (planTimer) planAfterChange(0)
   const e = engine
   if (!e || flushing || !navigator.onLine) return
   flushing = true
@@ -280,6 +300,7 @@ async function startEngine(userId: string) {
   engine.lastSyncedAt().then((lastSyncedAt) => set({ lastSyncedAt }))
   schedule(0)
   startProfileSync(supabase!, userId)
+  void checkPush(userId)
 }
 
 /** After Face ID or the data password: sync starts for a member; a waiting account is ready for later. */
@@ -343,8 +364,10 @@ export function startSync() {
 
   // Waiting for access, these look for the approval; a member syncs.
   const wake = (delay: number) => {
-    if (engine) schedule(delay)
-    else if (status.userId) void refreshAccess()
+    if (engine) {
+      schedule(delay)
+      if (status.userId) void checkPush(status.userId)
+    } else if (status.userId) void refreshAccess()
   }
   window.addEventListener('online', () => {
     set({ online: true })
@@ -399,6 +422,8 @@ export async function signOut(): Promise<void> {
   const userId = status.userId
   engine = null
   clearTimeout(timer)
+  // Signed out, this phone gets no more pushes. Offline, the server's copy stays until it fails.
+  if (userId) await turnOffPush(userId).catch((e) => log('push off failed', e))
   await supabase?.auth.signOut({ scope: 'local' })
   if (wipe) await wipeLocal(db)
   // Signed out, the phone is locked: signing in again asks for Face ID (spec PR-3).

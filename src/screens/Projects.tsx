@@ -5,13 +5,14 @@ import { marked, t } from '../i18n'
 import { addDays, dayMonth, dayMonthShort, diffDays, relativeDay } from '../lib/dates'
 import { activeEntries } from '../lib/scoring'
 import { stepDeadlines } from '../lib/today'
-import type { DateStr, Project, Task } from '../lib/types'
+import type { DateStr, Project, Reminder, Task } from '../lib/types'
 import { CheckButton, DatePickerButton, holdKeyboard, InfoTip, NoteField, PageText, passKeyboard, Screen, Section, TitleField, toast, TypeToConfirm } from '../ui/components'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconCalendar, IconClose } from '../ui/icons'
 import { Sortable } from '../ui/Sortable'
 import { deletedToast, putBack, SwipeToDelete } from '../ui/SwipeToDelete'
 import { navigate } from '../ui/router'
+import { ReminderCard, ReminderChip, usePassedCheck } from '../ui/ReminderCard'
 import { openQuickAddFor } from './QuickAdd'
 import { DateTimeRows, deleteWithUndo, GoalChoice, linkableGoals, TaskList } from './TaskSheet'
 
@@ -77,17 +78,21 @@ export function NewProjectScreen({ goalId: presetGoal }: { goalId?: string | nul
   // A month to start with; switched off, it has no due date.
   const [targetDate, setTargetDate] = useState<DateStr | null>(() => addDays(today, 30))
   const [time, setTime] = useState('')
+  const [reminder, setReminder] = useState<Reminder | null>(null)
   const [goalId, setGoalId] = useState<string | null>(presetGoal ?? null)
   const [steps, setSteps] = useState<DraftStep[]>([])
   const [tried, setTried] = useState(false)
   const form = useRef<HTMLDivElement>(null)
   useEffect(() => passKeyboard(() => form.current?.querySelector('textarea')), [])
 
-  const save = async () => {
+  const passed = usePassedCheck()
+  const save = () => {
     if (!title.trim()) return setTried(true)
-    const p = await createProject({ title, note, targetDate, time, goalId, steps: steps.map((s) => s.title), state: 'backlog' })
-    toast(t('project.savedBacklog'))
-    navigate(`/projects/${p.id}`, { replace: true })
+    passed.guard(targetDate ? reminder : null, targetDate, time, async () => {
+      const p = await createProject({ title, note, targetDate, time, reminder, goalId, steps: steps.map((s) => s.title), state: 'backlog' })
+      toast(t('project.savedBacklog'))
+      navigate(`/projects/${p.id}`, { replace: true })
+    })
   }
 
   return (
@@ -102,12 +107,14 @@ export function NewProjectScreen({ goalId: presetGoal }: { goalId?: string | nul
           {tried && !title.trim() && <div className="field-error" role="alert">{t('project.nameOutcome')}</div>}
         </div>
         <DateTimeRows date={targetDate} time={time} today={today} firstDate={addDays(today, 30)} onChange={(d, tm) => { setTargetDate(d); setTime(tm) }} />
+        <ReminderCard date={targetDate} time={time} value={reminder} onChange={setReminder} />
         {linkableGoals(snap, goalId).length > 0 && <div className="card list settings"><GoalChoice id="p-goal" goalId={goalId} onChange={setGoalId} /></div>}
       </div>
       <Section title={<span className="title-row">{t('project.steps')}<InfoTip label={t('project.steps')}><PageText text={marked('project.stepsHint')} /></InfoTip></span>}>
         <DraftSteps steps={steps} onChange={setSteps} />
       </Section>
       <div className="wizard-nav"><button className="btn primary" onClick={save}>{t('project.save')}</button></div>
+      {passed.ask}
     </Screen>
   )
 }
@@ -164,6 +171,7 @@ export function ProjectScreen({ id }: { id: string }) {
   const today = useToday(settings.rolloverHour)
   const snap = useSnapshot()
   const [editing, setEditing] = useState(false)
+  const passed = usePassedCheck()
   if (!snap) return null
   const project = snap.projects.find((p) => p.id === id)
   if (!project) {
@@ -205,13 +213,20 @@ export function ProjectScreen({ id }: { id: string }) {
         </div>
       )}
 
-      <Section title={t('common.details')} aside={<button className="link-btn" onClick={() => setEditing(!editing)}>{editing ? t('common.doneEditing') : t('common.edit')}</button>}>
+      {/* Changes save as they're made; leaving with a notification whose time has passed asks first. */}
+      <Section title={t('common.details')} aside={<button className="link-btn" onClick={() => (editing
+        ? passed.guard(project.reminder, project.targetDate, project.time, () => setEditing(false)) : setEditing(true))}>
+        {editing ? t('common.doneEditing') : t('common.edit')}</button>}>
         {editing ? (
           // As in Quick add, each its own card on the page: inside the details card, the date's card would be lost in it.
           <div className="task-form">
             <div className="card task-text"><ProjectTitle key={project.id} title={project.title} onSave={(title) => updateProject(project, { title })} /></div>
             <DateTimeRows date={project.targetDate ?? null} time={project.time ?? ''} today={today} firstDate={addDays(today, 30)}
-              onChange={(targetDate, time) => updateProject(project, { targetDate, time: targetDate && time ? time : null })} />
+              onChange={(targetDate, time) => updateProject(project, {
+                targetDate, time: targetDate && time ? time : null, ...(!targetDate && { reminder: null }),
+              })} />
+            <ReminderCard date={project.targetDate ?? null} time={project.time} value={project.reminder}
+              onChange={(reminder) => updateProject(project, { reminder })} />
             {linkableGoals(snap, project.goalId ?? null).length > 0 && (
               <div className="card list settings">
                 <GoalChoice id="pe-goal" goalId={project.goalId ?? null} onChange={(goalId) => updateProject(project, { goalId })} />
@@ -247,6 +262,11 @@ export function ProjectScreen({ id }: { id: string }) {
                     {!isDone && (
                       <div className="step-meta">
                         <StepEnd task={step} end={deadlines[steps.indexOf(step)]} />
+                        {/* Any step with a date, spread or set (owner's answers 7b and 9a). */}
+                        {deadlines[steps.indexOf(step)] && (
+                          <ReminderChip date={deadlines[steps.indexOf(step)]!} value={step.reminder} label={t('project.stepBell', { step: step.title })}
+                            onChange={(reminder) => updateTask(step, { reminder })} />
+                        )}
                       </div>
                     )}
                   </div>
@@ -282,6 +302,7 @@ export function ProjectScreen({ id }: { id: string }) {
           </details>
         </div>
       </Section>
+      {passed.ask}
     </Screen>
   )
 }

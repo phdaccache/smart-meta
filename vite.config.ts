@@ -31,7 +31,7 @@ export default defineConfig({
       manifest: {
         id: '/',
         name: 'Smart Meta',
-        short_name: 'Meta',
+        short_name: 'Smart Meta',
         description: 'Goals that survive the moment of decision.',
         start_url: '/',
         scope: '/',
@@ -49,6 +49,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true,
+        // Push and tapping a push (public/push-sw.js).
+        importScripts: ['push-sw.js'],
       },
     }),
   ],

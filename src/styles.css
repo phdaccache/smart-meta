@@ -213,6 +213,9 @@ a { color: var(--accent); }
   content: ''; position: absolute; top: 0; right: 0; left: 54px; border-top: 1px solid var(--line); pointer-events: none;
 }
 .items > li:first-child > .item::before { display: none; }
+/* The row a tapped reminder opened (owner, 2026-10-31): it lights up a moment, as in Reminders. */
+.items > li.flash > .item { animation: row-flash 2.4s ease-out; }
+@keyframes row-flash { 0%, 45% { background: var(--accent-soft); } 100% { background: transparent; } }
 /* A project's steps: the lines run the full width, on its page and while it's being made. */
 .step-list .item::before { left: 0; }
 .group-head + .items > li:first-child > .item::before, .prompt + .items > li:first-child > .item::before { display: block; }
@@ -650,6 +653,23 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .dt-text:disabled { cursor: default; }
 .dt-value { font-size: 14px; font-weight: 600; color: var(--accent); margin-top: 1px; }
 .dt-picker { border-top: 1px solid var(--line); padding: 8px 12px 12px; }
+
+/* The Notification card (S5): Custom's choice in red over its wheels; tapping it folds them (owner, 2026-10-31). */
+.custom-line { display: block; width: 100%; margin: 4px 0 6px; text-align: center; font-size: 15px; font-weight: 600; color: var(--danger); }
+button.custom-line { min-height: 36px; margin: -2px 0 0; }
+button.custom-line:active { opacity: 0.5; }
+.switch:disabled { opacity: 0.5; cursor: default; }
+
+/* Settings → Notifications (S5) */
+.card.dim .title { color: var(--ink-3); }
+/* "Weekdays only" under the summary's time. */
+.sub-switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; margin-top: 6px; padding: 4px 4px 0; border-top: 1px solid var(--line); font-size: 16px; }
+.notif-note { margin-bottom: 12px; font-size: 15px; line-height: 1.4; color: var(--ink-2); }
+.notif-denied { margin-bottom: 12px; display: grid; gap: 6px; justify-items: start; }
+.notif-denied-icon { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: color-mix(in srgb, var(--danger) 14%, var(--surface)); color: var(--danger); }
+.notif-denied h3 { margin: 4px 0 0; font-size: 17px; }
+.notif-denied p { margin: 0; color: var(--ink-2); font-size: 15px; }
+.notif-denied ol { margin: 4px 0 0; padding-left: 22px; display: grid; gap: 4px; font-size: 15px; }
 
 /* inline calendar and time wheels */
 .cal-head { display: flex; align-items: center; gap: 2px; padding: 0 0 4px 6px; }
@@ -1328,6 +1348,27 @@ li.done .gs-title { color: var(--ink-3); }
 .step-end.set { color: var(--accent); border-style: solid; border-color: color-mix(in srgb, var(--accent) 45%, transparent); background: var(--accent-soft); }
 .step-end-hit { display: inline-flex; align-items: center; gap: 4px; height: 100%; padding: 0 8px; font-size: 12.5px; font-weight: 600; }
 .step-end-clear { width: 24px; height: 100%; display: grid; place-items: center; margin-left: -6px; color: inherit; }
+/* A step's reminder (S5, owner's pick 7b): a bell beside its date; set, it says when. */
+.step-bell {
+  display: inline-flex; align-items: center; gap: 4px; height: 26px; min-width: 32px; justify-content: center; padding: 0 8px; border-radius: 7px;
+  border: 1px dashed var(--line-strong); color: var(--ink-2); font-size: 12.5px; font-weight: 600; position: relative;
+}
+/* A bigger target than it looks, as the date's button. */
+.step-bell::after { content: ''; position: absolute; inset: -9px -4px; }
+.step-bell.set { color: var(--accent); border-style: solid; border-color: color-mix(in srgb, var(--accent) 45%, transparent); background: var(--accent-soft); }
+.step-bell:active { opacity: 0.5; }
+/* The phone's own picker, laid over the bell and its wider target. */
+.step-bell select { position: absolute; inset: -9px -4px; width: calc(100% + 8px); height: calc(100% + 18px); opacity: 0; cursor: pointer; font-size: 16px; z-index: 1; }
+/* Preps as rows, like a task (S5, owner's pick 8b). */
+.prep-rows { display: grid; gap: 10px; }
+.prep-rows + .prep-rows { margin-top: 10px; }
+.prep-rows-head { display: flex; align-items: center; justify-content: space-between; min-height: 36px; margin: 0 4px -4px 16px; font-size: 13px; font-weight: 600; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.03em; }
+.prep-rows-head .prep-remove { position: static; }
+.prep-rows .dt-picker .weekdays { justify-content: center; }
+/* Inside a card (a new goal's form, the intro), the rows' own cards look like the form's other cards (Frequency). */
+.card .prep-rows > .card { background: var(--surface-2); border-radius: var(--radius-sm); }
+/* Its days as grey choices too, like the chips above them, not the page's darker color. */
+.card .prep-rows .weekdays button:not(.on) { background: var(--surface-2); border-color: transparent; }
 
 /* ——— notes ——— */
 
@@ -1680,6 +1721,15 @@ button, a, summary, [role='button'], .chip {
 .action-sheet-group .action-sheet-btn { border-radius: 0; }
 .action-sheet-btn.danger { color: var(--danger); }
 .action-sheet-btn.cancel { font-weight: 600; }
+/* Over everything (a sheet included), for an action sheet that isn't a sheet's own. */
+.action-sheet-layer { position: fixed; inset: 0; z-index: 90; }
+.action-sheet-layer .action-sheet { padding-bottom: calc(var(--safe-bottom) + 8px); }
+/* An action sheet's message, above its buttons, as iOS draws it. */
+.action-sheet-msg {
+  margin: 0; padding: 14px 16px; display: grid; gap: 4px; text-align: center; font-size: 13px; color: var(--ink-2);
+  background: var(--surface-raised); border-bottom: 1px solid var(--line);
+}
+.action-sheet-msg b { font-weight: 600; color: var(--ink-2); }
 .action-sheet-btn:active { background: color-mix(in srgb, var(--ink) 10%, var(--surface-raised)); transition-duration: 0s; }
 @media (prefers-reduced-motion: reduce) {
   .action-sheet-group, .action-sheet-btn.cancel { animation: fade 0.2s ease; }
@@ -1795,6 +1845,7 @@ button, a, summary, [role='button'], .chip {
 .request-detail .title { overflow-wrap: anywhere; }
 .request-face { display: flex; justify-content: center; margin: 4px 0 16px; }
 .request-detail .sub { margin: 0 0 2px; }
+.request-beta { margin-top: 16px; }
 .sheet-actions.column { flex-direction: column; gap: 4px; }
 .ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 

@@ -1,14 +1,14 @@
 import Dexie, { type Table } from 'dexie'
 import { asRhythm } from '../lib/migrations'
 import type {
-  Base, Commitment, Displacement, Entry, Goal, GoalReview, Occurrence, Prep, Project, Revision, Task, Value,
-  WeekReview,
+  Base, Commitment, Displacement, Entry, Goal, GoalReview, NotificationPrefs, Occurrence, Prep, Project, Revision, Task,
+  Value, WeekReview,
 } from '../lib/types'
 
 /** Every synced collection. The names are also the collection keys in Postgres. */
 export const COLLECTIONS = [
   'values', 'goals', 'commitments', 'preps', 'projects', 'tasks', 'entries',
-  'revisions', 'occurrences', 'displacements', 'goalReviews', 'weekReviews',
+  'revisions', 'occurrences', 'displacements', 'goalReviews', 'weekReviews', 'prefs',
 ] as const
 export type Collection = (typeof COLLECTIONS)[number]
 
@@ -25,6 +25,7 @@ export interface CollectionTypes {
   displacements: Displacement
   goalReviews: GoalReview
   weekReviews: WeekReview
+  prefs: NotificationPrefs
 }
 
 export interface MetaRow {
@@ -52,6 +53,8 @@ export class AppDB extends Dexie {
   displacements!: Table<Displacement, string>
   goalReviews!: Table<GoalReview, string>
   weekReviews!: Table<WeekReview, string>
+  /** Settings that follow the account to every phone: Settings → Notifications (one record, 'notifications'). */
+  prefs!: Table<NotificationPrefs, string>
   meta!: Table<MetaRow, string>
   outbox!: Table<OutboxItem, number>
 
@@ -86,6 +89,7 @@ export class AppDB extends Dexie {
         await tx.table('outbox').add({ collection: 'commitments', id: c.id, queuedAt: stamp })
       }
     })
+    this.version(4).stores({ prefs: 'id, updatedAt' })
   }
 
   coll<C extends Collection>(c: C): Table<CollectionTypes[C], string> {

@@ -1,0 +1,1266 @@
+<meta charset="utf-8">
+<title>Smart Meta S5 Mockups</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&display=swap">
+<style>
+/* Layout: desktop puts the views in a sidebar and the three layouts side by side as iPhones; a phone drops the frame and swipes between them. */
+:root {
+  /* The app's own tokens (src/styles.css). */
+  --bg: #f2f2f7; --surface: #ffffff; --surface-2: rgb(118 118 128 / 0.12); --surface-raised: #ffffff;
+  --ink: #000000; --ink-2: #6e6e73; --ink-3: #aeaeb2; --line: #e3e3e8; --line-strong: #c7c7cc;
+  --accent: #007aff; --accent-ink: #ffffff; --accent-soft: #e6f0ff; --seg-on: #ffffff;
+  --prep: #00879b; --on-track: #248a3d; --at-risk: #d70015; --danger: #d70015;
+  --c-pink: #ff2d55; --tile-mix: 16%; --glyph-ink: #000000; --glyph-mix: 88%;
+  --radius: 18px; --radius-sm: 12px;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1); --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', Roboto, system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', Roboto, system-ui, sans-serif;
+  /* iOS pieces drawn around the app: keyboard, alerts, the passkey sheet, Safari's bar. */
+  --kb: #d1d3d9; --kb-key: #ffffff; --kb-key-2: #acb1ba; --kb-shadow: rgb(0 0 0 / 0.3);
+  --sys: rgb(242 242 247 / 0.94); --alert: rgb(240 240 242 / 0.94); --alert-line: rgb(60 60 67 / 0.29);
+  --strong: #fdf5c4; --dim: rgb(0 0 0 / 0.35);
+  --frame: #1c1c1e; --frame-edge: #3a3a3c;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000; --surface: #1c1c1e; --surface-2: rgb(118 118 128 / 0.24); --surface-raised: #2c2c2e;
+    --ink: #ffffff; --ink-2: #98989f; --ink-3: #636366; --line: #38383a; --line-strong: #48484a;
+    --accent: #0a84ff; --accent-soft: #0b2a4a; --seg-on: #636366;
+    --prep: #40c8e0; --on-track: #30d158; --at-risk: #ff453a; --danger: #ff453a;
+    --c-pink: #ff375f; --tile-mix: 30%; --glyph-ink: #ffffff; --glyph-mix: 72%;
+    --kb: #2c2c2e; --kb-key: #6b6b6e; --kb-key-2: #464648; --kb-shadow: rgb(0 0 0 / 0.6);
+    --sys: rgb(28 28 30 / 0.94); --alert: rgb(44 44 46 / 0.94); --alert-line: rgb(84 84 88 / 0.6);
+    --strong: #3a3410; --dim: rgb(0 0 0 / 0.5);
+    --frame: #2c2c2e; --frame-edge: #48484a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000; --surface: #1c1c1e; --surface-2: rgb(118 118 128 / 0.24); --surface-raised: #2c2c2e;
+  --ink: #ffffff; --ink-2: #98989f; --ink-3: #636366; --line: #38383a; --line-strong: #48484a;
+  --accent: #0a84ff; --accent-soft: #0b2a4a; --seg-on: #636366;
+  --prep: #40c8e0; --on-track: #30d158; --at-risk: #ff453a; --danger: #ff453a;
+  --c-pink: #ff375f; --tile-mix: 30%; --glyph-ink: #ffffff; --glyph-mix: 72%;
+  --kb: #2c2c2e; --kb-key: #6b6b6e; --kb-key-2: #464648; --kb-shadow: rgb(0 0 0 / 0.6);
+  --sys: rgb(28 28 30 / 0.94); --alert: rgb(44 44 46 / 0.94); --alert-line: rgb(84 84 88 / 0.6);
+  --strong: #3a3410; --dim: rgb(0 0 0 / 0.5);
+  --frame: #2c2c2e; --frame-edge: #48484a;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 16px/1.4 var(--font); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+}
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+h1, h2, h3, p { margin: 0; }
+
+/* ——— review chrome ——— */
+.page {
+  max-width: 1200px; margin: 0 auto;
+  padding-left: max(24px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 120px; display: grid; gap: 20px;
+}
+.head { display: grid; gap: 6px; }
+.eyebrow { font-size: 13px; color: var(--ink-2); font-weight: 500; }
+.large-title { font: 700 34px/1.1 var(--font-display); letter-spacing: -0.02em; }
+.lede { color: var(--ink-2); font-size: 15px; max-width: 64ch; text-wrap: pretty; }
+.controls { display: grid; gap: 12px; }
+.steps { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  min-height: 34px; padding: 0 12px; border-radius: 999px; background: var(--surface-2);
+  font-size: 14px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out), transform 0.12s ease-out;
+}
+.chip:active { transform: scale(0.96); }
+.chip.on { background: var(--accent); color: var(--accent-ink); }
+.chip .n { font-variant-numeric: tabular-nums; opacity: 0.55; font-weight: 600; min-width: 1.2em; }
+.chip .pk { margin-left: auto; font-weight: 700; color: var(--on-track); }
+.chip.on .pk { color: var(--accent-ink); }
+.toggles { display: flex; gap: 10px; flex-wrap: wrap; }
+.segmented { display: flex; background: var(--surface-2); padding: 2px; border-radius: 9px; }
+.segmented button { min-height: 30px; padding: 0 12px; border-radius: 7px; font-size: 13px; font-weight: 500; transition: background 0.2s ease; }
+.segmented button.on { background: var(--seg-on); font-weight: 600; box-shadow: 0 3px 8px rgb(0 0 0 / 0.12), 0 1px 1px rgb(0 0 0 / 0.04); }
+.screens { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 28px 24px; align-items: start; }
+.opt { --dev-w: min(100%, 340px); display: grid; gap: 12px; justify-items: center; min-width: 0; }
+.opt-head { display: flex; align-items: baseline; gap: 8px; width: var(--dev-w); }
+.letter { flex: none; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: var(--surface-2); font-weight: 700; font-size: 14px; transform: translateY(-1px); }
+.opt-name { font: 600 17px/1.3 var(--font); letter-spacing: -0.01em; }
+.opt-note { width: var(--dev-w); font-size: 14px; color: var(--ink-2); line-height: 1.45; text-wrap: pretty; }
+.pick {
+  width: var(--dev-w); min-height: 44px; border-radius: 12px; font-weight: 600; font-size: 15px;
+  background: var(--surface-2); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out), transform 0.12s ease-out;
+}
+.pick:active { transform: scale(0.98); }
+.pick.on { background: var(--accent); color: var(--accent-ink); }
+.pick-all { width: var(--dev-w); font-size: 13px; color: var(--accent); font-weight: 500; min-height: 28px; margin-top: -6px; }
+.system-note { width: var(--dev-w); font-size: 13px; color: var(--ink-2); text-align: center; }
+
+.device {
+  width: var(--dev-w); aspect-ratio: 390 / 844; border-radius: 52px; padding: 11px;
+  background: var(--frame); box-shadow: inset 0 0 0 1.5px var(--frame-edge), 0 20px 50px rgb(0 0 0 / 0.18); position: relative;
+}
+.device::before { content: ''; position: absolute; top: 22px; left: 50%; width: 30%; height: 3.4%; transform: translateX(-50%); background: #000; border-radius: 99px; z-index: 30; }
+.scr { position: relative; height: 100%; border-radius: 42px; overflow: hidden; background: var(--bg); }
+.vp { position: absolute; top: 0; left: 0; width: 390px; height: 844px; transform-origin: 0 0; overflow: hidden; --st: 54px; --sb: 34px; }
+.vp.bare { --st: 14px; --sb: 10px; }
+
+.picks {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+  padding: 12px max(24px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(24px, env(safe-area-inset-left, 0px));
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8); backdrop-filter: blur(20px) saturate(1.8); border-top: 1px solid var(--line);
+}
+.picks-in { max-width: 1152px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+.picks-text { flex: 1; min-width: 0; font-size: 14px; color: var(--ink-2); }
+.picks-text b { color: var(--ink); font-weight: 600; }
+.copy { flex: none; min-height: 40px; padding: 0 16px; border-radius: 12px; font-weight: 600; font-size: 15px; background: var(--accent); color: var(--accent-ink); }
+.copy:disabled { opacity: 0.4; cursor: default; }
+.copy:active:not(:disabled) { opacity: 0.6; }
+.fallback { width: 100%; font: 13px/1.4 var(--font); padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); resize: none; }
+.dots { display: none; }
+.short { display: none; }
+
+@media (min-width: 1100px) {
+  .page {
+    max-width: 1560px; padding-block: 24px; column-gap: 44px; row-gap: 18px;
+    grid-template-columns: 250px 1fr; grid-template-rows: auto auto 1fr;
+    grid-template-areas: "head screens" "controls screens" "picks screens";
+  }
+  .head { grid-area: head; }
+  .controls { grid-area: controls; align-content: start; gap: 14px; }
+  .screens { grid-area: screens; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .opt { --dev-w: min(100%, 390px, calc((100dvh - 236px) * 0.4621)); }
+  .opt-note { min-height: 4.35em; }
+  .steps { flex-direction: column; align-items: stretch; gap: 4px; }
+  .chip { justify-content: flex-start; }
+  .toggles { flex-direction: column; }
+  .toggles .segmented button { flex: 1; }
+  .picks { grid-area: picks; position: static; padding: 0; background: none; border: 0; backdrop-filter: none; -webkit-backdrop-filter: none; align-self: end; }
+  .picks-in { flex-direction: column; align-items: stretch; gap: 10px; }
+}
+
+@media (max-width: 760px) {
+  html, body { overflow: hidden; }
+  .page { height: 100%; padding: 0; gap: 0; display: flex; flex-direction: column; }
+  .head { display: none; }
+  .screens { order: 1; flex: 1; min-height: 0; display: flex; gap: 0; overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none; }
+  .screens::-webkit-scrollbar { display: none; }
+  .opt { flex: 0 0 100%; scroll-snap-align: center; scroll-snap-stop: always; display: flex; flex-direction: column; gap: 0; height: 100%; }
+  .device { order: 1; width: 100%; flex: 1; min-height: 0; aspect-ratio: auto; border-radius: 0; padding: 0; background: none; box-shadow: none; }
+  .device::before { display: none; }
+  .scr { border-radius: 0; border-bottom: 1px solid var(--line); }
+  .opt-head, .opt-note, .pick, .pick-all, .system-note { order: 2; width: auto; align-self: stretch; margin-inline: 16px; }
+  .opt-head { margin-top: 10px; }
+  .opt-note { margin-top: 2px; font-size: 13px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .pick { margin-top: 8px; min-height: 40px; }
+  .pick-all { margin-top: 2px; }
+  .system-note { margin-block: 10px 4px; }
+  .dots { order: 2; display: flex; justify-content: center; gap: 7px; padding: 8px 0 2px; }
+  .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); transition: background 0.2s var(--ease-out), transform 0.2s var(--ease-out); }
+  .dots i.on { background: var(--ink); transform: scale(1.15); }
+  .controls { order: 3; padding: 6px 0 0; gap: 8px; }
+  .steps { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 0 16px; }
+  .steps::-webkit-scrollbar { display: none; }
+  .toggles { padding: 0 16px; flex-wrap: nowrap; }
+  .toggles .segmented { flex: 1; }
+  .toggles .segmented button { flex: 1; padding: 0 4px; }
+  .long { display: none; }
+  .short { display: inline; }
+  .picks { position: static; order: 4; border-top: 0; background: none; backdrop-filter: none; -webkit-backdrop-filter: none; padding: 8px 16px calc(10px + env(safe-area-inset-bottom, 0px)); }
+  .picks-text { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .copy { min-height: 36px; font-size: 14px; padding: 0 14px; }
+}
+
+/* ——— inside the phone: the app's own components ——— */
+.vp { font: 16px/1.4 var(--font); color: var(--ink); background: var(--bg); letter-spacing: normal; text-align: left; }
+.vp .layer { position: absolute; inset: 0; }
+.status {
+  position: absolute; top: 0; left: 0; right: 0; height: 54px; z-index: 25; display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 30px 0 52px; font: 600 17px/1 var(--font-display); color: var(--ink);
+}
+.status.light { color: #fff; }
+.status .icons { display: flex; gap: 6px; align-items: center; }
+.status svg { height: 12px; width: auto; fill: currentColor; }
+.vp.bare .status, .vp.bare .home { display: none; }
+.home { position: absolute; bottom: 8px; left: 50%; width: 140px; height: 5px; border-radius: 99px; transform: translateX(-50%); background: var(--ink); z-index: 40; }
+.home.light { background: #fff; }
+
+.screen { position: absolute; inset: 0; overflow: hidden; padding: calc(var(--st) + 14px) 16px 0; }
+.head-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.screen .eyebrow { margin-bottom: 2px; }
+.screen .large-title { overflow-wrap: anywhere; }
+.head-actions { display: flex; gap: 4px; margin-bottom: 2px; }
+.icon-btn { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 12px; color: var(--ink); }
+.icon-btn svg, .ico { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.card { background: var(--surface); border-radius: var(--radius); }
+.seg-app { display: flex; background: var(--surface-2); padding: 2px; border-radius: 9px; margin-bottom: 16px; }
+.seg-app span { flex: 1; min-height: 30px; display: grid; place-items: center; border-radius: 7px; font-size: 13px; font-weight: 500; }
+.seg-app span.on { background: var(--seg-on); font-weight: 600; box-shadow: 0 3px 8px rgb(0 0 0 / 0.12), 0 1px 1px rgb(0 0 0 / 0.04); }
+.group { overflow: hidden; margin-bottom: 12px; }
+.group-head { display: flex; gap: 12px; padding: 14px 12px 10px 16px; align-items: center; }
+.group-head .text { flex: 1; min-width: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+.chev { color: var(--ink-3); width: 20px; height: 20px; }
+.tile { flex: none; width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--c) var(--tile-mix), var(--surface)); color: color-mix(in srgb, var(--c) var(--glyph-mix), var(--glyph-ink)); }
+.tile svg { width: 15px; height: 15px; fill: currentColor; }
+.item { display: flex; align-items: center; gap: 2px; padding: 2px 14px 2px 6px; min-height: 52px; position: relative; }
+.item + .item::before, .group-head + .item::before { content: ''; position: absolute; top: 0; right: 0; left: 54px; border-top: 1px solid var(--line); }
+.check { width: 44px; height: 48px; display: grid; place-items: center; flex: none; }
+.check i { width: 24px; height: 24px; border: 1.5px solid var(--kc); border-radius: 50%; }
+.item-main { flex: 1; min-width: 0; padding: 11px 4px; }
+.item-title { font-size: 17px; line-height: 1.3; }
+.item-detail { font-size: 14px; color: var(--ink-2); margin-top: 1px; }
+.tabbar {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 10; padding-bottom: var(--sb);
+  background: color-mix(in srgb, var(--bg) 88%, transparent); -webkit-backdrop-filter: saturate(1.6) blur(18px); backdrop-filter: saturate(1.6) blur(18px);
+  border-top: 0.5px solid var(--line-strong);
+}
+.tabbar nav { display: flex; height: 58px; }
+.tabbar span { flex: 1; display: grid; place-items: center; align-content: center; gap: 2px; color: var(--ink-2); font-size: 10px; font-weight: 500; }
+.tabbar span.on { color: var(--accent); }
+.fab { position: absolute; z-index: 11; right: 16px; bottom: calc(58px + var(--sb) + 16px); width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; box-shadow: 0 4px 14px rgb(0 0 0 / 0.22); }
+.fab svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; }
+
+.btn { min-height: 44px; padding: 0 18px; border-radius: 12px; font-weight: 600; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: var(--surface-2); color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn.block { width: 100%; }
+.btn.big { min-height: 50px; font-size: 17px; border-radius: 14px; }
+.btn.ghost { background: none; padding: 0 8px; }
+.btn:disabled { opacity: 0.4; }
+.btn:active:not(:disabled) { opacity: 0.6; }
+.quiet { color: var(--accent); font-size: 15px; font-weight: 500; min-height: 44px; width: 100%; }
+.quiet.grey { color: var(--ink-2); }
+.field-label { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.input {
+  display: flex; align-items: center; min-height: 46px; padding: 10px 12px; border-radius: 12px; font-size: 17px;
+  border: 1px solid var(--line-strong); background: var(--surface);
+}
+.input.focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.caret { display: inline-block; width: 2px; height: 1.15em; background: var(--accent); margin-left: 1px; border-radius: 1px; animation: blink 1.1s steps(1) infinite; vertical-align: -0.15em; }
+@keyframes blink { 50% { opacity: 0; } }
+.input.strong { background: var(--strong); border-color: transparent; justify-content: space-between; gap: 8px; font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 15px; }
+.input.strong .badge { font-family: var(--font); font-size: 12px; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+.hint { font-size: 13px; color: var(--ink-2); line-height: 1.4; }
+.hint.lock { display: flex; gap: 6px; align-items: flex-start; }
+.hint.lock svg { flex: none; width: 14px; height: 14px; margin-top: 2px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.codes { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.codes span {
+  height: 56px; border-radius: 12px; border: 1px solid var(--line-strong); background: var(--surface);
+  display: grid; place-items: center; font: 600 26px/1 var(--font-display); font-variant-numeric: tabular-nums;
+}
+.codes span.focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.codes.gap span:nth-child(3) { margin-right: 6px; }
+.big-icon { width: 72px; height: 72px; border-radius: 18px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+.big-icon svg { width: 38px; height: 38px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.big-icon.green { background: color-mix(in srgb, var(--on-track) 16%, var(--surface)); color: var(--on-track); }
+.big-icon.round { border-radius: 50%; }
+.appicon { flex: none; width: 72px; height: 72px; border-radius: 17px; box-shadow: 0 6px 20px rgb(0 0 0 / 0.18); background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='rgb(44,93,143)'/%3E%3Cpath d='M29 52l14 14 29-30' fill='none' stroke='rgb(252,251,248)' stroke-width='10.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / cover; }
+.appicon.sm { width: 44px; height: 44px; border-radius: 10px; box-shadow: none; }
+
+/* A: the card on Today, and the sheet the steps run in */
+.signin-card { padding: 16px; margin-bottom: 12px; }
+.signin-card .row1 { display: flex; gap: 12px; align-items: flex-start; }
+.signin-card h3 { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
+.signin-card p { font-size: 15px; color: var(--ink-2); margin-top: 3px; line-height: 1.4; }
+.signin-card .actions { display: flex; gap: 8px; margin-top: 14px; align-items: center; }
+.signin-card .hint { margin-top: 12px; }
+.backdrop { position: absolute; inset: 0; background: var(--dim); z-index: 20; animation: fade 0.25s ease both; }
+@keyframes fade { from { opacity: 0; } }
+.sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 21; background: var(--bg); border-radius: 22px 22px 0 0;
+  display: flex; flex-direction: column; animation: sheet-in 0.42s var(--ease-drawer) both;
+}
+.sheet.large { top: calc(var(--st) + 10px); }
+.sheet.small { padding-bottom: calc(var(--sb) + 8px); }
+@keyframes sheet-in { from { transform: translateY(100%); } }
+.grabber { width: 36px; height: 5px; border-radius: 3px; background: var(--line-strong); margin: 6px auto 0; flex: none; }
+.sheet-bar { display: flex; align-items: center; gap: 8px; padding: 10px 8px 4px; }
+.sheet-bar .side { width: 84px; }
+.sheet-bar .side.r { text-align: right; }
+.sheet-bar h2 { flex: 1; text-align: center; font-size: 17px; font-weight: 600; }
+.sheet-bar .side button { color: var(--accent); font-size: 17px; min-height: 44px; padding: 0 8px; }
+.sheet-body { flex: 1; min-height: 0; overflow: hidden; padding: 16px 20px 0; display: flex; flex-direction: column; }
+.wizard-q { font: 700 24px/1.2 var(--font-display); letter-spacing: -0.01em; margin-bottom: 8px; }
+.wizard-lead { color: var(--ink-2); margin-bottom: 20px; line-height: 1.45; }
+.sheet-foot { padding: 12px 20px calc(var(--sb) + 8px); display: grid; gap: 2px; }
+.sheet-foot.on-kb { padding-bottom: 10px; }
+.sheet .stack { display: grid; gap: 14px; }
+.small-sheet { padding: 22px 20px 0; }
+.small-sheet h2 { font: 700 20px/1.25 var(--font-display); margin-bottom: 8px; }
+.small-sheet p { color: var(--ink-2); line-height: 1.45; }
+.small-sheet .actions { display: grid; gap: 4px; margin-top: 20px; }
+.toast { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(58px + var(--sb) + 84px); z-index: 30; background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 500; white-space: nowrap; animation: toast-in 0.3s var(--ease-out) both; }
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px) scale(0.96); } }
+
+/* B: full pages, like the intro */
+.page-b { position: absolute; inset: 0; display: flex; flex-direction: column; padding: calc(var(--st) + 6px) 24px 0; }
+.page-b .top { display: flex; justify-content: space-between; align-items: center; min-height: 44px; margin: 0 -8px 8px; }
+.page-b .back { color: var(--accent); font-size: 17px; display: inline-flex; align-items: center; gap: 0; min-height: 44px; padding: 0 6px 0 0; }
+.page-b .back svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.page-b .body { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.page-b .body.center { justify-content: center; padding-bottom: 40px; }
+.page-b .intro-title { font: 700 28px/1.15 var(--font-display); letter-spacing: -0.02em; text-wrap: balance; margin-top: 22px; }
+.page-b .intro-sub { color: var(--ink-2); font-size: 17px; line-height: 1.45; margin-top: 12px; max-width: 32ch; text-wrap: balance; }
+.page-b .form { width: 100%; text-align: left; margin-top: 28px; display: grid; gap: 12px; }
+.page-b .nav { display: grid; gap: 2px; padding: 16px 0 calc(var(--sb) + 10px); }
+.page-b .nav.on-kb { padding-bottom: 10px; }
+.page-b .nav .hint { text-align: center; margin-bottom: 10px; }
+.intro-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 16px; }
+.intro-dots i { width: 7px; height: 7px; border-radius: 4px; background: var(--line-strong); }
+.intro-dots i.on { width: 18px; background: var(--accent); }
+.intro-steps { list-style: none; margin: 28px 0 0; padding: 0; text-align: left; width: 100%; }
+.intro-steps li { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 16px; }
+.intro-steps li:first-child { border-top: 1px solid var(--line); }
+.intro-steps .n { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 14px; }
+.alert-wrap { position: absolute; inset: 0; z-index: 30; display: grid; place-items: center; background: var(--dim); animation: fade 0.2s ease both; }
+.alert { width: 270px; border-radius: 14px; background: var(--alert); -webkit-backdrop-filter: blur(30px); backdrop-filter: blur(30px); text-align: center; overflow: hidden; animation: pop 0.28s var(--ease-out) both; }
+@keyframes pop { from { opacity: 0; transform: scale(1.12); } }
+.alert .msg { padding: 19px 16px 18px; }
+.alert h3 { font-size: 17px; font-weight: 600; line-height: 1.3; }
+.alert p { font-size: 13px; line-height: 1.38; margin-top: 4px; }
+.alert .btns { border-top: 0.5px solid var(--alert-line); }
+.alert .btns button { display: block; width: 100%; min-height: 44px; font-size: 17px; color: var(--accent); }
+.alert .btns button + button { border-top: 0.5px solid var(--alert-line); }
+.alert .btns .b { font-weight: 600; }
+
+/* C: Settings style, like signing in to an Apple account */
+.page-c { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--bg); }
+.navbar { display: flex; align-items: center; padding: calc(var(--st) + 2px) 8px 6px; min-height: calc(var(--st) + 46px); }
+.navbar .side { width: 96px; display: flex; }
+.navbar .side.r { justify-content: flex-end; }
+.navbar .side button { color: var(--accent); font-size: 17px; min-height: 44px; padding: 0 8px; display: inline-flex; align-items: center; }
+.navbar .side button svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; margin-right: -2px; }
+.navbar .side button.b { font-weight: 600; }
+.navbar .side button:disabled { color: var(--ink-3); cursor: default; }
+.navbar h2 { flex: 1; text-align: center; font-size: 17px; font-weight: 600; }
+.page-c .content { flex: 1; min-height: 0; overflow: hidden; padding: 8px 16px 0; }
+.c-head { text-align: center; display: grid; justify-items: center; gap: 10px; padding: 8px 8px 22px; }
+.c-head .big-icon, .c-head .appicon { width: 64px; height: 64px; }
+.c-head h1 { font: 700 26px/1.2 var(--font-display); letter-spacing: -0.015em; text-wrap: balance; }
+.c-head p { color: var(--ink-2); font-size: 15px; line-height: 1.4; max-width: 34ch; text-wrap: balance; }
+.list { background: var(--surface); border-radius: 12px; overflow: hidden; }
+.lrow { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 11px 16px; position: relative; font-size: 17px; }
+.lrow + .lrow::before { content: ''; position: absolute; top: 0; right: 0; left: 16px; border-top: 0.5px solid var(--line-strong); }
+.lrow .k { flex: none; min-width: 92px; }
+.lrow .v { flex: 1; min-width: 0; text-align: right; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lrow .v.in { text-align: left; color: var(--ink); }
+.lrow.act { color: var(--accent); justify-content: center; }
+.lrow.act.left { justify-content: flex-start; }
+.lrow .sub { font-size: 13px; color: var(--ink-2); }
+.lrow .text { flex: 1; min-width: 0; }
+.lrow .approve { color: var(--accent); font-weight: 600; font-size: 15px; }
+.lrow .initials { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); font-size: 13px; font-weight: 600; color: var(--ink-2); flex: none; }
+.sec-head { font-size: 13px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.02em; margin: 22px 16px 7px; display: flex; justify-content: space-between; }
+.sec-foot { font-size: 13px; color: var(--ink-2); margin: 8px 16px 0; line-height: 1.4; }
+.banner { display: flex; gap: 12px; align-items: center; padding: 12px 12px 12px 14px; border-radius: var(--radius-sm); background: var(--accent-soft); margin-bottom: 12px; }
+.banner.green { background: color-mix(in srgb, var(--on-track) 14%, var(--surface)); }
+.banner .text { flex: 1; min-width: 0; }
+.banner b { display: block; font-size: 15px; font-weight: 600; }
+.banner span { display: block; font-size: 13px; color: var(--ink-2); margin-top: 1px; }
+.banner .ic { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; background: var(--accent); color: #fff; flex: none; }
+.banner.green .ic { background: var(--on-track); }
+.banner .ic svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.action-sheet { position: absolute; left: 8px; right: 8px; bottom: calc(var(--sb) + 4px); z-index: 30; display: grid; gap: 8px; animation: sheet-in 0.4s var(--ease-drawer) both; }
+.action-sheet .grp { border-radius: 14px; background: var(--alert); -webkit-backdrop-filter: blur(30px); backdrop-filter: blur(30px); overflow: hidden; text-align: center; }
+.action-sheet .msg { padding: 14px 16px; font-size: 13px; color: var(--ink-2); line-height: 1.38; }
+.action-sheet .msg b { display: block; font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+.action-sheet button { display: block; width: 100%; min-height: 57px; font-size: 20px; color: var(--accent); border-top: 0.5px solid var(--alert-line); }
+.action-sheet .cancel button { border-top: 0; font-weight: 600; background: var(--surface-raised); }
+
+/* B and A: Requests as cards */
+.req-card { display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 14px; }
+.req-card + .req-card { margin-top: 10px; }
+.req-card .text { flex: 1; min-width: 0; }
+.req-card .em { font-size: 16px; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.req-card .when { font-size: 13px; color: var(--ink-2); }
+.req-card .btn { min-height: 34px; padding: 0 14px; font-size: 14px; border-radius: 999px; }
+.big-count { display: flex; align-items: baseline; gap: 8px; margin: 4px 0 18px; }
+.big-count b { font: 700 40px/1 var(--font-display); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.big-count span { color: var(--ink-2); }
+.meter { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; margin: -8px 0 20px; }
+.meter i { display: block; height: 100%; width: 37%; background: var(--accent); border-radius: 3px; }
+.sec-title { font: 700 22px/1.2 var(--font-display); letter-spacing: -0.015em; margin: 6px 4px 10px; }
+
+/* iOS: keyboard, the passkey sheet and Safari's bar */
+.kb { position: absolute; left: 0; right: 0; bottom: 0; z-index: 22; background: var(--kb); padding: 0 3px var(--sb); }
+.kb-bar { height: 44px; display: flex; align-items: center; justify-content: center; gap: 0; font-size: 15px; }
+.kb-bar span { flex: 1; text-align: center; color: var(--ink); }
+.kb-bar span + span { border-left: 1px solid color-mix(in srgb, var(--ink) 15%, transparent); }
+.kb-bar .otp { line-height: 1.15; }
+.kb-bar .otp small { display: block; font-size: 12px; color: var(--ink-2); }
+.kb-row { display: flex; gap: 6px; justify-content: center; padding: 0 0 11px; }
+.kb-row:first-of-type { padding-top: 4px; }
+.kk { height: 42px; flex: 1; max-width: 34px; border-radius: 5px; background: var(--kb-key); box-shadow: 0 1px 0 var(--kb-shadow); display: grid; place-items: center; font-size: 22px; color: var(--ink); }
+.kk.s { background: var(--kb-key-2); max-width: 44px; font-size: 15px; }
+.kk.w { max-width: none; flex: 4; font-size: 15px; }
+.kk.m { max-width: 88px; flex: 1.6; font-size: 15px; }
+.kk.go { background: var(--accent); color: #fff; max-width: 88px; flex: 1.6; font-size: 15px; }
+.kb-row.pad { gap: 6px; padding: 0 3px 7px; }
+.kb-row.pad .kk { max-width: none; height: 46px; display: flex; flex-direction: column; justify-content: center; gap: 0; font-size: 24px; line-height: 1; }
+.kb-row.pad .kk small { font-size: 9px; font-weight: 600; letter-spacing: 0.15em; margin-top: 1px; }
+.kb-row.pad .kk.blank { background: none; box-shadow: none; }
+.kb-pad { padding-top: 6px; }
+.syssheet { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 30; border-radius: 38px; background: var(--sys); -webkit-backdrop-filter: blur(40px); backdrop-filter: blur(40px); padding: 18px 22px 22px; text-align: center; animation: sheet-in 0.45s var(--ease-drawer) both; }
+.syssheet .x { position: absolute; right: 16px; top: 16px; width: 30px; height: 30px; border-radius: 50%; background: var(--surface-2); display: grid; place-items: center; color: var(--ink-2); }
+.syssheet .x svg { width: 12px; height: 12px; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+.syssheet .site { font-size: 13px; color: var(--ink-2); margin-top: 6px; }
+.syssheet .key { width: 60px; height: 60px; margin: 12px auto 12px; color: var(--accent); }
+.syssheet .key svg { width: 60px; height: 60px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.syssheet h3 { font-size: 20px; font-weight: 700; line-height: 1.25; text-wrap: balance; }
+.syssheet p { font-size: 15px; color: var(--ink-2); line-height: 1.38; margin: 8px 6px 20px; }
+.syssheet .btn { min-height: 52px; border-radius: 16px; font-size: 17px; }
+.syssheet .other { color: var(--accent); font-size: 17px; min-height: 44px; margin-top: 4px; width: 100%; }
+.faceid-glyph { position: absolute; z-index: 31; left: 50%; top: 38%; width: 120px; height: 120px; transform: translate(-50%, -50%); border-radius: 26px; background: var(--alert); -webkit-backdrop-filter: blur(30px); backdrop-filter: blur(30px); display: grid; place-items: center; color: var(--ink); animation: pop 0.3s var(--ease-out) 0.5s both; }
+.faceid-glyph svg { width: 64px; height: 64px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.safari { position: absolute; left: 0; right: 0; bottom: 0; z-index: 12; padding: 8px 12px calc(var(--sb) + 2px); background: color-mix(in srgb, var(--bg) 92%, transparent); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border-top: 0.5px solid var(--line-strong); }
+.safari .addr { height: 46px; border-radius: 14px; background: var(--surface); box-shadow: 0 1px 6px rgb(0 0 0 / 0.08); display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 15px; }
+.safari .addr svg { width: 12px; height: 12px; fill: currentColor; color: var(--ink-2); }
+.safari .tools { display: flex; justify-content: space-between; padding: 10px 14px 0; color: var(--accent); }
+.safari .tools svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.vp.still .sheet, .vp.still > .backdrop { animation: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet, .action-sheet, .syssheet, .alert, .toast, .backdrop, .alert-wrap, .faceid-glyph { animation: fade 0.2s ease both; }
+  .caret { animation: none; }
+}
+
+/* ——— Settings → Notifications as picked: one page, switches that open their options, as in Quick Add ——— */
+:root { --c-green: #34c759; --c-orange: #ff9500; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --c-green: #30d158; --c-orange: #ff9f0a; } }
+:root[data-theme="dark"] { --c-green: #30d158; --c-orange: #ff9f0a; }
+.screen.scroll { overflow-y: auto; scrollbar-width: none; padding-bottom: 40px; }
+.screen.scroll::-webkit-scrollbar { display: none; }
+.sw { position: relative; flex: none; width: 51px; height: 31px; border-radius: 16px; background: var(--line-strong); transition: background 0.2s ease; cursor: pointer; }
+.sw::after { content: ''; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgb(0 0 0 / 0.2); transition: transform 0.3s var(--ease-drawer); }
+.sw.on { background: var(--c-green); }
+.sw.on::after { transform: translateX(20px); }
+.sw.dis { opacity: 0.45; cursor: default; }
+.lrow.dim .text, .lrow.dim .dt-text { opacity: 0.45; }
+.lrow.link { color: var(--accent); cursor: pointer; }
+.lrow.child { padding-left: 32px; }
+.lrow.child::before { left: 32px !important; }
+/* A switch with options: its value in blue under the label; the label opens and closes them. */
+.dt-text { flex: 1; min-width: 0; align-self: stretch; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; text-align: left; margin: -11px 0; padding: 11px 0; font-size: 17px; }
+.dt-text:disabled { cursor: default; }
+.dt-value { font-size: 14px; font-weight: 600; color: var(--accent); margin-top: 1px; }
+.dt-picker { position: relative; border-top: 0.5px solid var(--line-strong); padding: 8px 12px 12px; display: grid; gap: 8px; animation: open 0.3s var(--ease-out) both; }
+@keyframes open { from { opacity: 0; transform: translateY(-6px); } }
+.dt-picker .sub-row { display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 0 4px; font-size: 17px; border-top: 0.5px solid var(--line-strong); padding-top: 6px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.pair p { text-align: center; font-size: 13px; color: var(--ink-2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em; }
+.wheels { position: relative; display: flex; justify-content: center; align-items: center; gap: 4px; }
+.wheels::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 36px; transform: translateY(-50%); border-radius: 10px; background: var(--surface-2); pointer-events: none; }
+.wheel { position: relative; width: 72px; height: 180px; overflow-y: scroll; scroll-snap-type: y mandatory; padding: 72px 0; scrollbar-width: none; overscroll-behavior: contain;
+  mask-image: linear-gradient(transparent, #000 35%, #000 65%, transparent); -webkit-mask-image: linear-gradient(transparent, #000 35%, #000 65%, transparent); }
+.pair .wheel { width: 56px; }
+.wheel::-webkit-scrollbar { display: none; }
+.wheel-item { height: 36px; line-height: 36px; text-align: center; scroll-snap-align: center; font-size: 22px; font-variant-numeric: tabular-nums; color: var(--ink-2); cursor: pointer; }
+.wheel-item.on { color: var(--ink); font-weight: 600; }
+.wheels-colon { position: relative; font-size: 22px; font-weight: 600; }
+.banner { cursor: pointer; }
+.banner b { font-size: 16px; }
+.banner.static { cursor: default; }
+.state-card { padding: 18px 16px; display: grid; gap: 10px; justify-items: start; margin-bottom: 4px; }
+.state-card .ic { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: color-mix(in srgb, var(--c-orange) 16%, var(--surface)); color: var(--c-orange); }
+.state-card .ic svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.state-card h3 { font-size: 18px; font-weight: 650; letter-spacing: -0.01em; }
+.state-card p { font-size: 15px; color: var(--ink-2); line-height: 1.4; }
+.state-card ol { margin: 2px 0 0; padding-left: 20px; font-size: 15px; line-height: 1.6; }
+.state-card ol b { font-weight: 600; }
+.caption { width: var(--dev-w); font-size: 14px; color: var(--ink-2); line-height: 1.45; text-wrap: pretty; }
+.caption b { color: var(--ink); font-weight: 600; }
+@media (max-width: 760px) { .caption { order: 2; width: auto; align-self: stretch; margin: 10px 16px 0; font-size: 13px; } }
+
+/* ——— S5 additions: reminder on an item, push texts, questions ——— */
+:root {
+  --c-red: #ff3b30; --c-blue: #007aff; --c-gray: #8e8e93;
+  --wall: linear-gradient(150deg, #7b9bd0, #3d5a8e 60%, #2b3f66);
+  --nt-bg: rgb(250 250 252 / 0.84); --nt-ink: #000000; --nt-ink-2: rgb(60 60 67 / 0.7);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --c-red: #ff453a; --c-blue: #0a84ff; --c-gray: #98989d;
+  --wall: linear-gradient(150deg, #2c3d5c, #18223a 60%, #0f1626);
+  --nt-bg: rgb(44 44 48 / 0.84); --nt-ink: #ffffff; --nt-ink-2: rgb(235 235 245 / 0.6);
+} }
+:root[data-theme="dark"] {
+  --c-red: #ff453a; --c-blue: #0a84ff; --c-gray: #98989d;
+  --wall: linear-gradient(150deg, #2c3d5c, #18223a 60%, #0f1626);
+  --nt-bg: rgb(44 44 48 / 0.84); --nt-ink: #ffffff; --nt-ink-2: rgb(235 235 245 / 0.6);
+}
+.vp.still .dt-picker, .vp.still .alert-wrap, .vp.still .alert { animation: none; }
+@media (prefers-reduced-motion: reduce) { .dt-picker { animation: none !important; } }
+.subchips { display: flex; gap: 6px; flex-wrap: wrap; }
+.subchips .chip { min-height: 30px; font-size: 13px; }
+.scen-note { font-size: 13px; color: var(--ink-2); line-height: 1.45; }
+@media (min-width: 1100px) {
+  .subchips { flex-direction: column; align-items: stretch; gap: 4px; }
+  .screens.one { grid-template-columns: minmax(0, 390px); justify-content: center; }
+  .panel { grid-area: screens; }
+}
+@media (max-width: 760px) {
+  .subchips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 0 16px; }
+  .scen-note { padding: 0 16px; }
+  .panel { order: 1; flex: 1; min-height: 0; overflow-y: auto; padding: 16px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px)); }
+  .get { order: 2; width: auto; align-self: stretch; margin: 6px 16px 0; }
+  .get .wall { display: none; }
+}
+
+/* The task sheet */
+.today-behind { position: absolute; inset: 0; padding: calc(var(--st) + 14px) 16px 0; }
+.sheet-scroll { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; padding: 10px 16px 48px; display: grid; gap: 18px; align-content: start; }
+.sheet-scroll::-webkit-scrollbar { display: none; }
+.sheet-bar .side button.b { font-weight: 600; }
+.tt { padding: 12px 16px 14px; display: grid; gap: 6px; }
+.tt-title { font-size: 17px; }
+.tt-note { font-size: 15px; color: var(--ink-3); }
+.lrow .tile.st { --c: var(--c-gray); }
+.tile.st svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
+.lrow.dim .tile { opacity: 0.45; }
+.row-value { color: var(--ink-2); font-size: 17px; }
+.updown { width: 14px; height: 14px; fill: none; stroke: var(--ink-3); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.choice { display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 0 4px; font-size: 17px; width: 100%; text-align: left; }
+.choice + .choice { border-top: 0.5px solid var(--line-strong); }
+.choice svg { width: 18px; height: 18px; fill: none; stroke: var(--accent); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.sub-head { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink-2); padding: 10px 4px 0; border-top: 0.5px solid var(--line-strong); }
+.wheel.wide { width: 200px; }
+.wheel.mid { width: 150px; }
+.wheel.wide .wheel-item, .wheel.mid .wheel-item { font-size: 19px; }
+.pills { display: flex; flex-wrap: wrap; gap: 8px; padding: 2px 16px 14px; }
+.pill { min-height: 34px; padding: 0 14px; border-radius: 999px; background: var(--surface-2); font-size: 15px; font-weight: 500; transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out); }
+.pill.on { background: var(--accent); color: var(--accent-ink); }
+.foot-note { font-size: 13px; color: var(--ink-2); margin: -10px 16px 0; line-height: 1.4; }
+
+/* What arrives, under each phone */
+.get { width: var(--dev-w); display: grid; gap: 8px; }
+.get-line { font-size: 14px; color: var(--ink-2); line-height: 1.45; }
+.get-line b { color: var(--ink); font-weight: 600; }
+
+/* Push cards on a lock-screen wallpaper */
+.wall { border-radius: 18px; padding: 12px; background: var(--wall); display: grid; gap: 8px; }
+.nt { display: flex; gap: 10px; align-items: flex-start; padding: 11px 13px; border-radius: 20px; background: var(--nt-bg); color: var(--nt-ink); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); text-align: left; }
+.nt .appicon { width: 38px; height: 38px; border-radius: 9px; box-shadow: none; }
+.nt-text { flex: 1; min-width: 0; }
+.nt-top { display: flex; gap: 8px; align-items: baseline; }
+.nt-title { flex: 1; min-width: 0; font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nt-time { font-size: 13px; color: var(--nt-ink-2); flex: none; }
+.nt-body { font-size: 15px; line-height: 1.3; white-space: pre-line; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Push texts and questions: plain panels instead of phones */
+.panel { display: grid; gap: 34px; align-content: start; min-width: 0; }
+.tgroup { display: grid; gap: 14px; min-width: 0; }
+.tgroup > h2 { font: 700 22px/1.2 var(--font-display); letter-spacing: -0.015em; text-wrap: balance; }
+.tgroup > p { color: var(--ink-2); font-size: 15px; line-height: 1.45; max-width: 68ch; text-wrap: pretty; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 18px; }
+.tpush { display: grid; gap: 8px; align-content: start; min-width: 0; }
+.tpush .lbl { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 15px; font-weight: 600; }
+.tpush .why { font-size: 13px; color: var(--ink-2); line-height: 1.45; }
+.tpush .pick { width: 100%; }
+.tag { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); letter-spacing: 0.04em; text-transform: uppercase; }
+.tag.ok { background: color-mix(in srgb, var(--on-track) 15%, transparent); color: var(--on-track); }
+.tag.new { background: var(--accent-soft); color: var(--accent); }
+.qcard { background: var(--surface); border-radius: var(--radius); padding: 18px; display: grid; gap: 12px; max-width: 780px; }
+.qcard h2 { font: 650 18px/1.3 var(--font); letter-spacing: -0.01em; }
+.qcard > p { color: var(--ink-2); font-size: 15px; line-height: 1.45; max-width: 66ch; }
+.answers { display: grid; gap: 8px; }
+.ans { display: flex; gap: 12px; align-items: flex-start; text-align: left; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); font-size: 15px; line-height: 1.4; transition: background 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out); }
+.ans .k { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 13px; background: var(--surface); margin-top: -1px; }
+.ans.on { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.ans.on .k { background: var(--accent); color: var(--accent-ink); }
+.ans .rec { display: block; color: var(--accent); font-weight: 600; font-size: 13px; margin-top: 2px; }
+:root { --menu-bg: rgb(249 249 251 / 0.88); --menu-gap: rgb(0 0 0 / 0.07); --menu-shadow: 0 12px 40px rgb(0 0 0 / 0.2); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --menu-bg: rgb(44 44 48 / 0.92); --menu-gap: rgb(0 0 0 / 0.4); --menu-shadow: 0 12px 40px rgb(0 0 0 / 0.55); } }
+:root[data-theme="dark"] { --menu-bg: rgb(44 44 48 / 0.92); --menu-gap: rgb(0 0 0 / 0.4); --menu-shadow: 0 12px 40px rgb(0 0 0 / 0.55); }
+/* Round 2: the Notification card's menu, as in Reminders */
+.menu-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin: -11px -6px; padding: 0 6px; }
+.menu-layer { position: absolute; inset: 0; z-index: 40; }
+.menu { position: absolute; width: 250px; max-height: calc(100% - 110px); overflow-y: auto; scrollbar-width: none; border-radius: 13px; background: var(--menu-bg); -webkit-backdrop-filter: blur(24px) saturate(1.8); backdrop-filter: blur(24px) saturate(1.8); box-shadow: var(--menu-shadow); transform-origin: top right; animation: menu-pop 0.22s var(--ease-out) both; }
+.menu::-webkit-scrollbar { display: none; }
+.mg + .mg { border-top: 8px solid var(--menu-gap); }
+.mi { position: relative; display: flex; align-items: center; gap: 4px; width: 100%; min-height: 44px; padding: 0 16px 0 10px; font-size: 17px; text-align: left; color: var(--ink); }
+.mi + .mi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; border-top: 0.5px solid var(--line-strong); }
+.mi-check { width: 22px; flex: none; display: grid; place-items: center; }
+.mi-check svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+@keyframes menu-pop { from { opacity: 0; transform: scale(0.86); } to { opacity: 1; transform: none; } }
+.vp.still .menu { animation: none; }
+@media (prefers-reduced-motion: reduce) { .menu { animation: none !important; } }
+.custom-line { color: var(--c-red); font-size: 17px; text-align: center; padding-top: 2px; }
+/* A row after an open picker gets its line too (the owner's fix under "Weekdays only") */
+.dt-picker + .lrow::before { content: ''; position: absolute; top: 0; right: 0; left: 16px; border-top: 0.5px solid var(--line-strong); }
+.lrow.new-row { box-shadow: inset 0 0 0 2px var(--accent); border-radius: 12px; }
+.done-q { font-size: 15px; line-height: 1.45; color: var(--ink-2); max-width: 66ch; }
+.done-q b { color: var(--ink); font-weight: 600; }
+/* ——— round 3: steps and preps ——— */
+.srow { display: flex; gap: 12px; align-items: flex-start; padding: 12px 16px; position: relative; }
+.srow + .srow::before { content: ''; position: absolute; top: 0; right: 0; left: 50px; border-top: 0.5px solid var(--line-strong); }
+.srow .text { flex: 1; min-width: 0; }
+.st-t { font-size: 17px; line-height: 1.3; }
+.sq { flex: none; width: 22px; height: 22px; border-radius: 6px; border: 1.6px solid var(--ink-3); margin-top: 1px; }
+.smeta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.schip { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; padding: 0 9px; border-radius: 8px; background: var(--surface-2); color: var(--ink-2); font-size: 13px; font-weight: 500; }
+.schip.on { background: var(--accent-soft); color: var(--accent); }
+.schip.menu-btn { margin: 0; box-shadow: inset 0 0 0 1.5px var(--accent); }
+.bell-s, .cal-s { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.bell-mark { display: inline-grid; place-items: center; min-height: 28px; color: var(--c-orange); }
+.bell-mark .bell-s { width: 15px; height: 15px; }
+.srow.add { color: var(--accent); align-items: center; font-size: 17px; }
+.add-plus { width: 22px; display: grid; place-items: center; }
+.add-plus svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+.r3-foot { font-size: 13px; color: var(--ink-2); padding: 0 16px; }
+.r3-val { display: inline-flex; align-items: center; gap: 6px; }
+.pform { padding: 14px 16px; display: grid; gap: 14px; }
+.flabel { font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; }
+.finput { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; font-size: 17px; }
+.finput.short-in { width: 96px; text-align: center; }
+.wdays { display: flex; gap: 6px; flex-wrap: wrap; }
+.wd { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); font-size: 14px; font-weight: 600; }
+.wd.on { background: var(--accent); color: var(--accent-ink); }
+.r3-btns { display: flex; gap: 10px; }
+.r3-btn { flex: 1; min-height: 46px; border-radius: 12px; display: grid; place-items: center; font-size: 16px; font-weight: 600; }
+.r3-btn.primary { background: var(--accent); color: var(--accent-ink); }
+.r3-btn.danger { color: var(--danger); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--danger) 40%, transparent); }
+</style>
+
+<div class="page">
+  <header class="head">
+    <p class="eyebrow">S5 mockups</p>
+    <h1 class="large-title">Notifications, S5</h1>
+    <p class="lede">Round 3: the Notification card on project steps and preps, two ways each, and four questions (tab 4, then Questions). Rounds 1 and 2 are answered and built; their tabs show what was picked.</p>
+  </header>
+  <div class="controls">
+    <nav class="steps" id="steps" aria-label="Part"></nav>
+    <nav class="subchips" id="sub" aria-label="Situation"></nav>
+    <p class="scen-note" id="scen-note"></p>
+    <div class="toggles">
+      <div class="segmented" id="lang" role="group" aria-label="Language">
+        <button data-l="en"><span class="long">English</span><span class="short">EN</span></button><button data-l="pt"><span class="long">Português</span><span class="short">PT</span></button>
+      </div>
+      <div class="segmented" id="theme" role="group" aria-label="Appearance">
+        <button data-t="light">Light</button><button data-t="dark">Dark</button>
+      </div>
+    </div>
+  </div>
+  <section class="screens" id="screens" aria-live="polite"></section>
+  <div class="dots" id="dots" aria-hidden="true"></div>
+  <section class="panel" id="panel" hidden></section>
+  <footer class="picks">
+    <div class="picks-in">
+      <p class="picks-text" id="picks-text"></p>
+      <button class="copy" id="copy">Copy picks</button>
+    </div>
+  </footer>
+</div>
+
+<script>
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('s5m.' + k); return v === null ? d : JSON.parse(v) } catch { return d } },
+  set(k, v) { try { localStorage.setItem('s5m.' + k, JSON.stringify(v)) } catch {} },
+}
+const ON0 = { summary: true, weekdays: false, due: true, reminders: true, preps: true, review: true, goalReview: true, badge: false, details: true, quiet: false }
+const TIMES0 = { summary: [8, 0], review: [8, 0], quietFrom: [22, 0], quietTo: [7, 0] }
+const TABS = [
+  { key: 'reminder', label: 'Reminder on an item' },
+  { key: 'texts', label: 'Push texts' },
+  { key: 'settings', label: 'Settings → Notifications' },
+  { key: 'r3', label: 'Steps and preps' },
+  { key: 'questions', label: 'Questions' },
+]
+const NOW = new Date(2026, 9, 30, 9, 41) // the mockup's now: Friday 30 October 2026, 9:41
+const SCENS = [
+  { key: 'soonTime', label: 'Date and time, next week', due: [2026, 10, 5, 14, 30], time: true, note: 'Due Thursday, November 5 at 14:30, and today is Friday, October 30: 1 week and 1 month before have passed, so the menu leaves them out.' },
+  { key: 'farTime', label: 'Date and time, months away', due: [2027, 2, 1, 10, 0], time: true, note: 'Due Monday, March 1 2027 at 10:00: every choice still fits.' },
+  { key: 'soonDate', label: 'Date only, next week', due: [2026, 10, 5], time: false, note: 'Due Thursday, November 5, no time: the push comes at the morning summary’s time, 8:00 to start (answer 5). 1 week before and more have passed. Custom offers days, weeks and months only.' },
+  { key: 'farDate', label: 'Date only, months away', due: [2027, 5, 1], time: false, note: 'Due Tuesday, June 1 2027, no time: every choice fits, up to 6 months before.' },
+  { key: 'nodate', label: 'No date', note: 'No date: no Notification card at all.' },
+]
+const VIEWS = [
+  { key: 'on', label: 'Notifications on', cap: 'As approved on 29 October, with your answers: no “Items with a time” (1a) and no “Preps with a time” (3a). Turn on Morning summary: a line now sits under “Weekdays only”. Rows that come in S6: Goal review dates, and everything under On this phone.' },
+  { key: 'ask', label: 'Not allowed yet', cap: 'The switches wait, greyed out. Tapping the card asks iOS for permission.' },
+  { key: 'denied', label: 'Turned off in iPhone Settings', cap: 'Only after someone tapped Don’t Allow, or turned it off in iPhone Settings.' },
+  { key: 'noaccount', label: 'No account', cap: 'Tapping the card opens sign-in at the email step.' },
+  { key: 'where', label: 'Where the row sits', cap: 'The Settings page with the new Notifications row outlined. First row of App, as you answered (question 6a).' },
+]
+const state = {
+  tab: store.get('tab', 'reminder'), lang: store.get('lang', 'en'), theme: store.get('theme', null),
+  scen: store.get('scen', 'soonTime'), phones: {},
+  sview: store.get('sview', 'on'), on: { ...ON0 }, times: { ...TIMES0 }, sOpen: null, alert: false,
+  picks: { q1: 'a', q2: 'a', q3: 'a', q4: 'a', q5: 'a', q6: 'a', ...store.get('picks3', {}) }, // rounds 1 and 2 answered 2026-10-31
+  r3: store.get('r3', 'steps'),
+}
+if (!TABS.some((x) => x.key === state.tab)) state.tab = 'reminder'
+if (!SCENS.some((x) => x.key === state.scen)) state.scen = 'soonTime'
+if (!VIEWS.some((x) => x.key === state.sview)) state.sview = 'on'
+if (!['steps', 'preps'].includes(state.r3)) state.r3 = 'steps'
+const t = (en, pt) => (state.lang === 'en' ? en : pt)
+const L = (en, pt) => ({ en, pt })
+const tx = (o) => o[state.lang]
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+const hm = ([h, m]) => `${h}:${String(m).padStart(2, '0')}`
+const HOURS = [...Array(24).keys()]
+const MINUTES = [...Array(12).keys()].map((i) => i * 5)
+
+const I = {
+  signal: '<svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>',
+  wifi: '<svg viewBox="0 0 16 12"><path d="M8 2.2c2.3 0 4.4.9 6 2.4l1.2-1.3C13.3 1.5 10.8.4 8 .4S2.7 1.5.8 3.3L2 4.6c1.6-1.5 3.7-2.4 6-2.4zm0 3.6c1.3 0 2.5.5 3.4 1.3l1.2-1.3C11.4 4.7 9.8 4 8 4s-3.4.7-4.6 1.8l1.2 1.3c.9-.8 2.1-1.3 3.4-1.3zm0 3.6c.4 0 .8.2 1.1.4L8 11.6 6.9 9.8c.3-.2.7-.4 1.1-.4z"/></svg>',
+  battery: '<svg viewBox="0 0 27 12"><rect x=".5" y=".5" width="23" height="11" rx="3" fill="none" stroke="currentColor" opacity=".45"/><rect x="2" y="2" width="20" height="8" rx="1.8"/><path d="M25 4v4c.8-.3 1.3-1.1 1.3-2S25.8 4.3 25 4z" opacity=".45"/></svg>',
+  chevR: '<svg class="ico chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>',
+  back: '<svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg>',
+  calendar: '<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>',
+  clock: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+  bell: '<svg viewBox="0 0 24 24"><path d="M6 10a6 6 0 0 1 12 0c0 4.5 1.6 6.3 2.3 7H3.7c.7-.7 2.3-2.5 2.3-7z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg>',
+  bellOff: '<svg viewBox="0 0 24 24"><path d="M8.2 5.3A6 6 0 0 1 18 10c0 2.4.5 4 1 5.1M17 17H3.7c.7-.7 2.3-2.5 2.3-7 0-.6.1-1.2.3-1.8"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0M3 3l18 18"/></svg>',
+  user: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5c.8-3.8 3.8-6 7.5-6s6.7 2.2 7.5 6"/></svg>',
+  target: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/></svg>',
+  updown: '<svg class="updown" viewBox="0 0 24 24"><path d="m7 9 5-5 5 5M7 15l5 5 5-5"/></svg>',
+  check: '<svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+  pickCheck: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+}
+const svgIn = (name, cls = '') => I[name].replace('<svg', `<svg class="${cls}"`)
+const status = () => `<div class="status"><span>9:41</span><span class="icons">${I.signal}${I.wifi}${I.battery}</span></div>`
+const home = () => '<div class="home"></div>'
+const tile = (icon, color) => `<span class="tile st" style="--c:var(${color})">${I[icon]}</span>`
+
+// ——— wheels: each registers what it changes ———
+let WHEELS = {}
+function wheel(id, labels, sel, cls, set) {
+  WHEELS[id] = { set, n: labels.length }
+  return `<div class="wheel ${cls}" data-wh="${id}" data-sel="${sel}">${labels.map((v, i) => `<div class="wheel-item ${i === sel ? 'on' : ''}">${v}</div>`).join('')}</div>`
+}
+const clockWheels = (id, [h, m], set) => `<div class="wheels">${wheel(id + ':h', HOURS, HOURS.indexOf(h), '', (i) => set([HOURS[i], m]))}<span class="wheels-colon">:</span>${wheel(id + ':m', MINUTES.map((x) => String(x).padStart(2, '0')), MINUTES.indexOf(m), '', (i) => set([h, MINUTES[i]]))}</div>`
+function setWheels() { for (const w of document.querySelectorAll('.wheel')) w.scrollTop = +w.dataset.sel * 36 }
+
+// ——— 1. Reminder on an item: a Notification card, as in Reminders ———
+const TASK = { title: L('Renew gym membership', 'Renovar a academia'), goal: L('Exercise regularly', 'Fazer exercício com frequência') }
+const UNITS = ['min', 'hour', 'day', 'week', 'month']
+const UNIT_WORDS = { min: [L('minute', 'minuto'), L('minutes', 'minutos')], hour: [L('hour', 'hora'), L('hours', 'horas')], day: [L('day', 'dia'), L('days', 'dias')], week: [L('week', 'semana'), L('weeks', 'semanas')], month: [L('month', 'mês'), L('months', 'meses')] }
+const WITH_TIME = [[5, 'min'], [15, 'min'], [30, 'min'], [1, 'hour'], [2, 'hour'], [1, 'day'], [2, 'day'], [1, 'week'], [1, 'month']]
+const DATE_ONLY = [[1, 'day'], [2, 'day'], [1, 'week'], [2, 'week'], [1, 'month'], [3, 'month'], [6, 'month']]
+const scen = () => SCENS.find((x) => x.key === state.scen)
+const cap = (s) => s[0].toUpperCase() + s.slice(1)
+function offLabel(n, unit, timed) {
+  if (n === 0) return timed ? t('At the time', 'Na hora') : t('On the day', 'No dia')
+  return `${n} ${tx(UNIT_WORDS[unit][n === 1 ? 0 : 1])} ${t('before', 'antes')}`
+}
+// What a reminder counts back from: the due time, or the morning summary's time on the due date (answer 5).
+function baseTime(s, p) {
+  const [y, mo, d, h, mi] = s.due
+  if (s.time) return new Date(y, mo, d, h, mi)
+  const at = state.times.summary
+  return new Date(y, mo, d, at[0], at[1])
+}
+function fireAt(s, p, [n, unit]) {
+  const f = baseTime(s, p)
+  if (unit === 'min') f.setMinutes(f.getMinutes() - n)
+  else if (unit === 'hour') f.setHours(f.getHours() - n)
+  else if (unit === 'day') f.setDate(f.getDate() - n)
+  else if (unit === 'week') f.setDate(f.getDate() - 7 * n)
+  else f.setMonth(f.getMonth() - n)
+  return f
+}
+// The menu: only choices still ahead of now, led by "At the time" or "On the day" unless answer 4 is b.
+function choices(s, p) {
+  const list = (s.time ? WITH_TIME : DATE_ONLY).filter((o) => fireAt(s, p, o) > NOW)
+  return state.picks.q4 === 'b' ? list : [[0, s.time ? 'min' : 'day'], ...list]
+}
+const customUnits = (s) => (s.time ? UNITS : UNITS.slice(2))
+const chosen = (s, p) => (p.sel === 'custom' ? [p.cn, customUnits(s)[p.cu]] : p.sel)
+const sameSel = (a, b) => Array.isArray(a) && a[0] === b[0] && a[1] === b[1]
+function resetPhones() { state.phones.D = { sel: 'none', menu: false, cn: 1, cu: 0, at: [9, 0], atOpen: false } }
+resetPhones()
+function dateText(s) {
+  const [y, mo, d] = s.due
+  const o = { weekday: 'long', month: 'long', day: 'numeric', ...(y !== NOW.getFullYear() ? { year: 'numeric' } : {}) }
+  return cap(new Intl.DateTimeFormat(state.lang === 'en' ? 'en-US' : 'pt-BR', o).format(new Date(y, mo, d)))
+}
+function valueText(s, p) {
+  if (p.sel === 'none') return t('None', 'Nenhuma')
+  if (p.sel === 'custom') return t('Custom', 'Personalizado')
+  return offLabel(p.sel[0], p.sel[1], s.time)
+}
+function notifyCard(s, p) {
+  let html = `<div class="list"><div class="lrow">${tile('bell', '--c-orange')}<span class="text">${t('Notification', 'Notificação')}</span><button class="menu-btn" data-menu="D" aria-haspopup="menu" aria-expanded="${p.menu}"><span class="row-value">${esc(valueText(s, p))}</span>${I.updown}</button></div>`
+  if (p.sel === 'custom') {
+    const nums = [...Array(200).keys()].map((i) => i + 1)
+    const units = customUnits(s).map((u) => cap(tx(UNIT_WORDS[u][1])))
+    html += `<div class="dt-picker"><p class="custom-line">${esc(offLabel(p.cn, customUnits(s)[p.cu], s.time))}</p><div class="wheels">${wheel('D:cn', nums, p.cn - 1, '', (i) => { p.cn = i + 1 })}${wheel('D:cu', units, p.cu, 'mid', (i) => { p.cu = i })}</div></div>`
+  }
+  if (!s.time && state.picks.q5 === 'b' && p.sel !== 'none') {
+    html += `<div class="lrow"><button class="dt-text" data-open="D:at"><span>${t('At', 'Às')}</span><span class="dt-value">${hm(p.at)}</span></button></div>`
+    if (p.atOpen) html += `<div class="dt-picker">${clockWheels('D:at', p.at, (v) => { p.at = v })}</div>`
+  }
+  return html + '</div>'
+}
+function menuHTML(s, p) {
+  const item = (key, label, on) => `<button class="mi" role="menuitemradio" aria-checked="${on}" data-msel="${key}"><span class="mi-check">${on ? I.check : ''}</span><span>${esc(label)}</span></button>`
+  const mid = choices(s, p).map((o) => item(o.join(':'), offLabel(o[0], o[1], s.time), sameSel(p.sel, o))).join('')
+  return `<div class="menu-layer" data-menu-close><div class="menu" role="menu"><div class="mg">${item('none', t('None', 'Nenhuma'), p.sel === 'none')}</div>${mid ? `<div class="mg">${mid}</div>` : ''}<div class="mg">${item('custom', t('Custom', 'Personalizado'), p.sel === 'custom')}</div></div></div>`
+}
+// The menu opens under its value, or above it when that has more room; if neither fits, it scrolls.
+function placeMenu(vp) {
+  const m = vp && vp.querySelector('.menu'), a = vp && vp.querySelector('.menu-btn')
+  if (!m || !a) return
+  m.style.maxHeight = 'none'
+  const vr = vp.getBoundingClientRect(), k = vr.width / vp.offsetWidth || 1, ar = a.getBoundingClientRect()
+  const top = (ar.top - vr.top) / k, bottom = (ar.bottom - vr.top) / k, h = m.offsetHeight
+  const roomBelow = vp.offsetHeight - 40 - bottom - 6, roomAbove = top - 6 - 60
+  const below = h <= roomBelow || roomBelow >= roomAbove
+  const fitH = Math.min(h, below ? roomBelow : roomAbove)
+  m.style.maxHeight = fitH + 'px'
+  m.style.top = (below ? bottom + 6 : top - 6 - fitH) + 'px'
+  const right = Math.max(12, (vr.right - ar.right) / k - 6), w = m.offsetWidth
+  m.style.right = right + 'px'
+  m.style.left = 'auto'
+  // A value near the left edge (a step's bell): the menu hangs from its left instead, inside the screen.
+  if (vp.offsetWidth - right - w < 12) {
+    m.style.right = 'auto'
+    m.style.left = Math.max(12, Math.min((ar.left - vr.left) / k - 6, vp.offsetWidth - w - 12)) + 'px'
+  }
+}
+const sw = (key, on, dis) => `<span class="sw ${on && !dis ? 'on' : ''} ${dis ? 'dis' : ''}" ${dis ? '' : `data-tog="${key}"`} role="switch" aria-checked="${!!on && !dis}"></span>`
+const swShow = (on) =>`<span class="sw ${on ? 'on' : ''}" role="switch" aria-checked="${on}"></span>`
+function sheetPhone() {
+  const s = scen(), p = state.phones.D, hasDate = !!s.due
+  const dateRow = `<div class="lrow">${tile('calendar', '--c-red')}<span class="dt-text"><span>${t('Date', 'Data')}</span>${hasDate ? `<span class="dt-value">${esc(dateText(s))}</span>` : ''}</span>${swShow(hasDate)}</div>`
+  const timeRow = `<div class="lrow">${tile('clock', '--c-blue')}<span class="dt-text"><span>${t('Time', 'Horário')}</span>${s.time ? `<span class="dt-value">${hm([s.due[3], s.due[4]])}</span>` : ''}</span>${swShow(!!s.time)}</div>`
+  const body = `<div class="card tt"><div class="tt-title">${esc(tx(TASK.title))}</div><div class="tt-note">${t('Notes', 'Notas')}</div></div>
+    <div class="list">${dateRow}${timeRow}</div>${hasDate ? notifyCard(s, p) : ''}
+    <div class="list"><div class="lrow">${tile('target', '--c-green')}<span class="text">${t('Goal', 'Meta')}</span><span class="row-value">${esc(tx(TASK.goal))}</span>${I.updown}</div></div>`
+  return `${status()}<div class="today-behind"><h1 class="large-title">${t('Today', 'Hoje')}</h1></div><div class="backdrop"></div>
+    <div class="sheet large"><div class="grabber"></div><div class="sheet-bar"><div class="side"><button>${t('Cancel', 'Cancelar')}</button></div><h2>${t('Task', 'Tarefa')}</h2><div class="side r"><button class="b">${t('Save', 'Salvar')}</button></div></div>
+    <div class="sheet-scroll">${body}</div></div>${hasDate && p.menu ? menuHTML(s, p) : ''}${home()}`
+}
+// The push text (task text A, times only): when it's due, said from the day the push arrives.
+function whenText(fire, s) {
+  const [y, mo, d] = s.due, due = new Date(y, mo, d)
+  const diff = Math.round((due - new Date(fire.getFullYear(), fire.getMonth(), fire.getDate())) / 86400000)
+  const loc = state.lang === 'en' ? 'en-US' : 'pt-BR'
+  const w = diff === 0 ? t('Today', 'Hoje') : diff === 1 ? t('Tomorrow', 'Amanhã')
+    : cap(new Intl.DateTimeFormat(loc, diff < 7 ? { weekday: 'long' } : { month: 'long', day: 'numeric' }).format(due))
+  return s.time ? `${w}, ${hm([s.due[3], s.due[4]])}` : w
+}
+const ntCard = (title, body, when) => `<div class="nt"><span class="appicon" aria-hidden="true"></span><div class="nt-text"><div class="nt-top"><span class="nt-title">${esc(title)}</span><span class="nt-time">${esc(when)}</span></div>${body ? `<p class="nt-body">${esc(body)}</p>` : ''}</div></div>`
+function getBlock() {
+  const s = scen(), p = state.phones.D
+  if (!s.due) return '<p class="get-line">No date: no Notification card and no push.</p>'
+  if (p.sel === 'none') return '<p class="get-line"><b>None</b> to start: no push. The morning summary still lists the task on its day.</p>'
+  const f = fireAt(s, p, chosen(s, p))
+  if (f <= NOW) return '<p class="get-line"><b>That’s before now</b> (today is Friday 30 October, 9:41), so there’s nothing to send. Pick a shorter time.</p>'
+  const when = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', ...(f.getFullYear() !== NOW.getFullYear() ? { year: 'numeric' } : {}), hour: 'numeric', minute: '2-digit' }).format(f)
+  return `<p class="get-line"><b>Arrives ${esc(when)}</b></p><div class="wall">${ntCard(tx(TASK.title), whenText(f, s), t('now', 'agora'))}</div>`
+}
+
+// ——— 3. Settings → Notifications, as approved ———
+const SL = () => ({
+  title: t('Notifications', 'Notificações'), back: t('Settings', 'Ajustes'),
+  what: t('What you get', 'O que você recebe'), phone: t('On this phone', 'Neste celular'), dev: t('Developer', 'Desenvolvedor'),
+  summary: t('Morning summary', 'Resumo da manhã'), weekdays: t('Weekdays only', 'Só em dias úteis'),
+  due: t('Items with a time', 'Itens com horário'), reminders: t('Reminders you set', 'Lembretes que você define'),
+  preps: t('Preps with a time', 'Preparos com horário'), review: t('Weekly review', 'Revisão da semana'),
+  monday: t('Monday', 'Segunda'), goalReview: t('Goal review dates', 'Datas de revisão das metas'),
+  badge: t('App icon badge', 'Número no ícone'), details: t('Details on the lock screen', 'Detalhes na tela bloqueada'),
+  quiet: t('Quiet hours', 'Horário silencioso'), from: t('From', 'De'), to: t('To', 'Até'), toWord: t('to', 'às'),
+  weekdaysShort: t('weekdays only', 'só dias úteis'),
+  test: t('Send a test notification', 'Enviar notificação de teste'),
+  ask: t('Turn on notifications', 'Ative as notificações'),
+  alertT: t('“Smart Meta” Would Like to Send You Notifications', '“Smart Meta” Deseja Enviar Notificações'),
+  alertB: t('Notifications may include alerts, sounds and icon badges. These can be configured in Settings.', 'As notificações podem incluir alertas, sons e indicadores de ícone. Elas podem ser configuradas em Ajustes.'),
+  dont: t('Don’t Allow', 'Não Permitir'), allow: t('Allow', 'Permitir'),
+  deniedTitle: t('Notifications are off for Smart Meta', 'As notificações estão desativadas para o Smart Meta'),
+  deniedSub: t('Turn them back on in iPhone Settings:', 'Reative nos Ajustes do iPhone:'),
+  steps: [t('Open <b>Settings</b>', 'Abra <b>Ajustes</b>'), t('Tap <b>Notifications</b>', 'Toque em <b>Notificações</b>'), t('Tap <b>Smart Meta</b>', 'Toque em <b>Smart Meta</b>'), t('Turn on <b>Allow Notifications</b>', 'Ative <b>Permitir Notificações</b>')],
+  signIn: t('Sign in to get notifications', 'Entre para receber notificações'),
+})
+const srow = (key, label, dis) => `<div class="lrow ${dis ? 'dim' : ''}"><span class="text">${label}</span>${sw('s:' + key, state.on[key], dis)}</div>`
+const sec = (title, body) => `<p class="sec-head"><span>${title}</span></p><div class="list">${body}</div>`
+const shead = (l) => `<button style="color:var(--accent);font-size:16px;display:inline-flex;align-items:center;min-height:44px;margin:0 0 4px -6px">${svgIn('back', 'ico').replace('class="ico"', 'class="ico" style="width:22px;height:22px;stroke-width:2.2"')}${l.back}</button><h1 class="large-title" style="margin-bottom:16px">${l.title}</h1>`
+function svalue(key, l) {
+  if (key === 'summary') return hm(state.times.summary) + (state.on.weekdays ? `, ${l.weekdaysShort}` : '')
+  if (key === 'review') return `${l.monday}, ${hm(state.times.review)}`
+  return `${hm(state.times.quietFrom)} ${l.toWord} ${hm(state.times.quietTo)}`
+}
+const setTime = (key) => (v) => { state.times[key] = v }
+function optRow(key, label, l, dis) {
+  const on = state.on[key] && !dis
+  let html = `<div class="lrow ${dis ? 'dim' : ''}"><button class="dt-text" ${on ? `data-open="s:${key}"` : 'disabled'}><span>${label}</span>${on ? `<span class="dt-value">${svalue(key, l)}</span>` : ''}</button>${sw('s:' + key, state.on[key], dis)}</div>`
+  if (on && state.sOpen === key) {
+    let inner = key === 'quiet'
+      ? `<div class="pair"><div><p>${l.from}</p>${clockWheels('s:quietFrom', state.times.quietFrom, setTime('quietFrom'))}</div><div><p>${l.to}</p>${clockWheels('s:quietTo', state.times.quietTo, setTime('quietTo'))}</div></div>`
+      : clockWheels('s:' + key, state.times[key], setTime(key))
+    if (key === 'summary') inner += `<div class="sub-row">${l.weekdays}${sw('s:weekdays', state.on.weekdays)}</div>`
+    html += `<div class="dt-picker">${inner}</div>`
+  }
+  return html
+}
+function whatList(l, dis = false) {
+  return sec(l.what, optRow('summary', l.summary, l, dis) + (state.picks.q1 === 'a' ? '' : srow('due', l.due, dis)) + srow('reminders', l.reminders, dis)
+    + (state.picks.q3 === 'a' ? '' : srow('preps', l.preps, dis)) + optRow('review', l.review, l, dis) + srow('goalReview', l.goalReview, dis))
+}
+const phoneList = (l, dis = false) => sec(l.phone, srow('badge', l.badge, dis) + srow('details', l.details, dis) + optRow('quiet', l.quiet, l, dis))
+const banner = (icon, text, act) => `<div class="banner" ${act}><span class="ic">${I[icon]}</span><div class="text"><b>${text}</b></div>${I.chevR}</div>`
+const sscreen = (inner) => `<div class="screen scroll" style="padding-top:calc(var(--st) + 4px)">${inner}</div>`
+const iosAlert = (l) => `<div class="alert-wrap"><div class="alert"><div class="msg"><h3>${l.alertT}</h3><p>${l.alertB}</p></div>
+  <div class="btns" style="display:flex"><button style="border-right:0.5px solid var(--alert-line)" data-go-view="denied">${l.dont}</button><button class="b" style="border-top:0" data-go-view="on">${l.allow}</button></div></div></div>`
+function settingsPage() {
+  const l = SL(), v = state.sview
+  if (v === 'where') return mainSettings()
+  let inner
+  if (v === 'on') inner = sscreen(shead(l) + whatList(l) + phoneList(l) + sec(l.dev, `<div class="lrow link">${l.test}</div>`))
+  else if (v === 'ask') inner = sscreen(shead(l) + banner('bell', l.ask, 'data-ask') + whatList(l, true) + phoneList(l, true)) + (state.alert ? iosAlert(l) : '')
+  else if (v === 'denied') inner = sscreen(shead(l) + `<div class="card state-card"><span class="ic">${I.bellOff}</span><h3>${l.deniedTitle}</h3><p>${l.deniedSub}</p><ol>${l.steps.map((s) => `<li>${s}</li>`).join('')}</ol></div>` + whatList(l, true) + phoneList(l, true))
+  else inner = sscreen(shead(l) + banner('user', l.signIn, '') + whatList(l, true) + phoneList(l, true))
+  return status() + inner + home()
+}
+// The Settings page, with the new row where question 6 puts it.
+function mainSettings() {
+  const l = SL(), b = state.picks.q6 === 'b'
+  const link = (label, sub, cls = '') => `<div class="lrow ${cls}"><span class="text">${label}${sub ? `<span class="sub" style="display:block">${sub}</span>` : ''}</span>${I.chevR}</div>`
+  const val = (label, v) => `<div class="lrow"><span class="text">${label}</span><span class="row-value">${v}</span>${I.updown}</div>`
+  const nrow = link(l.title, '', 'new-row')
+  const profile = `<div class="list"><div class="lrow"><span class="initials">AS</span><span class="text">Ana Souza<span class="sub" style="display:block">ana.souza@gmail.com</span></span>${I.chevR}</div></div>`
+  return status() + sscreen(`<h1 class="large-title" style="margin:6px 0 16px">${l.back}</h1>` + profile + (b ? `<div class="list" style="margin-top:22px">${nrow}</div>` : '')
+    + sec(t('Goals', 'Metas'), link(t('Values', 'Valores'), t('Health · Career · Family', 'Saúde · Carreira · Família')) + `<div class="lrow"><span class="text">${t('Active goals', 'Metas ativas')}</span><span class="row-value">3</span></div>` + val(t('New goals', 'Novas metas'), t('Guided', 'Guiado')))
+    + sec('App', (b ? '' : nrow) + val(t('Language', 'Idioma'), t('Automatic', 'Automático')) + val(t('New day starts at', 'O dia começa às'), '4:00') + link(t('Replay intro', 'Rever o tutorial'), t('The welcome and a guided new goal', 'As boas-vindas e uma nova meta guiada')))
+    + sec(t('About', 'Sobre'), link(t('What’s new', 'Novidades')) + link(t('Privacy policy', 'Política de privacidade')) + `<div class="lrow"><span class="text">${t('Version', 'Versão')}</span><span class="row-value">1.2.0</span></div>`)) + home()
+}
+
+// ——— 2. Push texts ———
+const STEP = { item: L('Update the CV', 'Atualizar o currículo') }
+const PROJECT = L('CV & LinkedIn', 'Currículo e LinkedIn')
+const tpush = (x) => `<div class="tpush"><p class="lbl">${esc(x.lbl)} <span class="tag ${x.tag[0]}">${esc(x.tag[1])}</span></p><div class="wall">${x.cards.map(([ti, b, when]) => ntCard(ti, b, when || t('now', 'agora'))).join('')}</div>${x.why ? `<p class="why">${esc(x.why)}</p>` : ''}</div>`
+function textsPanel() {
+  const T = tx(TASK.title)
+  const yours = [
+    { lbl: 'Reminder on a task', tag: ['new', 'A, times only'], why: 'Only when it’s due, said from the day the push arrives: Today, Tomorrow, the weekday within a week, then the date. With no time, the day alone.', cards: [[T, t('Today, 14:30', 'Hoje, 14:30'), '14:15'], [T, t('Tomorrow, 14:30', 'Amanhã, 14:30'), t('Wed', 'qua.')], [T, t('Thursday', 'Quinta-feira'), t('Tue', 'ter.')], [T, t('June 1', '1 de junho'), t('May 1', '1 de mai.')]] },
+    { lbl: 'Reminder on a project', tag: ['new', 'A, times only'], why: 'The same as a task: its name, then when it’s due.', cards: [[tx(PROJECT), t('Tomorrow, 18:00', 'Amanhã, 18:00')], [tx(PROJECT), t('Friday', 'Sexta-feira')]] },
+    { lbl: 'Reminder on a project step', tag: ['new', 'Your text'], why: 'Was “Step 1 of 4 in CV & LinkedIn.”', cards: [[tx(STEP.item), t('CV & LinkedIn · step 1 of 4', 'Currículo e LinkedIn · etapa 1 de 4')]] },
+    { lbl: 'New access request (to you only)', tag: ['new', 'Your text'], why: 'Tapping it opens Requests.', cards: [[t('New request', 'Novo pedido'), 'ana.souza@gmail.com']] },
+  ]
+  const kept = [
+    { lbl: 'Morning summary', tag: ['ok', 'A, approved'], cards: [[t('Today: 6 things', 'Hoje: 6 itens'), t('Dentist appointment at 14:30, Renew gym membership (late), Gym and 3 more', 'Consulta no dentista às 14:30, Renovar a academia (atrasada), Academia e mais 3')]] },
+    { lbl: 'Several at once', tag: ['ok', 'A, approved'], why: 'Reminders within 15 minutes of each other still merge into one push. A single one now reads like your task text, “Today, 14:30”, instead of “Due at 14:30”.', cards: [[t('2 things at 11:00', '2 itens às 11:00'), t('Call the bank\nSend the invoice, 11:10', 'Ligar para o banco\nEnviar a nota fiscal, 11:10')]] },
+    { lbl: 'Weekly review', tag: ['ok', 'B, approved'], cards: [[t('Weekly review', 'Revisão da semana'), t('Look back at last week and plan this one.', 'Confira a semana passada e planeje esta.')]] },
+    { lbl: 'Prep', tag: ['ok', 'A, approved'], why: 'Preps get the Notification card too (answer 3a) and keep this text.', cards: [[t('Pack the gym bag and pick tomorrow’s routine', 'Arrumar a mochila e escolher o treino de amanhã'), t('Prep · Exercise regularly', 'Preparo · Fazer exercício com frequência')]] },
+    { lbl: 'Goal review date', tag: ['ok', 'B, approved · S6'], cards: [[t('Review date reached', 'Chegou a data de revisão'), t('Sleep well', 'Dormir bem')]] },
+    { lbl: 'Reminder on a habit', tag: ['', 'Not used for now'], why: 'Commitments get no reminder for now (answer 2a). Kept for repeating reminders later.', cards: [[t('At least 45 minutes of exercise', 'Pelo menos 45 minutos de exercício'), t('Exercise regularly · 1 of 3 this week', 'Fazer exercício com frequência · 1 de 3 nesta semana')]] },
+  ]
+  return `<div class="tgroup"><h2>Your picks and changes</h2><p>As you set them in round 1. Tell me in the chat if any still reads wrong.</p><div class="tiles">${yours.map(tpush).join('')}</div></div>
+    <div class="tgroup"><h2>Approved, unchanged</h2><p>You said the rest is OK. Shown again with what your answers changed around them.</p><div class="tiles">${kept.map(tpush).join('')}</div></div>`
+}
+
+// ——— 5. Round 3: the Notification card on project steps and preps ———
+const R3S = [
+  { key: 'steps', label: 'Project steps', note: 'Today a step has no editor of its own: tapping its name renames it in place, and its end date is the small “until 5 Nov” button under it. Two ways to give a step the Notification card. A step’s reminder has a date only, so it comes at the morning summary’s time.' },
+  { key: 'preps', label: 'Preps', note: 'A prep is edited in a sheet from its goal’s page: what to do, the days, the time. It repeats every week, so its reminder comes before each of its times. Two ways to add the card.' },
+]
+const R3_STEPS = [
+  [L('Update the CV', 'Atualizar o currículo'), [2026, 10, 5]],
+  [L('Write the LinkedIn summary', 'Escrever o resumo do LinkedIn'), [2026, 10, 12]],
+  [L('Ask two people for recommendations', 'Pedir duas recomendações'), [2026, 10, 19]],
+  [L('Apply to five jobs', 'Candidatar-se a cinco vagas'), [2026, 10, 26]],
+]
+const R3_PREP = { title: L('Pack the gym bag', 'Arrumar a mochila da academia'), goal: L('Exercise regularly', 'Fazer exercício com frequência') }
+const MON_SHORT = { en: 'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' '), pt: 'jan fev mar abr mai jun jul ago set out nov dez'.split(' ') }
+const dShort = ([y, m, d]) => `${d} ${MON_SHORT[state.lang][m]}`
+const r3 = () => R3S.find((x) => x.key === state.r3) || R3S[0]
+const PLUS = '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>'
+const bellSmall = () => svgIn('bell', 'bell-s')
+const calSmall = () => svgIn('calendar', 'cal-s')
+// A menu drawn open, as the phone shows it after a tap on the value.
+function r3Menu(timed, chosen, choices) {
+  const item = (label, on) => `<button class="mi" role="menuitemradio" aria-checked="${on}"><span class="mi-check">${on ? I.check : ''}</span><span>${esc(label)}</span></button>`
+  const mid = choices.map(([n, u]) => item(offLabel(n, u, timed), chosen === `${n}:${u}`)).join('')
+  return `<div class="menu-layer"><div class="menu" role="menu"><div class="mg">${item(t('None', 'Nenhuma'), chosen === 'none')}</div><div class="mg">${mid}</div><div class="mg">${item(t('Custom', 'Personalizado'), false)}</div></div></div>`
+}
+const notifyRow = (value, btn = false) => `<div class="list"><div class="lrow">${tile('bell', '--c-orange')}<span class="text">${t('Notification', 'Notificação')}</span><span class="${btn ? 'menu-btn' : 'r3-val'}"><span class="row-value">${esc(value)}</span>${I.updown}</span></div></div>`
+const projHead = () => `<button style="color:var(--accent);font-size:16px;display:inline-flex;align-items:center;min-height:44px;margin:0 0 2px -6px">${svgIn('back', 'ico').replace('class="ico"', 'class="ico" style="width:22px;height:22px;stroke-width:2.2"')}${t('Plan', 'Plano')}</button><p class="eyebrow">${t('Active project', 'Projeto ativo')}</p><h1 class="large-title" style="margin-bottom:6px">${esc(t('CV & LinkedIn', 'Currículo e LinkedIn'))}</h1>`
+// The project's steps as its page lists them. `mode` A: a bell beside the date once set; B: a bell button on every step.
+function stepRows(mode, openAt = -1) {
+  return R3_STEPS.map(([title, end], i) => {
+    const set = i === 0
+    const bell = mode === 'A'
+      ? (set ? `<span class="bell-mark" aria-label="${t('Notification set', 'Notificação definida')}">${bellSmall()}</span>` : '')
+      : `<span class="schip ${set ? 'on' : ''} ${i === openAt ? 'menu-btn' : ''}">${bellSmall()}${set ? esc(offLabel(1, 'day', false)) : ''}</span>`
+    return `<div class="srow"><span class="sq"></span><div class="text"><div class="st-t">${esc(tx(title))}</div><div class="smeta"><span class="schip">${calSmall()}${t('until', 'até')} ${dShort(end)}</span>${bell}</div></div></div>`
+  }).join('') + `<div class="srow add"><span class="add-plus">${PLUS}</span><span>${t('Add step', 'Adicionar etapa')}</span></div>`
+}
+function stepsPage(mode, openAt) {
+  return `<div class="screen scroll" style="padding-top:calc(var(--st) + 4px)">${projHead()}
+    <p class="sec-head"><span>${t('Steps', 'Etapas')}</span></p><div class="list">${stepRows(mode, openAt)}</div></div>`
+}
+function r3Phone(id) {
+  const date = [2026, 10, 12]
+  if (id === 'SA') {
+    const [title] = R3_STEPS[1]
+    return `${status()}<div class="today-behind" style="padding:0">${stepsPage('A')}</div><div class="backdrop"></div>
+      <div class="sheet large"><div class="grabber"></div><div class="sheet-bar"><div class="side"><button>${t('Cancel', 'Cancelar')}</button></div><h2>${t('Step', 'Etapa')}</h2><div class="side r"><button class="b">${t('Save', 'Salvar')}</button></div></div>
+      <div class="sheet-scroll"><div class="card tt"><div class="tt-title">${esc(tx(title))}</div><div class="tt-note">${t('Notes', 'Notas')}</div></div>
+      <div class="list"><div class="lrow">${tile('calendar', '--c-red')}<span class="dt-text"><span>${t('End date', 'Prazo')}</span><span class="dt-value">${esc(dateText({ due: date }))}</span></span>${swShow(true)}</div></div>
+      ${notifyRow(offLabel(1, 'day', false))}
+      <p class="r3-foot">${t('Step 2 of 4 in CV & LinkedIn', 'Etapa 2 de 4 em Currículo e LinkedIn')}</p></div></div>${home()}`
+  }
+  if (id === 'SB') {
+    return `${status()}${stepsPage('B', 1)}${r3Menu(false, 'none', [[0, 'day'], [1, 'day'], [2, 'day'], [1, 'week']])}${home()}`
+  }
+  const weekdays = (state.lang === 'en' ? 'M T W T F S S' : 'S T Q Q S S D').split(' ')
+  const wd = weekdays.map((d, i) => `<span class="wd ${i === 2 || i === 4 ? 'on' : ''}">${d}</span>`).join('')
+  const PREP_CHOICES = [[0, 'min'], [5, 'min'], [15, 'min'], [30, 'min'], [1, 'hour'], [2, 'hour'], [1, 'day']]
+  if (id === 'PA') {
+    return `${status()}<div class="today-behind"><h1 class="large-title">${esc(tx(R3_PREP.goal))}</h1></div><div class="backdrop"></div>
+      <div class="sheet large"><div class="grabber"></div><div class="sheet-bar"><div class="side"></div><h2>${t('Edit prep', 'Editar preparo')}</h2><div class="side r"><button>${t('Close', 'Fechar')}</button></div></div>
+      <div class="sheet-scroll"><div class="card pform">
+        <div><p class="flabel">${t('Prep 1', 'Preparo 1')}</p><div class="finput">${esc(tx(R3_PREP.title))}</div></div>
+        <div><p class="flabel">${t('Days', 'Dias')}</p><div class="wdays">${wd}</div></div>
+        <div><p class="flabel">${t('Time', 'Horário')}</p><div class="finput short-in">21:00</div></div></div>
+        ${notifyRow(offLabel(15, 'min', true), true)}
+        <div class="r3-btns"><span class="r3-btn danger">${t('Delete', 'Excluir')}</span><span class="r3-btn primary">${t('Save', 'Salvar')}</span></div></div></div>
+      ${r3Menu(true, '15:min', PREP_CHOICES)}${home()}`
+  }
+  // PB: the prep as rows, like a task.
+  return `${status()}<div class="today-behind"><h1 class="large-title">${esc(tx(R3_PREP.goal))}</h1></div><div class="backdrop"></div>
+    <div class="sheet large"><div class="grabber"></div><div class="sheet-bar"><div class="side"><button>${t('Cancel', 'Cancelar')}</button></div><h2>${t('Prep', 'Preparo')}</h2><div class="side r"><button class="b">${t('Save', 'Salvar')}</button></div></div>
+    <div class="sheet-scroll"><div class="card tt"><div class="tt-title">${esc(tx(R3_PREP.title))}</div></div>
+    <div class="list"><div class="lrow">${tile('calendar', '--c-red')}<span class="dt-text"><span>${t('Days', 'Dias')}</span><span class="dt-value">${t('Wed, Fri', 'qua, sex')}</span></span></div>
+      <div class="dt-picker" style="animation:none"><div class="wdays" style="justify-content:center">${wd}</div></div>
+      <div class="lrow">${tile('clock', '--c-blue')}<span class="dt-text"><span>${t('Time', 'Horário')}</span><span class="dt-value">21:00</span></span></div></div>
+    ${notifyRow(offLabel(15, 'min', true))}
+    <div class="r3-btns"><span class="r3-btn danger">${t('Delete prep', 'Excluir preparo')}</span></div></div></div>${home()}`
+}
+const R3_OPTS = {
+  steps: [
+    ['SA', 'A', 'A step opens like a task', 'Tapping a step opens a small sheet like the task sheet: its name, notes, End date, and the Notification card. On the page, a step with a reminder gets a small bell after its date. Renaming moves into the sheet.', 'q7'],
+    ['SB', 'B', 'A bell beside each step’s date', 'Each step keeps its row, with a bell button beside “until 12 Nov”. Tapping it opens the menu right there; once set, the bell shows the choice. Custom opens a small sheet with the two wheels.', 'q7'],
+  ],
+  preps: [
+    ['PA', 'A', 'The card under the prep’s time', 'The prep sheet stays as it is, with the Notification card added under it. Shown with its menu open: choices up to 1 day before, since a prep comes back every week.', 'q8'],
+    ['PB', 'B', 'The prep as rows, like a task', 'The prep sheet redone like the task sheet: the name, then Days and Time as rows (the days open under their row), then the Notification card. Same choices as A.', 'q8'],
+  ],
+}
+function r3Push() {
+  const step = ntCard(tx(R3_STEPS[1][0]), t('CV & LinkedIn · step 2 of 4', 'Currículo e LinkedIn · etapa 2 de 4'), t('now', 'agora'))
+  const prep = ntCard(tx(R3_PREP.title), `${t('Prep', 'Preparo')} · ${tx(R3_PREP.goal)}`, t('now', 'agora'))
+  return state.r3 === 'steps'
+    ? `<p class="get-line"><b>Arrives Wednesday 11 November, 8:00</b> (1 day before, at the morning summary’s time), with the step text you picked:</p><div class="wall">${step}</div>`
+    : `<p class="get-line"><b>Arrives Wednesdays and Fridays at 20:45</b> (15 minutes before each time), with the approved prep text:</p><div class="wall">${prep}</div>`
+}
+function r3HTML() {
+  return R3_OPTS[state.r3].map(([id, letter, name, note, q]) => {
+    const on = state.picks[q] === letter.toLowerCase()
+    return `<article class="opt"><div class="opt-head"><span class="letter">${letter}</span><h2 class="opt-name">${esc(name)}</h2></div>
+      <div class="device"><div class="scr"><div class="vp still ${isPhone() ? 'bare' : ''}" data-ph="${id}">${r3Phone(id)}</div></div></div>
+      <p class="opt-note">${esc(note)}</p><button class="pick ${on ? 'on' : ''}" data-ans="${q}:${letter.toLowerCase()}" aria-pressed="${on}">${on ? '✓ ' : ''}Pick ${letter}</button></article>`
+  }).join('') + `<article class="opt"><div class="opt-head"><span class="letter">✉</span><h2 class="opt-name">The push</h2></div><div class="get">${r3Push()}</div></article>`
+}
+
+// ——— 4. Questions ———
+const ANSWERED = [
+  ['1. Items with a time', 'a', 'Your Notification card decides: an item pushes only when its card says so. Settings drops “Items with a time”; the morning summary still lists everything.'],
+  ['2. Commitments', 'a', 'No reminder on commitments for now. Repeating reminders come later, kept as an open feature.'],
+  ['3. Preps', 'a', 'Preps get the same Notification card, None until set. Settings drops “Preps with a time”; the push text stays the approved one.'],
+  ['4. A push at the due time itself', 'a', '“At the time” (date and time) and “On the day” (date only) come first under None.'],
+  ['5. Date only: at what time', 'a, adjusted', 'At the morning summary’s time (8:00 to start), on the day the reminder falls.'],
+  ['6. Where the Notifications row sits', 'a', 'First row of the App section, above Language.'],
+]
+const QUESTIONS = [
+  { key: 'q7', title: '7. The card on project steps', text: 'See “Steps and preps” → Project steps.', answers: [
+    ['a', 'A step opens like a task: a sheet with its name, notes, End date and the Notification card.', 'the same card everywhere, and steps get notes'],
+    ['b', 'A bell beside each step’s date opens the menu right on the project page.', ''],
+  ] },
+  { key: 'q8', title: '8. The card on preps', text: 'See “Steps and preps” → Preps.', answers: [
+    ['a', 'The prep sheet as it is, with the card under it.', 'the smallest change'],
+    ['b', 'The prep sheet redone as rows, like a task.', ''],
+  ] },
+  { key: 'q9', title: '9. Steps whose date you didn’t set', text: 'A step without its own end date gets one spread from the project’s dates (4 steps in a month: about a week each). That date moves when steps are added, removed or done.', answers: [
+    ['a', 'They can have a reminder too; it follows the date shown, moving with it.', 'every step has a date on the page, so every step can remind'],
+    ['b', 'Only steps with an end date you set; the others show “Set an end date to get a notification.”', ''],
+  ] },
+  { key: 'q10', title: '10. Preps while creating a goal', text: 'Preps are also written in the new-goal steps (and in Edit goal), as a short form for up to three preps.', answers: [
+    ['a', 'Only in the prep sheet on the goal’s page; the new-goal steps stay short.', 'creating a goal is already long'],
+    ['b', 'In the new-goal steps and Edit goal too.', ''],
+  ] },
+]
+function questionsPanel() {
+  const done = `<div class="qcard"><h2>Rounds 1 and 2, answered</h2>${ANSWERED.map(([title, k, text]) => `<p class="done-q"><b>${esc(title)}: ${k}.</b> ${esc(text)}</p>`).join('')}</div>`
+  return `<div class="tgroup"><h2>Questions</h2><p>Round 3: four new ones, about the card on project steps and preps. The first six are answered and built.</p></div>` + QUESTIONS.map((q) => `<div class="qcard"><h2>${esc(q.title)}</h2><p>${esc(q.text)}</p><div class="answers">${q.answers.map(([k, text, rec]) => { const on = state.picks[q.key] === k; return `<button class="ans ${on ? 'on' : ''}" data-ans="${q.key}:${k}" aria-pressed="${on}"><span class="k">${k}</span><span>${esc(text)}${rec ? `<span class="rec">Suggested: ${esc(rec)}</span>` : ''}</span></button>` }).join('')}</div></div>`).join('') + done
+}
+
+// ——— render ———
+const $ = (s) => document.querySelector(s)
+const isPhone = () => matchMedia('(max-width: 760px)').matches
+function phoneInner(id) { return id === 'S' ? settingsPage() : id === 'D' ? sheetPhone() : r3Phone(id) }
+const D_NOTE = 'As in Reminders: once the task has a date, a card appears with one Notification row, None to start. Tap the value on the right for the menu: None, the choices that still fit before the due date, and Custom. Custom opens a wheel, with what you set in red above it.'
+function phonesHTML() {
+  if (state.tab === 'r3') return r3HTML()
+  if (state.tab === 'settings') {
+    const v = VIEWS.find((x) => x.key === state.sview)
+    return `<article class="opt"><div class="device"><div class="scr"><div class="vp ${isPhone() ? 'bare' : ''}" data-ph="S">${phoneInner('S')}</div></div></div><p class="caption">${v.cap}</p></article>`
+  }
+  return `<article class="opt"><div class="opt-head"><span class="letter">D</span><h2 class="opt-name">Notification card, as in Reminders</h2></div>
+    <div class="device"><div class="scr"><div class="vp ${isPhone() ? 'bare' : ''}" data-ph="D">${phoneInner('D')}</div></div></div>
+    <p class="opt-note">${esc(D_NOTE)}</p><div class="get" data-get="D">${getBlock()}</div></article>`
+}
+function render() {
+  if (state.theme) document.documentElement.dataset.theme = state.theme
+  else delete document.documentElement.dataset.theme
+  document.documentElement.lang = state.lang === 'en' ? 'en' : 'pt-BR'
+  const dark = state.theme ? state.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
+  const done = { reminder: '', texts: '', settings: '', r3: ['q7', 'q8'].every((k) => state.picks[k]) ? '✓' : '', questions: ['q7', 'q8', 'q9', 'q10'].every((k) => state.picks[k]) ? '✓' : '' }
+  $('#steps').innerHTML = TABS.map((x, k) => `<button class="chip ${x.key === state.tab ? 'on' : ''}" data-tab="${x.key}" aria-pressed="${x.key === state.tab}"><span class="n">${k + 1}</span>${x.label}${done[x.key] ? `<span class="pk">${done[x.key]}</span>` : ''}</button>`).join('')
+  const subs = state.tab === 'reminder' ? SCENS.map((x) => [x.key, x.label, x.key === state.scen]) : state.tab === 'settings' ? VIEWS.map((x) => [x.key, x.label, x.key === state.sview])
+    : state.tab === 'r3' ? R3S.map((x) => [x.key, x.label, x.key === state.r3]) : []
+  $('#sub').hidden = !subs.length
+  $('#sub').innerHTML = subs.map(([k, label, on]) => `<button class="chip ${on ? 'on' : ''}" data-sub="${k}" aria-pressed="${on}">${label}</button>`).join('')
+  $('#scen-note').hidden = state.tab !== 'reminder' && state.tab !== 'r3'
+  $('#scen-note').textContent = state.tab === 'r3' ? r3().note : SCENS.find((x) => x.key === state.scen).note
+  for (const b of document.querySelectorAll('#lang button')) b.classList.toggle('on', b.dataset.l === state.lang)
+  for (const b of document.querySelectorAll('#theme button')) b.classList.toggle('on', b.dataset.t === (dark ? 'dark' : 'light'))
+  const phones = state.tab === 'reminder' || state.tab === 'settings' || state.tab === 'r3'
+  $('#screens').hidden = !phones
+  $('#dots').hidden = true
+  $('#panel').hidden = phones
+  WHEELS = {}
+  if (phones) {
+    $('#screens').classList.toggle('one', state.tab !== 'r3')
+    $('#screens').innerHTML = phonesHTML()
+    $('#dots').innerHTML = ''
+    fit(); setWheels(); syncDots(); document.querySelectorAll('.vp').forEach(placeMenu)
+  } else {
+    $('#panel').innerHTML = state.tab === 'texts' ? textsPanel() : questionsPanel()
+    $('#screens').innerHTML = ''
+  }
+  const p = state.picks
+  const parts = [['Q7', p.q7], ['Q8', p.q8], ['Q9', p.q9], ['Q10', p.q10]]
+  const n = parts.filter((x) => x[1]).length
+  $('#picks-text').innerHTML = `<b>Round 3:</b> ` + parts.map(([k, v]) => `${k} ${v || '–'}`).join(' · ')
+  $('#copy').disabled = !n
+}
+// One phone again after a change, keeping its scroll and not replaying what already opened.
+function refresh(id, animateOpen = false) {
+  const vp = document.querySelector(`.vp[data-ph="${id}"]`)
+  if (!vp) return
+  const sc = vp.querySelector('.sheet-scroll, .screen')
+  const top = sc ? sc.scrollTop : 0
+  vp.classList.add('still')
+  vp.innerHTML = phoneInner(id)
+  if (animateOpen) for (const d of vp.querySelectorAll('.dt-picker')) d.style.animation = 'open 0.3s var(--ease-out) both'
+  const sc2 = vp.querySelector('.sheet-scroll, .screen')
+  if (sc2) sc2.scrollTop = top
+  const g = document.querySelector(`[data-get="${id}"]`)
+  if (g) g.innerHTML = getBlock(id)
+  for (const w of vp.querySelectorAll('.wheel')) w.scrollTop = +w.dataset.sel * 36
+  placeMenu(vp)
+}
+function fit() {
+  for (const scr of document.querySelectorAll('.scr')) {
+    const vp = scr.querySelector('.vp')
+    const w = scr.clientWidth, h = scr.clientHeight
+    if (isPhone()) { vp.style.transform = 'none'; vp.style.width = w + 'px'; vp.style.height = h + 'px'; continue }
+    const s = w / 390
+    vp.style.width = '390px'; vp.style.height = h / s + 'px'; vp.style.transform = `scale(${s})`
+  }
+}
+function syncDots() {
+  const s = $('#screens')
+  const i = Math.round(s.scrollLeft / Math.max(1, s.clientWidth))
+  document.querySelectorAll('#dots i').forEach((d, k) => d.classList.toggle('on', k === i))
+}
+const savePicks = () => store.set('picks3', { q7: state.picks.q7, q8: state.picks.q8, q9: state.picks.q9, q10: state.picks.q10 })
+
+// ——— events ———
+$('#steps').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (!b) return; state.tab = b.dataset.tab; store.set('tab', state.tab); render(); scrollTo?.(0, 0) })
+$('#sub').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-sub]'); if (!b) return
+  if (state.tab === 'r3') { state.r3 = b.dataset.sub; store.set('r3', state.r3) }
+  else if (state.tab === 'reminder') { state.scen = b.dataset.sub; store.set('scen', state.scen); resetPhones() }
+  else { state.sview = b.dataset.sub; state.alert = false; store.set('sview', state.sview) }
+  render()
+})
+$('#lang').addEventListener('click', (e) => { const b = e.target.closest('[data-l]'); if (!b) return; state.lang = b.dataset.l; store.set('lang', state.lang); render() })
+$('#theme').addEventListener('click', (e) => { const b = e.target.closest('[data-t]'); if (!b) return; state.theme = b.dataset.t; store.set('theme', state.theme); render() })
+$('#screens').addEventListener('click', (e) => {
+  const pk = e.target.closest('[data-ans]')
+  if (pk) { const [k, v] = pk.dataset.ans.split(':'); state.picks[k] = state.picks[k] === v ? undefined : v; savePicks(); render(); return }
+  if (state.tab === 'r3') return
+  const tog = e.target.closest('[data-tog]')
+  if (tog) {
+    const key = tog.dataset.tog.split(':')[1]
+    state.on[key] = !state.on[key]
+    const opens = ['summary', 'review', 'quiet'].includes(key)
+    if (opens) state.sOpen = state.on[key] ? key : state.sOpen === key ? null : state.sOpen
+    WHEELS = {}; refresh('S', opens && state.on[key]); return
+  }
+  const ms = e.target.closest('[data-msel]')
+  if (ms) {
+    const p = state.phones.D, k = ms.dataset.msel
+    if (k === 'custom' && p.sel !== 'custom') { p.cn = 1; p.cu = scen().time ? 1 : 0 }
+    p.sel = k === 'none' || k === 'custom' ? k : [+k.split(':')[0], k.split(':')[1]]
+    p.menu = false; WHEELS = {}; refresh('D', k === 'custom'); return
+  }
+  if (e.target.closest('[data-menu]')) {
+    const p = state.phones.D; p.menu = !p.menu; WHEELS = {}; refresh('D')
+    const m = document.querySelector('.vp[data-ph="D"] .menu'); if (m) m.style.animation = 'menu-pop 0.22s var(--ease-out) both'
+    return
+  }
+  if (e.target.closest('[data-menu-close]')) { state.phones.D.menu = false; WHEELS = {}; refresh('D'); return }
+  const open = e.target.closest('[data-open]')
+  if (open) {
+    const [id, key] = open.dataset.open.split(':')
+    if (id === 's') { const opening = state.sOpen !== key; state.sOpen = opening ? key : null; WHEELS = {}; refresh('S', opening); return }
+    const p = state.phones.D; p.atOpen = !p.atOpen; WHEELS = {}; refresh('D', p.atOpen); return
+  }
+  const item = e.target.closest('.wheel-item')
+  if (item) { const w = item.parentElement; w.scrollTo({ top: [...w.children].indexOf(item) * 36, behavior: 'smooth' }); return }
+  if (e.target.closest('[data-ask]')) { state.alert = true; WHEELS = {}; refresh('S', true); return }
+  const g = e.target.closest('[data-go-view]')
+  if (g) { state.sview = g.dataset.goView; state.alert = false; store.set('sview', state.sview); render() }
+})
+$('#panel').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-pick], [data-ans]'); if (!b) return
+  const [k, v] = (b.dataset.pick || b.dataset.ans).split(':')
+  state.picks[k] = state.picks[k] === v ? undefined : v; savePicks(); render()
+})
+// A wheel settles on a value: what it changes follows, then its phone redraws.
+const wheelTimers = new Map()
+$('#screens').addEventListener('scroll', (e) => {
+  const w = e.target
+  if (!(w instanceof Element)) return
+  if (w.id === 'screens') return syncDots()
+  if (!w.classList.contains('wheel')) return
+  clearTimeout(wheelTimers.get(w))
+  wheelTimers.set(w, setTimeout(() => {
+    const reg = WHEELS[w.dataset.wh]; if (!reg) return
+    const i = Math.max(0, Math.min(reg.n - 1, Math.round(w.scrollTop / 36)))
+    if (i === +w.dataset.sel) return
+    reg.set(i)
+    const id = w.closest('.vp').dataset.ph
+    WHEELS = {}; refresh(id)
+  }, 120))
+}, true)
+$('#copy').addEventListener('click', () => {
+  const p = state.picks
+  const text = `S5 mockup round 3: question 7 ${p.q7 || '-'}; question 8 ${p.q8 || '-'}; question 9 ${p.q9 || '-'}; question 10 ${p.q10 || '-'}`
+  const btn = $('#copy')
+  const fallback = () => {
+    let f = document.querySelector('.fallback')
+    if (!f) { f = document.createElement('textarea'); f.className = 'fallback'; f.rows = 3; $('.picks-in').prepend(f) }
+    f.value = text; f.select()
+  }
+  try {
+    navigator.clipboard.writeText(text).then(() => { btn.textContent = 'Copied'; setTimeout(() => (btn.textContent = 'Copy picks'), 1600) }, fallback)
+  } catch { fallback() }
+})
+let resizeTimer, wasPhone = isPhone()
+addEventListener('resize', () => {
+  clearTimeout(resizeTimer)
+  resizeTimer = setTimeout(() => { if (isPhone() !== wasPhone) { wasPhone = isPhone(); render() } else { fit(); placeMenu(document.querySelector('.vp[data-ph="D"]')) } }, 60)
+})
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', render)
+render()
+</script>
