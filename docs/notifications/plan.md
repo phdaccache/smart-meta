@@ -1879,3 +1879,5 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   sight); the summary not coming again the same day explained (one a day, sent ones are kept).
 - **2026-10-31 (17):** a push's link to Today is kept until shown with the app on screen, surviving the
   reload of an update; taps logged; the Android pop-ups line removed (owner).
+- **2026-10-31 (18):** owner's test: the highlight and "Now" work on the iPhone. "Now" leaves out what's due
+  another day (a step due tomorrow with "1 day before" had joined it); spec NO-13.

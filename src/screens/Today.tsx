@@ -248,7 +248,8 @@ export function TodayScreen({ date }: { date?: DateStr }) {
   useEffect(() => {
     if (!pending || !visible || !snap || !view || prefs === undefined) return
     const { remind: key, at, elsewhere } = pending
-    const open = new Set(view.groups.flatMap((g) => g.items).filter((i) => !i.done).map((i) => i.key))
+    const items = view.groups.flatMap((g) => g.items).filter((i) => !i.done)
+    const open = new Set(items.map((i) => i.key))
     if (!open.has(key)) {
       // Not here yet: still on its way from the sync, so it waits (a little while at most).
       const id = key.slice(key.indexOf(':') + 1)
@@ -262,7 +263,9 @@ export function TodayScreen({ date }: { date?: DateStr }) {
     writePending(null)
     setPending(null)
     const input = { snap, prefs: prefs ?? DEFAULT_PREFS, now: Date.now(), timeZone: phoneTimeZone(), rolloverHour: settings.rolloverHour }
-    const rows = Number.isFinite(at) ? remindedRows(input, at - NOW_MS, at + 60_000).filter((k) => open.has(k)) : []
+    // "Now" is what's due now: an early reminder for something due another day stays out (owner, 2026-10-31).
+    const dueNow = new Set(items.filter((i) => !i.dueDate || i.dueDate <= today).map((i) => i.key))
+    const rows = Number.isFinite(at) ? remindedRows(input, at - NOW_MS, at + 60_000).filter((k) => k === key || dueNow.has(k)) : []
     const together = rows.length > 1 && rows.includes(key)
     setNowRows(together ? rows : null)
     // Nothing on Today may hide the row.

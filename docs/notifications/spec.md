@@ -158,7 +158,8 @@ Rules:
 - **NO-13** [S5] Tapping a push **opens that item** (task, project, goal) or Today. [S5, owner, 2026-10-31]
   A reminder for something on Today (a task, the current step, today's prep) opens **Today**, scrolled to its
   row, which lights up a moment, as in Reminders. When others reminded within `N-10` of it, Today's filter
-  shows "Now": those rows only, the tapped one lit. Anything else opens its page.
+  shows "Now": those rows only, the tapped one lit; of the others, only those due today or late (an early
+  reminder for something due another day isn't "now"). Anything else opens its page.
 - **NO-14** [S5] Pushes use the **app's language** and the user's **time zone**, including travel and
   daylight saving.
 - **NO-15** [S5] Pushes go to **one device per account**: the latest that turned notifications on.
