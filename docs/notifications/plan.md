@@ -1738,6 +1738,14 @@ The S6 preview has its Vercel Preview variables (Supabase URL and key, `VITE_VAP
   Also: the row waits for a real frame as well; the app looks for the tap for 10 s, not 2; a page in the background
   doesn't animate. The log now says "app came to the front" and how long after the tap it read it, for the next round.
 
+**Third round (same day):** a goal's push and a reminder's, tapped with the app in the background, both work now (owner).
+**What the white screen is:** the owner's screenshot from before these fixes shows the iPhone's own browser bar inside the
+installed app ("Search or enter website name", no address, back, share, reload). So it isn't our page: it's the empty entry
+under the app's first screen, reached by going back too far, and none of our code runs there, which is why the log and the
+guard saw nothing. That fits the first Back bug above. No white screen since that fix, but not many tries yet. **Open:** the
+iPhone's own edge swipe doesn't go through `goBack`, so a swipe on the bottom screen might reach that entry too. If it does,
+the fix is a spare entry at the bottom of the stack that a swipe lands on, in `src/ui/router.ts`.
+
 ### S6 part B: production and the merge (step by step)
 
 Written in part A so it survives the compaction; check each against the code as you go. Claude can't do the
