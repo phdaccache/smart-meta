@@ -31,7 +31,7 @@ export default defineConfig({
       manifest: {
         id: '/',
         name: 'Smart Meta',
-        short_name: 'Meta',
+        short_name: 'Smart Meta',
         description: 'Goals that survive the moment of decision.',
         start_url: '/',
         scope: '/',

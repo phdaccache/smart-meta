@@ -16,7 +16,8 @@ import {
   localRow, NoPrfError, passkeysWork, setUpWithPasskey, setUpWithPassword, unlockWithPasskey, unlockWithPassword,
 } from '../sync/keys'
 import { useCaptcha } from '../ui/captcha'
-import { holdKeyboard, PageText, passKeyboard, Screen, Section, Sheet, toast } from '../ui/components'
+import { holdKeyboard, PageText, passKeyboard, Screen, Section, Sheet, Switch, toast } from '../ui/components'
+import { pushBeta, setPushBeta } from '../sync/push'
 import { IconChevronLeft, IconChevronRight } from '../ui/icons'
 import { backTo, currentDepth, goBack, navigate, openOver, useLocation } from '../ui/router'
 import { SwipeToDelete } from '../ui/SwipeToDelete'
@@ -712,6 +713,8 @@ function RequestsScreen() {
   const { query } = useLocation()
   const [waiting, setWaiting] = useState<Request[] | null>(null)
   const [approved, setApproved] = useState<Member[]>([])
+  /** Members who get real pushes while Pushes is on Shadow (0010); null before 0010 or while loading. */
+  const [beta, setBeta] = useState<Set<string> | null>(null)
   const me = useSyncStatus().userId
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -723,6 +726,8 @@ function RequestsScreen() {
       setWaiting(w)
       setApproved(m)
       setError(null)
+      // Its own call: before 0010 is pasted, Requests still works, without the switch.
+      setBeta(await pushBeta().catch((e) => (log('push beta', e), null)))
     } catch (e) {
       setError((e as Error).message)
     }
@@ -768,6 +773,15 @@ function RequestsScreen() {
     await load()
   }
   const sureOut = (m: Member) => confirm(t('acct.removeQ', { email: m.email }))
+  const toggleBeta = async (m: Member, on: boolean) => {
+    setBeta((b) => b && new Set(on ? [...b, m.userId] : [...b].filter((x) => x !== m.userId)))
+    try {
+      await setPushBeta(m.userId, on)
+    } catch (e) {
+      toast((e as Error).message)
+      await load()
+    }
+  }
 
   const initial = (email: string) => <span className="initial" aria-hidden="true">{email.charAt(0).toUpperCase()}</span>
   return (
@@ -799,7 +813,9 @@ function RequestsScreen() {
                     {m.avatar ? <AvatarView avatar={m.avatar} size={32} /> : initial(m.email)}
                     <div className="text">
                       <div className="title ellipsis">{m.name || m.email}</div>
-                      <div className="sub ellipsis">{m.name ? `${m.email} · ${askedText(m.approvedAt)}` : askedText(m.approvedAt)}</div>
+                      <div className="sub ellipsis">
+                        {[m.name && m.email, askedText(m.approvedAt), beta?.has(m.userId) && t('acct.beta')].filter(Boolean).join(' · ')}
+                      </div>
                     </div>
                   </button>
                 )
@@ -827,6 +843,14 @@ function RequestsScreen() {
                 <div className="sub">{t(open.request ? 'acct.asked' : 'acct.approvedOn')}</div><div className="title">{askedFull(open.at)}</div>
               </div></div>
             </div>
+            {open.member && open.member.userId !== me && beta && (
+              <div className="card list settings request-beta">
+                <div className="list-row">
+                  <div className="text"><div className="title">{t('acct.beta')}</div><div className="sub">{t('acct.betaSub')}</div></div>
+                  <Switch checked={beta.has(open.member.userId)} label={t('acct.beta')} onChange={(on) => toggleBeta(open.member!, on)} />
+                </div>
+              </div>
+            )}
             {open.member && open.member.userId !== me && (
               <div className="sheet-actions column">
                 <button className="btn danger block" onClick={() => sureOut(open.member!) && out(open.member!)}>{t('acct.removeMember')}</button>

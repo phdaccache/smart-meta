@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { flushSync } from 'react-dom'
+import { log } from '../sync/log'
 
 const listeners = new Set<() => void>()
 const notify = () => {
@@ -96,13 +97,12 @@ let ownMoves = 0
 /** What was asked for while one of our moves was on its way: it runs, in order, once the browser gets there. */
 let later: (() => void)[] = []
 
-// A reload with a sheet open leaves its entry behind, with no sheet: drop it.
-if (layer() > 0) {
-  ownMoves++
-  history.go(-layer())
-}
-// Entries made before this app ran (or by a reload) count as the bottom of the stack.
-else if (!depth()) history.replaceState({ depth: 0 }, '')
+// Entries made before this page loaded count as the bottom of the stack. After a reload (the app updating
+// itself on an inner screen, S5 test), the entries under it belong to the page that was: going back into
+// them loads that page anew, which a Home Screen app on the iPhone showed as a blank white page. So Back
+// starts here, and goes to the screen's own parent instead.
+if (depth() > 0 || layer() > 0) log('nav', 'fresh page at depth', depth(), 'layer', layer())
+history.replaceState({ depth: 0 }, '')
 
 // Screens keep their own scroll (see screensUnder) and the page itself never scrolls, so the browser restoring
 // the page's scroll on Back changes nothing, and it stays on: after a swipe back, the iPhone keeps its picture

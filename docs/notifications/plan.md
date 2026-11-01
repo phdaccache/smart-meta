@@ -1519,7 +1519,8 @@ card in the prep sheet only. The questions as asked:
 - **Developer → Pushes** couldn't change the mode: "UPDATE requires a WHERE clause" (Supabase's API refuses
   an UPDATE with none, even on one row; PGlite doesn't). Fixed by `0009_push_mode_where.sql`.
 - "from Meta" under each push: iPhone adds it (the Home Screen app's name, `short_name`); a web app can't
-  remove it.
+  remove it or move it beside the title. Renamed "Smart Meta" (owner): the Home Screen name is set when the
+  app is added, so it shows once the app is added again.
 - New decisions (owner): **each reminder is its own push**, never "2 things" (NO-9); **the summary counts
   kinds** (NO-1); **a reminder opens Today on its row**, lit a moment, with "Now" in the filter when others
   came within 15 minutes, only the tapped one lit (NO-13; steps and preps too when on Today); **a task's date
@@ -1536,6 +1537,31 @@ card in the prep sheet only. The questions as asked:
 
 **Owner's setup for the fixes:** Supabase → `smart-meta-staging` → SQL Editor → paste
 `supabase/migrations/0009_push_mode_where.sql` → Run.
+
+**Second round, the same evening (answers in chat):**
+- **Shadow beta from the app:** Developer → Requests → a member → "Shadow beta" switch; the list says
+  "Shadow beta" beside them. `0010_owner_push_tools.sql`: `push_beta_members()` and `set_push_beta()`,
+  owner only, members only. Tested on PGlite (12 checks, run twice).
+- **No fuse for the owner** (owner, to test): the same migration takes the owner's account out of N-8 in
+  `dispatch_claim` and `dispatch_requests` (0006's, with only that changed). Whether the fuse was hit shows
+  in the send log: `select at, kind, reason from private.send_log where reason = 'fuse' order by at desc;`
+- **A notification whose time has passed** warns on saving (task sheet, Quick Add, a new project, and
+  Done editing on a project's details), as an iOS action sheet: Save anyway, or Change it. A step's bell
+  only offers what's ahead; a step whose date moves closer isn't warned about (it has no save).
+- **The white page on Back:** the app updates itself as soon as it opens after a deploy, reloading on
+  whatever screen it was. The Back entries under that screen belonged to the page from before the reload,
+  and going back into them showed a blank white page on the iPhone. A freshly loaded page now counts as the
+  bottom of the stack (Back goes to the screen's parent), and the log notes "fresh page at depth N". The
+  iPhone's own swipe from the edge can still reach those old entries.
+- **Signing out offline** left the phone's push subscription in place, so pushes could still come. The
+  phone now drops its own subscription first; the server's copy goes when the push service answers "gone".
+- Renamed the Home Screen app "Smart Meta" (`short_name`, `apple-mobile-web-app-title`).
+- **Known limit, travel (NO-14):** pushes are planned for the phone's time zone when it last planned. After
+  landing, the first open (or sync) plans again for the new zone; until then they come at the old zone's
+  wall time.
+
+**Owner's setup for the second round:** paste `supabase/migrations/0010_owner_push_tools.sql` → Run (after
+0009). To see the new name, remove the app from the Home Screen and add it again (sign in again after).
 
 - [x] VAPID keys; service worker push and click handlers (deep links). *(Part 2.)*
 - [x] One subscription per user; re-subscribe on open; diagnostics logged (spec NO-23). *(Part 2.)*
@@ -1826,3 +1852,7 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   minutes isn't put off (`dateSetAt`); the phone's own picker for the Notification card and the step bell;
   Custom only what's still ahead, its red line folds the wheels; no drag-to-close from a wheel; prep rows'
   colors in forms; "Lembretes". Spec NO-1, NO-3, NO-9, NO-13, N-10, N-13 updated (owner's decisions).
+- **2026-10-31 (15):** second round from the owner: the shadow beta switched from Developer → Requests and
+  no fuse for the owner (`0010_owner_push_tools.sql`, spec NO-16, NO-17); a warning when saving a
+  notification whose time has passed (spec NO-3); Back after the app reloads itself stays in the app (the
+  white page); signing out offline drops the phone's subscription first; the app renamed "Smart Meta".

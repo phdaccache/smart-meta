@@ -134,7 +134,9 @@ Types:
   from a bell beside its end date on the project's page, whether that date was set or spread; a **prep** in
   its sheet on the goal's page (laid out as rows like a task), up to 1 day before. [S5, owner, 2026-10-31]
   The choices open in the phone's own picker (as a task's goal or project does); Custom's wheels offer only
-  what's still ahead of now; tapping Custom's red line folds the wheels and keeps the choice.
+  what's still ahead of now; tapping Custom's red line folds the wheels and keeps the choice. Saving with
+  a notification whose time has passed (the date moved closer, or the screen stayed open past it) asks
+  first: "This notification's time has passed. Nothing will be sent for it." Save anyway, or Change it.
 - **NO-4** [S5] **Weekly review**: its own push on Monday, with its **own editable time** (default
   `N-12`).
 - **NO-5** [S5] **Preps** don't push by themselves; their Notification card does (NO-3). (Owner,
@@ -161,9 +163,11 @@ Rules:
   daylight saving.
 - **NO-15** [S5] Pushes go to **one device per account**: the latest that turned notifications on.
 - **NO-16** [S5] A server-side **fuse** (`N-8` pushes per user per day), a **kill switch**, and a send
-  log without content (kept `N-21`).
+  log without content (kept `N-21`). [S5, owner, 2026-10-31] The owner's own account has no fuse, for
+  testing.
 - **NO-17** [S5] Before friends: a **shadow period** (`N-22`) that logs what would be sent without
-  sending.
+  sending. [S5, owner, 2026-10-31] The owner adds members to it and takes them out in Developer →
+  Requests (a member's sheet).
 - **NO-18** [S5] Notifications require an account; without one, Settings explains why and offers
   sign-in.
 - **NO-27** [S5] **Subscriptions are kept alive:** each app open checks the push subscription and

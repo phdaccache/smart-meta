@@ -98,15 +98,17 @@ export async function turnOnPush(userId: string): Promise<'on' | 'denied'> {
 export async function turnOffPush(userId: string): Promise<void> {
   const ours = await getMeta<string | null>(pushKey(userId), null)
   if (!ours) return
+  // The phone's own subscription goes first, so nothing reaches it even when the server can't be told
+  // (signing out offline): the push service then answers "gone", and the server deletes its copy (NO-27).
+  const sub = await browserSubscription(false).catch(() => null)
+  await sub?.unsubscribe().catch(() => {})
+  await setMeta(pushKey(userId), null)
+  await forgetPlan(userId)
+  log('push', 'off')
   if (supabase) {
     const { error } = await supabase.from('push_subscriptions').delete().eq('endpoint', ours)
     if (error) throw new Error(error.message)
   }
-  await setMeta(pushKey(userId), null)
-  await forgetPlan(userId)
-  const sub = await browserSubscription(false).catch(() => null)
-  await sub?.unsubscribe().catch(() => {})
-  log('push', 'off')
 }
 
 /** Where the account stands with pushes (0008): the mode, whether it's in the rollout, and whether it's the owner's. */
@@ -139,6 +141,19 @@ export async function setPushMode(userId: string, mode: PushStatus['mode']): Pro
   if (error) throw new Error(error.message)
   log('push', 'mode', mode)
   await refreshPushStatus(userId)
+}
+
+/** The members in the shadow beta (0010), for the owner: they get real pushes while the mode is Shadow. */
+export async function pushBeta(): Promise<Set<string>> {
+  const { data, error } = await supabase!.rpc('push_beta_members')
+  if (error) throw new Error(error.message)
+  return new Set((data as (string | { push_beta_members: string })[]).map((r) => (typeof r === 'string' ? r : r.push_beta_members)))
+}
+
+export async function setPushBeta(member: string, beta: boolean): Promise<void> {
+  const { error } = await supabase!.rpc('set_push_beta', { member, beta })
+  if (error) throw new Error(error.message)
+  log('push', 'beta', beta)
 }
 
 /** Checked at most this often while the app stays open, besides each open. */

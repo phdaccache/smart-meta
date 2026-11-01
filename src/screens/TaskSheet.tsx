@@ -10,7 +10,7 @@ import { InlineCalendar, TimeWheel } from '../ui/pickers'
 import { useSnapshot } from '../ui/hooks'
 import { IconCalendar, IconChevronUpDown, IconClock, IconGoals, IconNote } from '../ui/icons'
 import { navigate } from '../ui/router'
-import { ReminderCard } from '../ui/ReminderCard'
+import { ReminderCard, usePassedCheck } from '../ui/ReminderCard'
 import { IconTile, ProjectTile, ValueTile } from '../ui/valueLook'
 import { deletedToast, SwipeToDelete } from '../ui/SwipeToDelete'
 
@@ -136,6 +136,7 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
   const [goalId, setGoalId] = useState<string | null>(null)
   const [projectId, setProjectId] = useState<string | null>(null)
   const [note, setNote] = useState('')
+  const passed = usePassedCheck()
 
   useEffect(() => {
     if (!task) return
@@ -153,14 +154,16 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
     || projectId !== (task.forProjectId ?? null) || note !== (task.note ?? '')
     || JSON.stringify(reminder) !== JSON.stringify(task.reminder ?? null)
 
-  const save = async () => {
+  const save = () => {
     if (!title.trim()) return
-    // A project's task takes its goal from the project.
-    await updateTask(task, {
-      title: title.trim(), date, time: date && time ? time : null, reminder: date ? reminder : null, goalId: projectId ? null : goalId,
-      forProjectId: projectId, note: note.trim() || null,
+    passed.guard(date ? reminder : null, date, time, async () => {
+      // A project's task takes its goal from the project.
+      await updateTask(task, {
+        title: title.trim(), date, time: date && time ? time : null, reminder: date ? reminder : null, goalId: projectId ? null : goalId,
+        forProjectId: projectId, note: note.trim() || null,
+      })
+      onClose()
     })
-    onClose()
   }
 
   return (
@@ -192,6 +195,7 @@ export function TaskSheet({ task, onClose, today }: { task: Task | null; onClose
           {t('task.delete')}
         </button>
       </div>
+      {passed.ask}
     </Sheet>
   )
 }

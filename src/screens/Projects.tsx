@@ -12,7 +12,7 @@ import { IconCalendar, IconClose } from '../ui/icons'
 import { Sortable } from '../ui/Sortable'
 import { deletedToast, putBack, SwipeToDelete } from '../ui/SwipeToDelete'
 import { navigate } from '../ui/router'
-import { ReminderCard, ReminderChip } from '../ui/ReminderCard'
+import { ReminderCard, ReminderChip, usePassedCheck } from '../ui/ReminderCard'
 import { openQuickAddFor } from './QuickAdd'
 import { DateTimeRows, deleteWithUndo, GoalChoice, linkableGoals, TaskList } from './TaskSheet'
 
@@ -85,11 +85,14 @@ export function NewProjectScreen({ goalId: presetGoal }: { goalId?: string | nul
   const form = useRef<HTMLDivElement>(null)
   useEffect(() => passKeyboard(() => form.current?.querySelector('textarea')), [])
 
-  const save = async () => {
+  const passed = usePassedCheck()
+  const save = () => {
     if (!title.trim()) return setTried(true)
-    const p = await createProject({ title, note, targetDate, time, reminder, goalId, steps: steps.map((s) => s.title), state: 'backlog' })
-    toast(t('project.savedBacklog'))
-    navigate(`/projects/${p.id}`, { replace: true })
+    passed.guard(targetDate ? reminder : null, targetDate, time, async () => {
+      const p = await createProject({ title, note, targetDate, time, reminder, goalId, steps: steps.map((s) => s.title), state: 'backlog' })
+      toast(t('project.savedBacklog'))
+      navigate(`/projects/${p.id}`, { replace: true })
+    })
   }
 
   return (
@@ -111,6 +114,7 @@ export function NewProjectScreen({ goalId: presetGoal }: { goalId?: string | nul
         <DraftSteps steps={steps} onChange={setSteps} />
       </Section>
       <div className="wizard-nav"><button className="btn primary" onClick={save}>{t('project.save')}</button></div>
+      {passed.ask}
     </Screen>
   )
 }
@@ -167,6 +171,7 @@ export function ProjectScreen({ id }: { id: string }) {
   const today = useToday(settings.rolloverHour)
   const snap = useSnapshot()
   const [editing, setEditing] = useState(false)
+  const passed = usePassedCheck()
   if (!snap) return null
   const project = snap.projects.find((p) => p.id === id)
   if (!project) {
@@ -208,7 +213,10 @@ export function ProjectScreen({ id }: { id: string }) {
         </div>
       )}
 
-      <Section title={t('common.details')} aside={<button className="link-btn" onClick={() => setEditing(!editing)}>{editing ? t('common.doneEditing') : t('common.edit')}</button>}>
+      {/* Changes save as they're made; leaving with a notification whose time has passed asks first. */}
+      <Section title={t('common.details')} aside={<button className="link-btn" onClick={() => (editing
+        ? passed.guard(project.reminder, project.targetDate, project.time, () => setEditing(false)) : setEditing(true))}>
+        {editing ? t('common.doneEditing') : t('common.edit')}</button>}>
         {editing ? (
           // As in Quick add, each its own card on the page: inside the details card, the date's card would be lost in it.
           <div className="task-form">
@@ -294,6 +302,7 @@ export function ProjectScreen({ id }: { id: string }) {
           </details>
         </div>
       </Section>
+      {passed.ask}
     </Screen>
   )
 }

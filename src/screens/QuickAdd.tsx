@@ -3,7 +3,7 @@ import { createTask } from '../db/repo'
 import { t } from '../i18n'
 import type { DateStr, Reminder } from '../lib/types'
 import { holdKeyboard, NoteField, Sheet, TitleField, toast } from '../ui/components'
-import { ReminderCard } from '../ui/ReminderCard'
+import { ReminderCard, usePassedCheck } from '../ui/ReminderCard'
 import { useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { DateTimeRows, TaskLinks } from './TaskSheet'
 
@@ -49,14 +49,17 @@ function TaskForm({ today, onDone }: { today: DateStr; onDone: () => void }) {
   const [projectId, setProjectId] = useState<string | null>(preset.projectId ?? null)
   const project = snap?.projects.find((p) => p.id === projectId)
 
-  const save = async () => {
+  const passed = usePassedCheck()
+  const save = () => {
     if (!title.trim()) return
-    // Always a task: of a project (not a step), of a goal, or on its own.
-    await createTask({
-      title, note, date, time: time || null, reminder: date ? reminder : null, goalId: project ? null : goalId, forProjectId: project?.id ?? null,
+    passed.guard(date ? reminder : null, date, time, async () => {
+      // Always a task: of a project (not a step), of a goal, or on its own.
+      await createTask({
+        title, note, date, time: time || null, reminder: date ? reminder : null, goalId: project ? null : goalId, forProjectId: project?.id ?? null,
+      })
+      toast(project ? t('qa.addedTo', { project: project.title }) : t('common.added'))
+      onDone()
     })
-    toast(project ? t('qa.addedTo', { project: project.title }) : t('common.added'))
-    onDone()
   }
 
   return (
@@ -71,6 +74,7 @@ function TaskForm({ today, onDone }: { today: DateStr; onDone: () => void }) {
         <ReminderCard date={date} time={time} value={reminder} onChange={setReminder} />
         <TaskLinks projectId={projectId} goalId={goalId} onProject={setProjectId} onGoal={setGoalId} />
       </form>
+      {passed.ask}
     </Sheet>
   )
 }

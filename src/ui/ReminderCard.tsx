@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { t, tlist } from '../i18n'
 import {
   CUSTOM_MAX, DATE_CHOICES, DATE_UNITS, isPreset, PREP_CHOICES, PREP_MAX, PREP_UNITS, reminderAt, reminderChoices, reminderLabel,
@@ -190,4 +191,36 @@ function CustomWheels({ kind, value, onChange }: { kind: Kind; value: Reminder; 
         onChange={(i) => onChange({ n: Math.min(n, Math.max(1, kind.max(units[i]))), unit: units[i] })} />
     </div>
   )
+}
+
+/**
+ * Saving with a notification whose time has passed (owner, 2026-10-31): the date moved closer, or the screen
+ * stayed open past it. Nothing would be sent, so it asks first, as an iOS action sheet: save anyway, or go
+ * back and change it. `guard` runs `save` at once when there's nothing to say.
+ */
+export function usePassedCheck(): {
+  guard: (r: Reminder | null | undefined, date: DateStr | null | undefined, time: string | null | undefined, save: () => void) => void
+  ask: ReactNode
+} {
+  const prefs = usePrefs()
+  const [pending, setPending] = useState<(() => void) | null>(null)
+  const guard = (r: Reminder | null | undefined, date: DateStr | null | undefined, time: string | null | undefined, save: () => void) => {
+    const passed = !!r && !!date && reminderAt(r, date, time || null, prefs?.summaryTime ?? '08:00', phoneTimeZone()) <= Date.now()
+    if (passed) setPending(() => save)
+    else save()
+  }
+  const ask = pending && createPortal(
+    <div className="action-sheet-layer">
+      <div className="action-sheet" role="alertdialog" aria-label={t('rem.passedTitle')}>
+        <div className="action-sheet-shade" onClick={() => setPending(null)} />
+        <div className="action-sheet-group">
+          <p className="action-sheet-msg"><b>{t('rem.passedTitle')}</b>{t('rem.passedBody')}</p>
+          <button type="button" className="action-sheet-btn" onClick={() => { setPending(null); pending() }}>{t('rem.saveAnyway')}</button>
+        </div>
+        <button type="button" className="action-sheet-btn cancel" autoFocus onClick={() => setPending(null)}>{t('rem.changeIt')}</button>
+      </div>
+    </div>,
+    document.body,
+  )
+  return { guard, ask }
 }
