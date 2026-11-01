@@ -1579,6 +1579,14 @@ most) until its row has been shown with the app on screen; a row not there yet (
 it. The log has "push tapped / remind" for each tap, then "remind link" and "remind open task found". The
 Android line about pop-ups is gone (owner).
 
+**Fifth round (iPhone, from the owner's log):** it worked only when the iPhone had closed the app, so the
+tap opened a new window at the push's address. With the app still open in the background, the iPhone
+brought it to the front but the service worker's message never arrived (no "push tapped" line at all), or
+it reloaded the app at plain `/`. The service worker now also leaves the tap in a cache (`smart-meta-tap`,
+read once, a minute at most); the app reads it on start and each time it comes to the front (again 0.6 s
+and 2 s later, in case the worker is still writing it). The message and the cache carry the tap's time, so
+only one acts. The log says "push tapped message" or "push tapped kept".
+
 **Owner's setup for the second round:** paste `supabase/migrations/0010_owner_push_tools.sql` → Run (after
 0009). To see the new name, remove the app from the Home Screen and add it again (sign in again after).
 
@@ -1881,3 +1889,5 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   reload of an update; taps logged; the Android pop-ups line removed (owner).
 - **2026-10-31 (18):** owner's test: the highlight and "Now" work on the iPhone. "Now" leaves out what's due
   another day (a step due tomorrow with "1 day before" had joined it); spec NO-13.
+- **2026-10-31 (19):** a tapped push reaches an app the iPhone only brought to the front: the service worker
+  leaves the tap in a cache the app reads on start and on coming to the front.
