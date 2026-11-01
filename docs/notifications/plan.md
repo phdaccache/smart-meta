@@ -1812,6 +1812,11 @@ back fine with `history.forward()` in the dev app. Forward entries can't be remo
 in the code (the same forward entries, the same `popstate` path), so **`main` may have this too, unnoticed.** The owner is asked to try it there.
 If it has, it isn't from this project. A possible fix, not tried: stop touches at the right edge in the installed app (`preventDefault` on `touchstart`).
 
+**Ninth round (same day):** **the tap is fixed** (owner, iPhone). **`main` doesn't go white on that swipe, and the preview does** (owner), so the guess
+above that `main` had it too was wrong. The cause is still unknown. The owner's screenshot shows the back arrow dimmed, with only reload lit, so this
+looks like a page with no history at all, not an entry we can reach, which is new against what this plan said in the third round. Temporary log lines
+in `src/ui/router.ts` ("edge touch", "after swipe", "page leaving") say whether our page is still alive behind the white page. To remove once this is settled.
+
 ### S6 part B: production and the merge (step by step)
 
 Written in part A so it survives the compaction; check each against the code as you go. Claude can't do the
