@@ -1666,6 +1666,8 @@ setting). Mockups: [Smart Meta S6 Mockups](https://claude.ai/artifact/JGqJ6CnYgT
   settings (they're encrypted). It still arrives at night, for the owner only.
 - More than 3 goal review dates on one day (with the cap of 3): the rest get no push; their pages still ask.
 
+The S6 preview has its Vercel Preview variables (Supabase URL and key, `VITE_VAPID_PUBLIC_KEY`, all staging's).
+
 **To test part A on the S6 preview** (`smart-meta-h2ur-git-notifications-s6-daccache.vercel.app`, a new Home
 Screen app; sign in with an account on staging, Face ID, turn on notifications):
 1. **Settings → Notifications:** "Goal review dates" and the "How they arrive" section show; turning Quiet hours
