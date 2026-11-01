@@ -187,6 +187,14 @@ function writePending(p: PendingRemind | null) {
 }
 
 /** Whether the app is on screen. */
+/** When the app last came to the front. */
+let cameToFrontAt = 0
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') cameToFrontAt = Date.now()
+})
+/** How long the iPhone takes to really show an app it brings to the front. */
+const FRONT_SETTLE_MS = 700
+
 function useVisible(): boolean {
   const [visible, setVisible] = useState(() => document.visibilityState === 'visible')
   useEffect(() => {
@@ -284,9 +292,15 @@ export function TodayScreen({ date }: { date?: DateStr }) {
     if (!row) return
     const box = row.getBoundingClientRect()
     if (box.top < 0 || box.bottom > (window.visualViewport?.height ?? window.innerHeight)) row.scrollIntoView({ block: 'center' })
-    row.classList.remove('flash')
-    void row.offsetWidth // a new tap on the same row plays again
-    row.classList.add('flash')
+    // Coming to the front, the row lit up behind the iPhone's own animation and had faded by the time the app
+    // showed (S6 test: it only lit up when a closed app was opened, which takes longer). So it waits for that.
+    const wait = Math.max(0, FRONT_SETTLE_MS - (Date.now() - cameToFrontAt))
+    const id = setTimeout(() => {
+      row.classList.remove('flash')
+      void row.offsetWidth // a new tap on the same row plays again
+      row.classList.add('flash')
+    }, wait)
+    return () => clearTimeout(id)
   }, [flash])
 
   if (!snap || !view) return null

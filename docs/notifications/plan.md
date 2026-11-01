@@ -1708,6 +1708,21 @@ The S6 preview has its Vercel Preview variables (Supabase URL and key, `VITE_VAP
   coming: the push sets the number for its day. Badge off, open and leave: the number is gone.
 - **J. Send anything odd to Claude.** Settings → Developer → Diagnostics log has the details.
 
+**Owner's test of part A, first round (2026-11-01), iPhone:**
+- **A tap lit its row only when the app had been closed.** The log showed the tap arriving and the row found both
+  ways, and in the dev app the row lights from Today and from inner screens. Likely cause, not proven on the phone:
+  with the app in the background the row lit up behind the iPhone's own animation and had faded by the time the app
+  showed. It now waits until the app has been at the front for 0.7 s (`FRONT_SETTLE_MS` in `src/screens/Today.tsx`).
+- **The goal review push may not have come.** Open: the log suggests it was planned. To find out: `select at, kind,
+  fire_at, status, reason from private.send_log where kind in ('goal-review', 'summary') order by at desc limit 10;`
+  To test again: each goal has its own push a day, not tied to the summary (another habit goal with "Review on" today, the
+  summary's time 3 minutes ahead; an outcome goal waits for its extra days). To reset the day's rows on staging: `delete
+  from public.scheduled_notifications where id like 'sum:%' or id like 'gol:%';`, then change the summary's time.
+- **White screens, in Safari and the app.** Cause not known. The log has no crash lines, and one reload at an inner screen
+  (the S5 "white page on Back" case, which each new build can bring). `public/boot-guard.js` now notes each open
+  ("boot open in the app") and any file that failed to load, and if nothing is drawn after 8 s it logs that and offers a reload.
+  The next white screen's log, from the same place (Safari and the app keep separate logs), should say which it is.
+
 ### S6 part B: production and the merge (step by step)
 
 Written in part A so it survives the compaction; check each against the code as you go. Claude can't do the
