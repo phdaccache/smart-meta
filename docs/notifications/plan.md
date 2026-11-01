@@ -140,8 +140,8 @@ icon and name; the title is one line on the lock screen (cut with "…"), the bo
 
 | Type | Pick | Title | Body |
 |---|---|---|---|
-| Morning summary | A | "Today: 6 things" / "Hoje: 6 itens" | One sentence, at most 3 names (N-13): timed items with their time, then late ones marked, then the rest, then the count left. "Dentist appointment at 14:30, Renew gym membership (late), Gym and 3 more" / "Consulta no dentista às 14:30, Renovar a academia (atrasada), Academia e mais 3" |
-| Due at a time | A | The item's name | Single: replaced on 2026-10-31 by the task reminder text below ("Today, 14:30"), since items no longer push at their time by themselves. **Merged** (within N-10), kept: title "2 things at 11:00" / "2 itens às 11:00", body one item per line, later ones with their time ("Send the invoice, 11:10") |
+| Morning summary | A, **changed 2026-10-31** | "Today: 6 things" / "Hoje: 6 itens" | How many of each kind, none left out: "Tasks: 5, Commitments: 1" / "Tarefas: 5, Compromissos: 1" (owner's idea after testing). ~~At most 3 names, timed first: "Dentist appointment at 14:30, Renew gym membership (late), Gym and 3 more"~~ |
+| Due at a time | A | The item's name | Single: replaced on 2026-10-31 by the task reminder text below ("Today, 14:30"), since items no longer push at their time by themselves. ~~**Merged** (within N-10): "2 things at 11:00"~~: dropped 2026-10-31, each reminder is its own push (owner) |
 | Custom reminder | C, adjusted; **changed in S5 (2026-10-31)** | The item's name | **Task and project** (S5 pick A, times only): only when it's due, said from the day the push arrives: "Today, 14:30" / "Hoje, 14:30", "Tomorrow, 23:35" / "Amanhã, 23:35", the weekday within a week ("Thursday, 14:30" / "Quinta-feira, 14:30"), then the date ("June 1" / "1 de junho"); no time, the day alone ("Tomorrow"). **Project step** (owner's text): "CV & LinkedIn · step 1 of 4" / "Currículo e LinkedIn · etapa 1 de 4". **Prep:** the "Prep with a time" text below. ~~Goal item (habit)~~: not used while commitments have no reminder ("Exercise regularly · 1 of 3 this week", kept for later) |
 | Weekly review | B | "Weekly review" / "Revisão da semana" | "Look back at last week and plan this one." / "Confira a semana passada e planeje esta." Same text every week, no numbers |
 | Prep with a time | A | The prep | "Prep · Exercise regularly" / "Preparo · Fazer exercício com frequência" |
@@ -1512,6 +1512,31 @@ card in the prep sheet only. The questions as asked:
 9. **Timing:** `select at, kind, fire_at, status, reason from private.send_log order by at desc limit 20;`
    `at` should be within a few seconds of `fire_at`.
 
+**Owner's test of part 3, 2026-10-31, and the fixes the same day** (answers in chat):
+- **D** (two tasks 5 minutes apart) came as a single reminder once, and right the next try: the phone planned only
+  after each sync (2 seconds after a change), so locking it right after saving could skip the plan. Now it
+  also plans 0.8 s after a change and when the app goes to the background.
+- **Developer → Pushes** couldn't change the mode: "UPDATE requires a WHERE clause" (Supabase's API refuses
+  an UPDATE with none, even on one row; PGlite doesn't). Fixed by `0009_push_mode_where.sql`.
+- "from Meta" under each push: iPhone adds it (the Home Screen app's name, `short_name`); a web app can't
+  remove it.
+- New decisions (owner): **each reminder is its own push**, never "2 things" (NO-9); **the summary counts
+  kinds** (NO-1); **a reminder opens Today on its row**, lit a moment, with "Now" in the filter when others
+  came within 15 minutes, only the tapped one lit (NO-13; steps and preps too when on Today); **a task's date
+  changed the same day it was set, or within 30 minutes, isn't struck as put off** (a change of mind).
+- UI fixes: a drag that starts on a wheel no longer pulls the sheet down (every sheet); the Notification
+  card and the step's bell open the **phone's own picker**, as a task's goal does, with lines between None,
+  the choices and Custom where the phone draws them (the custom menu is gone); Custom's wheels offer only
+  what's still ahead (minutes up to the time left, no unit with none); tapping the red line folds the wheels
+  and keeps the choice; the summary's time no longer has a line under "Weekdays only"; "Reminders you set"
+  is now "Reminders" / "Lembretes"; preps in the new-goal form, Edit goal, the intro and templates take the
+  form's grey cards and grey day buttons (as Frequency and the chips), not black.
+- Asked: Settings → Notifications in the mockup also had **Goal review dates** and **On this phone** (badge,
+  details, quiet hours): those come in S6, as planned.
+
+**Owner's setup for the fixes:** Supabase → `smart-meta-staging` → SQL Editor → paste
+`supabase/migrations/0009_push_mode_where.sql` → Run.
+
 - [x] VAPID keys; service worker push and click handlers (deep links). *(Part 2.)*
 - [x] One subscription per user; re-subscribe on open; diagnostics logged (spec NO-23). *(Part 2.)*
 - [x] Planner (tests first) with phone-encrypted payloads; upload only the difference. *(Part 3.)*
@@ -1794,3 +1819,10 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   everywhere they're written (prep sheet, new goal, Edit goal, intro, template habits), the Notification card
   only in the prep sheet (up to 1 day before; Custom up to 24 hours or 6 days). Spec NO-3 updated. A planner
   test for a spread step's reminder (25 planner tests).
+- **2026-10-31 (14):** the owner's test of part 3 and the fixes: each reminder its own push (no merging;
+  N-10 now the window for Today's "Now"); a reminder opens Today on its row, lit, with "Now" when several
+  came together; the summary counts kinds (N-13 dropped); planning 0.8 s after a change and on going to the
+  background; `0009_push_mode_where.sql` for the kill switch; a task's date changed the same day or within 30
+  minutes isn't put off (`dateSetAt`); the phone's own picker for the Notification card and the step bell;
+  Custom only what's still ahead, its red line folds the wheels; no drag-to-close from a wheel; prep rows'
+  colors in forms; "Lembretes". Spec NO-1, NO-3, NO-9, NO-13, N-10, N-13 updated (owner's decisions).

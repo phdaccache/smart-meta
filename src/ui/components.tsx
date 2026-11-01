@@ -416,6 +416,11 @@ function useSwipeToDismiss(
       const body = sheet.querySelector('.sheet-body')
       const atTop = !body || body.scrollTop <= 0 || !body.contains(el)
       if (e.touches.length !== 1 || !atTop || el.closest('input, textarea, select, .look-icons, .look-colors')) return
+      // A wheel, or anything else that scrolls inside the body, takes the drag, whichever way it starts.
+      for (let x: HTMLElement | null = el; x && x !== body && x !== sheet; x = x.parentElement) {
+        const { overflowY } = getComputedStyle(x)
+        if ((overflowY === 'auto' || overflowY === 'scroll') && x.scrollHeight > x.clientHeight) return
+      }
       start = { y: e.touches[0].clientY, t: e.timeStamp }
       last = { y: start.y, t: e.timeStamp, v: 0 }
       dragging = false

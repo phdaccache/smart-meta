@@ -213,6 +213,9 @@ a { color: var(--accent); }
   content: ''; position: absolute; top: 0; right: 0; left: 54px; border-top: 1px solid var(--line); pointer-events: none;
 }
 .items > li:first-child > .item::before { display: none; }
+/* The row a tapped reminder opened (owner, 2026-10-31): it lights up a moment, as in Reminders. */
+.items > li.flash > .item { animation: row-flash 2.4s ease-out; }
+@keyframes row-flash { 0%, 45% { background: var(--accent-soft); } 100% { background: transparent; } }
 /* A project's steps: the lines run the full width, on its page and while it's being made. */
 .step-list .item::before { left: 0; }
 .group-head + .items > li:first-child > .item::before, .prompt + .items > li:first-child > .item::before { display: block; }
@@ -651,31 +654,22 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 32px; }
 .dt-value { font-size: 14px; font-weight: 600; color: var(--accent); margin-top: 1px; }
 .dt-picker { border-top: 1px solid var(--line); padding: 8px 12px 12px; }
 
-/* The Notification card (S5): its value opens a pull-down menu, as in iPhone's Reminders. */
-.menu-value {
-  display: inline-flex; align-items: center; gap: 4px; flex: 0 1 auto; min-width: 0; min-height: 44px; margin: -12px -4px -12px auto;
-  padding: 0 4px; color: var(--ink-2);
-}
-.menu-value:active { opacity: 0.5; }
-.menu-value .chev { flex: none; }
-.custom-line { margin: 4px 0 6px; text-align: center; font-size: 15px; font-weight: 600; color: var(--danger); }
-.choice-menu-layer { position: fixed; inset: 0; z-index: 80; }
+/* The Notification card (S5): Custom's choice in red over its wheels; tapping it folds them (owner, 2026-10-31). */
+.custom-line { display: block; width: 100%; margin: 4px 0 6px; text-align: center; font-size: 15px; font-weight: 600; color: var(--danger); }
+button.custom-line { min-height: 36px; margin: -2px 0 0; }
+button.custom-line:active { opacity: 0.5; }
 .switch:disabled { opacity: 0.5; cursor: default; }
 
 /* Settings → Notifications (S5) */
 .card.dim .title { color: var(--ink-3); }
-/* "Weekdays only" under the summary's time, with a line under it (owner, S5). */
-.sub-switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; margin-top: 6px; padding: 4px 4px 8px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 16px; }
+/* "Weekdays only" under the summary's time. */
+.sub-switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; margin-top: 6px; padding: 4px 4px 0; border-top: 1px solid var(--line); font-size: 16px; }
 .notif-note { margin-bottom: 12px; font-size: 15px; line-height: 1.4; color: var(--ink-2); }
 .notif-denied { margin-bottom: 12px; display: grid; gap: 6px; justify-items: start; }
 .notif-denied-icon { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: color-mix(in srgb, var(--danger) 14%, var(--surface)); color: var(--danger); }
 .notif-denied h3 { margin: 4px 0 0; font-size: 17px; }
 .notif-denied p { margin: 0; color: var(--ink-2); font-size: 15px; }
 .notif-denied ol { margin: 4px 0 0; padding-left: 22px; display: grid; gap: 4px; font-size: 15px; }
-/* .menu sits under its button; this one is placed by script (see ChoiceMenu). */
-.menu.choice-menu { position: fixed; top: auto; overflow-y: auto; overscroll-behavior: contain; padding: 0; min-width: 220px; }
-/* Groups as iOS draws them: a wider band between them. */
-.menu-group + .menu-group { border-top: 7px solid color-mix(in srgb, var(--ink) 7%, transparent); }
 
 /* inline calendar and time wheels */
 .cal-head { display: flex; align-items: center; gap: 2px; padding: 0 0 4px 6px; }
@@ -1363,14 +1357,18 @@ li.done .gs-title { color: var(--ink-3); }
 .step-bell::after { content: ''; position: absolute; inset: -9px -4px; }
 .step-bell.set { color: var(--accent); border-style: solid; border-color: color-mix(in srgb, var(--accent) 45%, transparent); background: var(--accent-soft); }
 .step-bell:active { opacity: 0.5; }
+/* The phone's own picker, laid over the bell and its wider target. */
+.step-bell select { position: absolute; inset: -9px -4px; width: calc(100% + 8px); height: calc(100% + 18px); opacity: 0; cursor: pointer; font-size: 16px; z-index: 1; }
 /* Preps as rows, like a task (S5, owner's pick 8b). */
 .prep-rows { display: grid; gap: 10px; }
 .prep-rows + .prep-rows { margin-top: 10px; }
 .prep-rows-head { display: flex; align-items: center; justify-content: space-between; min-height: 36px; margin: 0 4px -4px 16px; font-size: 13px; font-weight: 600; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.03em; }
 .prep-rows-head .prep-remove { position: static; }
 .prep-rows .dt-picker .weekdays { justify-content: center; }
-/* Inside a card (a new goal's form, the intro), the rows' own cards take the page's color to stand apart. */
-.card .prep-rows > .card { background: var(--bg); }
+/* Inside a card (a new goal's form, the intro), the rows' own cards look like the form's other cards (Frequency). */
+.card .prep-rows > .card { background: var(--surface-2); border-radius: var(--radius-sm); }
+/* Its days as grey choices too, like the chips above them, not the page's darker color. */
+.card .prep-rows .weekdays button:not(.on) { background: var(--surface-2); border-color: transparent; }
 
 /* ——— notes ——— */
 

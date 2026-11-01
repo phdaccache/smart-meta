@@ -9,7 +9,7 @@ import { toast } from '../ui/components'
 import { EncryptedTarget } from './encrypted'
 import { queueEverything, SyncEngine } from './engine'
 import { forgetAll, forgetKey, keepKeys, localLockState, readyKey, type LockState } from './keys'
-import { SYNC_AFTER_CHANGE_MS, SYNC_EVERY_MS, SYNC_MAX_WAIT_MS } from '../numbers'
+import { PLAN_AFTER_CHANGE_MS, SYNC_AFTER_CHANGE_MS, SYNC_EVERY_MS, SYNC_MAX_WAIT_MS } from '../numbers'
 import { log, short } from './log'
 import { startProfileSync, stopProfileSync } from './profile'
 import { planSoon } from './planner'
@@ -133,6 +133,20 @@ function afterChange() {
   const now = Date.now()
   firstChangeAt ??= now
   schedule(Math.max(0, Math.min(SYNC_AFTER_CHANGE_MS, firstChangeAt + SYNC_MAX_WAIT_MS - now)))
+  planAfterChange()
+}
+
+/**
+ * Pushes are planned from this phone's own data, so a change needn't wait for the sync: the owner set a
+ * reminder and locked the phone within the sync's 2 seconds, and its push never came (S5 test, 2026-10-31).
+ */
+let planTimer: ReturnType<typeof setTimeout> | undefined
+function planAfterChange(delay = PLAN_AFTER_CHANGE_MS) {
+  clearTimeout(planTimer)
+  planTimer = setTimeout(() => {
+    planTimer = undefined
+    if (status.userId && engine && navigator.onLine) void planSoon(status.userId)
+  }, delay)
 }
 
 /** Rows in the push sent while the app goes to the background: small enough for a keepalive request. */
@@ -144,6 +158,8 @@ let flushing = false
  * within seconds and closing it from the app switcher sends no event at all, so this can't wait.
  */
 async function flush() {
+  // A change waiting to be planned goes now, while the phone still lets the app run.
+  if (planTimer) planAfterChange(0)
   const e = engine
   if (!e || flushing || !navigator.onLine) return
   flushing = true

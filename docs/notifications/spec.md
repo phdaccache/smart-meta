@@ -119,8 +119,9 @@ and projects; photo avatars; Google sign-in if it becomes reliable on iPhone.
 
 Types:
 - **NO-1** [S5] **Morning summary**: one push, default time `N-11`, editable, optional **weekdays
-  only**, skipped on empty days; lists timed items first, then late, then the rest, at most `N-13`
-  names and "+N more". Shows item names (content), since it's encrypted end to end.
+  only**, skipped on empty days. Title "Today: N things"; body how many of each kind, a kind with none left
+  out: "Tasks: 4, Preps: 2, Commitments: 2, Projects: 3" (a project's current step counts for Projects).
+  [S5, owner, 2026-10-31: replaced the list of up to `N-13` names.]
 - **NO-2** [S5] **Due dates:** items with a due date appear in the morning summary. An item pushes only
   through its Notification card (NO-3), with or without a time (owner, 2026-10-31; before, items with a
   time pushed at that time by themselves). Project steps follow the same rule.
@@ -131,7 +132,9 @@ Types:
   minutes, hours, days, weeks or months). With a date only, it fires at the morning summary's time. A
   prep's reminder follows each of its times. Always sent. [S5, owner, 2026-10-31] A **project step** sets it
   from a bell beside its end date on the project's page, whether that date was set or spread; a **prep** in
-  its sheet on the goal's page (laid out as rows like a task), up to 1 day before.
+  its sheet on the goal's page (laid out as rows like a task), up to 1 day before. [S5, owner, 2026-10-31]
+  The choices open in the phone's own picker (as a task's goal or project does); Custom's wheels offer only
+  what's still ahead of now; tapping Custom's red line folds the wheels and keeps the choice.
 - **NO-4** [S5] **Weekly review**: its own push on Monday, with its **own editable time** (default
   `N-12`).
 - **NO-5** [S5] **Preps** don't push by themselves; their Notification card does (NO-3). (Owner,
@@ -144,12 +147,16 @@ Types:
 Rules:
 - **NO-9** [S5] Pushes **the app starts by itself** (summary, weekly review, goal review date): at most
   `N-7` a day. Pushes the user asked for (reminders set on a Notification card) **always** go
-  out. Items within `N-10` of each other are merged into one push.
+  out, **each as its own push**, as in Reminders: the phone stacks those that come together. ~~Items within
+  `N-10` of each other are merged into one push.~~ (Owner, 2026-10-31.)
 - **NO-10** [S5] Pushes arrive **on time** (normally within a minute). A push more than `N-9` late is
   dropped, never sent late.
 - **NO-11** [S5] **Finishing or deleting an item cancels** its pending push (once the phone has synced).
 - **NO-12** [S5] Late items are not pushed again.
-- **NO-13** [S5] Tapping a push **opens that item** (task, project, goal) or Today.
+- **NO-13** [S5] Tapping a push **opens that item** (task, project, goal) or Today. [S5, owner, 2026-10-31]
+  A reminder for something on Today (a task, the current step, today's prep) opens **Today**, scrolled to its
+  row, which lights up a moment, as in Reminders. When others reminded within `N-10` of it, Today's filter
+  shows "Now": those rows only, the tapped one lit. Anything else opens its page.
 - **NO-14** [S5] Pushes use the **app's language** and the user's **time zone**, including travel and
   daylight saving.
 - **NO-15** [S5] Pushes go to **one device per account**: the latest that turned notifications on.
@@ -263,10 +270,10 @@ code (RE-5), and add a line to the plan's change log. "Where" says what enforces
 | N-7 | **3** | Pushes per day the app starts by itself | Phone planner |
 | N-8 | **20** | Pushes per user per day, safety fuse | Server |
 | N-9 | **15 minutes** | A push later than this is dropped | Server |
-| N-10 | **15 minutes** | Items this close in time are merged into one push | Phone planner |
+| N-10 | **15 minutes** | Reminders this close before the one tapped show with it under Today's "Now" (until 2026-10-31: merged into one push) | Phone |
 | N-11 | **8:00** | Morning summary default time (user can change) | Phone |
 | N-12 | **Monday 8:00** | Weekly review push default (user can change the time) | Phone |
-| N-13 | **3** | Item names listed in the morning summary before "+N more" | Phone |
+| ~~N-13~~ | ~~3~~ | ~~Item names listed in the morning summary before "+N more"~~ (the summary counts kinds since 2026-10-31) | |
 | N-14 | **30 minutes** | An undo within this erases the check-in instead of keeping it as history | Phone |
 | N-15 | **2 seconds** | Sync waits this long after the last change | Phone |
 | N-16 | **10 seconds** | Longest wait during continuous editing | Phone |

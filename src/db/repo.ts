@@ -2,7 +2,7 @@ import { addDays, diffDays, formatTime, logicalDate, parseTime } from '../lib/da
 import { commitmentRevision } from '../lib/revisions'
 import type { CommitmentDraft, GoalDraft, PrepDraft } from '../lib/draft'
 import { DEFAULT_PREFS, type Prefs } from '../lib/planner'
-import { QUICK_UNDO_MS } from '../numbers'
+import { CHANGE_OF_MIND_MS, QUICK_UNDO_MS } from '../numbers'
 import { activeEntries, meetsTarget, missKey, type MissAsks, type MissPrompt } from '../lib/scoring'
 import type {
   Base, Commitment, DateStr, Entry, Goal, GoalReview, GoalState, ID, MissReason, Occurrence, Prep, Project, ProjectState,
@@ -458,15 +458,23 @@ export async function createTask(fields: {
   return put('tasks', make<'tasks'>({
     title: fields.title.trim(), date: fields.date ?? null, time: fields.date ? fields.time ?? null : null, goalId: fields.forProjectId || fields.projectId ? null : fields.goalId ?? null,
     projectId: fields.projectId ?? null, order, forProjectId: fields.projectId ? null : fields.forProjectId ?? null, note: fields.note?.trim() || null,
-    reminder: fields.date ? fields.reminder ?? null : null,
+    reminder: fields.date ? fields.reminder ?? null : null, dateSetAt: fields.date ? new Date().toISOString() : null,
   }))
 }
 
 export async function updateTask(t: Task, changes: Partial<Fields<Task>>) {
-  // A task's date put off (later, or taken off) keeps the old one, shown struck through from then on.
+  // A task's date put off (later, or taken off) keeps the old one, shown struck through from then on. Not
+  // when it was set the same day or a moment ago: that's a change of mind (owner, 2026-10-31).
   const cur = (await db.tasks.get(t.id)) ?? t
-  if ('date' in changes && cur.date && !cur.projectId && (!changes.date || changes.date > cur.date)) {
-    changes = { ...changes, movedFrom: [...(cur.movedFrom ?? []), cur.date] }
+  if ('date' in changes && (changes.date ?? null) !== (cur.date ?? null)) {
+    const { rolloverHour } = await getSettings()
+    const now = new Date()
+    const setAt = new Date(cur.dateSetAt ?? cur.createdAt)
+    const changedMind = now.getTime() - setAt.getTime() < CHANGE_OF_MIND_MS || logicalDate(now, rolloverHour) === logicalDate(setAt, rolloverHour)
+    if (cur.date && !cur.projectId && (!changes.date || changes.date > cur.date) && !changedMind) {
+      changes = { ...changes, movedFrom: [...(cur.movedFrom ?? []), cur.date] }
+    }
+    changes = { ...changes, dateSetAt: changes.date ? now.toISOString() : null }
   }
   return patch('tasks', t.id, changes)
 }

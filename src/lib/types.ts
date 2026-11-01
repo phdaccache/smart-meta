@@ -115,6 +115,8 @@ export interface Task extends Base {
   time?: string | null
   /** Tasks only: the dates it was due before, oldest first. Kept each time its date moves later or is taken off. */
   movedFrom?: DateStr[] | null
+  /** Tasks only: when its date was last set (ISO), so a change made soon after isn't counted as put off. */
+  dateSetAt?: string | null
   goalId?: ID | null
   /** Set: one of that project's steps, in `order`. */
   projectId?: ID | null

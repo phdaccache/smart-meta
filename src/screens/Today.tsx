@@ -10,7 +10,10 @@ import { buildDay, type Snapshot, type TodayGroup, type TodayItem } from '../lib
 import type { Commitment, DateStr, ID, MissReason, Task } from '../lib/types'
 import { CheckButton, Chip, DatePickerButton, DueText, Screen, Segmented, Sheet, toast } from '../ui/components'
 import { ProjectTile, ValueTile } from '../ui/valueLook'
-import { useDisplacements, useMissAsksLoaded, useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
+import { useDisplacements, useMissAsksLoaded, usePrefs, useSettings, useSnapshot, useToday, useWeekReviews } from '../ui/hooks'
+import { DEFAULT_PREFS, remindedRows } from '../lib/planner'
+import { phoneTimeZone } from '../lib/zoned'
+import { NOW_MS } from '../numbers'
 import { dismissedMisses, reviewPending } from '../lib/review'
 import { IconCalendar, IconCheck, IconChevronLeft, IconChevronRight, IconFilter, IconNote, IconPlus } from '../ui/icons'
 import { navigate, useLocation } from '../ui/router'
@@ -101,7 +104,11 @@ function applyWhen(groups: TodayGroup[], when: When, today: DateStr): TodayGroup
  * The filter button and the menu it opens, as on the iPhone: the menu grows out of the button,
  * the choice is ticked, and a tap anywhere else closes it. The button fills while a filter is on.
  */
-function WhenMenu({ value, onChange }: { value: When; onChange: (w: When) => void }) {
+function WhenMenu({ value, now, onChange }: {
+  value: When; onChange: (w: When) => void
+  /** Opened from a push that came with others: "Now" is on, and shown first. */
+  now: boolean
+}) {
   // Closing keeps it shown a moment, while it shrinks back into the button.
   const [phase, setPhase] = useState<'closed' | 'open' | 'closing'>('closed')
   const open = phase === 'open'
@@ -128,17 +135,23 @@ function WhenMenu({ value, onChange }: { value: When; onChange: (w: When) => voi
   }, [open])
   return (
     <div className="when" ref={wrap}>
-      <button type="button" className={`icon-btn filter-btn ${value !== 'all' ? 'on' : ''}`} aria-label={t('today.when')}
+      <button type="button" className={`icon-btn filter-btn ${value !== 'all' || now ? 'on' : ''}`} aria-label={t('today.when')}
         aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
         <IconFilter />
       </button>
       {phase !== 'closed' && (
         <div className={`menu ${phase === 'closing' ? 'closing' : ''}`} role="menu" aria-label={t('today.when')}>
           <div className="menu-title">{t('today.when')}</div>
+          {now && (
+            <button type="button" role="menuitemradio" aria-checked className="menu-item" onClick={() => setOpen(false)}>
+              <span className="menu-check"><IconCheck width={16} height={16} strokeWidth={2.4} /></span>
+              {t('today.whenNow')}
+            </button>
+          )}
           {WHENS.map((w) => (
-            <button key={w.value} type="button" role="menuitemradio" aria-checked={value === w.value} className="menu-item"
+            <button key={w.value} type="button" role="menuitemradio" aria-checked={!now && value === w.value} className="menu-item"
               onClick={() => { onChange(w.value); setOpen(false) }}>
-              <span className="menu-check">{value === w.value && <IconCheck width={16} height={16} strokeWidth={2.4} />}</span>
+              <span className="menu-check">{!now && value === w.value && <IconCheck width={16} height={16} strokeWidth={2.4} />}</span>
               {w.label()}
             </button>
           ))}
@@ -165,9 +178,10 @@ export function TodayScreen({ date }: { date?: DateStr }) {
   const view = useMemo(() => (snap && asks && weekReviews ? buildDay(snap, viewDate, ctx, asks, dismissed) : null),
     [snap, viewDate, ctx, asks, weekReviews, dismissed])
   const isPast = viewDate !== today
-  // A reminder's push opens its task (spec NO-13): over Today, which keeps the plain address, so Back
-  // doesn't open it again.
-  const linked = useLocation().query.get('task')
+  // Opening a task from a link (a project's own task pushed from elsewhere): over Today, which keeps the
+  // plain address, so Back doesn't open it again.
+  const query = useLocation().query
+  const linked = query.get('task')
   useEffect(() => {
     if (!linked || !snap) return
     navigate('/', { replace: true })
@@ -175,10 +189,64 @@ export function TodayScreen({ date }: { date?: DateStr }) {
     if (task) setOpenTask(task)
   }, [linked, snap])
 
+  // A reminder's push (owner, 2026-10-31): Today, scrolled to its row, which lights up a moment, as in
+  // Reminders. Others that reminded with it show together under the filter's "Now"; only the tapped one
+  // lights up. Not on Today (a step not current yet, a prep on another day): where it lives instead.
+  const prefs = usePrefs()
+  const remind = query.get('remind')
+  const [nowRows, setNowRows] = useState<string[] | null>(null)
+  const [flash, setFlash] = useState<string | null>(null)
+  useEffect(() => {
+    if (!remind || !snap || !view || prefs === undefined) return
+    const at = Number(query.get('at'))
+    const elsewhere = query.get('else')
+    navigate('/', { replace: true })
+    const open = new Set(view.groups.flatMap((g) => g.items).filter((i) => !i.done).map((i) => i.key))
+    if (!open.has(remind)) {
+      if (elsewhere?.startsWith('/') && !elsewhere.startsWith('//')) navigate(elsewhere)
+      return
+    }
+    const input = { snap, prefs: prefs ?? DEFAULT_PREFS, now: Date.now(), timeZone: phoneTimeZone(), rolloverHour: settings.rolloverHour }
+    const rows = Number.isFinite(at) ? remindedRows(input, at - NOW_MS, at + 60_000).filter((k) => open.has(k)) : []
+    const together = rows.length > 1 && rows.includes(remind)
+    setNowRows(together ? rows : null)
+    // Nothing on Today may hide the row.
+    if (!together && !applyWhen(applyFilter(view.groups, filter), when, today).some((g) => g.items.some((i) => i.key === remind))) {
+      setFilter('all')
+      setWhen('all')
+    }
+    setFlash(remind)
+  }, [remind, snap, view, prefs])
+  useEffect(() => {
+    if (!flash) return
+    const row = document.querySelector<HTMLElement>(`[data-item="${CSS.escape(flash)}"]`)
+    if (!row) return setFlash(null)
+    // Out of sight: it lights up once it has scrolled into view, not on the way.
+    const box = row.getBoundingClientRect()
+    const away = box.top < 0 || box.bottom > (window.visualViewport?.height ?? window.innerHeight)
+    if (away) row.scrollIntoView({ block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
+    let off: ReturnType<typeof setTimeout> | undefined
+    const on = setTimeout(() => {
+      row.classList.add('flash')
+      off = setTimeout(() => {
+        row.classList.remove('flash')
+        setFlash(null)
+      }, 2400)
+    }, away ? 600 : 0)
+    return () => {
+      clearTimeout(on)
+      clearTimeout(off)
+      row.classList.remove('flash')
+    }
+  }, [flash])
+
   if (!snap || !view) return null
   // Past days show what was done; the date filter is for what's ahead.
-  const whenOn = !isPast && when !== 'all'
-  const shown = applyWhen(applyFilter(view.groups, filter), isPast ? 'all' : when, today)
+  const nowOn = !isPast && !!nowRows
+  const whenOn = !isPast && (when !== 'all' || nowOn)
+  const shown = nowOn
+    ? view.groups.map((g) => ({ ...g, items: g.items.filter((i) => nowRows.includes(i.key)), prompts: [] })).filter((g) => g.items.length > 0)
+    : applyWhen(applyFilter(view.groups, filter), isPast ? 'all' : when, today)
 
   let count = ''
   if (view.total > 0) {
@@ -198,7 +266,7 @@ export function TodayScreen({ date }: { date?: DateStr }) {
     <Screen
       // With a date filter on, the line under the date says which, so a short list is never a surprise.
       eyebrow={isPast ? t('today.pastDay', { date: dayMonth(viewDate) })
-        : [dayMonth(viewDate), whenOn ? WHENS.find((w) => w.value === when)!.label() : count].filter(Boolean).join(' · ')}
+        : [dayMonth(viewDate), nowOn ? t('today.whenNow') : whenOn ? WHENS.find((w) => w.value === when)!.label() : count].filter(Boolean).join(' · ')}
       eyebrowAside={!isPast && <SyncNote />}
       title={isPast && diffDays(viewDate, today) === 1 ? t('dates.Yesterday') : weekdayName(viewDate)}
       settings
@@ -209,7 +277,7 @@ export function TodayScreen({ date }: { date?: DateStr }) {
         </button>
       )}
       actions={<>
-        {!isPast && view.groups.length > 0 && <WhenMenu value={when} onChange={setWhen} />}
+        {!isPast && view.groups.length > 0 && <WhenMenu value={when} now={nowOn} onChange={(w) => { setNowRows(null); setWhen(w) }} />}
         <DatePickerButton className="icon-btn" value={viewDate} max={today} label={t('today.goToPastDay')} confirm={t('today.goToDay')}
           onPick={(d) => navigate(d === today ? '/' : `/day/${d}`)}>
           <IconCalendar />
@@ -225,7 +293,7 @@ export function TodayScreen({ date }: { date?: DateStr }) {
       ) : (
         <>
           <div className="today-filter">
-            <Segmented label={t('common.show')} value={filter} onChange={setFilter} options={[
+            <Segmented label={t('common.show')} value={nowOn ? 'all' : filter} onChange={(f) => { setNowRows(null); setFilter(f) }} options={[
               { value: 'all', label: t('common.all') }, { value: 'goals', label: t('today.filterGoals') },
               { value: 'projects', label: t('today.filterProjects') }, { value: 'tasks', label: t('today.filterTasks') },
             ]} />
@@ -419,7 +487,7 @@ function ItemRow({ item, date, today, onOpen }: { item: TodayItem; date: DateStr
     </>
   )
   return (
-    <li>
+    <li data-item={item.key}>
       {deletable ? (
         <SwipeToDelete className={rowClass} label={t('task.deleteNamed', { task: item.title })} onDelete={() => deleteWithUndo(item.subjectId)}>
           {content}

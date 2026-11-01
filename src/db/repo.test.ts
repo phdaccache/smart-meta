@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { activeEntries } from '../lib/scoring'
 import { QUICK_UNDO_MS } from '../numbers'
 import { db } from './db'
-import { check, uncheck } from './repo'
+import { check, createTask, uncheck, updateTask } from './repo'
 
 const subject = { subjectType: 'task' as const, subjectId: 't1' }
 
@@ -51,5 +51,16 @@ describe('undoing a check-in (spec SY-6)', () => {
     await uncheck(e.id)
     const queued = await db.outbox.toArray()
     expect(queued.filter((q) => q.id === e.id)).toHaveLength(2)
+  })
+})
+
+describe('putting a task off', () => {
+  it('strikes the old date when it moves later on another day, not on the day it was set (owner, 2026-10-31)', async () => {
+    const task = await createTask({ title: 'Call the bank', date: '2026-11-02' })
+    await updateTask(task, { date: '2026-11-03' })
+    expect((await db.tasks.get(task.id))?.movedFrom ?? []).toEqual([])
+    vi.setSystemTime(new Date('2026-10-30T15:00:00Z'))
+    await updateTask((await db.tasks.get(task.id))!, { date: '2026-11-05' })
+    expect((await db.tasks.get(task.id))?.movedFrom).toEqual(['2026-11-03'])
   })
 })

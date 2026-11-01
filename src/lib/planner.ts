@@ -1,13 +1,13 @@
-import { joinList, t, tn } from '../i18n'
+import { t, tn } from '../i18n'
 import type { PushMessage } from '../../supabase/functions/_shared/webpush'
-import { APP_PUSHES_MAX, MERGE_MS, PLAN_DAYS, PLAN_ROWS_MAX, REVIEW_TIME, SUMMARY_NAMES, SUMMARY_TIME } from '../numbers'
-import { addDays, capitalize, isoWeekday, parseTime } from './dates'
+import { APP_PUSHES_MAX, PLAN_DAYS, PLAN_ROWS_MAX, REVIEW_TIME, SUMMARY_TIME } from '../numbers'
+import { addDays, isoWeekday, parseTime } from './dates'
 import { dueWhen, reminderAt, validReminder } from './reminders'
 import { reviewPending } from './review'
 import { activeEntries } from './scoring'
 import { buildDay, isLiveGoal, stepDeadlines, waitsForGoal, type Snapshot, type TodayItem } from './today'
 import type { DateStr, NotificationPrefs, Reminder, Task, WeekReview } from './types'
-import { wallClock, wallTime, zonedTime } from './zoned'
+import { wallClock, zonedTime } from './zoned'
 
 /**
  * The notification planner (plan §4): every push for the next N-6 days, from what's on the phone and
@@ -67,7 +67,7 @@ export function planPushes(input: PlanInput): PlannedPush[] {
     ...(prefs.summary ? summaries(input, prefs, days) : []),
     ...(prefs.review ? reviews(input, prefs, days) : []),
   ].filter((p) => inWindow(p.fireAt))
-  const asked = prefs.reminders ? merge(reminders(input, prefs).filter((x) => inWindow(x.fireAt)), tz) : []
+  const asked = prefs.reminders ? reminders(input, prefs).filter((x) => inWindow(x.fireAt)).map(toPush) : []
 
   // N-7: what the app starts by itself, a few a day at most. What the person asked for always goes.
   const perDay = new Map<DateStr, number>()
@@ -97,21 +97,13 @@ function summaries(input: PlanInput, prefs: Prefs, days: DateStr[]): PlannedPush
     const view = buildDay(snap, date, { today: date, rolloverHour })
     const open = view.groups.flatMap((g) => g.items).filter((i) => isTodo(i) && !i.done)
     if (!open.length) continue // empty days get no summary
-    const timed: { name: string; time: string }[] = []
-    const late: string[] = []
-    const rest: string[] = []
-    for (const item of open) {
-      const name = itemName(snap, item)
-      const time = item.kind === 'prep' ? snap.preps.find((p) => p.id === item.subjectId)?.fireTime
-        : item.kind === 'task' && item.dueDate === date ? snap.tasks.find((x) => x.id === item.subjectId)?.time : null
-      if (okTime(time)) timed.push({ name, time })
-      else if (item.dueDate && item.dueDate < date) late.push(t('push.late', { name }))
-      else rest.push(name)
-    }
-    const names = [...timed.sort((a, b) => a.time.localeCompare(b.time)).map((x) => t('push.at', x)), ...late, ...rest]
-    const shown = names.slice(0, SUMMARY_NAMES)
-    const more = names.length - shown.length
-    const body = more ? `${shown.join(', ')} ${tn('push.andMore', more)}` : joinList(shown)
+    // How many of each (owner, 2026-10-31): "Tasks: 4, Preps: 2, Commitments: 2, Projects: 3", none left out
+    // of the title's count, and a kind with none not named.
+    const body = SUMMARY_KINDS
+      .map(([kind, key]) => [key, open.filter((i) => i.kind === kind).length] as const)
+      .filter(([, n]) => n > 0)
+      .map(([key, n]) => t('push.count', { what: t(key), n }))
+      .join(', ')
     out.push({
       id: `sum:${day}`, kind: 'summary', fireAt: zonedTime(day, prefs.summaryTime, tz),
       message: msg(tn('push.summaryTitle', open.length), body, '/', 'summary'),
@@ -120,14 +112,10 @@ function summaries(input: PlanInput, prefs: Prefs, days: DateStr[]): PlannedPush
   return out
 }
 
-/** A commitment by its short name ("Gym"), anything else by its title. */
-function itemName(snap: Snapshot, item: TodayItem): string {
-  if (item.kind === 'commitment') {
-    const label = snap.commitments.find((c) => c.id === item.subjectId)?.label?.trim()
-    if (label) return capitalize(label)
-  }
-  return item.title
-}
+/** The summary's kinds, in its order: a project's current step counts for Projects. */
+const SUMMARY_KINDS = [
+  ['task', 'push.tasks'], ['prep', 'push.preps'], ['commitment', 'push.commitments'], ['step', 'push.projects'],
+] as const
 
 // ——— weekly review (spec NO-4) ———
 
@@ -145,7 +133,11 @@ function reviews(input: PlanInput, prefs: Prefs, days: DateStr[]): PlannedPush[]
 
 // ——— reminders set on items (spec NO-3) ———
 
-interface Asked { key: string; name: string; body: string; url: string; fireAt: number }
+interface Asked {
+  key: string; name: string; body: string; fireAt: number
+  /** Its row on Today (`TodayItem.key`), if it has one; else where tapping the push goes. */
+  row?: string; url: string
+}
 
 function reminders(input: PlanInput, prefs: Prefs): Asked[] {
   const { snap, timeZone: tz, now } = input
@@ -171,7 +163,7 @@ function reminders(input: PlanInput, prefs: Prefs): Asked[] {
     const fireAt = at(task.reminder, task.date, task.time)
     out.push({
       key: `task:${task.id}`, name: task.title, body: dueWhen(task.date, okTime(task.time) ? task.time : null, from(fireAt)),
-      url: `/?task=${task.id}`, fireAt,
+      row: `task:${task.id}`, url: `/?task=${task.id}`, fireAt,
     })
   }
 
@@ -191,7 +183,7 @@ function reminders(input: PlanInput, prefs: Prefs): Asked[] {
       if (!end || !validReminder(step.reminder) || done.has(`task:${step.id}`) || !running(p.id, end)) return
       out.push({
         key: `step:${step.id}`, name: step.title, body: t('push.step', { project: p.title, n: i + 1, total: steps.length }),
-        url: `/projects/${p.id}`, fireAt: at(step.reminder, end),
+        row: `task:${step.id}`, url: `/projects/${p.id}`, fireAt: at(step.reminder, end),
       })
     })
   }
@@ -212,7 +204,7 @@ function reminders(input: PlanInput, prefs: Prefs): Asked[] {
       if (done.has(`prep:${prep.id}:${day}`)) continue
       out.push({
         key: `prep:${prep.id}:${day}`, name: prep.title, body: t('push.prep', { goal: g.title }),
-        url: `/goals/${g.id}`, fireAt: at(prep.reminder, day, prep.fireTime),
+        row: `prep:${prep.id}`, url: `/goals/${g.id}`, fireAt: at(prep.reminder, day, prep.fireTime),
       })
     }
   }
@@ -220,26 +212,28 @@ function reminders(input: PlanInput, prefs: Prefs): Asked[] {
 }
 
 /**
- * N-10: reminders this close together go out as one push, at the first one's time: "2 things at 11:00", one
- * per line, the later ones with their own time (plan §2, "Several at once").
+ * Each reminder is a push of its own, as in Reminders (owner, 2026-10-31): the phone stacks those that come
+ * together. Tapping one opens Today on its row (`remindUrl`), or where it lives when it has no row there.
  */
-function merge(asked: Asked[], tz: string): PlannedPush[] {
-  const sorted = [...asked].sort((a, b) => a.fireAt - b.fireAt || a.key.localeCompare(b.key))
-  const out: PlannedPush[] = []
-  for (let i = 0; i < sorted.length;) {
-    const first = sorted[i]
-    let j = i + 1
-    while (j < sorted.length && sorted[j].fireAt - first.fireAt < MERGE_MS) j++
-    const group = sorted.slice(i, j)
-    i = j
-    const id = `rem:${first.fireAt}`
-    if (group.length === 1) {
-      out.push({ id, kind: 'reminder', fireAt: first.fireAt, message: msg(first.name, first.body, first.url) })
-      continue
-    }
-    const time = wallTime(first.fireAt, tz)
-    const lines = group.map((x) => (x.fireAt === first.fireAt ? x.name : t('push.lineAt', { name: x.name, time: wallTime(x.fireAt, tz) })))
-    out.push({ id, kind: 'reminder', fireAt: first.fireAt, message: msg(tn('push.several', group.length, { time }), lines.join('\n'), '/') })
+function toPush(x: Asked): PlannedPush {
+  return {
+    id: `rem:${x.fireAt}:${x.key}`, kind: 'reminder', fireAt: x.fireAt,
+    message: msg(x.name, x.body, x.row ? remindUrl(x.row, x.fireAt, x.url) : x.url, x.key),
   }
-  return out
+}
+
+/** Today, on this row; `else` when the row isn't on Today (a step not current yet, a prep on another day). */
+export const remindUrl = (row: string, fireAt: number, elsewhere: string) =>
+  `/?remind=${encodeURIComponent(row)}&at=${fireAt}&else=${encodeURIComponent(elsewhere)}`
+
+/**
+ * The rows on Today whose reminders fired between `from` and `to`: what Today's "Now" shows when a push is
+ * tapped while others came with it (owner, 2026-10-31).
+ */
+export function remindedRows(input: Omit<PlanInput, 'weekReviews'>, from: number, to: number): string[] {
+  const prefs = { ...DEFAULT_PREFS, ...input.prefs }
+  if (!okTime(prefs.summaryTime)) prefs.summaryTime = SUMMARY_TIME
+  if (!prefs.reminders) return []
+  const rows = reminders({ ...input, weekReviews: [] }, prefs).filter((x) => x.row && x.fireAt >= from && x.fireAt <= to).map((x) => x.row!)
+  return [...new Set(rows)]
 }

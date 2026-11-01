@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { inLang } from '../i18n'
-import { DEFAULT_PREFS, planPushes, type PlanInput, type Prefs } from './planner'
+import { DEFAULT_PREFS, planPushes, remindedRows, remindUrl, type PlanInput, type Prefs } from './planner'
 import { dueWhen, reminderAt, reminderChoices, reminderLabel } from './reminders'
 import { commitment, goal, hit, prep, project, snapshot, task } from './testkit'
 import type { Reminder, WeekReview } from './types'
@@ -84,8 +84,10 @@ describe('reminders on items', () => {
   it('pushes once, before the item is due, with its name and when it is due', () => {
     const [p] = only('reminder', plan({ snap: snapshot({ tasks: [t1] }) }))
     expect(iso(p.fireAt)).toBe('2026-11-05T17:15:00.000Z')
-    expect(p.message).toEqual({ title: 'Renew gym membership', body: 'Today, 14:30', url: `/?task=${t1.id}` })
-    expect(p.id).toBe(`rem:${p.fireAt}`)
+    expect(p.message).toEqual({
+      title: 'Renew gym membership', body: 'Today, 14:30', url: remindUrl(`task:${t1.id}`, p.fireAt, `/?task=${t1.id}`), tag: `task:${t1.id}`,
+    })
+    expect(p.id).toBe(`rem:${p.fireAt}:task:${t1.id}`)
   })
 
   it('pushes nothing for a task with no reminder, done, deleted, or no date', () => {
@@ -118,7 +120,9 @@ describe('reminders on items', () => {
     expect(pushes.map((p) => [p.message.title, p.message.body])).toEqual([
       ['Step 1', 'CV & LinkedIn · step 1 of 4'], ['Ask Ana', 'Today'], ['CV & LinkedIn', 'Tomorrow, 18:00'],
     ])
-    expect(pushes[0].message.url).toBe(`/projects/${live.id}`)
+    // A step opens Today on its row, or its project when it isn't the current step; the project, its page.
+    expect(pushes[0].message.url).toBe(remindUrl(`task:${steps[0].id}`, pushes[0].fireAt, `/projects/${live.id}`))
+    expect(pushes[2].message.url).toBe(`/projects/${live.id}`)
     expect(iso(pushes[0].fireAt)).toBe('2026-11-02T11:00:00.000Z')
     const paused = snapshot({ projects: [{ ...live, state: 'backlog' }], tasks: [...steps, own] })
     expect(only('reminder', plan({ snap: paused }))).toEqual([])
@@ -141,21 +145,34 @@ describe('reminders on items', () => {
     const pushes = only('reminder', plan({ snap }))
     // Wednesdays and Fridays in the next 14 days (to 13 November, 9:41), but not today's: it's done.
     expect(pushes.map((x) => wallClock(x.fireAt, SP).date)).toEqual(['2026-11-04', '2026-11-06', '2026-11-11'])
-    expect(pushes[0].message).toEqual({ title: 'Pack the gym bag', body: 'Prep · Exercise regularly', url: `/goals/${g.id}` })
+    expect(pushes[0].message).toMatchObject({
+      title: 'Pack the gym bag', body: 'Prep · Exercise regularly', url: remindUrl(`prep:${p.id}`, pushes[0].fireAt, `/goals/${g.id}`),
+    })
     expect(iso(pushes[0].fireAt)).toBe('2026-11-04T23:45:00.000Z')
   })
 
-  it('merges reminders within 15 minutes into one push', () => {
+  it('sends each reminder on its own, even at the same minute (owner, 2026-10-31)', () => {
+    const tasks = [
+      task({ title: 'Call the bank', date: '2026-11-03', time: '11:00', reminder: rem(0, 'minute') }),
+      task({ title: 'Send the invoice', date: '2026-11-03', time: '11:00', reminder: rem(0, 'minute') }),
+      task({ title: 'Lunch with Bia', date: '2026-11-03', time: '11:10', reminder: rem(0, 'minute') }),
+    ]
+    const pushes = only('reminder', plan({ snap: snapshot({ tasks }) }))
+    expect(pushes.map((p) => p.message.title).sort()).toEqual(['Call the bank', 'Lunch with Bia', 'Send the invoice'])
+    expect(new Set(pushes.map((p) => p.id)).size).toBe(3)
+    // Different tags: the phone keeps all three, stacked, rather than one replacing another.
+    expect(new Set(pushes.map((p) => p.message.tag)).size).toBe(3)
+  })
+
+  it('finds the rows that reminded around a moment, for Today’s “Now”', () => {
     const tasks = [
       task({ title: 'Call the bank', date: '2026-11-03', time: '11:00', reminder: rem(0, 'minute') }),
       task({ title: 'Send the invoice', date: '2026-11-03', time: '11:10', reminder: rem(0, 'minute') }),
       task({ title: 'Lunch with Bia', date: '2026-11-03', time: '12:30', reminder: rem(0, 'minute') }),
     ]
-    const pushes = only('reminder', plan({ snap: snapshot({ tasks }) }))
-    expect(pushes.map((p) => p.message)).toEqual([
-      { title: '2 things at 11:00', body: 'Call the bank\nSend the invoice, 11:10', url: '/' },
-      { title: 'Lunch with Bia', body: 'Today, 12:30', url: `/?task=${tasks[2].id}` },
-    ])
+    const input = { snap: snapshot({ tasks }), prefs: DEFAULT_PREFS, now, timeZone: SP, rolloverHour: 4 }
+    const tapped = at('2026-11-03', '11:10')
+    expect(remindedRows(input, tapped - 15 * 60_000, tapped)).toEqual([`task:${tasks[0].id}`, `task:${tasks[1].id}`])
   })
 
   it('sends nothing the person asked for when “Reminders you set” is off', () => {
@@ -174,24 +191,24 @@ describe('morning summary', () => {
   const snap = snapshot({ goals: [g], commitments: [gym], tasks })
   const monday = () => plan({ snap }).find((p) => p.id === 'sum:2026-11-02')!
 
-  it('lists timed items first, then late ones, then the rest, three names at most', () => {
+  it('counts each kind, leaving out the kinds with none (owner, 2026-10-31)', () => {
     expect(iso(monday().fireAt)).toBe('2026-11-02T11:00:00.000Z')
-    expect(monday().message).toEqual({
-      title: 'Today: 6 things',
-      body: 'Dentist appointment at 14:30, Renew gym membership (late), Gym and 3 more',
-      url: '/', tag: 'summary',
-    })
+    expect(monday().message).toEqual({ title: 'Today: 6 things', body: 'Tasks: 5, Commitments: 1', url: '/', tag: 'summary' })
   })
 
   it('speaks the app’s language', () => {
     const pt = inLang('pt-BR', () => plan({ snap }).find((p) => p.id === 'sum:2026-11-02')!)
     expect(pt.message.title).toBe('Hoje: 6 itens')
-    expect(pt.message.body).toBe('Dentist appointment às 14:30, Renew gym membership (atrasada), Gym e mais 3')
+    expect(pt.message.body).toBe('Tarefas: 5, Compromissos: 1')
   })
 
-  it('names just a few without “more”', () => {
-    const few = snapshot({ tasks: [task({ title: 'Buy stamps' }), task({ title: 'Call mum' })] })
-    expect(plan({ snap: few })[0].message).toMatchObject({ title: 'Today: 2 things', body: 'Buy stamps and Call mum' })
+  it('counts preps and a project’s current step too', () => {
+    const p = project({ title: 'Move flat', targetDate: '2026-11-20' })
+    const step = task({ title: 'Pack', projectId: p.id, order: 0 })
+    const bag = prep(gym, { title: 'Pack the gym bag', fireWeekdays: [1], fireTime: '21:00' })
+    const more = snapshot({ goals: [g], commitments: [gym], preps: [bag], projects: [p], tasks: [step, task({ title: 'Call mum' })] })
+    expect(plan({ snap: more }).find((x) => x.id === 'sum:2026-11-02')!.message)
+      .toMatchObject({ title: 'Today: 4 things', body: 'Tasks: 1, Preps: 1, Commitments: 1, Projects: 1' })
   })
 
   it('skips empty days, and weekends with “Weekdays only”', () => {
@@ -205,11 +222,13 @@ describe('morning summary', () => {
   })
 
   it('belongs to the day before when it comes before the new day starts', () => {
-    const late = snapshot({ tasks: [task({ title: 'Pay rent', date: '2026-11-02' })] })
-    const body = (time: string) => plan({ snap: late, prefs: { summaryTime: time } }).find((p) => p.id === 'sum:2026-11-03')!.message.body
-    expect(body('08:00')).toBe('Pay rent (late)')
-    // At 02:00 it's still 2 November in the app (the new day starts at 4:00): due today, not late.
-    expect(body('02:00')).toBe('Pay rent')
+    // A prep on Mondays only: on Tuesday 3 November at 08:00 it isn't there.
+    const bag = prep(gym, { title: 'Pack the gym bag', fireWeekdays: [1], fireTime: '21:00' })
+    const both = snapshot({ goals: [g], commitments: [gym], preps: [bag] })
+    const body = (time: string) => plan({ snap: both, prefs: { summaryTime: time } }).find((p) => p.id === 'sum:2026-11-03')!.message.body
+    expect(body('08:00')).toBe('Commitments: 1')
+    // At 02:00 it's still Monday 2 November in the app (the new day starts at 4:00).
+    expect(body('02:00')).toBe('Preps: 1, Commitments: 1')
   })
 
   it('follows the phone to another time zone', () => {
