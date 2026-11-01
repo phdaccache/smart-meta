@@ -1815,7 +1815,7 @@ If it has, it isn't from this project. A possible fix, not tried: stop touches a
 **Ninth round (same day):** **the tap is fixed** (owner, iPhone). **`main` doesn't go white on that swipe, and the preview does** (owner), so the guess
 above that `main` had it too was wrong. The cause is still unknown. The owner's screenshot shows the back arrow dimmed, with only reload lit, so this
 looks like a page with no history at all, not an entry we can reach, which is new against what this plan said in the third round. Temporary log lines
-in `src/ui/router.ts` ("edge touch", "after swipe", "page leaving") say whether our page is still alive behind the white page. To remove once this is settled.
+in `src/ui/router.ts` ("edge touch", "after swipe", "page leaving") say whether our page is still alive behind the white page. Removed after the twelfth round.
 
 **Tenth round (same day):** no white page in that build's test (18:06 to 18:08 UTC), with the app opened by hand and no push tapped: 7 touches at the left
 edge of Today with nothing under it (no swipe at all, as on `main`), 2 at the right edge with nothing ahead, 8 forward swipes, about 17 back swipes, some under a second apart.
@@ -1829,8 +1829,14 @@ the page stopped running within about a second, with no "page leaving", and the 
 at 17:38, `swipe to depth 0 entries 2` at 17:39:08, then nothing until a new open. Sessions opened by hand had about 15 such swipes in the last two logs with no white page. `main` has no pushes, so
 it never opens a window. So `public/push-sw.js` no longer calls `clients.openWindow` on the iPhone. The evidence that the phone opens the app by itself: the page starts about 40 ms
 after the click event (18:12:03.866 to .910; 17:37:11.592 to .634), too soon for a launch that event began, though that page did get the push's address, so this isn't proven.
-**To check on the iPhone:** a tap with the app fully closed still opens it, and goes to its place by the cache ("push tapped kept"). What that white page is
+What that white page is
 isn't known. This doesn't explain the owner's white page with spare entries, which those entries' removal solved. Android keeps `openWindow`.
+
+**Twelfth round (same day): the owner's test passed** ("seems ok now"). Fully closed, a tap opened the app with no window asked for (`click leaves it to the phone`, 18:25:03) and went to its row by the cache,
+so the iPhone does open the app by itself. About 15 back swipes to Today and several forward ones in that session, and more after a tap with the app in the background (18:26:03), with no white page.
+**What caused what:** the spare entries caused the white page on a plain swipe on Today; asking for a window on a tap caused it after a back swipe. **`reloadFromBottom` may not be needed:** the white pages with a log all came
+from those two causes, and none is shown to have come from entries left by a reload, so S5's explanation of the white page on Back isn't proven. It stays because it passed the owner's tests and removing it would need another round;
+it can go if a reload on an inner screen, then a swipe, proves safe without it. Also the owner's to overrule: a push the app came to the front within 15 s of counts as tapped (eighth round). Part A is done.
 
 ### S6 part B: production and the merge (step by step)
 
@@ -2173,3 +2179,4 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
 - **2026-11-01 (23):** S6 started. Part A built on `notifications-s6`: goal review push, quiet hours (everything
   waits), details off (the kind only), badge, Settings' "How they arrive" (follows the account), the goal
   celebration (option A with more motion). Part B's step-by-step written in §14. Waiting for the owner's test.
+- **2026-11-01 (24):** part A's last two iPhone bugs solved with the owner's tests: no spare entries under the first screen, no `clients.openWindow` on the iPhone (a white page after a back swipe), and a tapped push the worker never hears about is worked out by the app (`findLostTap`). Details in §14 S6, sixth to twelfth rounds.

@@ -93,9 +93,8 @@ self.addEventListener('notificationclick', (event) => {
     void trace(`click sees ${windows.length} windows ${windows.map((w) => w.visibilityState).join(' ')}`)
     const open = windows.find((w) => 'focus' in w)
     if (!open) {
-      // The iPhone is already opening the app by itself: the page starts 40 ms after this event, and reads the tap
-      // from the cache. A window asked for here left the white page behind, with its browser bar and no way
-      // back, one back swipe later (S6 test, twice in two tries).
+      // The iPhone opens the app by itself on a tap, and the page reads the tap from the cache. A window asked for
+      // here left a white page one back swipe later, with the phone's own browser bar and no way out (S6 test).
       if (/iP(hone|ad|od)/.test(self.navigator.userAgent)) return trace('click leaves it to the phone')
       return self.clients.openWindow(path)
     }

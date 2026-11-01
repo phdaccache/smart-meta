@@ -178,23 +178,12 @@ function backArrived() {
   if (ownMoves === 0) later.splice(0).forEach((run) => run())
 }
 
-// For now (S6 test, the white page): a swipe that leaves no "swipe to depth" line still shows here, with where it started.
-document.addEventListener('touchstart', (e) => {
-  const x = e.touches[0]?.clientX ?? 100
-  if (x < 24 || x > window.innerWidth - 24) log('nav', 'edge touch', x < 24 ? 'left' : 'right', 'depth', depth(), 'entries', history.length)
-}, { passive: true })
-window.addEventListener('pagehide', (e) => log('nav', 'page leaving', e.persisted ? 'kept' : 'gone'))
-
 /** Set while going down to the bottom of the stack to reload there (see reloadFromBottom). */
 let reloading: (() => void) | null = null
 
 window.addEventListener('popstate', (e: PopStateEvent & { hasUAVisualTransition?: boolean }) => {
   if (reloading) return reloading()
-  if (e.hasUAVisualTransition) {
-    log('nav', 'swipe to depth', depth(), 'entries', history.length)
-    // For now (S6 test, the white page): is this page still there and at the front after the swipe?
-    ;[300, 1500, 4000].forEach((ms) => setTimeout(() => log('nav', 'after swipe', ms, document.visibilityState, 'depth', depth(), 'screens', document.querySelectorAll('.screen-layer').length), ms))
-  }
+  if (e.hasUAVisualTransition) log('nav', 'swipe to depth', depth(), 'entries', history.length)
   // After this event's own work, which is about the same move.
   if (backing != null) queueMicrotask(backArrived)
   if (ownMoves > 0) {
