@@ -296,6 +296,7 @@ code (RE-5), and add a line to the plan's change log. "Where" says what enforces
 | N-24 | **6 digits** | Sign-in code length | Supabase setting |
 | N-25 | **30 per hour** | Sign-in emails Supabase may send (default with custom SMTP; Gmail allows about 500 a day) | Supabase setting |
 | N-26 | **22:00 to 7:00** | Quiet hours to start with, once turned on (user can change) | Phone |
+| N-27 | **15 seconds** | The app coming to the front this soon after a push counts as tapping it, since the iPhone doesn't always report the tap (`ANSWERED_MS`, plan §15) | Phone |
 
 Free-plan limits of Supabase, Vercel and GitHub are not ours to set; they're in
 [plan §3.1](plan.md) with the date they were checked.

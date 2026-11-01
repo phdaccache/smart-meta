@@ -7,7 +7,7 @@ Meta. It runs on branch `notifications` and merges to `main` only when notificat
 
 | File | What it holds | When to change it |
 |---|---|---|
-| [spec.md](spec.md) | **What** must be true: numbered, checkable requirements, and **Adjustable numbers** (every limit, time and threshold, N-1 to N-25) | Only when the owner changes a requirement or a number |
+| [spec.md](spec.md) | **What** must be true: numbered, checkable requirements, and **Adjustable numbers** (every limit, time and threshold, N-1 to N-27) | Only when the owner changes a requirement or a number |
 | [plan.md](plan.md) | **How and why**: facts, designs, trade-offs, the owner's worries (§0), decisions (§2), stages (§14), open questions (§16), change log | Whenever something is decided, learned or done |
 | [mockups/](mockups/) | S0 mockups and the S5 mockup `s5.html` (HTML artifacts); S6's are the artifact linked in plan §14; the picks are recorded in plan §2 and §14 | When the owner asks for another round |
 | [runway-simulator.html](runway-simulator.html) | Storage and cost simulator (also a private artifact: [Smart Meta Runway](https://claude.ai/artifact/6xvMmYEUDBiKkGsgkfLWhq)) | When limits or record sizes change |

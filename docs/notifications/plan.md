@@ -1948,6 +1948,17 @@ writes, so they'd wait on the phones until the app is forward again. Nothing on 
   logging reminder, custom domain + Resend.
 
 ---
+- **`reloadFromBottom` may not be needed** (owner, 2026-11-01: keep it for now, look again later). It's in `src/ui/router.ts`,
+  called by `onNeedReload` in `src/main.tsx` and three times in `src/screens/Settings.tsx`. It was added on the idea that entries left under a
+  screen by a reload cause the white page, but every white page with a log came from the spare entries or `clients.openWindow` instead (§14 S6, twelfth
+  round). To find out: without it, on the preview, go two screens deep, deploy so the app reloads there, tap a tab, then swipe from both edges, several times.
+  No white page means it can go: put `location.reload()` and `location.replace('/')` back, and drop `onNeedReload`. Remember S5's white page on Back after a
+  reload (§14 S5) when trying this; its cause isn't proven either way.
+- **The 15 seconds that count as a tap** (`N-27`, owner, 2026-11-01: fine for now). With the app in the background, the iPhone often brings it to the front
+  without telling the worker about the tap, and can keep the tapped push on its list. So the app coming to the front within 15 s of a push counts as
+  tapping it, and opening the app by hand in that time also goes to the push's place. To change it: `ANSWERED_MS` in `src/main.tsx`, one number, no
+  migration. Lower means fewer false opens and more real taps missed; the failed taps seen were 1 to 4 s after the push; 0 turns the rule off and leaves
+  only the list check. Next to it, `LOST_TAP_MS` (60 s) is how long a push gone from the list still counts.
 
 ## 16. Open questions
 

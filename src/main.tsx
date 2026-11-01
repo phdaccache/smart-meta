@@ -92,7 +92,7 @@ const lookForTap = () => [0, 600, 2000, 5000, 10_000].forEach((ms) => setTimeout
 interface RecentPush { tag: string; path: string; at: number }
 /** A push that arrived this recently and has gone from the list was tapped; older, it's for a moment that's gone. */
 const LOST_TAP_MS = 60_000
-/** The app coming to the front this soon after a push is taken as the push's tap, even if it's still on the list. */
+/** The app coming to the front this soon after a push is taken as the push's tap, even if it's still on the list (spec N-27). */
 const ANSWERED_MS = 15_000
 /** When the app last came to the front. */
 let frontAt = 0
