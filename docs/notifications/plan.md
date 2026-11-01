@@ -1753,6 +1753,13 @@ entries under it again. Only with `navigator.standalone`: in a browser Back has 
 the app. The log says "swipe stopped at the first screen". What the swipe looks like on the phone isn't known yet; a
 swipe on the first screen slides and comes back to the same screen.
 
+**Fifth round (same day):** a tap with the app in the background now mostly works ("push tapped message", right after "app
+came to the front"), but not always: at 16:51:05 and 17:01:03 the app came to the front with no sign of a tap, by message or
+by the cache. Not known why; it isn't how long the app was away. `public/push-sw.js` now traces what it saw ("worker click
+…", "worker push …") into the log, so the next miss says whether the tap ever reached the worker. If it never does, a
+fallback is possible: a push that arrived moments ago and has gone from `getNotifications()` was probably tapped. A missed
+tap only leaves the app where it was, so it doesn't hold back part B. (`feedback.js` in the log was Vercel's preview toolbar.)
+
 ### S6 part B: production and the merge (step by step)
 
 Written in part A so it survives the compaction; check each against the code as you go. Claude can't do the

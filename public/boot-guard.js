@@ -22,7 +22,9 @@
   // A file that didn't load: these events don't bubble, so they're caught on the way down.
   addEventListener('error', function (e) {
     var el = e.target
-    if (el && (el.tagName === 'SCRIPT' || el.tagName === 'LINK')) note('failed to load ' + String(el.src || el.href).split('/').pop())
+    var src = el && (el.tagName === 'SCRIPT' || el.tagName === 'LINK') && String(el.src || el.href)
+    // Only our own files: Vercel adds a script of its own to previews, which the app's rules block.
+    if (src && src.indexOf(location.origin) === 0) note('failed to load ' + src.split('/').pop())
   }, true)
   addEventListener('pageshow', function (e) {
     if (e.persisted) note('page came back from the browser\'s cache')

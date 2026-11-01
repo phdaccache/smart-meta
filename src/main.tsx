@@ -71,6 +71,11 @@ const TAP_FRESH_MS = 60_000
 async function readTap() {
   try {
     const cache = await caches.open('smart-meta-tap')
+    const trace = await cache.match('/__trace')
+    if (trace) {
+      await cache.delete('/__trace')
+      for (const line of (await trace.json()) as string[]) log('worker', line)
+    }
     const res = await cache.match('/__tap')
     if (!res) return
     await cache.delete('/__tap')
