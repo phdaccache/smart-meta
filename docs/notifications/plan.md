@@ -185,7 +185,9 @@ toast on Today; Requests is a Settings-style list. Numbers are the owner's scree
   summary, Items with a time, Reminders you set, Preps with a time, Weekly review, Goal review dates.
   **Changed in S5 (2026-10-31):** "Items with a time" and "Preps with a time" are gone (answers 1a and
   3a), and an open picker gets a line under it too (the owner asked for one under "Weekdays only").
-  The Notifications row is the first row of Settings → App, above Language (S5 answer 6a).
+  The Notifications row is the first row of Settings → App, above Language (S5 answer 6a). After the
+  owner's test (2026-10-31): "Reminders you set" is "Reminders" / "Lembretes", and the line under
+  "Weekdays only" is gone.
   "On this phone": App icon badge, Details on the lock screen, Quiet hours. "Developer": Send a test
   notification. **Switches with options work like Quick Add:** turning one on opens its options under
   the row (summary: time wheel and Weekdays only; weekly review: time; quiet hours: from and to); its
@@ -373,8 +375,9 @@ shows it.
   open checks the subscription and quietly re-subscribes if needed.
 - **Revoked permission** (Chrome can do it; users can): pushes stop; the app shows "Notifications are
   off" with instructions; if the state is back to `default`, one tap asks again.
-- **Grouping:** iPhone stacks notifications from one app; Android bundles them. The planner also merges
-  items close in time ("3 things at 9:00").
+- **Grouping:** iPhone stacks notifications from one app; Android bundles them. Each reminder is its own
+  push (owner, 2026-10-31), so the phone's stack does the grouping; the planner no longer merges items close
+  in time ("3 things at 9:00").
 - **Badge can be stale:** no silent pushes on iPhone, so the number updates only on app open or with
   a real push.
 - **Measured in S1 (2026-10-29):** pushes from a local script reached the installed app in about
@@ -1258,7 +1261,9 @@ part needs:
 3. **The rest:** planner, the four types, Settings → Notifications, the Notification card, the kill switch
    row in Developer, the app's beta flag. Then the owner tests, and the week on the preview starts.
    **Built 2026-10-31** and checked in the dev app (below, "Part 3: what was built"), including the card on
-   project steps and preps after the round 3 answers. Next: the owner's setup and test, then the week.
+   project steps and preps after the round 3 answers. **Tested by the owner on both phones 2026-10-31**,
+   in five rounds, each fixed the same day (below, "Owner's test of part 3" and the rounds after it); 0009
+   and 0010 pasted. **What's left: the shadow week** (from 1 November 2026).
 
 **Owner's first idea for custom reminders (2026-10-30), replacing "a reminder at any date and time"; superseded
 on 2026-10-31 by the Notification card below:** a
@@ -1501,7 +1506,8 @@ card in the prep sheet only. The questions as asked:
 2. **A reminder:** add a task for today with a time 10 minutes ahead; Notification → "5 minutes before".
    Five minutes before, "the task's name / Today, HH:MM" arrives; tapping it opens the task.
 3. **Done takes it back:** another task like it, ticked off before its push: nothing comes.
-4. **Merged:** two tasks with "At the time", 5 minutes apart: one push, "2 things at …".
+4. **Two at once:** two tasks with "At the time" at the same minute: two pushes, stacked; tapping one
+   opens Today with "Now" (those two), the tapped one lit. *(Changed 2026-10-31: no more "2 things at …".)*
 5. **Morning summary:** set its time 3 minutes ahead (with something on Today): "Today: N things" arrives.
    Then put it back.
 6. **Other phone:** on the second phone (same account), tick off a task whose reminder is still ahead: the
@@ -1597,16 +1603,18 @@ only one acts. The log says "push tapped message" or "push tapped kept".
 - [x] Types: morning summary (lists due items), custom reminders from the Notification card (once; tasks,
       projects, steps, preps), weekly review (own time). *(Part 3: the card on tasks, Quick Add and
       projects; the bell beside a step's date; the card in the prep sheet.)*
-- [x] Settings → Notifications (Morning summary with time and weekdays only, Reminders you set, Weekly
+- [x] Settings → Notifications (Morning summary with time and weekdays only, Reminders, Weekly
       review with time; Goal review dates and the "On this phone" rows come in S6, as the mockup says).
       *(Part 3.)*
 - [x] **Kill switch in the app** (owner, 2026-10-31): an owner-only row in Developer, On / Shadow / Off,
       checked on the server like approving a request (`private.is_owner()`), so pushes can be stopped from
       the phone. The SQL Editor still works: `update private.push_config set mode = 'off'`. *(Part 3,
       `0008_push_controls.sql`.)*
-- [ ] Developer test button. Beta flag for the owner → shadow week. *(The test button and the server's
-      shadow mode built in part 2; the app's beta flag built in part 3; the shadow week is the owner's week
-      of testing.)*
+- [x] Developer test button *(part 2, tested)*. Beta flag for the owner *(part 3, tested: Shadow hides the
+      row from accounts not in the beta; the beta list is switched from Developer → Requests, 0010)*.
+- [ ] **Shadow week** (N-22): from 1 November 2026, Pushes on Shadow, the owner (and anyone switched into
+      the beta) using it day to day. Anything wrong goes back to this branch. Then S5 merges into
+      `notifications`.
 - [x] **Push to the owner on each new access request** (spec AC-5), moved here from S2 on
       2026-10-29: title "New request", body the email (owner, 2026-10-31); tapping it opens Requests. Sent by the server when someone
       signs up, so it needs this stage's VAPID keys, server sender and the owner's subscription.
@@ -1690,6 +1698,12 @@ only one acts. The log says "push tapped message" or "push tapped kept".
    device should be on the new version (the PWA updates on open). And 0003 refuses readable writes, so it
    goes to production together with the app that encrypts; an older app's writes then wait on its phone
    until it updates.
+4. **App updates reload at once** (seen in S5): the app installs a new version the moment it comes to the
+   front, reloading on whatever screen it was. During S5's tests that interrupted a tapped push (fixed by
+   keeping the tap until shown) and left Back entries that showed a blank page (fixed for the app's own
+   Back; the iPhone's edge swipe can still reach them). Should the reload wait, for example until the
+   app next goes to the background, or until it's on a tab? Matters little once deploys are rare (after
+   the merge), more during testing.
 
 Answered on 2026-10-31 (S5): the kill switch goes in the app too, as an owner-only Developer row (part 3).
 The privacy policy now lists the app's language among the notification data (the push subscription keeps it
@@ -1891,3 +1905,6 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   another day (a step due tomorrow with "1 day before" had joined it); spec NO-13.
 - **2026-10-31 (19):** a tapped push reaches an app the iPhone only brought to the front: the service worker
   leaves the tap in a cache the app reads on start and on coming to the front.
+- **2026-10-31 (20):** S5 tested and fixed; what's left is the shadow week (from 1 November). Docs brought
+  up to date (the S5 header and checklist, "Reminders", no merged pushes, the push ids in the README's
+  shared decisions); open question 4, app updates reloading at once.

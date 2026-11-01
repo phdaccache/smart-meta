@@ -54,8 +54,8 @@ These are the contracts between stages. Changing one affects others.
   Diagnostics log.
 - **Tables** (all with RLS, explicit grants, nothing for `anon`; plan §8.2): `records` (exists),
   `members` (only the owner writes), `profiles`, `user_keys` (locked data key, public key),
-  `push_subscriptions` (one row per user), `scheduled_notifications` (deterministic ids like
-  `due:<taskId>:<fireAt>`, payload encrypted by the phone), and, out of the API's reach, `private.send_log`
+  `push_subscriptions` (one row per user), `scheduled_notifications` (deterministic ids: `sum:<day>`,
+  `rev:<day>`, `rem:<fire ms>:<item>`, `test:<ms>`; payload encrypted by the phone), and, out of the API's reach, `private.send_log`
   (no content), `private.push_config` (kill switch and shadow mode) and `private.push_beta` (S5, `0006_push.sql`). S4 adds `private.daily_rows` (new rows per user per day, for the
   limits and the alarm; not reachable through the API). Backups: private repo `phdaccache/smart-meta-backups`.
 - **Membership gates the server:** non-members can't read or write anything on the server, their own
@@ -76,7 +76,7 @@ These are the contracts between stages. Changing one affects others.
 | S2 | Accounts | Done 2026-10-29 (tested on two phones; members, requests, profile, one person per phone) |
 | S3 | Encryption | Done 2026-10-29 (tested on both phones; data encrypted on staging; "open twice" warning) |
 | S4 | Safety and operations (backups, alarm, limits, sync timing, privacy note) | Done 2026-10-30 (backups and restore drill on staging, alarm email, limits; privacy policy confirmed by the owner) |
-| S5 | Core notifications | In progress on `notifications-s5`: part 1 of 3 (mockups) done 2026-10-31; part 2 (plumbing) done 2026-10-31 (tested on both phones); part 3 built 2026-10-31 (planner, Settings → Notifications, the card on tasks, projects, steps and preps, kill switch, beta flag), tested by the owner and fixed the same day (paste 0009, test again), then the week |
+| S5 | Core notifications | In progress on `notifications-s5`: part 1 of 3 (mockups) done 2026-10-31; part 2 (plumbing) done 2026-10-31 (tested on both phones); part 3 built 2026-10-31 (planner, Settings → Notifications, the card on tasks, projects, steps and preps, kill switch, beta flag) and tested by the owner on both phones the same day (0009, 0010 pasted); the shadow week runs from 1 November, then S5 merges into `notifications` |
 | S6 | The rest, then merge to `main` | Not started |
 
 Details and checkboxes: [plan.md §14](plan.md).

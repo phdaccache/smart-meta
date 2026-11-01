@@ -178,7 +178,7 @@ Rules:
   encrypted; the server only delivers.
 
 Settings and indicators:
-- **NO-19** [S5] **Settings → Notifications:** a toggle per type (morning summary, reminders you set,
+- **NO-19** [S5] **Settings → Notifications:** a toggle per type (morning summary, reminders,
   weekly review, goal review dates), summary time, weekdays only, review time. Reached from the first
   row of Settings → App. The settings follow the account: synced and encrypted like the rest, so every
   phone of the account plans the same pushes (owner, 2026-10-31).
