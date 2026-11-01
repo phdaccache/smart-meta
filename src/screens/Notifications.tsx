@@ -136,7 +136,6 @@ export function NotificationsScreen() {
             <TimeWheel value={prefs.reviewTime} onChange={(reviewTime) => change({ reviewTime })} />
           </OptionRow>
         </div>
-        {on && isAndroid() && <p className="settings-note">{t('notif.androidPopups')}</p>}
       </Section>
 
       {developer && on && (

@@ -5,7 +5,7 @@ import { inject, pageview } from '@vercel/analytics'
 import { App } from './App'
 import { initLang } from './i18n'
 import { startSync } from './sync/controller'
-import { logUncaught } from './sync/log'
+import { log, logUncaught } from './sync/log'
 import { CrashScreen } from './ui/CrashScreen'
 import { holdOpenLock, OpenTwice } from './ui/OpenTwice'
 import { installCaretAtEnd } from './ui/caret'
@@ -53,6 +53,7 @@ registerSW({
 navigator.serviceWorker?.addEventListener('message', (e: MessageEvent) => {
   const path: unknown = e.data?.type === 'open' ? e.data.path : null
   if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//')) return
+  log('push', 'tapped', path.split('?')[0], path.includes('remind=') ? 'remind' : '')
   if (path !== location.pathname + location.search) navigate(path)
 })
 logUncaught()

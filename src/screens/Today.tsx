@@ -162,6 +162,41 @@ function WhenMenu({ value, now, onChange }: {
   )
 }
 
+/** A push's link to a row on Today, kept for this app's session until shown (it survives a reload). */
+interface PendingRemind { remind: string; at: number; elsewhere: string | null; t: number }
+const REMIND_KEY = 'today-remind'
+/** Older than this, it's let go: the moment has passed. */
+const REMIND_KEEP_MS = 2 * 60_000
+
+function readPending(): PendingRemind | null {
+  try {
+    const p = JSON.parse(sessionStorage.getItem(REMIND_KEY) ?? 'null') as PendingRemind | null
+    return p && typeof p.remind === 'string' && Date.now() - p.t < REMIND_KEEP_MS ? p : null
+  } catch {
+    return null
+  }
+}
+
+function writePending(p: PendingRemind | null) {
+  try {
+    if (p) sessionStorage.setItem(REMIND_KEY, JSON.stringify(p))
+    else sessionStorage.removeItem(REMIND_KEY)
+  } catch {
+    // Private mode: it just won't survive a reload.
+  }
+}
+
+/** Whether the app is on screen. */
+function useVisible(): boolean {
+  const [visible, setVisible] = useState(() => document.visibilityState === 'visible')
+  useEffect(() => {
+    const on = () => setVisible(document.visibilityState === 'visible')
+    document.addEventListener('visibilitychange', on)
+    return () => document.removeEventListener('visibilitychange', on)
+  }, [])
+  return visible
+}
+
 export function TodayScreen({ date }: { date?: DateStr }) {
   const settings = useSettings()
   const today = useToday(settings.rolloverHour)
@@ -198,54 +233,57 @@ export function TodayScreen({ date }: { date?: DateStr }) {
   const [nowRows, setNowRows] = useState<string[] | null>(null)
   /** The row to light up; `n` makes each tap a new one, even of the same row. */
   const [flash, setFlash] = useState<{ key: string; n: number } | null>(null)
+  // The link is kept until it's been shown: on the iPhone the app often reloads right as a push opens it
+  // (updating itself), or gets the link before it's on screen, and both lost it (S5 test).
+  const [pending, setPending] = useState<PendingRemind | null>(readPending)
+  const visible = useVisible()
   useEffect(() => {
-    if (!remind || !snap || !view || prefs === undefined) return
-    const at = Number(query.get('at'))
-    const elsewhere = query.get('else')
+    if (!remind) return
+    const p: PendingRemind = { remind, at: Number(query.get('at')), elsewhere: query.get('else'), t: Date.now() }
+    log('remind', 'link', remind.split(':')[0])
+    writePending(p)
+    setPending(p)
     navigate('/', { replace: true })
+  }, [remind])
+  useEffect(() => {
+    if (!pending || !visible || !snap || !view || prefs === undefined) return
+    const { remind: key, at, elsewhere } = pending
     const open = new Set(view.groups.flatMap((g) => g.items).filter((i) => !i.done).map((i) => i.key))
-    if (!open.has(remind)) {
+    if (!open.has(key)) {
+      // Not here yet: still on its way from the sync, so it waits (a little while at most).
+      const id = key.slice(key.indexOf(':') + 1)
+      if (!snap.tasks.some((x) => x.id === id) && !snap.preps.some((x) => x.id === id)) return
+      writePending(null)
+      setPending(null)
+      log('remind', 'elsewhere', key.split(':')[0])
       if (elsewhere?.startsWith('/') && !elsewhere.startsWith('//')) navigate(elsewhere)
       return
     }
+    writePending(null)
+    setPending(null)
     const input = { snap, prefs: prefs ?? DEFAULT_PREFS, now: Date.now(), timeZone: phoneTimeZone(), rolloverHour: settings.rolloverHour }
     const rows = Number.isFinite(at) ? remindedRows(input, at - NOW_MS, at + 60_000).filter((k) => open.has(k)) : []
-    const together = rows.length > 1 && rows.includes(remind)
+    const together = rows.length > 1 && rows.includes(key)
     setNowRows(together ? rows : null)
     // Nothing on Today may hide the row.
-    if (!together && !applyWhen(applyFilter(view.groups, filter), when, today).some((g) => g.items.some((i) => i.key === remind))) {
+    if (!together && !applyWhen(applyFilter(view.groups, filter), when, today).some((g) => g.items.some((i) => i.key === key))) {
       setFilter('all')
       setWhen('all')
     }
-    setFlash({ key: remind, n: Date.now() })
-  }, [remind, snap, view, prefs])
+    setFlash({ key, n: Date.now() })
+  }, [pending, visible, snap, view, prefs])
   useEffect(() => {
     if (!flash) return
-    // On the iPhone a tapped push can reach the app before it's on screen, and a smooth scroll then may not
-    // happen at all: the row lit up below the screen, unseen (S5 test). So it waits until the app shows, and
-    // jumps to the row at once, as Reminders does. No timer is involved, so paused timers can't hold it back.
-    let stop = () => {}
-    const run = () => {
-      const row = document.querySelector<HTMLElement>(`[data-item="${CSS.escape(flash.key)}"]`)
-      log('remind', 'open', flash.key.split(':')[0], row ? 'found' : 'missing')
-      if (!row) return
-      const box = row.getBoundingClientRect()
-      if (box.top < 0 || box.bottom > (window.visualViewport?.height ?? window.innerHeight)) row.scrollIntoView({ block: 'center' })
-      row.classList.remove('flash')
-      void row.offsetWidth // a new tap on the same row plays again
-      row.classList.add('flash')
-    }
-    if (document.visibilityState === 'visible') run()
-    else {
-      const shown = () => {
-        if (document.visibilityState !== 'visible') return
-        stop()
-        run()
-      }
-      document.addEventListener('visibilitychange', shown)
-      stop = () => document.removeEventListener('visibilitychange', shown)
-    }
-    return () => stop()
+    // Jumps to the row at once, as Reminders does: a smooth scroll as the app came to the front didn't
+    // happen at all on the iPhone, and the row lit up below the screen, unseen (S5 test).
+    const row = document.querySelector<HTMLElement>(`[data-item="${CSS.escape(flash.key)}"]`)
+    log('remind', 'open', flash.key.split(':')[0], row ? 'found' : 'missing')
+    if (!row) return
+    const box = row.getBoundingClientRect()
+    if (box.top < 0 || box.bottom > (window.visualViewport?.height ?? window.innerHeight)) row.scrollIntoView({ block: 'center' })
+    row.classList.remove('flash')
+    void row.offsetWidth // a new tap on the same row plays again
+    row.classList.add('flash')
   }, [flash])
 
   if (!snap || !view) return null

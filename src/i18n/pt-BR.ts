@@ -1511,5 +1511,4 @@ export const ptBR: Messages = {
   'notif.androidSettings': 'Configurações',
   'notif.androidApps': 'Apps',
   'notif.androidNotifications': 'Notificações',
-  'notif.androidPopups': 'Para que apareçam na tela, ative os pop-ups do Smart Meta nas configurações de notificação do celular.',
 }

@@ -1571,6 +1571,14 @@ card in the prep sheet only. The questions as asked:
   push, so it came. Test the summary on another day; `select id, status, fire_at from
   public.scheduled_notifications where id like 'sum:%' order by fire_at desc limit 3;` shows it.
 
+**Fourth round (iPhone, after the third):** neither the single row nor "Now" (two at once) showed any
+more. Likely cause: a new build before each test, and the app installs it with a reload as soon as it comes
+to the front, so opening it by tapping a push reloaded it mid-way: the link was read, the address cleaned,
+then the page reloaded and the link was gone. The link is now kept (this session's storage, 2 minutes at
+most) until its row has been shown with the app on screen; a row not there yet (still syncing) waits for
+it. The log has "push tapped / remind" for each tap, then "remind link" and "remind open task found". The
+Android line about pop-ups is gone (owner).
+
 **Owner's setup for the second round:** paste `supabase/migrations/0010_owner_push_tools.sql` → Run (after
 0009). To see the new name, remove the app from the Home Screen and add it again (sign in again after).
 
@@ -1869,3 +1877,5 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   white page); signing out offline drops the phone's subscription first; the app renamed "Smart Meta".
 - **2026-10-31 (16):** iPhone: a single reminder's row is jumped to and lit once the app shows (it lit out of
   sight); the summary not coming again the same day explained (one a day, sent ones are kept).
+- **2026-10-31 (17):** a push's link to Today is kept until shown with the app on screen, surviving the
+  reload of an update; taps logged; the Android pop-ups line removed (owner).

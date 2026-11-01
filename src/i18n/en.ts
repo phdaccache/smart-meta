@@ -1516,5 +1516,4 @@ export const en = {
   'notif.androidSettings': 'Settings',
   'notif.androidApps': 'Apps',
   'notif.androidNotifications': 'Notifications',
-  'notif.androidPopups': 'To see them pop up on the screen, turn on pop-ups for Smart Meta in the phone’s notification settings.',
 } as const
