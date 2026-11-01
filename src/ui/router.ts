@@ -71,6 +71,8 @@ interface NavState {
   layer?: number
   /** The screens this one was opened from, bottom first. */
   under?: string[]
+  /** An entry under the first screen (see SPARE_ENTRIES), and how many from the bottom. */
+  spare?: number
 }
 
 const depth = () => (history.state as NavState | null)?.depth ?? 0
@@ -102,7 +104,22 @@ let later: (() => void)[] = []
 // them loads that page anew, which a Home Screen app on the iPhone showed as a blank white page. So Back
 // starts here, and goes to the screen's own parent instead.
 if (depth() > 0 || layer() > 0) log('nav', 'fresh page at depth', depth(), 'layer', layer())
-history.replaceState({ depth: 0 }, '')
+/**
+ * Under the app's first screen, the iPhone's Home Screen app has an empty page: its own browser bar with no address,
+ * no code of ours running, and no way back but closing the app (S6 test, a quick swipe from the edge). A swipe can't
+ * be stopped, so it lands here instead: spare entries under the first screen, which put the screen back at once. Two,
+ * since a second quick swipe may start before the phone knows about the first one's way back. Only there: in
+ * a browser Back has to be able to leave, and on Android it closes the app.
+ */
+const SPARE_ENTRIES = 2
+const stopsSwipes = (navigator as Navigator & { standalone?: boolean }).standalone === true
+if (stopsSwipes) {
+  history.replaceState({ depth: 0, spare: SPARE_ENTRIES }, '')
+  for (let n = SPARE_ENTRIES - 1; n > 0; n--) history.pushState({ depth: 0, spare: n }, '')
+  history.pushState({ depth: 0 }, '')
+} else {
+  history.replaceState({ depth: 0 }, '')
+}
 
 // Screens keep their own scroll (see screensUnder) and the page itself never scrolls, so the browser restoring
 // the page's scroll on Back changes nothing, and it stays on: after a swipe back, the iPhone keeps its picture
@@ -178,6 +195,15 @@ function backArrived() {
 }
 
 window.addEventListener('popstate', (e: PopStateEvent & { hasUAVisualTransition?: boolean }) => {
+  const spare = (e.state as NavState | null)?.spare
+  if (spare) {
+    // A swipe past the first screen: the same screen again, with the spare entries back under it.
+    const at = shown[shown.length - 1]
+    for (let n = spare - 1; n > 0; n--) history.pushState({ depth: 0, spare: n }, '', at)
+    history.pushState({ depth: 0 }, '', at)
+    log('nav', 'swipe stopped at the first screen', spare)
+    return
+  }
   // After this event's own work, which is about the same move.
   if (backing != null) queueMicrotask(backArrived)
   if (ownMoves > 0) {

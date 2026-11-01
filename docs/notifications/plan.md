@@ -1746,6 +1746,13 @@ guard saw nothing. That fits the first Back bug above. No white screen since tha
 iPhone's own edge swipe doesn't go through `goBack`, so a swipe on the bottom screen might reach that entry too. If it does,
 the fix is a spare entry at the bottom of the stack that a swipe lands on, in `src/ui/router.ts`.
 
+**Fourth round (same day):** the owner reproduced the white screen with a quick swipe from the edge, not every time; not
+with Back taps since the fix. Every other test passed. So the installed iPhone app now keeps two spare entries under its first
+screen (`SPARE_ENTRIES`, `src/ui/router.ts`): a swipe lands there and the same screen goes back on at once, with the spare
+entries under it again. Only with `navigator.standalone`: in a browser Back has to be able to leave, and on Android it closes
+the app. The log says "swipe stopped at the first screen". What the swipe looks like on the phone isn't known yet; a
+swipe on the first screen slides and comes back to the same screen.
+
 ### S6 part B: production and the merge (step by step)
 
 Written in part A so it survives the compaction; check each against the code as you go. Claude can't do the
