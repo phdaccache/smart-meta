@@ -1723,6 +1723,21 @@ The S6 preview has its Vercel Preview variables (Supabase URL and key, `VITE_VAP
   ("boot open in the app") and any file that failed to load, and if nothing is drawn after 8 s it logs that and offers a reload.
   The next white screen's log, from the same place (Safari and the app keep separate logs), should say which it is.
 
+**Second round (same day):**
+- **The goal review push works** (a habit goal; the owner's first try was an outcome goal, which waits for its extra
+  days). It comes once per goal per day, by design: moving the summary's time again doesn't send it again.
+- **White screen and stuck app on fast Back, in the installed app.** The owner: "navigating back very fast"; closing the
+  app was the only way out. Two bugs found and reproduced in the dev app. (1) A quick second Back counted the same screen
+  twice and went one too far, onto entries from before a reload: from depth 2, three quick Backs landed under the bottom
+  of the stack; those entries are what showed a blank white page on the iPhone in S5. Now one Back at a time, what's
+  asked meanwhile waits (`backing` in `src/ui/router.ts`). (2) Opening a screen while Back was still sliding reused its
+  layer with the slide's end still applied: the new screen stayed off to the side, everything under it inert. The slide is
+  now cancelled when it ends. **Not proven on the iPhone;** the iPhone's own edge swipe doesn't go through this code.
+- **A tap with the app in the background still didn't work.** One bug found: a tap to the address the app was first
+  opened at was ignored for as long as the app stayed open (`launchedAt`), so a goal's push tapped a second time did nothing.
+  Also: the row waits for a real frame as well; the app looks for the tap for 10 s, not 2; a page in the background
+  doesn't animate. The log now says "app came to the front" and how long after the tap it read it, for the next round.
+
 ### S6 part B: production and the merge (step by step)
 
 Written in part A so it survives the compaction; check each against the code as you go. Claude can't do the

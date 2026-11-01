@@ -20,7 +20,7 @@ function show(dir: 'forward' | 'back' | null) {
   ending?.()
   const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   // A sheet going away plays its own exit; the page under it changes at once.
-  if (!dir || still || document.querySelector('.sheet-layer')) return notify()
+  if (!dir || still || document.hidden || document.querySelector('.sheet-layer')) return notify()
   if (dir === 'back') return slideBack()
   slideIn()
 }
@@ -132,11 +132,15 @@ function slideBack() {
   const shade = document.createElement('div')
   shade.className = 'nav-shade'
   document.body.append(shade)
+  let runs: (Animation | undefined)[] = []
   const end = () => {
     if (ending !== end) return
     ending = null
     leaving = null
     shade.remove()
+    // Its end stays applied until cancelled, and a screen opened right away takes this same layer: it stayed
+    // off to the side, with everything under it untouchable (S6 test).
+    runs.forEach((a) => a?.cancel())
   }
   ending = end
   const finish = () => {
@@ -147,7 +151,7 @@ function slideBack() {
   // Animations wait while the app is in the background; the screen must not outlive its moment.
   setTimeout(finish, 1000)
   const timing = { duration: 400, easing: EASE, fill: 'forwards' } as const
-  const runs = [
+  runs = [
     layer?.animate([{ transform: 'none' }, { transform: 'translateX(100%)' }], timing),
     shade.animate([{ opacity: 1 }, { opacity: 0 }], timing),
   ]
@@ -160,7 +164,22 @@ export const leavingScreen = () => leaving
 /** Set while unwinding the stack to a tab: where to land once the browser gets there. */
 let pendingRoot: string | null = null
 
+/**
+ * A Back the browser hasn't made yet. Until it has, `history.state` still says where we were, so a quick second
+ * tap counted the same screen twice and went one too far, past the bottom of the stack, onto the entries of a page
+ * from before a reload (S6 test: a white page). What's asked for meanwhile waits its turn (see `later`).
+ */
+let backing: ReturnType<typeof setTimeout> | null = null
+function backArrived() {
+  if (backing == null) return
+  clearTimeout(backing)
+  backing = null
+  if (ownMoves === 0) later.splice(0).forEach((run) => run())
+}
+
 window.addEventListener('popstate', (e: PopStateEvent & { hasUAVisualTransition?: boolean }) => {
+  // After this event's own work, which is about the same move.
+  if (backing != null) queueMicrotask(backArrived)
   if (ownMoves > 0) {
     if (--ownMoves === 0) later.splice(0).forEach((run) => run())
     return
@@ -197,7 +216,7 @@ function afterOwnMoves(then: () => void): boolean {
   const n = pushedLayers()
   layers.length = 0 // the sheets close as their screen goes; their own release finds nothing to do
   dropEntries(n)
-  if (ownMoves === 0) return false
+  if (ownMoves === 0 && backing == null) return false
   later.push(then)
   return true
 }
@@ -216,7 +235,7 @@ export function pushLayer(close: () => void): () => void {
     entry.pushed = true
   }
   // A sheet that opens as another closes waits for the browser to drop the old entry first.
-  if (ownMoves > 0) later.push(push)
+  if (ownMoves > 0 || backing != null) later.push(push)
   else push()
   return () => {
     const i = layers.indexOf(entry)
@@ -281,8 +300,11 @@ export function backTo(d: number, fallback: string) {
 /** Back within the app when there is somewhere to go, otherwise to a sensible parent. */
 export function goBack(fallback: string) {
   if (afterOwnMoves(() => goBack(fallback))) return
-  if (depth() > 0) history.back()
-  else navigate(fallback, { replace: true })
+  if (depth() > 0) {
+    // A move that never comes mustn't hold everything else back.
+    backing = setTimeout(backArrived, 1000)
+    history.back()
+  } else navigate(fallback, { replace: true })
 }
 
 function getPath() {

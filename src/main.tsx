@@ -52,14 +52,16 @@ registerSW({
 // and says where to go. It also leaves the tap in a cache (public/push-sw.js), read here on start and each
 // time the app comes to the front: on the iPhone, an open app came to the front but its message never came.
 const launchedAt = location.pathname + location.search
+const startedAt = Date.now()
 /** The last tap handled, so the message and the cache don't both act on it. */
 let lastTap = 0
 function openTapped(path: unknown, at: number, how: string) {
   if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//') || at <= lastTap) return
   lastTap = at
-  log('push', 'tapped', how, path.split('?')[0], path.includes('remind=') ? 'remind' : '')
-  // Already there, it stays: going again would leave the same screen twice in Back's way. Opened at it, too.
-  if (path !== location.pathname + location.search && !(how === 'kept' && path === launchedAt)) navigate(path)
+  log('push', 'tapped', how, path.split('?')[0], path.includes('remind=') ? 'remind' : '', `${Date.now() - at} ms ago`)
+  // Already there, it stays: going again would leave the same screen twice in Back's way. So does the tap that
+  // opened this page at it; a later tap to the same address is a new one, wherever the app is by now.
+  if (path !== location.pathname + location.search && !(how === 'kept' && path === launchedAt && at <= startedAt)) navigate(path)
 }
 navigator.serviceWorker?.addEventListener('message', (e: MessageEvent) => {
   if (e.data?.type === 'open') openTapped(e.data.path, typeof e.data.at === 'number' ? e.data.at : Date.now(), 'message')
@@ -79,10 +81,14 @@ async function readTap() {
   }
 }
 // The worker may still be writing it as the app shows: look again a moment later.
-const lookForTap = () => [0, 600, 2000].forEach((ms) => setTimeout(() => void readTap(), ms))
+const lookForTap = () => [0, 600, 2000, 5000, 10_000].forEach((ms) => setTimeout(() => void readTap(), ms))
 if ('caches' in window) {
   lookForTap()
-  document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && lookForTap())
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return
+    log('app', 'came to the front')
+    lookForTap()
+  })
 }
 logUncaught()
 holdOpenLock()
