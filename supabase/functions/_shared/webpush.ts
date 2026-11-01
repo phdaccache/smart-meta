@@ -40,6 +40,8 @@ export interface PushMessage {
   url: string
   /** Same tag, same notification: a newer one replaces it instead of stacking. */
   tag?: string
+  /** The number for the app's icon, 0 to clear it; left out, the icon stays as it is. */
+  badge?: number
 }
 
 /**

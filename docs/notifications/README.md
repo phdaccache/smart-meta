@@ -7,9 +7,9 @@ Meta. It runs on branch `notifications` and merges to `main` only when notificat
 
 | File | What it holds | When to change it |
 |---|---|---|
-| [spec.md](spec.md) | **What** must be true: numbered, checkable requirements, and **Adjustable numbers** (every limit, time and threshold, N-1 to N-25) | Only when the owner changes a requirement or a number |
+| [spec.md](spec.md) | **What** must be true: numbered, checkable requirements, and **Adjustable numbers** (every limit, time and threshold, N-1 to N-27) | Only when the owner changes a requirement or a number |
 | [plan.md](plan.md) | **How and why**: facts, designs, trade-offs, the owner's worries (§0), decisions (§2), stages (§14), open questions (§16), change log | Whenever something is decided, learned or done |
-| [mockups/](mockups/) | S0 mockups and the S5 mockup `s5.html` (HTML artifacts); the picks are recorded in plan §2 and §14 | When the owner asks for another round |
+| [mockups/](mockups/) | S0 mockups and the S5 mockup `s5.html` (HTML artifacts); S6's are the artifact linked in plan §14; the picks are recorded in plan §2 and §14 | When the owner asks for another round |
 | [runway-simulator.html](runway-simulator.html) | Storage and cost simulator (also a private artifact: [Smart Meta Runway](https://claude.ai/artifact/6xvMmYEUDBiKkGsgkfLWhq)) | When limits or record sizes change |
 
 ## For every session working on this
@@ -55,8 +55,8 @@ These are the contracts between stages. Changing one affects others.
 - **Tables** (all with RLS, explicit grants, nothing for `anon`; plan §8.2): `records` (exists),
   `members` (only the owner writes), `profiles`, `user_keys` (locked data key, public key),
   `push_subscriptions` (one row per user), `scheduled_notifications` (deterministic ids: `sum:<day>`,
-  `rev:<day>`, `rem:<fire ms>:<item>`, `test:<ms>`; payload encrypted by the phone), and, out of the API's reach, `private.send_log`
-  (no content), `private.push_config` (kill switch and shadow mode) and `private.push_beta` (S5, `0006_push.sql`). S4 adds `private.daily_rows` (new rows per user per day, for the
+  `rev:<day>`, `gol:<day>:<goal>`, `rem:<due ms>:<item>`, `test:<ms>`; payload encrypted by the phone), and, out of the API's reach, `private.send_log`
+  (no content), `private.push_config` (kill switch, shadow mode, the owner's own quiet hours for "New request") and `private.push_beta` (S5, `0006_push.sql`). S4 adds `private.daily_rows` (new rows per user per day, for the
   limits and the alarm; not reachable through the API). Backups: private repo `phdaccache/smart-meta-backups`.
 - **Membership gates the server:** non-members can't read or write anything on the server, their own
   profile included; they can only ask for their membership status (`my_access()`). Their name, avatar and
@@ -77,6 +77,6 @@ These are the contracts between stages. Changing one affects others.
 | S3 | Encryption | Done 2026-10-29 (tested on both phones; data encrypted on staging; "open twice" warning) |
 | S4 | Safety and operations (backups, alarm, limits, sync timing, privacy note) | Done 2026-10-30 (backups and restore drill on staging, alarm email, limits; privacy policy confirmed by the owner) |
 | S5 | Core notifications | Done 2026-11-01 (planner, the four types, Settings → Notifications, the Notification card, kill switch, shadow beta from Requests; tested on both phones, 0006 to 0010 on staging). The shadow week moved to production, after S6 |
-| S6 | The rest, then merge to `main` | Not started |
+| S6 | The rest, then merge to `main` | Part A done 2026-11-01 (tested on the iPhone, merged into `notifications`); part B not started, its steps are in plan §14 |
 
 Details and checkboxes: [plan.md §14](plan.md).

@@ -141,8 +141,10 @@ Types:
   `N-12`).
 - **NO-5** [S5] **Preps** don't push by themselves; their Notification card does (NO-3). (Owner,
   2026-10-31; before, every prep with a time pushed at that time in S6.)
-- **NO-6** [S6] **Goal review date reached**: a push.
-- **NO-7** [S6] **Goal completed / target hit**: an in-app celebration, no push.
+- **NO-6** [S6] **Goal review date reached**: a push, once, at the morning summary's time (even with the summary
+  off), with its own switch. For an outcome goal, the day its extra days end. [Owner, 2026-11-01]
+- **NO-7** [S6] **Goal completed / target hit**: an in-app celebration, no push. It plays on a goal review saved
+  with "Yes" (whatever comes next) and on "Close it out". [Owner, 2026-11-01]
 - **NO-8** No pushes for: missed logging, goal status changes, sync, release notes, plan tomorrow,
   stalled projects.
 
@@ -183,9 +185,11 @@ Settings and indicators:
   row of Settings → App. The settings follow the account: synced and encrypted like the rest, so every
   phone of the account plans the same pushes (owner, 2026-10-31).
 - **NO-20** [S6] **App icon badge:** toggle, **off by default**, counts **late + left today** (not the
-  review).
-- **NO-21** [S6] **Lock-screen details:** on by default; off sends generic text.
-- **NO-22** [S6] **Quiet hours:** off by default.
+  review): the day's commitments and preps, and tasks and steps due that day or late.
+- **NO-21** [S6] **Lock-screen details:** on by default; off, a push says only its kind, no names or counts.
+- **NO-22** [S6] **Quiet hours:** off by default (`N-26` once on). **Everything waits** until they end, reminders
+  too, the owner's "New request" included; nothing is skipped. [Owner, 2026-11-01] These three follow the account,
+  like the rest of NO-19.
 - **NO-23** [S5] **Diagnostics are logged, not shown:** the send log (NO-16) keeps each push's result
   (delivered, failed, subscription gone), and the push subscription keeps when the phone last checked
   its permission and subscription. Users never see this. (Changed by the owner 2026-10-29: no
@@ -291,6 +295,8 @@ code (RE-5), and add a line to the plan's change log. "Where" says what enforces
 | N-23 | **Weekly full + nightly changes, 30 days kept** | Backup schedule and retention | Backup job |
 | N-24 | **6 digits** | Sign-in code length | Supabase setting |
 | N-25 | **30 per hour** | Sign-in emails Supabase may send (default with custom SMTP; Gmail allows about 500 a day) | Supabase setting |
+| N-26 | **22:00 to 7:00** | Quiet hours to start with, once turned on (user can change) | Phone |
+| N-27 | **15 seconds** | The app coming to the front this soon after a push counts as tapping it, since the iPhone doesn't always report the tap (`ANSWERED_MS`, plan §15) | Phone |
 
 Free-plan limits of Supabase, Vercel and GitHub are not ours to set; they're in
 [plan §3.1](plan.md) with the date they were checked.

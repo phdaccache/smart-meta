@@ -5,7 +5,7 @@ import {
 } from '../../supabase/functions/_shared/webpush'
 import { phoneTimeZone } from '../lib/zoned'
 import { log } from './log'
-import { forgetPlan, planSoon } from './planner'
+import { forgetPlan, planSoon, pushStatusKey } from './planner'
 import { supabase } from './supabase'
 
 /**
@@ -119,7 +119,7 @@ export interface PushStatus {
   owner: boolean
 }
 
-export const pushStatusKey = (userId: string) => `pushStatus:${userId}`
+export { pushStatusKey }
 
 /** Asks the server, and keeps the answer for screens to read. Offline (or before 0008), the last answer stands. */
 export async function refreshPushStatus(userId: string): Promise<PushStatus | null> {

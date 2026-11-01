@@ -19,12 +19,13 @@ import { deletedToast, putBack, SwipeToDelete } from '../ui/SwipeToDelete'
 import { useIsDeveloper } from '../ui/developer'
 import { RELEASES } from '../lib/releases'
 import { ReleaseNotes } from './WhatsNew'
-import { navigate, useLocation } from '../ui/router'
+import { navigate, reloadFromBottom, useLocation } from '../ui/router'
 import { ValueLookSheet, ValueTile, valueLook } from '../ui/valueLook'
 import type { Value } from '../lib/types'
 import { resetIntro } from './Intro'
 import { openSignIn } from './Account'
 import { AvatarView, ProfileSheet } from '../ui/Avatar'
+import { celebrateSample } from '../ui/Celebration'
 import { useNotificationsShown, usePushStatus } from './Notifications'
 import { useProfile } from '../sync/profile'
 
@@ -260,7 +261,7 @@ function SyncSection({ restore = false }: { restore?: boolean }) {
     setBusy(true)
     try {
       await signOut()
-      window.location.replace('/')
+      reloadFromBottom('/')
     } catch (e) {
       toast((e as Error).message)
       setBusy(false)
@@ -362,7 +363,7 @@ function DangerSection() {
   const run = async (fn: () => Promise<void>) => {
     try {
       await fn()
-      window.location.replace('/')
+      reloadFromBottom('/')
     } catch (e) {
       toast((e as Error).message)
     }
@@ -404,6 +405,13 @@ export function DeveloperScreen() {
   return (
     <Screen back="/settings" backLabel={t('set.title')} title="Developer">
       <DevSection devToday={settings.devToday} />
+      <Section title="Goal celebration">
+        <div className="card list settings">
+          <button className="list-row accent" onClick={celebrateSample}>
+            <div className="text"><div className="title">Play it</div></div>
+          </button>
+        </div>
+      </Section>
     </Screen>
   )
 }
@@ -443,7 +451,7 @@ function DevSection({ devToday }: { devToday: string | null }) {
     setBusy(true)
     try {
       await fill(today)
-      window.location.replace('/')
+      reloadFromBottom('/')
     } catch (e) {
       toast((e as Error).message)
       setBusy(false)

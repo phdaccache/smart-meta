@@ -115,8 +115,8 @@ the same local tables as A's, so both people's data mix. Fix in S2 (§6.8).
 | Project steps | ✅ Same rules as due dates (steps have end dates). |
 | Late items | Not pushed again after their time; only counted in the badge (confirmed). |
 | Preps with a time | ✅ **Changed 2026-10-31 (S5, answer 3a):** no push by itself; the prep's Notification card, like any item. |
-| Goal review date reached | ✅ |
-| Goal completed / target hit | ✅ In-app celebration only, no push. |
+| Goal review date reached | ✅ At the morning summary's time, even with the summary off; once only (owner, 2026-11-01, S6). |
+| Goal completed / target hit | ✅ In-app celebration only, no push. Plays on a goal review saved with "Yes" (renew, maintenance or close) and on "Close it out" (owner, 2026-11-01, S6). |
 | Test notification | ✅ Developer mode only (the owner). |
 | Misses logging (evening) | ❌ Skipped for now. |
 | Goal status change | ❌ Shown in Review. |
@@ -199,8 +199,11 @@ toast on Today; Requests is a Settings-style list. Numbers are the owner's scree
   email step. Mockup: [notification settings](mockups/notification-settings.html), artifact
   [Smart Meta Notification Settings](https://claude.ai/artifact/4gN8wJzt7pzg5sXiKGzXTU).
 - **App icon badge:** toggle, **off by default**, counts **late + left today**. **Review not included.**
-- **Lock-screen details:** shown by default, can be turned off.
-- **Quiet hours:** available, off by default.
+- **Lock-screen details:** shown by default, can be turned off. Off, a push says only its kind: "Reminder",
+  "Morning summary", "Weekly review", "Goal review date" (S6 pick B).
+- **Quiet hours:** available, off by default. **Everything waits** until they end, reminders too (owner, S6).
+- **The "On this phone" rows follow the account** (owner, S6): any phone can plan the pushes, so per-phone
+  values would overwrite each other's plan. The section is "How they arrive" / "Como chegam".
 - **Deep links:** tapping opens that task, goal or project.
 - **Cancel on done.** **No snooze.** **Time zone** stored with the plan. **Language** from app settings.
 - **Denied permission:** instructions to turn it back on.
@@ -1625,19 +1628,281 @@ only one acts. The log says "push tapped message" or "push tapped kept".
   owner's call after testing on both phones (the week moved to production, after S6).
 
 ### S6. The rest, then merge
-- [ ] Goal review date, in-app celebration. (Preps with a time moved to S5 on 2026-10-31: preps get the
-      Notification card like any item.)
-- [ ] App icon badge (late + today), quiet hours, lock-screen details toggle.
-- [ ] Merge plan: apply migrations to production, deploy, enable for the owner, then friends.
-- [ ] Backups to production (from S4): in `smart-meta-backups`, replace `DATABASE_URL` and
-      `RESTORE_DATABASE_URL` with production's session pooler URI, update its README's "staging only" note,
-      run a full backup, and repeat the restore drill once with a test account.
-- [ ] Production Supabase set up like staging was in S2, before deploying: custom SMTP with the app Gmail
-      (`smartmeta.codes@gmail.com`, its app password pasted by the owner), the code-only "Confirm signup"
-      and "Magic Link" templates, sign-ups on, anonymous sign-ins off, confirm email on, 6-digit codes,
-      Turnstile captcha with its secret, 30 emails an hour; then `0002_accounts.sql` in the SQL editor
-      (existing users become members), and Security Advisor checked. Friends sign in once with a code:
-      the password sign-in is gone from the app (spec AC-14).
+
+Started 2026-11-01 on branch `notifications-s6`. The owner's split: **part A** (the features, tested on the
+preview), then a compaction, then **part B** (production and the merge, with a step-by-step for every
+setting). Mockups: [Smart Meta S6 Mockups](https://claude.ai/artifact/JGqJ6CnYgTeRYFAcDSbcZv).
+
+**Part A answers (owner, 2026-11-01):**
+- **Celebration:** option A (a full screen, a ring in the goal's value color closes, a tick, Done), with more
+  motion, "not too much". If the motion doesn't please, keep plain A: drop the sparks, glow and pulse in
+  `src/styles.css` (`.cele-spark`, `.cele-glow`, `cele-pulse`).
+- **It plays** on a goal review saved with "Yes", whatever comes next, and on "Close it out". "Goal completed"
+  when the goal ends, "You hit it" when it goes on. A review answered "No" gets the usual "Saved" toast.
+- **Goal review date push:** at the morning summary's time (even with the summary off), no time of its own.
+- **Details off:** the push's kind only (option B), no name or count, and it still opens the same place.
+- **Quiet hours:** everything waits until they end, reminders too. Nothing is skipped.
+- **Those three rows follow the account**, as "How they arrive" (see §2).
+
+**Part A: what was built (2026-11-01):**
+- `src/lib/planner.ts` (tests first, 15 new): the goal review push (`gol:<day>:<goal>`, kind `goal-review`, which
+  0006 already allows; a habit goal on its review date, an outcome goal when its extra days end, as the goal's
+  page; it counts toward N-7). Quiet hours move a push's `fire_at` and keep its id, so a push already sent
+  stays sent if they're turned on later (the server keeps those rows as they are), and a push held overnight
+  stays planned when the phone plans again at night. A reminder arriving the day after it was due says
+  "Yesterday, 23:00". "Now" on Today uses the time it arrived.
+- **Badge:** each push carries its day's number (`badge` in `PushMessage`, encrypted like the rest), the service
+  worker sets it (`public/push-sw.js`), and `src/ui/AppBadge.tsx` keeps it right while the app is open.
+- Settings → Notifications: "Goal review dates"; the section "How they arrive" (App icon badge, Details on the
+  lock screen, Quiet hours with From and To wheels). Prefs are in the synced `prefs` record, no migration.
+- `src/ui/Celebration.tsx`, `.cele` in `src/styles.css`: CSS animations only, two taps of the phone as the ring
+  closes, reduced motion just fades. Developer → Goal celebration → Play it shows it again.
+
+- **The owner's "New request" waits too** (owner's question, 2026-11-01). It's the one push the server starts by
+  itself, and the settings are encrypted, so the owner's phone tells the server the owner's own quiet hours
+  (`0011_request_quiet.sql`, `private.push_config`, owner only; nobody else's hours reach the server). During them
+  nothing goes out and `requests_seen_at` stays; when they end, what came in goes out, unless already approved.
+  Tested on PGlite with stand-ins: 30 checks, run twice. No dispatcher deploy: only the SQL changed.
+
+**Choices made while building (the owner may change any):**
+- **The badge counts less than Today's total:** commitments and preps of the day, and tasks and steps due today
+  or late (as Today's "Today" filter). Today also lists tasks due later and tasks with no date; counting those
+  would keep the number up for good ("late + left today", NO-20). The morning summary still counts everything.
+- More than 3 goal review dates on one day (with the cap of 3): the rest get no push; their pages still ask.
+
+The S6 preview has its Vercel Preview variables (Supabase URL and key, `VITE_VAPID_PUBLIC_KEY`, all staging's).
+
+**Set up for the test (owner):**
+1. Supabase → `smart-meta-staging` → SQL Editor → paste `supabase/migrations/0011_request_quiet.sql` → Run. Advisors →
+   Security Advisor: anything new goes to Claude.
+2. Cloudflare → Turnstile → "Smart Meta" → Settings → add `smart-meta-h2ur-git-notifications-s6-daccache.vercel.app`.
+3. On the iPhone, open that address in Safari, add it to the Home Screen, open it from there. Sign in with the
+   owner's staging account (code, Face ID). Settings → Notifications → "Turn on notifications" → Allow. Same on
+   Android if wanted; pushes go to whichever phone turned them on last, so finish on the iPhone.
+
+**To test part A** (on the phone that turned notifications on; the test account needs a goal and a task):
+- **A. Settings.** Settings → Notifications. "What you get" has "Goal review dates"; below it, "How they arrive" has App
+  icon badge (off), Details on the lock screen (on), Quiet hours (off). Quiet hours on: From and To wheels open, the
+  blue line says "22:00 to 07:00" and follows the wheels. Close and reopen the app: all still there. On the other
+  phone, after it syncs: the same. Turn Quiet hours back off.
+- **B. The celebration's motion.** Settings → Developer → Goal celebration → Play it, a few times. The ring closes, the
+  phone taps twice, the words come in. Pronto closes it. Too much, too little, or right?
+- **C. A real celebration.** On a goal that started before today: Edit → "Review on" today → save. The page shows
+  "Review date reached" → Review → Yes → Close it out → Save. The ring plays with "Goal completed"; Pronto shows the
+  goal's page; Back goes to the goals. Then on another goal, the same with Yes → Renew: "You hit it". Another with
+  No: only the "Saved" toast. A maintenance goal → Close it out: it plays.
+- **D. The goal review push.** A goal that started before today: Edit → "Review on" today. Settings → Notifications →
+  Morning summary → time 3 minutes ahead. Wait with the app closed: "Review date reached" with the goal's name. Tap it:
+  the goal opens. Then Goal review dates off, and repeat on another goal: nothing comes. Put both back.
+- **E. Details off.** Details on the lock screen off. A task for today, with a time 10 minutes ahead and Notification
+  "5 minutes before". Lock the phone: "Reminder", with no name. Tap it: Today, on that task. Details back on.
+- **F. Quiet hours hold a reminder.** Quiet hours on, From the current time, To 5 minutes ahead. A task with a reminder
+  arriving 2 minutes from now. Nothing comes at 2 minutes; it arrives within a minute after they end, with its name.
+- **G. A held reminder can be cancelled.** The same again, and tick the task off before they end: nothing comes.
+- **H. "New request" waits.** Quiet hours on, From now, To 5 minutes ahead. In another browser (or a private tab), sign up
+  on the same preview with a new email. No push yet; Developer → Requests already lists them. Within a minute after
+  quiet hours end: "New request" with that email. Quiet hours off, and sign up again with another email: it comes
+  at once. Reject the test requests.
+- **I. The badge.** App icon badge on. Leave the app: the icon shows what's late or left today (tasks due today or
+  late, plus today's commitments and preps). Open it, tick one off, leave: one less. Leave the app with a reminder
+  coming: the push sets the number for its day. Badge off, open and leave: the number is gone.
+- **J. Send anything odd to Claude.** Settings → Developer → Diagnostics log has the details.
+
+**Owner's test of part A, first round (2026-11-01), iPhone:**
+- **A tap lit its row only when the app had been closed.** The log showed the tap arriving and the row found both
+  ways, and in the dev app the row lights from Today and from inner screens. Likely cause, not proven on the phone:
+  with the app in the background the row lit up behind the iPhone's own animation and had faded by the time the app
+  showed. It now waits until the app has been at the front for 0.7 s (`FRONT_SETTLE_MS` in `src/screens/Today.tsx`).
+- **The goal review push may not have come.** Open: the log suggests it was planned. To find out: `select at, kind,
+  fire_at, status, reason from private.send_log where kind in ('goal-review', 'summary') order by at desc limit 10;`
+  To test again: each goal has its own push a day, not tied to the summary (another habit goal with "Review on" today, the
+  summary's time 3 minutes ahead; an outcome goal waits for its extra days). To reset the day's rows on staging: `delete
+  from public.scheduled_notifications where id like 'sum:%' or id like 'gol:%';`, then change the summary's time.
+- **White screens, in Safari and the app.** Cause not known. The log has no crash lines, and one reload at an inner screen
+  (the S5 "white page on Back" case, which each new build can bring). `public/boot-guard.js` now notes each open
+  ("boot open in the app") and any file that failed to load, and if nothing is drawn after 8 s it logs that and offers a reload.
+  The next white screen's log, from the same place (Safari and the app keep separate logs), should say which it is.
+
+**Second round (same day):**
+- **The goal review push works** (a habit goal; the owner's first try was an outcome goal, which waits for its extra
+  days). It comes once per goal per day, by design: moving the summary's time again doesn't send it again.
+- **White screen and stuck app on fast Back, in the installed app.** The owner: "navigating back very fast"; closing the
+  app was the only way out. Two bugs found and reproduced in the dev app. (1) A quick second Back counted the same screen
+  twice and went one too far, onto entries from before a reload: from depth 2, three quick Backs landed under the bottom
+  of the stack; those entries are what showed a blank white page on the iPhone in S5. Now one Back at a time, what's
+  asked meanwhile waits (`backing` in `src/ui/router.ts`). (2) Opening a screen while Back was still sliding reused its
+  layer with the slide's end still applied: the new screen stayed off to the side, everything under it inert. The slide is
+  now cancelled when it ends. **Not proven on the iPhone;** the iPhone's own edge swipe doesn't go through this code.
+- **A tap with the app in the background still didn't work.** One bug found: a tap to the address the app was first
+  opened at was ignored for as long as the app stayed open (`launchedAt`), so a goal's push tapped a second time did nothing.
+  Also: the row waits for a real frame as well; the app looks for the tap for 10 s, not 2; a page in the background
+  doesn't animate. The log now says "app came to the front" and how long after the tap it read it, for the next round.
+
+**Third round (same day):** a goal's push and a reminder's, tapped with the app in the background, both work now (owner).
+**What the white screen is:** the owner's screenshot from before these fixes shows the iPhone's own browser bar inside the
+installed app ("Search or enter website name", no address, back, share, reload). So it isn't our page: it's the empty entry
+under the app's first screen, reached by going back too far, and none of our code runs there, which is why the log and the
+guard saw nothing. That fits the first Back bug above. No white screen since that fix, but not many tries yet. **Open:** the
+iPhone's own edge swipe doesn't go through `goBack`, so a swipe on the bottom screen might reach that entry too. If it does,
+the fix is a spare entry at the bottom of the stack that a swipe lands on, in `src/ui/router.ts`.
+
+**Fourth round (same day):** the owner reproduced the white screen with a quick swipe from the edge, not every time; not
+with Back taps since the fix. Every other test passed. So the installed iPhone app now keeps two spare entries under its first
+screen (`SPARE_ENTRIES`, `src/ui/router.ts`): a swipe lands there and the same screen goes back on at once, with the spare
+entries under it again. Only with `navigator.standalone`: in a browser Back has to be able to leave, and on Android it closes
+the app. The log says "swipe stopped at the first screen". What the swipe looks like on the phone isn't known yet; a
+swipe on the first screen slides and comes back to the same screen.
+
+**Fifth round (same day):** a tap with the app in the background now mostly works ("push tapped message", right after "app
+came to the front"), but not always: at 16:51:05 and 17:01:03 the app came to the front with no sign of a tap, by message or
+by the cache. Not known why; it isn't how long the app was away. `public/push-sw.js` now traces what it saw ("worker click
+…", "worker push …") into the log, so the next miss says whether the tap ever reached the worker. If it never does, a
+fallback is possible: a push that arrived moments ago and has gone from `getNotifications()` was probably tapped. A missed
+tap only leaves the app where it was, so it doesn't hold back part B. (`feedback.js` in the log was Vercel's preview toolbar.)
+
+**Sixth round (same day):** the owner: swiping on Today shows the white page, which `main` never does ("at main, we cant
+swipe left from Today"). **The spare entries caused that and are gone.** On a fresh open the iPhone has nothing under
+the first screen, so it offers no swipe at all; the spare entries gave it something to swipe to. What differs from `main`:
+- **`main`:** a reload on an inner screen keeps its depth, and tapping a tab goes back down to the real bottom of the history, so
+  Today ends up with nothing under it.
+- **Since S5:** a reload counts as depth 0 ("fresh page"), which keeps Back from those entries, but a tab tap then stays where
+  it is, so Today can have the old entries under it, and a swipe reaches them. Each deploy reloads the app, wherever
+  it is. That is the likely cause of the quick-swipe white screen on inner screens, and why it came "not every time": it needs a reload
+  on an inner screen earlier in that session. **Not proven on the iPhone.**
+- **The fix:** `reloadFromBottom` in `src/ui/router.ts`. An update's reload (`onNeedReload` in `src/main.tsx`) and the three
+  `location.replace('/')` in Settings first go down this page's own entries, which is safe, and reload at the bottom, on the same
+  screen. Tried in the dev app: from depth 2, and with a sheet open, it lands at index 0 with `canGoBack` false; three quick
+  `history.back()` and three quick Back taps stop at the bottom. `backing` and the slide's cancel stay.
+- **Still possible:** a reload it can't catch (the iPhone dropping the page in the background) leaves old entries. The log now says
+  "nav page start at depth N layer N entries N" on every load and "nav swipe to depth N" on each swipe, so the next white screen's
+  log shows whether old entries were there.
+
+**The worker's trace works, and it shows the cache doesn't reach an open app.** The log is in UTC. The next log has `worker
+17:06:02.200 push task`, so the worker with the trace handled the 17:06 push (a guess in this round that an old worker had was wrong).
+But that line only reached the log at 17:23:42, on a new page load. The page open at 17:06 looked for it at 17:06:03 (five times
+in 10 s), 17:07:40 and 17:23:39, and never saw it. So on the iPhone an open page doesn't see what the worker writes to the cache, only
+a page loaded later does. The cache fallback from S5 can't help an app in the background. The same list had no `click` line, so
+the worker probably never got that tap, which is not proven. The worker now also traces how many windows a tap saw and whether its message was sent.
+
+**Seventh round (same day):** the owner: the white screen seems fixed (their test, not many tries of a reload on an inner screen). A tap
+again did nothing. After closing and reopening, the log had `worker 17:26:02.520 push task` and `worker 17:28:01.934 push task`, and no
+`click` at all, with the app at the front 2.7 s after each push. So **in these failures the iPhone brings the app to the front and
+never tells the worker about the tap.** All four failures came 2 to 5 s into the minute, soon after the push; whether a later tap
+always works isn't known. The fallback (`findLostTap` in `src/main.tsx`, `noteRecent` in `public/push-sw.js`): the worker notes each push
+in its own small database, `smart-meta-push`. Coming to the front, the app looks at 0.6, 2 and 5 s: a push of the last minute, with no
+tap since, that's gone from `getNotifications()` was tapped, and it opens as a tap would ("push tapped lost"). One left unread stays
+on the list, so opening the app by hand does nothing. Clearing a push from the list and opening the app within the minute would count as a tap,
+which only opens its place. Tried in the dev app with the worker's real code and the phone's parts stood in for: unread, tapped, a list that
+updates late, one tap only, over a minute old, the tap's own message first, the row lighting up. **Not proven on the iPhone:** that an open app
+sees this database, and that `getNotifications()` drops a tapped push. The log says which ("push recent N listed N …", "push recent failed").
+
+**Eighth round (same day):** the fallback worked at 17:34, 17:35 and 17:36, so an open app does see the database, and a tapped push can
+leave the list. Then it stopped: from 17:41 the log says "recent 1 listed 2 none gone", tapped pushes still on the list, 27 s later in one
+case. Why the list changed isn't known. So a push the app came to the front within 15 s of (`ANSWERED_MS`, the failures were 1 to 4 s) now counts as tapped too,
+even if listed. Owner's call to make: opening the app by hand within those 15 s also goes to that push's place. Tried in the dev app:
+tapped and still listed opens it; listed and 20 s old stays; arriving with the app already open stays; the tap's own message first
+does nothing more. A hint, not proven: the real click reached the worker at 17:39, and that app had been opened by tapping a push (17:38),
+while apps opened by hand (17:33, 17:40, 17:42) got no click. A quick tap isn't the cause: the 17:39 one came 1.1 s after its push. The worker's click trace
+wrote ids into the log; it now writes kinds only.
+
+**A second white screen: a swipe from the right edge on Today**, after visiting a screen and coming back, so the iPhone has a forward entry
+to go to. The log has "swipe to depth 1 entries 2" at 17:39:57, then a new open at 17:40:01. Not every time: four more at 17:40:12 to 17:40:23 had no new open after them. All
+of that session's entries belong to one page load, so reloads aren't involved here. Our code runs ("swipe to depth 1"), and the screen comes
+back fine with `history.forward()` in the dev app. Forward entries can't be removed from a page, and nothing about them differs from `main`
+in the code (the same forward entries, the same `popstate` path), so **`main` may have this too, unnoticed.** The owner is asked to try it there.
+If it has, it isn't from this project. A possible fix, not tried: stop touches at the right edge in the installed app (`preventDefault` on `touchstart`).
+
+**Ninth round (same day):** **the tap is fixed** (owner, iPhone). **`main` doesn't go white on that swipe, and the preview does** (owner), so the guess
+above that `main` had it too was wrong. The cause is still unknown. The owner's screenshot shows the back arrow dimmed, with only reload lit, so this
+looks like a page with no history at all, not an entry we can reach, which is new against what this plan said in the third round. Temporary log lines
+in `src/ui/router.ts` ("edge touch", "after swipe", "page leaving") say whether our page is still alive behind the white page. Removed after the twelfth round.
+
+**Tenth round (same day):** no white page in that build's test (18:06 to 18:08 UTC), with the app opened by hand and no push tapped: 7 touches at the left
+edge of Today with nothing under it (no swipe at all, as on `main`), 2 at the right edge with nothing ahead, 8 forward swipes, about 17 back swipes, some under a second apart.
+Not tried: the Back button before a right-edge swipe, and **an app opened by tapping a push**. An idea to test, not proven: the white page came in the session
+opened by a tap at 17:38 (`click sees 0 windows`, so `clients.openWindow`), `main` has no pushes at all, and a page with no history fits something
+the iPhone makes when a worker opens a window. It may also be chance, since the white page never came every time.
+
+**Eleventh round (same day): it is the window the worker opens.** The owner reproduced it. The log: the app opened by a tap at 18:12:03 (`click sees 0 windows`),
+edge touches on Today did nothing, then a screen, then `swipe to depth 0 entries 2` at 18:12:19.417. The "after swipe 300" line came, and the 1500 and 4000 ones never did:
+the page stopped running within about a second, with no "page leaving", and the next line is the new open at 18:12:36. The white page at 17:39 has the same shape: opened by a tap
+at 17:38, `swipe to depth 0 entries 2` at 17:39:08, then nothing until a new open. Sessions opened by hand had about 15 such swipes in the last two logs with no white page. `main` has no pushes, so
+it never opens a window. So `public/push-sw.js` no longer calls `clients.openWindow` on the iPhone. The evidence that the phone opens the app by itself: the page starts about 40 ms
+after the click event (18:12:03.866 to .910; 17:37:11.592 to .634), too soon for a launch that event began, though that page did get the push's address, so this isn't proven.
+What that white page is
+isn't known. This doesn't explain the owner's white page with spare entries, which those entries' removal solved. Android keeps `openWindow`.
+
+**Twelfth round (same day): the owner's test passed** ("seems ok now"). Fully closed, a tap opened the app with no window asked for (`click leaves it to the phone`, 18:25:03) and went to its row by the cache,
+so the iPhone does open the app by itself. About 15 back swipes to Today and several forward ones in that session, and more after a tap with the app in the background (18:26:03), with no white page.
+**What caused what:** the spare entries caused the white page on a plain swipe on Today; asking for a window on a tap caused it after a back swipe. **`reloadFromBottom` may not be needed:** the white pages with a log all came
+from those two causes, and none is shown to have come from entries left by a reload, so S5's explanation of the white page on Back isn't proven. It stays because it passed the owner's tests and removing it would need another round;
+it can go if a reload on an inner screen, then a swipe, proves safe without it. Also the owner's to overrule: a push the app came to the front within 15 s of counts as tapped (eighth round). Part A is done.
+
+### S6 part B: production and the merge (step by step)
+
+Written in part A so it survives the compaction; check each against the code as you go. Claude can't do the
+**Owner** steps (accounts and secrets; Claude gets no Supabase access) and gives them one at a time, waiting
+for each. **Secrets never go in chat.** Production is project ref `oqhwkjhuuaeopahhcxac` (`.env.production`).
+
+**Part A is merged into `notifications` (2026-11-01).** Part B runs in its own session (owner's choice). Anything it changes
+in the repo goes on `notifications-s6`, brought up to date from `origin/notifications` first, and merges into `notifications` before step 10.
+
+**Before any of it (Claude):** `origin/main` merged in if it has anything new; tests and build pass; a release note in
+`src/lib/releases.ts` (ask the owner for its text; `package.json` version up); privacy policy date still right.
+
+1. **Owner, a copy first:** on each phone with data, Settings → export the JSON backup, and keep it.
+2. **Owner, backups to production (`smart-meta-backups`):** github.com/phdaccache/smart-meta-backups → Settings
+   → Secrets and variables → Actions: replace `DATABASE_URL` and `RESTORE_DATABASE_URL` with production's session
+   pooler URI (Supabase → production project → **Connect** → **Session pooler**, with `[YOUR-PASSWORD]` replaced
+   by production's database password; if lost, Database → Settings → Reset database password, which nothing else
+   uses). **Claude:** updates the repo's README ("staging only") and runs a full backup, so there's a copy of
+   production **from before the migrations**. Checks the run passed.
+3. **Owner, email (production → Authentication):** custom SMTP on: host `smtp.gmail.com`, port 465, user and sender
+   `smartmeta.codes@gmail.com`, the Gmail app password from the password manager, sender name "Smart Meta". Rate
+   limit: 30 emails an hour. Email provider: confirm email **on**, code length **6**, expiry 1 hour (3600 s).
+4. **Owner, templates:** Authentication → Emails → "Confirm signup" and "Magic Link": paste what staging has (the
+   code only, English and Portuguese together; copy them from `smart-meta-staging`).
+5. **Owner, sign-ups and captcha:** Authentication → sign-ups **on**, anonymous sign-ins **off**. Attack
+   Protection → Turnstile captcha **on**, with the secret key from the password manager. Cloudflare → Turnstile →
+   "Smart Meta": check the production address `smart-meta-h2ur.vercel.app` is among its hostnames. Supabase's "personal
+   provider" warning about Gmail is expected (§14 S2).
+6. **Owner, VAPID (production's own pair):** in `Documents\smart-meta`: `node scripts/vapid-keys.mjs`. Save both
+   lines in the password manager as "Smart Meta VAPID (production)". Supabase → production → Edge Functions →
+   Secrets: add `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`. **Send Claude only the public line**; Claude adds it to
+   Vercel as `VITE_VAPID_PUBLIC_KEY`, Production only.
+7. **Owner, migrations, right before the merge** (0003 refuses unencrypted writes, §16.3: from here to step 10 should
+   take minutes, and every phone's writes just wait until it updates). Supabase → production → SQL Editor, each
+   file pasted and Run, in order, one at a time; Claude waits for each:
+   `0002_accounts.sql` (existing accounts become members), `0003_keys.sql`, `0004_limits.sql`,
+   `0005_daily_rows_policy.sql`, `0006_push.sql` (mode starts at `shadow`: leave it), then in a new query
+   `select vault.create_secret('https://oqhwkjhuuaeopahhcxac.supabase.co/functions/v1/dispatch', 'dispatch_url');`,
+   then `0007_pg_net_schema.sql`, `0008_push_controls.sql`, `0009_push_mode_where.sql`, `0010_owner_push_tools.sql`, `0011_request_quiet.sql`.
+8. **Owner, the dispatcher:** in PowerShell, in the repo folder: `npx supabase login`, then
+   `npx supabase functions deploy dispatch --project-ref oqhwkjhuuaeopahhcxac --no-verify-jwt --use-api`, then
+   **`npx supabase logout`** right away, and delete the token in Supabase → Account → Access Tokens.
+9. **Owner, checks:** Integrations → Cron: `smart-meta-dispatch` and `smart-meta-purge` listed, the first succeeding
+   each minute. Edge Functions → `dispatch` → Invocations: a 200 each minute. Advisors → Security Advisor: anything
+   new goes to Claude ("Leaked Password Protection" doesn't apply; see §14 S5).
+10. **Claude, the merge (only on the owner's go):** `notifications` into `main`, push; checks the Production deployment
+    on Vercel is ready and the site answers.
+11. **Owner, the first phone:** open the installed app (reopen it so it updates). Sign in with an email code, Face ID
+    (a new passkey: the address is new). The phone's data seals and uploads. In the SQL Editor, this should
+    say 0: `select count(*) from public.records where not (data ? 'e');`. Second phone: same account, Face ID opens
+    the data; the data matches. Settings → Notifications → turn on; Developer → Pushes shows Shadow; send a test.
+12. **Owner, the restore drill:** with a test account on production, as in §14 S4 (Claude runs the workflow); then
+    delete the test account.
+13. **Owner, a week of real use** in Shadow (spec NO-17): only the owner gets pushes. Nothing scheduled.
+14. **Friends (spec NO-28):** each opens the app and signs in once with a code (the password sign-in is gone,
+    spec AC-14) and Face ID. Developer → Requests → a member → "Shadow beta" for the first ones; when ready, Developer
+    → Pushes → On.
+
+**Rollback:** the kill switch (Developer → Pushes → Off, or `update private.push_config set mode = 'off';`) stops
+pushes at once. App: Vercel → Deployments → promote the last good one; 0003's check would refuse an older app's
+writes, so they'd wait on the phones until the app is forward again. Nothing on the phones is lost.
+
+- [x] Goal review date, in-app celebration. *(Part A, tested on the iPhone.)*
+- [x] App icon badge, quiet hours, lock-screen details toggle. *(Part A, tested on the iPhone.)*
+- [ ] Part B: production set up, migrations, backups, merge, the owner first, then friends.
 - **Done when:** merged to `main` and friends have it.
 
 ### What the owner needs to set up, and when
@@ -1685,6 +1950,17 @@ only one acts. The log says "push tapped message" or "push tapped kept".
   logging reminder, custom domain + Resend.
 
 ---
+- **`reloadFromBottom` may not be needed** (owner, 2026-11-01: keep it for now, look again later). It's in `src/ui/router.ts`,
+  called by `onNeedReload` in `src/main.tsx` and three times in `src/screens/Settings.tsx`. It was added on the idea that entries left under a
+  screen by a reload cause the white page, but every white page with a log came from the spare entries or `clients.openWindow` instead (§14 S6, twelfth
+  round). To find out: without it, on the preview, go two screens deep, deploy so the app reloads there, tap a tab, then swipe from both edges, several times.
+  No white page means it can go: put `location.reload()` and `location.replace('/')` back, and drop `onNeedReload`. Remember S5's white page on Back after a
+  reload (§14 S5) when trying this; its cause isn't proven either way.
+- **The 15 seconds that count as a tap** (`N-27`, owner, 2026-11-01: fine for now). With the app in the background, the iPhone often brings it to the front
+  without telling the worker about the tap, and can keep the tapped push on its list. So the app coming to the front within 15 s of a push counts as
+  tapping it, and opening the app by hand in that time also goes to the push's place. To change it: `ANSWERED_MS` in `src/main.tsx`, one number, no
+  migration. Lower means fewer false opens and more real taps missed; the failed taps seen were 1 to 4 s after the push; 0 turns the rule off and leaves
+  only the list check. Next to it, `LOST_TAP_MS` (60 s) is how long a push gone from the list still counts.
 
 ## 16. Open questions
 
@@ -1913,3 +2189,8 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   the owner by hand.
 - **2026-11-01 (22):** **S5 done** (owner): no shadow week on the preview; the shadow feature stays for
   production after S6, where the owner sets the beta list. `notifications-s5` merged into `notifications`.
+- **2026-11-01 (23):** S6 started. Part A built on `notifications-s6`: goal review push, quiet hours (everything
+  waits), details off (the kind only), badge, Settings' "How they arrive" (follows the account), the goal
+  celebration (option A with more motion). Part B's step-by-step written in §14. Waiting for the owner's test.
+- **2026-11-01 (24):** part A's last two iPhone bugs solved with the owner's tests: no spare entries under the first screen, no `clients.openWindow` on the iPhone (a white page after a back swipe), and a tapped push the worker never hears about is worked out by the app (`findLostTap`). Details in §14 S6, sixth to twelfth rounds.
+- **2026-11-01 (25):** S6 part A done (owner) and `notifications-s6` merged into `notifications`. Part B starts in its own session.

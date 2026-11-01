@@ -55,7 +55,7 @@ export function NotificationsScreen() {
   const [onHere, setOnHere] = useState<boolean | null>(null)
   const [permission, setPermission] = useState(() => (typeof Notification === 'undefined' ? 'default' : Notification.permission))
   const [busy, setBusy] = useState(false)
-  const [open, setOpen] = useState<'summary' | 'review' | null>(null)
+  const [open, setOpen] = useState<'summary' | 'review' | 'quiet' | null>(null)
   const userId = s.access === 'member' ? s.userId : null
 
   useEffect(() => {
@@ -134,6 +134,38 @@ export function NotificationsScreen() {
             onSwitch={(v) => { change({ review: v }); setOpen(v ? 'review' : null) }}
             onOpen={() => setOpen(open === 'review' ? null : 'review')}>
             <TimeWheel value={prefs.reviewTime} onChange={(reviewTime) => change({ reviewTime })} />
+          </OptionRow>
+          <div className="list-row">
+            <div className="text"><span className="title">{t('notif.goalReviews')}</span></div>
+            <Switch checked={on && prefs.goalReviews} disabled={!on} label={t('notif.goalReviews')} onChange={(goalReviews) => change({ goalReviews })} />
+          </div>
+        </div>
+      </Section>
+
+      <Section title={t('notif.how')}>
+        <div className={`card list settings dt-rows ${on ? '' : 'dim'}`}>
+          <div className="list-row">
+            <div className="text"><span className="title">{t('notif.badge')}</span></div>
+            <Switch checked={on && prefs.badge} disabled={!on} label={t('notif.badge')} onChange={(badge) => change({ badge })} />
+          </div>
+          <div className="list-row">
+            <div className="text"><span className="title">{t('notif.details')}</span></div>
+            <Switch checked={on && prefs.details} disabled={!on} label={t('notif.details')} onChange={(details) => change({ details })} />
+          </div>
+          <OptionRow label={t('notif.quiet')} on={on && prefs.quiet} disabled={!on} open={open === 'quiet'}
+            value={t('notif.quietWhen', { from: prefs.quietFrom, to: prefs.quietTo })}
+            onSwitch={(v) => { change({ quiet: v }); setOpen(v ? 'quiet' : null) }}
+            onOpen={() => setOpen(open === 'quiet' ? null : 'quiet')}>
+            <div className="quiet-wheels">
+              <div>
+                <div className="quiet-label">{t('notif.from')}</div>
+                <TimeWheel value={prefs.quietFrom} onChange={(quietFrom) => change({ quietFrom })} />
+              </div>
+              <div>
+                <div className="quiet-label">{t('notif.to')}</div>
+                <TimeWheel value={prefs.quietTo} onChange={(quietTo) => change({ quietTo })} />
+              </div>
+            </div>
           </OptionRow>
         </div>
       </Section>

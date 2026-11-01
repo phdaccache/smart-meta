@@ -20,7 +20,7 @@ function show(dir: 'forward' | 'back' | null) {
   ending?.()
   const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   // A sheet going away plays its own exit; the page under it changes at once.
-  if (!dir || still || document.querySelector('.sheet-layer')) return notify()
+  if (!dir || still || document.hidden || document.querySelector('.sheet-layer')) return notify()
   if (dir === 'back') return slideBack()
   slideIn()
 }
@@ -100,8 +100,9 @@ let later: (() => void)[] = []
 // Entries made before this page loaded count as the bottom of the stack. After a reload (the app updating
 // itself on an inner screen, S5 test), the entries under it belong to the page that was: going back into
 // them loads that page anew, which a Home Screen app on the iPhone showed as a blank white page. So Back
-// starts here, and goes to the screen's own parent instead.
-if (depth() > 0 || layer() > 0) log('nav', 'fresh page at depth', depth(), 'layer', layer())
+// starts here, and goes to the screen's own parent instead. (Nothing may be added under the first screen: on a
+// fresh open the iPhone has nothing to swipe back to, and an entry put there gave it one, showing a white page. S6 test.)
+log('nav', 'page start at depth', depth(), 'layer', layer(), 'entries', history.length)
 history.replaceState({ depth: 0 }, '')
 
 // Screens keep their own scroll (see screensUnder) and the page itself never scrolls, so the browser restoring
@@ -132,11 +133,15 @@ function slideBack() {
   const shade = document.createElement('div')
   shade.className = 'nav-shade'
   document.body.append(shade)
+  let runs: (Animation | undefined)[] = []
   const end = () => {
     if (ending !== end) return
     ending = null
     leaving = null
     shade.remove()
+    // Its end stays applied until cancelled, and a screen opened right away takes this same layer: it stayed
+    // off to the side, with everything under it untouchable (S6 test).
+    runs.forEach((a) => a?.cancel())
   }
   ending = end
   const finish = () => {
@@ -147,7 +152,7 @@ function slideBack() {
   // Animations wait while the app is in the background; the screen must not outlive its moment.
   setTimeout(finish, 1000)
   const timing = { duration: 400, easing: EASE, fill: 'forwards' } as const
-  const runs = [
+  runs = [
     layer?.animate([{ transform: 'none' }, { transform: 'translateX(100%)' }], timing),
     shade.animate([{ opacity: 1 }, { opacity: 0 }], timing),
   ]
@@ -160,7 +165,27 @@ export const leavingScreen = () => leaving
 /** Set while unwinding the stack to a tab: where to land once the browser gets there. */
 let pendingRoot: string | null = null
 
+/**
+ * A Back the browser hasn't made yet. Until it has, `history.state` still says where we were, so a quick second
+ * tap counted the same screen twice and went one too far, past the bottom of the stack, onto the entries of a page
+ * from before a reload (S6 test: a white page). What's asked for meanwhile waits its turn (see `later`).
+ */
+let backing: ReturnType<typeof setTimeout> | null = null
+function backArrived() {
+  if (backing == null) return
+  clearTimeout(backing)
+  backing = null
+  if (ownMoves === 0) later.splice(0).forEach((run) => run())
+}
+
+/** Set while going down to the bottom of the stack to reload there (see reloadFromBottom). */
+let reloading: (() => void) | null = null
+
 window.addEventListener('popstate', (e: PopStateEvent & { hasUAVisualTransition?: boolean }) => {
+  if (reloading) return reloading()
+  if (e.hasUAVisualTransition) log('nav', 'swipe to depth', depth(), 'entries', history.length)
+  // After this event's own work, which is about the same move.
+  if (backing != null) queueMicrotask(backArrived)
   if (ownMoves > 0) {
     if (--ownMoves === 0) later.splice(0).forEach((run) => run())
     return
@@ -182,6 +207,31 @@ window.addEventListener('popstate', (e: PopStateEvent & { hasUAVisualTransition?
   show(e.hasUAVisualTransition ? null : 'back')
 })
 
+/**
+ * Reloads the app on the screen it's on, from the bottom of the stack. A reload leaves the entries under it behind,
+ * and going back into those showed the iPhone's white page, closing the app the only way out (S5 and S6 tests; a swipe
+ * reaches them whatever Back does). This page's own entries are safe to go down, so it goes down them first.
+ * `to` is the screen to reload on: the one shown unless said otherwise.
+ */
+export function reloadFromBottom(to = getPath()) {
+  const finish = () => {
+    reloading = null
+    if (depth() + layer() > 0) return location.replace(to)
+    history.replaceState({ depth: 0 }, '', to)
+    location.reload()
+  }
+  const n = depth() + layer()
+  if (n === 0) return finish()
+  reloading = () => {
+    if (depth() + layer() === 0) finish()
+  }
+  // A move that never comes mustn't hold the reload back.
+  setTimeout(() => {
+    if (reloading) finish()
+  }, 1000)
+  history.go(-n)
+}
+
 /** Takes `n` of our own entries off the history. */
 function dropEntries(n: number) {
   if (n === 0) return
@@ -197,7 +247,7 @@ function afterOwnMoves(then: () => void): boolean {
   const n = pushedLayers()
   layers.length = 0 // the sheets close as their screen goes; their own release finds nothing to do
   dropEntries(n)
-  if (ownMoves === 0) return false
+  if (ownMoves === 0 && backing == null) return false
   later.push(then)
   return true
 }
@@ -216,7 +266,7 @@ export function pushLayer(close: () => void): () => void {
     entry.pushed = true
   }
   // A sheet that opens as another closes waits for the browser to drop the old entry first.
-  if (ownMoves > 0) later.push(push)
+  if (ownMoves > 0 || backing != null) later.push(push)
   else push()
   return () => {
     const i = layers.indexOf(entry)
@@ -281,8 +331,11 @@ export function backTo(d: number, fallback: string) {
 /** Back within the app when there is somewhere to go, otherwise to a sensible parent. */
 export function goBack(fallback: string) {
   if (afterOwnMoves(() => goBack(fallback))) return
-  if (depth() > 0) history.back()
-  else navigate(fallback, { replace: true })
+  if (depth() > 0) {
+    // A move that never comes mustn't hold everything else back.
+    backing = setTimeout(backArrived, 1000)
+    history.back()
+  } else navigate(fallback, { replace: true })
 }
 
 function getPath() {
