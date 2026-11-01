@@ -1613,7 +1613,7 @@ only one acts. The log says "push tapped message" or "push tapped kept".
 - [x] Developer test button *(part 2, tested)*. Beta flag for the owner *(part 3, tested: Shadow hides the
       row from accounts not in the beta; the beta list is switched from Developer → Requests, 0010)*.
 - [ ] **Shadow week** (N-22): from 1 November 2026, Pushes on Shadow, the owner (and anyone switched into
-      the beta) using it day to day. Anything wrong goes back to this branch. Then S5 merges into
+      the beta) using it day to day; run by the owner by hand, nothing scheduled. Anything wrong goes back to this branch. Then S5 merges into
       `notifications`.
 - [x] **Push to the owner on each new access request** (spec AC-5), moved here from S2 on
       2026-10-29: title "New request", body the email (owner, 2026-10-31); tapping it opens Requests. Sent by the server when someone
@@ -1698,12 +1698,11 @@ only one acts. The log says "push tapped message" or "push tapped kept".
    device should be on the new version (the PWA updates on open). And 0003 refuses readable writes, so it
    goes to production together with the app that encrypts; an older app's writes then wait on its phone
    until it updates.
-4. **App updates reload at once** (seen in S5): the app installs a new version the moment it comes to the
-   front, reloading on whatever screen it was. During S5's tests that interrupted a tapped push (fixed by
-   keeping the tap until shown) and left Back entries that showed a blank page (fixed for the app's own
-   Back; the iPhone's edge swipe can still reach them). Should the reload wait, for example until the
-   app next goes to the background, or until it's on a tab? Matters little once deploys are rare (after
-   the merge), more during testing.
+
+Answered on 2026-10-31 (S5, after testing): app updates keep reloading at once when the app comes to the
+front (owner: leave it as it is); the app keeps a tapped push until it's shown and its own Back stays
+inside the app, which covered what this broke during the tests. The shadow week is the owner's to run by
+hand, nothing scheduled.
 
 Answered on 2026-10-31 (S5): the kill switch goes in the app too, as an owner-only Developer row (part 3).
 The privacy policy now lists the app's language among the notification data (the push subscription keeps it
@@ -1908,3 +1907,5 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
 - **2026-10-31 (20):** S5 tested and fixed; what's left is the shadow week (from 1 November). Docs brought
   up to date (the S5 header and checklist, "Reminders", no merged pushes, the push ids in the README's
   shared decisions); open question 4, app updates reloading at once.
+- **2026-10-31 (21):** open question 4 answered (updates keep reloading at once); the shadow week is run by
+  the owner by hand.
