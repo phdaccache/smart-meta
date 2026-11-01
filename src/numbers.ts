@@ -41,3 +41,7 @@ export const SUMMARY_TIME = '08:00'
 
 /** N-12: the weekly review's push, Mondays at this time to start with. */
 export const REVIEW_TIME = '08:00'
+
+/** N-26: quiet hours to start with, once turned on. */
+export const QUIET_FROM = '22:00'
+export const QUIET_TO = '07:00'

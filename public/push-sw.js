@@ -17,14 +17,23 @@ self.addEventListener('push', (event) => {
   // iPhone allows no silent push: something always shows, even for a payload this can't read.
   const title = m && typeof m.title === 'string' && m.title ? m.title : 'Smart Meta'
   event.waitUntil(
-    self.registration.showNotification(title, {
-      body: m && typeof m.body === 'string' ? m.body : '',
-      tag: m && typeof m.tag === 'string' ? m.tag : undefined,
-      icon: '/icons/icon-192.png',
-      data: { url: appPath(m && m.url) },
-    }),
+    Promise.all([
+      self.registration.showNotification(title, {
+        body: m && typeof m.body === 'string' ? m.body : '',
+        tag: m && typeof m.tag === 'string' ? m.tag : undefined,
+        icon: '/icons/icon-192.png',
+        data: { url: appPath(m && m.url) },
+      }),
+      setBadge(m && m.badge),
+    ]),
   )
 })
+
+/** The app's icon, when the push carries a number (spec NO-20). A phone that can't show one just doesn't. */
+function setBadge(n) {
+  if (!Number.isInteger(n) || n < 0 || !('setAppBadge' in self.navigator)) return Promise.resolve()
+  return (n ? self.navigator.setAppBadge(n) : self.navigator.clearAppBadge()).catch(() => {})
+}
 
 /**
  * Where the last tap should take the app, for the app to read when it starts or comes to the front

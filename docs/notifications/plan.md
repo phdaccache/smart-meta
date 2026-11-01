@@ -115,8 +115,8 @@ the same local tables as A's, so both people's data mix. Fix in S2 (§6.8).
 | Project steps | ✅ Same rules as due dates (steps have end dates). |
 | Late items | Not pushed again after their time; only counted in the badge (confirmed). |
 | Preps with a time | ✅ **Changed 2026-10-31 (S5, answer 3a):** no push by itself; the prep's Notification card, like any item. |
-| Goal review date reached | ✅ |
-| Goal completed / target hit | ✅ In-app celebration only, no push. |
+| Goal review date reached | ✅ At the morning summary's time, even with the summary off; once only (owner, 2026-11-01, S6). |
+| Goal completed / target hit | ✅ In-app celebration only, no push. Plays on a goal review saved with "Yes" (renew, maintenance or close) and on "Close it out" (owner, 2026-11-01, S6). |
 | Test notification | ✅ Developer mode only (the owner). |
 | Misses logging (evening) | ❌ Skipped for now. |
 | Goal status change | ❌ Shown in Review. |
@@ -199,8 +199,11 @@ toast on Today; Requests is a Settings-style list. Numbers are the owner's scree
   email step. Mockup: [notification settings](mockups/notification-settings.html), artifact
   [Smart Meta Notification Settings](https://claude.ai/artifact/4gN8wJzt7pzg5sXiKGzXTU).
 - **App icon badge:** toggle, **off by default**, counts **late + left today**. **Review not included.**
-- **Lock-screen details:** shown by default, can be turned off.
-- **Quiet hours:** available, off by default.
+- **Lock-screen details:** shown by default, can be turned off. Off, a push says only its kind: "Reminder",
+  "Morning summary", "Weekly review", "Goal review date" (S6 pick B).
+- **Quiet hours:** available, off by default. **Everything waits** until they end, reminders too (owner, S6).
+- **The "On this phone" rows follow the account** (owner, S6): any phone can plan the pushes, so per-phone
+  values would overwrite each other's plan. The section is "How they arrive" / "Como chegam".
 - **Deep links:** tapping opens that task, goal or project.
 - **Cancel on done.** **No snooze.** **Time zone** stored with the plan. **Language** from app settings.
 - **Denied permission:** instructions to turn it back on.
@@ -1625,19 +1628,126 @@ only one acts. The log says "push tapped message" or "push tapped kept".
   owner's call after testing on both phones (the week moved to production, after S6).
 
 ### S6. The rest, then merge
-- [ ] Goal review date, in-app celebration. (Preps with a time moved to S5 on 2026-10-31: preps get the
-      Notification card like any item.)
-- [ ] App icon badge (late + today), quiet hours, lock-screen details toggle.
-- [ ] Merge plan: apply migrations to production, deploy, enable for the owner, then friends.
-- [ ] Backups to production (from S4): in `smart-meta-backups`, replace `DATABASE_URL` and
-      `RESTORE_DATABASE_URL` with production's session pooler URI, update its README's "staging only" note,
-      run a full backup, and repeat the restore drill once with a test account.
-- [ ] Production Supabase set up like staging was in S2, before deploying: custom SMTP with the app Gmail
-      (`smartmeta.codes@gmail.com`, its app password pasted by the owner), the code-only "Confirm signup"
-      and "Magic Link" templates, sign-ups on, anonymous sign-ins off, confirm email on, 6-digit codes,
-      Turnstile captcha with its secret, 30 emails an hour; then `0002_accounts.sql` in the SQL editor
-      (existing users become members), and Security Advisor checked. Friends sign in once with a code:
-      the password sign-in is gone from the app (spec AC-14).
+
+Started 2026-11-01 on branch `notifications-s6`. The owner's split: **part A** (the features, tested on the
+preview), then a compaction, then **part B** (production and the merge, with a step-by-step for every
+setting). Mockups: [Smart Meta S6 Mockups](https://claude.ai/artifact/JGqJ6CnYgTeRYFAcDSbcZv).
+
+**Part A answers (owner, 2026-11-01):**
+- **Celebration:** option A (a full screen, a ring in the goal's value color closes, a tick, Done), with more
+  motion, "not too much". If the motion doesn't please, keep plain A: drop the sparks, glow and pulse in
+  `src/styles.css` (`.cele-spark`, `.cele-glow`, `cele-pulse`).
+- **It plays** on a goal review saved with "Yes", whatever comes next, and on "Close it out". "Goal completed"
+  when the goal ends, "You hit it" when it goes on. A review answered "No" gets the usual "Saved" toast.
+- **Goal review date push:** at the morning summary's time (even with the summary off), no time of its own.
+- **Details off:** the push's kind only (option B), no name or count, and it still opens the same place.
+- **Quiet hours:** everything waits until they end, reminders too. Nothing is skipped.
+- **Those three rows follow the account**, as "How they arrive" (see §2).
+
+**Part A: what was built (2026-11-01):**
+- `src/lib/planner.ts` (tests first, 15 new): the goal review push (`gol:<day>:<goal>`, kind `goal-review`, which
+  0006 already allows; a habit goal on its review date, an outcome goal when its extra days end, as the goal's
+  page; it counts toward N-7). Quiet hours move a push's `fire_at` and keep its id, so a push already sent
+  stays sent if they're turned on later (the server keeps those rows as they are), and a push held overnight
+  stays planned when the phone plans again at night. A reminder arriving the day after it was due says
+  "Yesterday, 23:00". "Now" on Today uses the time it arrived.
+- **Badge:** each push carries its day's number (`badge` in `PushMessage`, encrypted like the rest), the service
+  worker sets it (`public/push-sw.js`), and `src/ui/AppBadge.tsx` keeps it right while the app is open.
+- Settings → Notifications: "Goal review dates"; the section "How they arrive" (App icon badge, Details on the
+  lock screen, Quiet hours with From and To wheels). Prefs are in the synced `prefs` record, no migration.
+- `src/ui/Celebration.tsx`, `.cele` in `src/styles.css`: CSS animations only, two taps of the phone as the ring
+  closes, reduced motion just fades. Developer → Goal celebration → Play it shows it again.
+
+**Choices made while building (the owner may change any):**
+- **The badge counts less than Today's total:** commitments and preps of the day, and tasks and steps due today
+  or late (as Today's "Today" filter). Today also lists tasks due later and tasks with no date; counting those
+  would keep the number up for good ("late + left today", NO-20). The morning summary still counts everything.
+- The server's own "New request" push to the owner doesn't know quiet hours: the server can't read the
+  settings (they're encrypted). It still arrives at night, for the owner only.
+- More than 3 goal review dates on one day (with the cap of 3): the rest get no push; their pages still ask.
+
+**To test part A on the S6 preview** (`smart-meta-h2ur-git-notifications-s6-daccache.vercel.app`, a new Home
+Screen app; sign in with an account on staging, Face ID, turn on notifications):
+1. **Settings → Notifications:** "Goal review dates" and the "How they arrive" section show; turning Quiet hours
+   on opens From and To; the blue line follows them; everything is still there after reopening the app and on
+   the other phone.
+2. **Celebration:** Developer → Goal celebration → Play it, a few times. Is the motion right? Then a real one:
+   a goal with a review date today (Edit goal), its page → Review → Yes → Close it out → Save: the ring plays,
+   Done shows the goal's page, Back goes to Goals. With Yes → Renew: "You hit it". With No: only "Saved".
+   A maintenance goal → Close it out: it plays.
+3. **Goal review push:** a goal with tomorrow's review date, or set the morning summary's time 3 minutes ahead
+   on a goal whose review date is today (before saving a review): "Review date reached / the goal's name" comes
+   at that time; tapping it opens the goal. Then "Goal review dates" off: planning again takes it away.
+4. **Details off:** turn it off, add a task with a reminder a few minutes ahead: "Reminder", no name; tapping it
+   opens the task on Today. Then back on.
+5. **Quiet hours:** From now to 5 minutes ahead, and a reminder 2 minutes ahead: it arrives when they end, not
+   before. Tick something off in that time with a reminder held: it never comes. Then off.
+6. **Badge:** turn it on and leave the app: the icon shows late + left today. Tick one off: the number drops.
+   A push arriving with the app closed sets the number for its day. Off: the number goes away.
+
+### S6 part B: production and the merge (step by step)
+
+Written in part A so it survives the compaction; check each against the code as you go. Claude can't do the
+**Owner** steps (accounts and secrets; Claude gets no Supabase access) and gives them one at a time, waiting
+for each. **Secrets never go in chat.** Production is project ref `oqhwkjhuuaeopahhcxac` (`.env.production`).
+
+**Before any of it (Claude):** part A tested by the owner; `notifications-s6` merged into `notifications` (S6's
+docs up to date); `origin/main` merged in if it has anything new; tests and build pass; a release note in
+`src/lib/releases.ts` (ask the owner for its text; `package.json` version up); privacy policy date still right.
+
+1. **Owner, a copy first:** on each phone with data, Settings → export the JSON backup, and keep it.
+2. **Owner, backups to production (`smart-meta-backups`):** github.com/phdaccache/smart-meta-backups → Settings
+   → Secrets and variables → Actions: replace `DATABASE_URL` and `RESTORE_DATABASE_URL` with production's session
+   pooler URI (Supabase → production project → **Connect** → **Session pooler**, with `[YOUR-PASSWORD]` replaced
+   by production's database password; if lost, Database → Settings → Reset database password, which nothing else
+   uses). **Claude:** updates the repo's README ("staging only") and runs a full backup, so there's a copy of
+   production **from before the migrations**. Checks the run passed.
+3. **Owner, email (production → Authentication):** custom SMTP on: host `smtp.gmail.com`, port 465, user and sender
+   `smartmeta.codes@gmail.com`, the Gmail app password from the password manager, sender name "Smart Meta". Rate
+   limit: 30 emails an hour. Email provider: confirm email **on**, code length **6**, expiry 1 hour (3600 s).
+4. **Owner, templates:** Authentication → Emails → "Confirm signup" and "Magic Link": paste what staging has (the
+   code only, English and Portuguese together; copy them from `smart-meta-staging`).
+5. **Owner, sign-ups and captcha:** Authentication → sign-ups **on**, anonymous sign-ins **off**. Attack
+   Protection → Turnstile captcha **on**, with the secret key from the password manager. Cloudflare → Turnstile →
+   "Smart Meta": check the production address `smart-meta-h2ur.vercel.app` is among its hostnames. Supabase's "personal
+   provider" warning about Gmail is expected (§14 S2).
+6. **Owner, VAPID (production's own pair):** in `Documents\smart-meta`: `node scripts/vapid-keys.mjs`. Save both
+   lines in the password manager as "Smart Meta VAPID (production)". Supabase → production → Edge Functions →
+   Secrets: add `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`. **Send Claude only the public line**; Claude adds it to
+   Vercel as `VITE_VAPID_PUBLIC_KEY`, Production only.
+7. **Owner, migrations, right before the merge** (0003 refuses unencrypted writes, §16.3: from here to step 10 should
+   take minutes, and every phone's writes just wait until it updates). Supabase → production → SQL Editor, each
+   file pasted and Run, in order, one at a time; Claude waits for each:
+   `0002_accounts.sql` (existing accounts become members), `0003_keys.sql`, `0004_limits.sql`,
+   `0005_daily_rows_policy.sql`, `0006_push.sql` (mode starts at `shadow`: leave it), then in a new query
+   `select vault.create_secret('https://oqhwkjhuuaeopahhcxac.supabase.co/functions/v1/dispatch', 'dispatch_url');`,
+   then `0007_pg_net_schema.sql`, `0008_push_controls.sql`, `0009_push_mode_where.sql`, `0010_owner_push_tools.sql`.
+8. **Owner, the dispatcher:** in PowerShell, in the repo folder: `npx supabase login`, then
+   `npx supabase functions deploy dispatch --project-ref oqhwkjhuuaeopahhcxac --no-verify-jwt --use-api`, then
+   **`npx supabase logout`** right away, and delete the token in Supabase → Account → Access Tokens.
+9. **Owner, checks:** Integrations → Cron: `smart-meta-dispatch` and `smart-meta-purge` listed, the first succeeding
+   each minute. Edge Functions → `dispatch` → Invocations: a 200 each minute. Advisors → Security Advisor: anything
+   new goes to Claude ("Leaked Password Protection" doesn't apply; see §14 S5).
+10. **Claude, the merge (only on the owner's go):** `notifications` into `main`, push; checks the Production deployment
+    on Vercel is ready and the site answers.
+11. **Owner, the first phone:** open the installed app (reopen it so it updates). Sign in with an email code, Face ID
+    (a new passkey: the address is new). The phone's data seals and uploads. In the SQL Editor, this should
+    say 0: `select count(*) from public.records where not (data ? 'e');`. Second phone: same account, Face ID opens
+    the data; the data matches. Settings → Notifications → turn on; Developer → Pushes shows Shadow; send a test.
+12. **Owner, the restore drill:** with a test account on production, as in §14 S4 (Claude runs the workflow); then
+    delete the test account.
+13. **Owner, a week of real use** in Shadow (spec NO-17): only the owner gets pushes. Nothing scheduled.
+14. **Friends (spec NO-28):** each opens the app and signs in once with a code (the password sign-in is gone,
+    spec AC-14) and Face ID. Developer → Requests → a member → "Shadow beta" for the first ones; when ready, Developer
+    → Pushes → On.
+
+**Rollback:** the kill switch (Developer → Pushes → Off, or `update private.push_config set mode = 'off';`) stops
+pushes at once. App: Vercel → Deployments → promote the last good one; 0003's check would refuse an older app's
+writes, so they'd wait on the phones until the app is forward again. Nothing on the phones is lost.
+
+- [ ] Goal review date, in-app celebration. *(Built in part A, waiting for the owner's test.)*
+- [ ] App icon badge, quiet hours, lock-screen details toggle. *(Built in part A, waiting for the owner's test.)*
+- [ ] Part B: production set up, migrations, backups, merge, the owner first, then friends.
 - **Done when:** merged to `main` and friends have it.
 
 ### What the owner needs to set up, and when
@@ -1913,3 +2023,6 @@ notifications, sign-in, avatars, Settings → Notifications, "Not synced yet".
   the owner by hand.
 - **2026-11-01 (22):** **S5 done** (owner): no shadow week on the preview; the shadow feature stays for
   production after S6, where the owner sets the beta list. `notifications-s5` merged into `notifications`.
+- **2026-11-01 (23):** S6 started. Part A built on `notifications-s6`: goal review push, quiet hours (everything
+  waits), details off (the kind only), badge, Settings' "How they arrive" (follows the account), the goal
+  celebration (option A with more motion). Part B's step-by-step written in §14. Waiting for the owner's test.

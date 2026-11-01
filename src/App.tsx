@@ -4,6 +4,8 @@ import { t, tk, useLang, type Key } from './i18n'
 import { db } from './db/db'
 import { setSettings } from './db/settings'
 import { dayMonth } from './lib/dates'
+import { AppBadge } from './ui/AppBadge'
+import { Celebration } from './ui/Celebration'
 import { Toaster } from './ui/components'
 import { reviewPending } from './lib/review'
 import { useSettingsLoaded, useToday } from './ui/hooks'
@@ -143,6 +145,8 @@ export function App() {
       <WhatsNew waiting={onboarding || path.startsWith('/welcome')} />
       <Toaster />
       <KeysPrompt />
+      <Celebration />
+      <AppBadge />
     </Fragment>
   )
 }

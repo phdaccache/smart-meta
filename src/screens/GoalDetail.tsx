@@ -15,6 +15,7 @@ import type { Snapshot } from '../lib/today'
 import { stateLabel } from '../lib/revisions'
 import type { Commitment, Goal, GoalReview, Prep, Value } from '../lib/types'
 import { DateField, Field, InfoTip, PageText, Screen, Section, Sheet, StatusInfo, StatusWord, toast, TypeToConfirm, WeekBar } from '../ui/components'
+import { celebrate } from '../ui/Celebration'
 import { useGoalReviews, useSettings, useSnapshot, useToday } from '../ui/hooks'
 import { IconChevronRight, IconHistory, IconInsights } from '../ui/icons'
 import { goBack, navigate } from '../ui/router'
@@ -191,7 +192,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
             </button>
           )}
           {goal.state === 'maintenance' && (
-            <button className="list-row" onClick={() => setGoalState(goal, 'completed')}>{t('goal.closeItOut')}</button>
+            <button className="list-row" onClick={() => setGoalState(goal, 'completed').then(() => celebrate(goal, snap.values, today, true))}>{t('goal.closeItOut')}</button>
           )}
           {(goal.state === 'abandoned' || goal.state === 'completed') && (
             <button className="list-row" onClick={() => setGoalState(goal, 'backlog')}>{t('goal.restoreToBacklog')}</button>
@@ -505,7 +506,8 @@ export function GoalReviewScreen({ id, presetHit }: { id: string; presetHit?: bo
   const save = async () => {
     if (!ready) return
     await saveGoalReview(goal, { hit: hit!, whatHappened: whatHappened.trim(), journalNote: journal.trim() }, outcome!, renewDate || null)
-    toast(t('common.saved'))
+    if (hit) celebrate(goal, snap.values, today, outcome === 'completed')
+    else toast(t('common.saved'))
     goBack(`/goals/${goal.id}`)
   }
   const choice = (v: typeof outcome, title: string, d: string) => (

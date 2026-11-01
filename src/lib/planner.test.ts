@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { inLang } from '../i18n'
-import { DEFAULT_PREFS, planPushes, remindedRows, remindUrl, type PlanInput, type Prefs } from './planner'
+import { DEFAULT_PREFS, openCount, planPushes, remindedRows, remindUrl, type PlanInput, type Prefs } from './planner'
 import { dueWhen, reminderAt, reminderChoices, reminderLabel } from './reminders'
 import { commitment, goal, hit, prep, project, snapshot, task } from './testkit'
 import type { Reminder, WeekReview } from './types'
@@ -271,5 +271,140 @@ describe('the plan as a whole', () => {
     const bad = task({ date: '2026-11-03', reminder: { n: -1, unit: 'day' } })
     const odd = task({ date: '2026-11-03', reminder: { n: 1, unit: 'year' } as unknown as Reminder })
     expect(only('reminder', plan({ snap: snapshot({ tasks: [bad, odd] }) }))).toEqual([])
+  })
+})
+
+describe('goal review date (spec NO-6)', () => {
+  const dated = (over = {}) => goal({ title: 'Run a 10k', targetDate: '2026-11-05', ...over })
+
+  it("comes on a goal's review date at the morning summary's time, and opens the goal", () => {
+    const g = dated()
+    const pushes = only('goal-review', plan({ snap: snapshot({ goals: [g] }), prefs: { summaryTime: '09:15', summary: false } }))
+    expect(pushes.map((p) => p.id)).toEqual([`gol:2026-11-05:${g.id}`])
+    expect(iso(pushes[0].fireAt)).toBe('2026-11-05T12:15:00.000Z')
+    expect(pushes[0].message).toEqual({ title: 'Review date reached', body: 'Run a 10k', url: `/goals/${g.id}`, tag: `goal:${g.id}` })
+  })
+
+  it("waits for an outcome goal's extra days, as the goal's page does", () => {
+    const g = dated({ kind: 'outcome', graceDays: 3 })
+    const pushes = only('goal-review', plan({ snap: snapshot({ goals: [g] }) }))
+    expect(pushes.map((p) => p.id)).toEqual([`gol:2026-11-08:${g.id}`])
+  })
+
+  it('stays away from goals not running, dates gone by, and with its switch off', () => {
+    const snap = (over: object) => snapshot({ goals: [dated(over)] })
+    expect(only('goal-review', plan({ snap: snap({ state: 'backlog' }) }))).toEqual([])
+    expect(only('goal-review', plan({ snap: snap({ state: 'completed' }) }))).toEqual([])
+    expect(only('goal-review', plan({ snap: snap({ deletedAt: '2026-10-01T00:00:00.000Z' }) }))).toEqual([])
+    expect(only('goal-review', plan({ snap: snap({ targetDate: '2026-10-29' }) }))).toEqual([])
+    expect(only('goal-review', plan({ snap: snap({}), prefs: { goalReviews: false } }))).toEqual([])
+  })
+
+  it('counts a time before the rollover hour for the day before, as the summary does', () => {
+    const pushes = only('goal-review', plan({ snap: snapshot({ goals: [dated()] }), prefs: { summaryTime: '03:00' } }))
+    expect(iso(pushes[0].fireAt)).toBe('2026-11-06T06:00:00.000Z')
+  })
+
+  it('counts toward the cap of what the app starts by itself', () => {
+    const goals = [1, 2, 3, 4].map((n) => dated({ title: `Goal ${n}` }))
+    const day = (p: { fireAt: number }) => wallClock(p.fireAt, SP).date
+    const pushes = plan({ snap: snapshot({ goals }), prefs: { review: false } }).filter((p) => day(p) === '2026-11-05')
+    expect(pushes).toHaveLength(3)
+  })
+})
+
+describe('quiet hours (spec NO-22): everything waits until they end', () => {
+  const quiet = { quiet: true, quietFrom: '22:00', quietTo: '07:00' }
+  const late = task({ title: 'Call mum', date: '2026-11-03', time: '23:00', reminder: rem(0, 'minute') })
+
+  it('holds a reminder until they end, keeping its id, and says when it was due from the day it arrives', () => {
+    const [plain] = only('reminder', plan({ snap: snapshot({ tasks: [late] }) }))
+    const [held] = only('reminder', plan({ snap: snapshot({ tasks: [late] }), prefs: quiet }))
+    expect(iso(held.fireAt)).toBe('2026-11-04T10:00:00.000Z')
+    expect(held.id).toBe(plain.id)
+    expect(held.message.body).toBe('Yesterday, 23:00')
+    expect(held.message.url).toContain(`at=${held.fireAt}`)
+  })
+
+  it('holds the morning summary too, and leaves alone what falls outside', () => {
+    const snap = snapshot({ tasks: [task({ date: '2026-11-03' })] })
+    const at630 = only('summary', plan({ snap, prefs: { ...quiet, summaryTime: '06:30' } }))
+    expect(iso(at630.find((p) => p.id === 'sum:2026-11-03')!.fireAt)).toBe('2026-11-03T10:00:00.000Z')
+    const at8 = only('summary', plan({ snap, prefs: quiet }))
+    expect(iso(at8.find((p) => p.id === 'sum:2026-11-03')!.fireAt)).toBe('2026-11-03T11:00:00.000Z')
+  })
+
+  it('works within a day too, and does nothing when they start and end together or are off', () => {
+    const midday = task({ date: '2026-11-03', time: '14:00', reminder: rem(0, 'minute') })
+    const [held] = only('reminder', plan({ snap: snapshot({ tasks: [midday] }), prefs: { quiet: true, quietFrom: '13:00', quietTo: '15:00' } }))
+    expect(iso(held.fireAt)).toBe('2026-11-03T18:00:00.000Z')
+    const [same] = only('reminder', plan({ snap: snapshot({ tasks: [midday] }), prefs: { quiet: true, quietFrom: '13:00', quietTo: '13:00' } }))
+    expect(iso(same.fireAt)).toBe('2026-11-03T17:00:00.000Z')
+    const [off] = only('reminder', plan({ snap: snapshot({ tasks: [midday] }), prefs: { quiet: false, quietFrom: '13:00', quietTo: '15:00' } }))
+    expect(iso(off.fireAt)).toBe('2026-11-03T17:00:00.000Z')
+  })
+
+  it('keeps what it holds when the phone plans again during the night', () => {
+    const c = commitment(goal())
+    const p = prep(c, { title: 'Pack the bag', fireWeekdays: [2], fireTime: '23:30', reminder: rem(0, 'minute') })
+    const night = at('2026-11-04', '01:00')
+    const snap = snapshot({ goals: [goal({ id: c.goalId })], commitments: [c], preps: [p], tasks: [late] })
+    const ids = only('reminder', plan({ snap, now: night, prefs: quiet })).filter((x) => iso(x.fireAt) === '2026-11-04T10:00:00.000Z')
+    expect(ids).toHaveLength(2)
+  })
+
+  it('finds a held reminder for "Now" at the time it arrived', () => {
+    const input = { snap: snapshot({ tasks: [late] }), prefs: { ...DEFAULT_PREFS, ...quiet }, now, timeZone: SP, rolloverHour: 4 }
+    const arrived = at('2026-11-04', '07:00')
+    expect(remindedRows(input, arrived - 60_000, arrived + 60_000)).toEqual([`task:${late.id}`])
+    expect(remindedRows(input, at('2026-11-03', '22:59'), at('2026-11-03', '23:01'))).toEqual([])
+  })
+})
+
+describe('details on the lock screen off (spec NO-21)', () => {
+  const g = goal({ title: 'Run a 10k', targetDate: '2026-11-05' })
+  const snap = snapshot({ goals: [g], tasks: [task({ title: 'Call mum', date: '2026-11-03', reminder: rem(0, 'day') })] })
+
+  it('says only the kind, and still opens the same place', () => {
+    const on = plan({ snap })
+    const off = plan({ snap, prefs: { details: false } })
+    const of = (list: typeof on, kind: string) => only(kind, list)[0].message
+    expect(of(off, 'reminder')).toMatchObject({ title: 'Reminder', body: '', url: of(on, 'reminder').url })
+    expect(of(off, 'summary')).toMatchObject({ title: 'Morning summary', body: '' })
+    expect(of(off, 'review')).toMatchObject({ title: 'Weekly review', body: '' })
+    expect(of(off, 'goal-review')).toMatchObject({ title: 'Goal review date', body: '', url: `/goals/${g.id}` })
+  })
+
+  it("leaves no name in what's sent", () => {
+    const text = JSON.stringify(plan({ snap, prefs: { details: false } }).map((p) => [p.message.title, p.message.body]))
+    expect(text).not.toContain('Call mum')
+    expect(text).not.toContain('Run a 10k')
+    expect(text).not.toContain('1 thing')
+  })
+})
+
+describe('app icon badge (spec NO-20)', () => {
+  const snap = snapshot({
+    tasks: [
+      task({ title: 'Late', date: '2026-10-28' }),
+      task({ title: 'Today', date: '2026-10-30', reminder: rem(0, 'day') }),
+      task({ title: 'Later', date: '2026-11-03', reminder: rem(0, 'day') }),
+    ],
+  })
+
+  it("is off to start with: what's sent has no number", () => {
+    expect(plan({ snap }).every((p) => !('badge' in p.message))).toBe(true)
+  })
+
+  it('counts late + left on the day the push arrives', () => {
+    const pushes = plan({ snap, prefs: { badge: true, summaryTime: '10:00' } })
+    const sum = (day: string) => pushes.find((p) => p.id === `sum:${day}`)!.message
+    expect(sum('2026-10-31').badge).toBe(2)
+    expect(sum('2026-11-03').badge).toBe(3)
+    expect(openCount(snap, '2026-10-31', 4)).toBe(2)
+  })
+
+  it('leaves out tasks with no date', () => {
+    expect(openCount(snapshot({ tasks: [task({ title: 'Someday' })] }), '2026-10-31', 4)).toBe(0)
   })
 })

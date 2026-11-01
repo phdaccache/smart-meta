@@ -1898,3 +1898,62 @@ input.ed-name { text-align: center; font-size: 20px; font-weight: 600; }
 .av-picker button { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; transition: transform 0.12s ease-out; }
 .av-picker button.on { background: color-mix(in srgb, var(--c) var(--av-soft), var(--surface)); box-shadow: 0 0 0 2px var(--c); }
 .av-picker button:active { transform: scale(0.9); }
+
+/* ——— Settings → Notifications: quiet hours ——— */
+
+.quiet-wheels { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.quiet-label { text-align: center; font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 2px; }
+
+/* ——— the goal celebration (spec NO-7): one moment, a few times a year ——— */
+
+.cele {
+  position: fixed; inset: 0; z-index: 900; background: var(--surface); display: flex; flex-direction: column; align-items: center;
+  padding: var(--safe-top) 32px calc(var(--safe-bottom) + 24px); animation: fade 0.2s var(--ease-out) both;
+}
+.cele.closing { opacity: 0; transition: opacity 0.22s var(--ease-out); pointer-events: none; }
+.cele-middle { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; align-items: center; gap: 36px; padding: 48px 0 16px; text-align: center; width: 100%; }
+.cele-words { margin-bottom: auto; }
+.cele-ring { position: relative; width: 148px; height: 148px; flex: none; margin-top: auto; animation: cele-ring-in 0.3s var(--ease-out) both, cele-pulse 0.5s var(--ease-out) 0.96s; }
+.cele-ring svg { position: relative; display: block; width: 100%; height: 100%; overflow: visible; }
+.cele-track, .cele-arc { fill: none; stroke-width: 14; }
+.cele-track { stroke: color-mix(in srgb, var(--c) 16%, transparent); }
+/* Starts at the top, closes at the top. 377 is the ring's length: 2 × π × 60. */
+.cele-arc {
+  stroke: var(--c); stroke-linecap: round; stroke-dasharray: 377; stroke-dashoffset: 377; transform: rotate(-90deg); transform-origin: center;
+  animation: cele-draw 0.85s cubic-bezier(0.77, 0, 0.175, 1) 0.15s forwards;
+}
+.cele-tick {
+  fill: none; stroke: var(--c); stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 70; stroke-dashoffset: 70;
+  animation: cele-draw 0.28s var(--ease-out) 1s forwards;
+}
+.cele-glow {
+  position: absolute; inset: -44px; border-radius: 50%; opacity: 0;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--c) 34%, transparent), transparent);
+  animation: cele-glow 0.9s var(--ease-out) 0.96s forwards;
+}
+/* Small dots thrown out from the ring as it closes. */
+.cele-spark {
+  position: absolute; left: 50%; top: 50%; width: 7px; height: 7px; margin: -3.5px; border-radius: 50%; background: var(--c); opacity: 0;
+  animation: cele-spark 0.65s var(--ease-out) both;
+}
+.cele-words > * { animation: cele-up 0.42s var(--ease-out) both; }
+.cele-kicker { font-size: 15px; font-weight: 600; color: var(--ink-2); animation-delay: 1.08s !important; }
+.cele-words h2 { margin: 4px 0 0; font: 700 30px/1.15 var(--font-display); letter-spacing: -0.02em; overflow-wrap: anywhere; animation-delay: 1.14s !important; }
+.cele-since { margin-top: 10px; font-size: 15px; color: var(--ink-2); animation-delay: 1.2s !important; }
+.cele-done { flex: none; animation: cele-up 0.36s var(--ease-out) 1.3s both; }
+@keyframes cele-ring-in { from { opacity: 0; transform: scale(0.92); } }
+@keyframes cele-pulse { 35% { transform: scale(1.07); } 70% { transform: scale(0.99); } }
+@keyframes cele-draw { to { stroke-dashoffset: 0; } }
+@keyframes cele-glow { 0% { opacity: 0; transform: scale(0.7); } 35% { opacity: 1; } 100% { opacity: 0.45; transform: none; } }
+@keyframes cele-spark {
+  0% { opacity: 0; transform: rotate(var(--a)) translateY(-66px) scale(1); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--far) * -1)) scale(0.4); }
+}
+@keyframes cele-up { from { opacity: 0; transform: translateY(10px); } }
+@media (prefers-reduced-motion: reduce) {
+  .cele-ring, .cele-words > *, .cele-done { animation: fade 0.25s ease both !important; }
+  .cele-arc, .cele-tick { animation: none; stroke-dashoffset: 0; }
+  .cele-spark { display: none; }
+  .cele-glow { animation: none; opacity: 0.45; }
+}

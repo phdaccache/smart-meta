@@ -155,6 +155,15 @@ export interface NotificationPrefs extends Base {
   review: boolean
   /** 'HH:MM', on Mondays. */
   reviewTime: string
+  goalReviews: boolean
+  /** The number on the app's icon: late + left today. */
+  badge: boolean
+  /** Off: pushes say only their kind, no names or counts. */
+  details: boolean
+  quiet: boolean
+  /** 'HH:MM': what falls from here to quietTo waits until quietTo. */
+  quietFrom: string
+  quietTo: string
 }
 
 export type SubjectType = 'commitment' | 'prep' | 'task'

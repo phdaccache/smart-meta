@@ -82,7 +82,7 @@ export function reminderChoices(date: DateStr, time: string | null | undefined, 
  */
 export function dueWhen(due: DateStr, time: string | null | undefined, from: DateStr): string {
   const d = diffDays(from, due)
-  const day = d === 0 ? capitalize(t('dates.today')) : d === 1 ? capitalize(t('dates.tomorrow'))
+  const day = d === 0 ? capitalize(t('dates.today')) : d === 1 ? capitalize(t('dates.tomorrow')) : d === -1 ? capitalize(t('dates.yesterday'))
     : d > 1 && d < 7 ? tlist('rem.weekdays')[isoWeekday(due) - 1] : dayMonth(due)
   return time ? t('rem.dueAt', { day, time }) : day
 }

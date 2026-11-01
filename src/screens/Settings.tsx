@@ -25,6 +25,7 @@ import type { Value } from '../lib/types'
 import { resetIntro } from './Intro'
 import { openSignIn } from './Account'
 import { AvatarView, ProfileSheet } from '../ui/Avatar'
+import { celebrateSample } from '../ui/Celebration'
 import { useNotificationsShown, usePushStatus } from './Notifications'
 import { useProfile } from '../sync/profile'
 
@@ -404,6 +405,13 @@ export function DeveloperScreen() {
   return (
     <Screen back="/settings" backLabel={t('set.title')} title="Developer">
       <DevSection devToday={settings.devToday} />
+      <Section title="Goal celebration">
+        <div className="card list settings">
+          <button className="list-row accent" onClick={celebrateSample}>
+            <div className="text"><div className="title">Play it</div></div>
+          </button>
+        </div>
+      </Section>
     </Screen>
   )
 }
